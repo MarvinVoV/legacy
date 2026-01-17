@@ -1,0 +1,15 @@
+menu "WiFi Configuration"
+
+    config EXAMPLE_WIFI_SSID
+        string "WiFi SSID"
+        default "MyRouter"
+        help
+            WiFi接入点的名称(SSID)
+
+    config EXAMPLE_WIFI_PASSWORD
+        string "WiFi Password"
+        default "my_password"
+        help
+            WiFi密码（至少8字符）
+
+endmenu

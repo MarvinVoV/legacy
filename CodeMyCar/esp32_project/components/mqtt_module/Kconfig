@@ -1,0 +1,33 @@
+menu "MQTT Configuration"
+
+    config MQTT_BROKER_URL
+        string "MQTT Broker URL"
+        default "mqtt://localhost"
+        help
+            URL of the MQTT broker to connect to
+
+    config MQTT_BROKER_PORT
+        int "MQTT Broker Port"
+        default 1883
+        help
+            Port of the MQTT broker to connect to
+
+    config MQTT_CLIENT_ID
+        string "MQTT Client ID"
+        default "esp32_client"
+        help
+            Client ID used when connecting to the MQTT broker
+
+    config MQTT_USERNAME
+        string "MQTT Username"
+        default ""
+        help
+            Username for MQTT authentication (leave blank if not required)
+
+    config MQTT_PASSWORD
+        string "MQTT Password"
+        default ""
+        help
+            Password for MQTT authentication (leave blank if not required)
+
+endmenu

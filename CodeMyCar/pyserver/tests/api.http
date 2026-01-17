@@ -1,0 +1,65 @@
+### GET /
+GET http://localhost:8000
+Accept: application/json
+
+### GET /api/v1/devices/status/DEV1
+GET http://localhost:8000/api/v1/devices/status/DEV1?request_id=1234567890
+Accept: application/json
+
+#### POST /api/v1/devices/DEV1/commands
+POST http://localhost:8000/api/v1/devices/DEV1/commands
+Accept: application/json
+Content-Type: application/json
+
+{
+  "ctrl_id": "1",
+  "motion": {
+    "mode": 1,
+    "duration": 10,
+    "params": {
+      "left_rpm":-100,
+      "right_rpm": 100,
+      "steer_angle": 900
+    }
+  }
+}
+
+#### POST /api/v1/devices/DEV1/commands
+POST http://localhost:8000/api/v1/devices/DEV1/commands
+Accept: application/json
+Content-Type: application/json
+
+{
+  "ctrl_id": "1",
+  "motion": {
+    "mode": 1,
+    "duration": 10,
+    "params": {
+      "left_rpm": 0,
+      "right_rpm": 0,
+      "steer_angle": 900
+    }
+  }
+}
+
+
+
+
+
+
+### POST /api/v1/devices/DEV1/commands
+POST http://localhost:8000/api/v1/devices/DEV1/commands
+Accept: application/json
+Content-Type: application/json
+
+{
+  "ctrl_id": "1",
+  "motion": {
+    "mode": 4,
+    "duration": 10,
+    "params": {
+      "angular_vel": 60,
+      "rotation_point": 0
+    }
+  }
+}

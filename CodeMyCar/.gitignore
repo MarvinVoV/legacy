@@ -1,0 +1,114 @@
+# =======================
+# 忽略构建输出目录
+# =======================
+**/build/
+**/output/
+**/Binary/
+**/Debug/
+**/Release/
+**/CMakeFiles/
+/output/
+/build/
+/Debug/
+/Release/
+/CMakeFiles/
+**/CMakeCache.txt
+*.o
+*.d
+*.elf
+*.bin
+*.hex
+*.ld
+
+# =======================
+# 忽略 CMake 生成的文件
+# =======================
+/sdkconfig
+/sdkconfig.old
+build.ninja
+cmake_install.cmake
+compile_commands.json
+flasher_args.json
+/CMakeUserPresets.json
+
+# =======================
+# 忽略 IDE 配置文件和项目文件
+# =======================
+/.vscode/
+/.idea/
+/.env/
+*.launch
+*.settings
+.project
+.cproject
+.launches
+**/.vscode/
+
+# =======================
+# 忽略 STM32CubeMX 生成的文件
+# =======================
+**/Middlewares/**/Documentation/
+**/Middlewares/**/Examples/
+**/Middlewares/**/Projects/
+**/Middlewares/Third_Party/
+**/Drivers/**/Documentation/
+**/Drivers/**/Examples/
+**/Drivers/**/Projects/
+**/Drivers/CMSIS/**/*.c
+**/Drivers/CMSIS/**/*.h
+**/Drivers/STM32**/*.c
+**/Drivers/STM32**/*.h
+.mxproject
+*.mx
+
+# =======================
+# 忽略 Eclipse 相关文件
+# =======================
+.metadata/
+*.tmp/
+
+# =======================
+# 忽略 PlatformIO 相关文件
+# =======================
+.pio/build/
+.pio/libdeps/
+.pio/package/
+pio.ini.bak
+
+# =======================
+# 忽略 Arduino 相关文件
+# =======================
+*.ino.bin
+*.ino.elf
+*.ino.map
+*.ino.with_bootloader.bin
+.arduino15/
+
+# =======================
+# 忽略工具链、库和子模块
+# =======================
+/tools/
+/tools/sdk/
+/idf_tools.py
+/idf_tools.json
+/lib/
+/vendor/
+
+# =======================
+# 忽略私有和本地配置文件
+# =======================
+/secrets/
+/local.mk
+
+# =======================
+# 忽略系统自动生成的隐藏文件
+# =======================
+.DS_Store
+Thumbs.db
+
+# =======================
+# 忽略临时文件和编辑器缓存
+# =======================
+*.swp
+*~
+/.cache/
