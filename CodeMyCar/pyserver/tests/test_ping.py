@@ -14,7 +14,8 @@ from app.services.ping_service import PingError, PingRegistry, PingReply, PingSe
 class FakeMQTT:
     def __init__(self):
         self.is_connected = True
-        self.published: list[tuple[str, object]] = []
+        # 本文件里 ping 只发布 dict payload，便于测试直接索引字段
+        self.published: list[tuple[str, dict]] = []
 
     async def publish(self, topic, payload, qos=0):
         self.published.append((topic, payload))
