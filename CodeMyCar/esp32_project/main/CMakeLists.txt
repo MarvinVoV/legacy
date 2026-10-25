@@ -1,8 +1,13 @@
-idf_component_register(SRCS "src/main.c"
-                    INCLUDE_DIRS "../components/common/include"
-                    REQUIRES 
-                        wifi_module 
-                        mqtt_module
-                        uart_module
-                        common
+idf_component_register(
+    SRCS "src/main.c"
+    INCLUDE_DIRS ""
+    REQUIRES
+        common
+        pkt_codec
+        wifi_service
+        mqtt_service
+        uart_service
+        remote_log
+        bridge
+        health_monitor
 )

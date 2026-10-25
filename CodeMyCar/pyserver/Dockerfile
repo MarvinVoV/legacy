@@ -1,8 +1,12 @@
-FROM python:3.11-slim as builder
-COPY requirements.txt .
-RUN pip install --user -r requirements.txt
+FROM python:3.11-slim
 
-FROM python:3.11-slim as runtime
-COPY --from=builder /root/.local /root/.local
-COPY requirements .
-RUN pip install -r requirements.txt
+WORKDIR /app
+
+COPY pyproject.toml .
+RUN pip install --no-cache-dir .
+
+COPY app/ app/
+
+EXPOSE 8000
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

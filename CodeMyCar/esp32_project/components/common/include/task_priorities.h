@@ -1,26 +1,27 @@
 /**
- * @brief 任务优先级统一管理头文件
+ * @brief 任务优先级统一管理（v2 组件布局）
  *
- * 定义系统中所有任务的优先级枚举，实现优先级集中管理
+ * 数值越大优先级越高。原则：ISR 必须尽快排空 → UART RX 最高；
+ * 命令下行优先于遥测上行；MQTT/日志次之；心跳/看门狗最低但仍被调度。
  */
 
 #pragma once
 
-/**
- * @brief 系统任务优先级枚举定义
- */
 typedef enum
 {
-    TASK_PRIORITY_IDLE = 0,          // 系统空闲任务（保留）
-    TASK_PRIORITY_EVENT_HANDLER = 9, // 事件处理任务（最高优先级）
-    // UART
-    TASK_PRIORITY_UART_EVENT = 8,           // UART事件处理任务
-    TASK_PRIORITY_UART_HANDLE_MQTT_MSG = 7, // UART缓冲区处理任务
-    TASK_PRIORITY_UART_BUFFER_PROCESS = 6,  // UART缓冲区处理任务
-    // MQTT
-    TASK_PRIORITY_MQTT_HANDLE_UART_MSG = 5, // MQTT通信任务
-    TASK_PRIORITY_MQTT_MANAGER = 4,         // MQTT通信任务
-    TASK_PRIORITY_MQTT_LOG = 4,             // MQTT LOG任务
+    TASK_PRIO_IDLE = 0,
 
-    TASK_PRIORITY_WIFI_MANAGER = 3 // WiFi管理任务
+    TASK_PRIO_EVENT = 9,        /* esp_event 默认事件循环任务（保留最高） */
+
+    /* UART：必须高于一切消费者，避免 ISR 事件队列溢出 */
+    TASK_PRIO_UART_RX = 8,     /* UART RX：排空驱动事件队列 → RingBuf → 解析 */
+    TASK_PRIO_UART_TX = 7,     /* UART TX：tx_queue → uart_write_bytes */
+
+    /* 桥接：命令下行（时序敏感）优先于遥测上行 */
+    TASK_PRIO_BRIDGE_DOWNLINK = 6, /* MQTT JSON → 二进制 → UART */
+    TASK_PRIO_BRIDGE_UPLINK = 5,   /* UART 帧 → JSON → MQTT publish */
+
+    TASK_PRIO_REMOTE_LOG = 5,  /* 远程日志发布（与上行同级） */
+    TASK_PRIO_MQTT = 4,        /* MQTT 客户端任务（esp_mqtt） */
+    TASK_PRIO_HEALTH = 3,      /* 心跳 / 看门狗喂狗（最低，但需被调度） */
 } task_priority_t;

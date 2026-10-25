@@ -1,0 +1,25 @@
+menu "WiFi Configuration"
+
+    config CMCAR_WIFI_SSID
+        string "WiFi SSID"
+        default "MyRouter"
+
+    config CMCAR_WIFI_PASSWORD
+        string "WiFi Password"
+        default ""
+
+    config CMCAR_WIFI_MAX_RETRY
+        int "Max WiFi retry count (0 = infinite)"
+        default 0
+        range 0 100
+        help
+            WiFi 断连后最大重试次数。0 表示无限重试。
+
+    config CMCAR_WIFI_RECONNECT_BASE_MS
+        int "Reconnect base delay (ms)"
+        default 1000
+        range 500 10000
+        help
+            指数退避重连的基础延迟。
+
+endmenu

@@ -1,43 +1,91 @@
-## 创建 Python 虚拟环境
+# CodeMyCar Server
+
+CodeMyCar 的 Python 服务端：基于 FastAPI 的 HTTP API + MQTT 客户端。负责把上层（Web/App）的 JSON 命令通过 MQTT 下发给设备（ESP32），并接收/聚合设备上报的传感器、心跳、日志数据。
+
+- **协议分层**：pyserver 只处理 JSON；JSON↔二进制的转换由 ESP32 桥接组件完成；STM32 只收发二进制 v2 帧。详见 [`docs/pyserver-v2-design.md`](docs/pyserver-v2-design.md)。
+- **MQTT topic 契约**：3 段式 `data/{device_id}/{type}` 上行、`cmd/{device_id}/exec` 下行。详见 `esp32_project/docs/mqtt-topics.md`、[`docs/pyserver-v2-design.md`](docs/pyserver-v2-design.md)。
+
+## 依赖
+
+- Python ≥ 3.11
+- mosquitto（本地开发 broker）：`brew install mosquitto`
+
+依赖声明在 [`pyproject.toml`](pyproject.toml)（无需 `requirements.txt`）。开发额外依赖见 `[project.optional-dependencies].dev`。
+
+## 快速开始
+
+最省事的方式——一条命令拉起本地 mosquitto + uvicorn（热重载）：
 
 ```bash
-python3 -m venv .venv
+make dev
+# 首次运行会自动创建 .venv 并安装依赖；之后直接进 uvicorn
+#   API:  http://localhost:8000
+#   Docs: http://localhost:8000/docs
+#   MQTT: localhost:1883（匿名）
+# Ctrl-C 退出，脚本会自动停掉它拉起的 mosquitto。
 ```
 
-## 激活 Python 虚拟环境
+`make dev` 会：
+1. 若无 `.env`，从 `.env.example` 复制一份；
+2. 启动本机 mosquitto（用 `mosquitto.dev.conf`，无鉴权、不落盘）；
+3. 用 `.venv` 跑 `uvicorn --reload`。
+
+指向远端 broker（只起 Python 服务，不起本地 broker）：
 
 ```bash
-source .venv/bin/activate
+MQTT_HOST=192.168.1.10 make dev
 ```
 
-## 安装依赖包
+## 测试
+
+**离线测试**（无需 broker、无需板子）：
 
 ```bash
-pip install -r requirements.txt
+make test          # 跑全部 pytest（命令模型 / MQTT handler / API 鉴权）
+make test-watch    # 改动自动重跑（需 brew install entr）
 ```
 
-## 运行程序
+测试覆盖：`tests/test_commands.py`（字段范围、枚举与 STM32 对齐）、`tests/test_mqtt.py`（topic 匹配、payload 解析）、`tests/test_api.py`（命令下发、设备状态、API Key）。共 22 项，全部在内存中用 FakeMQTT 跑，不连真实 broker。
+
+## 常用命令（Makefile）
+
+| 命令 | 说明 |
+|---|---|
+| `make dev` | 一键本地开发环境（mosquitto + uvicorn --reload） |
+| `make test` | 离线单元测试 |
+| `make mqtt-sub` | 订阅全部 topic（`data/#` `cmd/#`），观察设备上报 |
+| `make mqtt-pub MODE=2` | 下发一条测试运动命令（差速模式） |
+| `make shell` | 进 venv REPL，已加载 app |
+| `make clean` | 删 `.venv` 与缓存 |
+
+## 配置
+
+通过环境变量 / `.env`（前缀 `CMCAR_`），见 [`config.py`](app/config.py) 与 [`.env.example`](.env.example)：
+
+| 变量 | 默认 | 说明 |
+|---|---|---|
+| `CMCAR_MQTT_HOST` | localhost | broker 地址（`make dev` 自动设为 localhost） |
+| `CMCAR_MQTT_PORT` | 1883 | |
+| `CMCAR_MQTT_USERNAME` / `_PASSWORD` | 空 | 空=匿名；与 broker 账号一致 |
+| `CMCAR_API_KEY` | 空 | 空=禁用 API Key 鉴权（仅开发）；生产务必设置 |
+| `CMCAR_CORS_ORIGINS` | `*` | 逗号分隔允许来源，或 `*` |
+
+**安全提示**：开发默认匿名 + 无 API Key。生产部署前需设 `CMCAR_API_KEY`，并给 broker 配账号（参考 [`mosquitto.conf.example`](mosquitto.conf.example)）。
+
+## 本地 broker
+
+开发用 [`mosquitto.dev.conf`](mosquitto.dev.conf)（无鉴权、不落盘、日志到 stdout），`make dev` 自动使用。手动启动：
 
 ```bash
-python3 uart_serial_test.py
+mosquitto -c mosquitto.dev.conf
 ```
 
-## 退出虚拟环境
+## MQTT topic
 
-```bash
-deactivate
-```
+3 段式（设备类型已并入 device_id 层级）：
 
-```shell
-/opt/homebrew/opt/mosquitto/sbin/mosquitto -c /opt/homebrew/etc/mosquitto/mosquitto.conf
-```
-
-## mqtt topic
-
-[前缀]/[设备类型]/[设备ID]/[数据类型]
-
-1. 设备命令下发（设备订阅）
-   cmd/[device_type]/[device_id]/exec
-2. 设备数据上报（服务端订阅）
-   data/[device_type]/[device_id]/sensor
-   data/+/+/heartbeat
+- 下行命令（ESP32 订阅自身 id）：`cmd/{device_id}/exec`
+- 上行数据（pyserver 订阅 `data/+/...`）：
+  - `data/{device_id}/sensor`
+  - `data/{device_id}/heartbeat`
+  - `data/{device_id}/log`

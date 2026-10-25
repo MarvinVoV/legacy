@@ -1,0 +1,40 @@
+menu "UART Configuration"
+
+    config CMCAR_UART_PORT
+        int "UART port number"
+        default 1
+        range 0 2
+
+    config CMCAR_UART_BAUD_RATE
+        int "Baud rate"
+        default 115200
+
+    config CMCAR_UART_TX_PIN
+        int "TX GPIO number"
+        default 4
+
+    config CMCAR_UART_RX_PIN
+        int "RX GPIO number"
+        default 5
+
+    config CMCAR_UART_RX_BUF_SIZE
+        int "UART driver RX buffer size (bytes)"
+        default 1024
+        range 256 4096
+
+    config CMCAR_UART_TX_BUF_SIZE
+        int "UART driver TX buffer size (bytes)"
+        default 512
+        range 0 4096
+
+    config CMCAR_UART_RINGBUF_SIZE
+        int "Raw data ring buffer size (bytes)"
+        default 1024
+        range 256 4096
+
+    config CMCAR_UART_TX_QUEUE_DEPTH
+        int "TX queue depth (frames)"
+        default 8
+        range 2 32
+
+endmenu

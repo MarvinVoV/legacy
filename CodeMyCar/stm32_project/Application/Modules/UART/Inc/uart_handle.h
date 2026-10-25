@@ -52,5 +52,17 @@ void Init_UART_DMA(void);
  */
 bool UART_Send_Protocol_Log(log_entry_t* log_entry);
 
+/**
+ * @brief 发送 v2 协议帧到 ESP32（支持 seq/flags，用于 ACK 回复等）
+ * @param type   协议类型
+ * @param seq    序列号
+ * @param flags  FLAGS（ACK_REQ/ACK_RSP）
+ * @param data   payload（可为 NULL）
+ * @param len    payload 长度
+ * @return true 成功发送
+ */
+bool UART_Send_Frame(protocol_type_t type, uint8_t seq, uint8_t flags,
+                     const uint8_t* data, uint16_t len);
+
 
 #endif /* INC_UART_HANDLE_H_ */

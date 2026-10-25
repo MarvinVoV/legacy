@@ -21,7 +21,8 @@ static osThreadId_t rawDataReadTaskHandle = NULL;
 // 协议解析处理器
 static protocol_receiver receiver;
 
-static void dispatcher(uint8_t type, const uint8_t* cmd_payload, uint16_t total_len);
+static void dispatcher(uint8_t type, uint8_t seq, uint8_t flags,
+                       const uint8_t* cmd_payload, uint16_t total_len);
 
 static void process_raw_data(const uint8_t* raw_data, uint16_t len);
 
@@ -41,7 +42,7 @@ void CtrlTask_Init()
 
     // 初始化协议接收器
     protocol_receiver_init(&receiver, ACCUMULATE_BUF_SIZE, dispatcher);
-    if (receiver.buffer == NULL)
+    if (receiver.callback == NULL)
     {
         LOG_ERROR(LOG_MODULE_SYSTEM, "Create protocol receiver error.");
     }
@@ -70,8 +71,21 @@ void CtrlTask_doTask(void* args)
     }
 }
 
-static void dispatcher(uint8_t type, const uint8_t* cmd_payload, const uint16_t total_len)
+static void dispatcher(uint8_t type, uint8_t seq, uint8_t flags,
+                       const uint8_t* cmd_payload, const uint16_t total_len)
 {
+    /* 收到带 ACK_REQ 的帧：先回 ACK（语义=帧已收到 + CRC 通过） */
+    if (flags & FRAME_FLAG_ACK_REQ)
+    {
+        UART_Send_Frame(PROTOCOL_TYPE_ACK, seq, FRAME_FLAG_ACK_RSP, NULL, 0);
+    }
+
+    /* 仅处理控制指令 */
+    if (type != PROTOCOL_TYPE_CONTROL)
+    {
+        return;
+    }
+
     const int32_t error_code = validateControlCmd(cmd_payload, total_len);
     if (error_code != ERR_SUCCESS)
     {

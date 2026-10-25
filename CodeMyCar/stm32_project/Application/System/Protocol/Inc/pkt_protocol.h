@@ -1,190 +1,167 @@
 /*
- * uart_protocol.h
+ * pkt_protocol.h
  *
- *  Created on: Feb 4, 2025
- *      Author: marvin
+ * UART 协议 v2 编解码器（与 esp32/components/pkt_codec 单一事实源一致）
+ *
+ * 帧格式（小端）：
+ *   MAGIC(2): 0x55 0xAA | TYPE(1) | SEQ(1) | FLAGS(1) | LEN(1) | PAYLOAD(≤120) | CRC16(2)
+ *   总帧长 = 8 + payload_len，最大 128 字节
+ *   CRC16-CCITT（多项式 0x1021，初始 0xFFFF），覆盖 MAGIC..PAYLOAD
  */
 
 #ifndef SYSTEM_PROTOCOL_INC_PKT_PROTOCOL_H_
 #define SYSTEM_PROTOCOL_INC_PKT_PROTOCOL_H_
+
 #include <stdint.h>
 #include <stdlib.h>
 
-/*
- * NOTE: 字节流采用小端字序
- */
+/* ==================== 帧常量 ==================== */
 
-#define FRAME_HEADER 0xAA55
-#define FRAME_HEADER_HIGH 0xAA
-#define FRAME_HEADER_LOW 0x55
-#define FRAME_TAIL 0x55AA
-#define PROTOCOL_MAX_DATA_LEN 108
+#define FRAME_MAGIC_LO      0x55   /* wire 首字节 */
+#define FRAME_MAGIC_HI      0xAA   /* wire 次字节 */
+#define PROTOCOL_MAX_PAYLOAD 120
+#define PROTOCOL_FRAME_OVERHEAD 8  /* MAGIC(2)+TYPE(1)+SEQ(1)+FLAGS(1)+LEN(1)+CRC(2) */
+#define PROTOCOL_MAX_FRAME_SIZE (PROTOCOL_FRAME_OVERHEAD + PROTOCOL_MAX_PAYLOAD) /* 128 */
 
+/* 兼容旧名 */
+#define PROTOCOL_MAX_DATA_LEN PROTOCOL_MAX_PAYLOAD
 
-// 检测平台字节序列
-#if defined(__BYTE_ORDER__) && defined(__ORDER_LITTLE_ENDIAN__) && defined(__ORDER_BIG_ENDIAN__)
-// GCC/Clang 风格的字节序检测
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-#define IS_LITTLE_ENDIAN 1
-#else
-        #define IS_LITTLE_ENDIAN 0
-#endif
-#elif defined(_WIN32) || defined(_WIN64)
-    // Windows 平台默认为小端模式
-    #define IS_LITTLE_ENDIAN 1
-#else
-    // 运行时检测字节序
-    static int detect_endian() {
-        unsigned int x = 1;
-        return *(unsigned char*)&x == 1;
-    }
-#define IS_LITTLE_ENDIAN detect_endian()
-#endif
+/* FLAGS 位定义 */
+#define FRAME_FLAG_ACK_REQ (1U << 7) /* 请求应答 */
+#define FRAME_FLAG_ACK_RSP (1U << 6) /* 此帧为应答 */
 
+/* ACK 管理器参数（与 ESP32 一致） */
+#define PROTOCOL_MAX_PENDING_ACK 4
+#define PROTOCOL_ACK_TIMEOUT_MS  200
+#define PROTOCOL_ACK_MAX_RETRIES 3
 
-// 字节序转换宏
-#define TO_LE16(x) (IS_LITTLE_ENDIAN ? (x) : htole16(x))
-#define TO_LE32(x) (IS_LITTLE_ENDIAN ? (x) : htole32(x))
+/* ==================== 类型 ==================== */
 
-
+/** 协议类型（值与 esp32 pkt_type_t 对齐） */
 typedef enum
 {
-    PROTOCOL_TYPE_MIN = 0x00,    // 起始值
-    PROTOCOL_TYPE_SENSOR = 0x01, // 传感器数据
-    PROTOCOL_TYPE_CONTROL,       // 控制指令
-    PROTOCOL_TYPE_LOG,           // 系统日志
-    PROTOCOL_TYPE_MAX            // 结束值
+    PROTOCOL_TYPE_MIN       = 0x00,
+    PROTOCOL_TYPE_SENSOR    = 0x01, /* 传感器数据上报 */
+    PROTOCOL_TYPE_CONTROL   = 0x02, /* 控制指令 */
+    PROTOCOL_TYPE_LOG       = 0x03, /* 系统日志 */
+    PROTOCOL_TYPE_ACK       = 0x04, /* 应答帧 */
+    PROTOCOL_TYPE_HEARTBEAT = 0x05, /* 心跳 */
+    PROTOCOL_TYPE_JSON_CMD  = 0x06, /* JSON 命令（手机控制，预留） */
+    PROTOCOL_TYPE_MAX
 } protocol_type_t;
 
-/**
- * @brief 协议头结构体
- * @note 柔性数组结构体，使用1byte对齐
- */
-#pragma pack(push, 1)
+/** 完整帧结构（固定大小，可值传递，零 malloc 解析） */
 typedef struct
 {
-    uint16_t header; // 帧头 - 0xAA55
-    uint8_t type;    // 协议类型
-    uint16_t len;    // 数据长度 最大支持65535
-    uint8_t data[0]; // 柔性数组，用于动态数据
-} protocol_header_t;
-#pragma pack(pop)
-
-#define PROTOCOL_HEADER_SIZE sizeof(protocol_header_t)
-
-/**
- * @brief 协议帧结构体
- */
-typedef struct
-{
-    uint16_t header; // 帧头 (固定值 0xAA55)
-    uint8_t type;    // 协议类型
-    uint16_t len;    // 数据长度 最大支持65535
-    uint8_t* data;   // 数据内容 (动态分配)
-    uint16_t crc;    // CRC16 校验值
-    uint16_t tail;   // 帧尾 (固定值 0x55AA)
+    uint8_t type;
+    uint8_t seq;
+    uint8_t flags;
+    uint8_t payload_len;
+    uint8_t payload[PROTOCOL_MAX_PAYLOAD];
 } protocol_frame_t;
 
+/* ==================== 编码器 ==================== */
+
 /**
- * @brief 协议解析状态机
+ * @brief 将帧编码到调用者缓冲区（零 malloc 版本）
+ * @param frame       待编码的帧
+ * @param out_buf     输出缓冲区（至少 PROTOCOL_MAX_FRAME_SIZE 字节）
+ * @param out_buf_size 缓冲区大小
+ * @param out_len     [out] 实际写入字节数
+ * @return 0 成功，非 0 失败（-1 参数，-2 超长/缓冲不足）
  */
-typedef enum
-{
-    STATE_WAIT_HEADER_1,
-    STATE_WAIT_HEADER_2,
-    STATE_WAIT_TYPE,
-    STATE_WAIT_LENGTH_1,
-    STATE_WAIT_LENGTH_2,
-    STATE_WAIT_DATA,
-    STATE_WAIT_CRC_1,
-    STATE_WAIT_CRC_2,
-    STATE_WAIT_TAIL_1,
-    STATE_WAIT_TAIL_2
-} parse_state_t;
-
+int protocol_encode(const protocol_frame_t* frame, uint8_t* out_buf,
+                    size_t out_buf_size, size_t* out_len);
 
 /**
- * @brief 协议解析器
- */
-typedef struct
-{
-    parse_state_t state;    // 协议解析状态
-    protocol_frame_t frame; // 解析出来的协议头
-    uint16_t data_index;    // 解析出来的数据
-} protocol_parser_t;
-
-
-/**
- * 初始化协议解析器
- * @param parser 协议解析器
- */
-void protocol_parser_init(protocol_parser_t* parser);
-
-/**
- * 重置协议解析器
- * @param parser 协议解析器
- */
-void protocol_parser_reset(protocol_parser_t* parser);
-
-/**
- * 单字节解析
- * @param parser 协议解析器
- * @param byte   待解析的字节
- * @return 解析结果，1-解析完成，0-解析未完成
- */
-int protocol_parse_byte(protocol_parser_t* parser, uint8_t byte);
-
-/**
- * @brief 打包协议帧
- *
- * @param type 协议类型
- * @param data 数据内容
- * @param data_len 数据长度
- * @param frame_len 协议帧数据长度
+ * @brief 打包协议帧（malloc 版本，兼容旧 TX 路径）
+ * @note  seq=0, flags=0；调用者负责 free()
+ * @return malloc 出的帧缓冲区，失败返回 NULL
  */
 uint8_t* protocol_pack_frame(protocol_type_t type, const uint8_t* data,
                              uint16_t data_len, uint16_t* frame_len);
 
 /**
- * CRC16-CCITT 校验
- * @param data   待校验数据 Frame Header + Data
- * @param length  数据长度
+ * @brief 打包协议帧（带 seq/flags，用于 ACK 回复）
+ * @note  调用者负责 free()
  */
+uint8_t* protocol_pack_frame_ex(protocol_type_t type, uint8_t seq, uint8_t flags,
+                                const uint8_t* data, uint16_t data_len,
+                                uint16_t* frame_len);
+
+/* ==================== 解析器 ==================== */
+
+/** 解析器状态 */
+typedef enum
+{
+    PARSE_MAGIC_LO, /* 等待 0x55 */
+    PARSE_MAGIC_HI, /* 等待 0xAA */
+    PARSE_HEADER,   /* 收集 type/seq/flags/len (4 字节) */
+    PARSE_PAYLOAD,  /* 收集 payload */
+    PARSE_CRC_LO,   /* CRC 低字节 */
+    PARSE_CRC_HI    /* CRC 高字节，校验 */
+} parse_state_t;
+
+/** 解析器实例（静态 payload，零 malloc） */
+typedef struct
+{
+    parse_state_t state;
+    protocol_frame_t frame;
+    uint8_t header_idx;    /* header/payload 接收位置 */
+    uint8_t header_buf[4]; /* type/seq/flags/len 暂存 + CRC 低字节暂存 */
+    uint16_t crc_running;  /* 渐进 CRC */
+} protocol_parser_t;
+
+void protocol_parser_init(protocol_parser_t* parser);
+void protocol_parser_reset(protocol_parser_t* parser);
+
+/**
+ * @brief 单字节解析
+ * @return 1 表示一帧解析完成（结果在 parser->frame 中），0 未完成
+ */
+int protocol_parse_byte(protocol_parser_t* parser, uint8_t byte);
+
+/**
+ * @brief 批量喂入数据
+ * @return 完成的帧数
+ */
+int protocol_parse_buf(protocol_parser_t* parser, const uint8_t* data,
+                       size_t len, protocol_frame_t* out_frames, size_t max_frames);
+
+/* ==================== CRC16-CCITT ==================== */
+
 uint16_t crc16_ccitt(const uint8_t* data, uint16_t length);
+uint16_t crc16_ccitt_continue(uint16_t crc, const uint8_t* data, uint16_t length);
 
-// ----------------- Tools -------------------
-/**
- * Host to Little Endian 16
- * @param value   Host Endian
- * @return        Little Endian
- */
+/* ==================== ACK 管理器 ==================== */
+
+typedef struct
+{
+    uint8_t seq;
+    uint8_t retries;
+    uint32_t send_time_ms;
+    uint8_t active;
+} protocol_pending_ack_t;
+
+typedef struct
+{
+    protocol_pending_ack_t slots[PROTOCOL_MAX_PENDING_ACK];
+    uint8_t next_seq;
+} protocol_ack_mgr_t;
+
+void protocol_ack_mgr_init(protocol_ack_mgr_t* mgr);
+uint8_t protocol_ack_mgr_next_seq(protocol_ack_mgr_t* mgr);
+int protocol_ack_mgr_add(protocol_ack_mgr_t* mgr, uint8_t seq, uint32_t now_ms);
+int protocol_ack_mgr_check(protocol_ack_mgr_t* mgr, uint8_t ack_seq);
+int protocol_ack_mgr_check_timeout(protocol_ack_mgr_t* mgr, uint32_t now_ms,
+                                   uint8_t* expired_seqs, int max_expired);
+
+/* ==================== 工具 ==================== */
+
 uint16_t htole16(uint16_t value);
-
-/**
- * Host to Little Endian 32
- * @param x       Host Endian
- * @return        Little Endian
- */
 uint32_t htole32(uint32_t x);
-
-/**
- * Print Hex Data
- * @param data Frame data
- * @param len Frame len
- */
 void print_hex_data(const uint8_t* data, uint16_t len);
-
-/**
- * @brief 将缓冲区内容以十六进制格式打印到目标缓冲区
- *
- * @param src_buffer 源缓冲区
- * @param src_len 源缓冲区长度
- * @param dst_buffer 目标缓冲区
- * @param dst_size 目标缓冲区大小
- * @return size_t 返回写入目标缓冲区的字符数（不包括终止符'\0'）
- */
 size_t buffer_to_hex(const uint8_t* src_buffer, size_t src_len,
                      char* dst_buffer, size_t dst_size);
-
 
 #endif /* SYSTEM_PROTOCOL_INC_PKT_PROTOCOL_H_ */

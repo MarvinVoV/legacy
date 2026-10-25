@@ -1,32 +1,8 @@
+# Claude Code local config (contains API keys)
+.claude/settings.local.json
 
-# CMake
-cmake-build-*/
-
-# File-based project format
-*.iws
-
-# IntelliJ
-out/
-
-# mpeltonen/sbt-idea plugin
-.idea_modules/
-
-# JIRA plugin
-atlassian-ide-plugin.xml
-
-
-# Crashlytics plugin (for Android Studio and IntelliJ)
-com_crashlytics_export_strings.xml
-crashlytics.properties
-crashlytics-build.properties
-fabric.properties
-
-
-.idea/
-
-.cmake/
-editor.xml
-*.iml
-.ninja_deps
-.ninja_log
-/Testing
+# ESP-IDF / 本机生成文件（不入库）
+managed_components/
+.cache/
+eim_config.toml
+.firecrawl/

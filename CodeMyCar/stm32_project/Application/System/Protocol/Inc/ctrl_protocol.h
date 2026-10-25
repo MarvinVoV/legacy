@@ -62,7 +62,7 @@ typedef struct
  */
 typedef struct
 {
-    DriveControlType driveCtrlType; ///< 驱动控制类型
+    uint8_t driveCtrlType; ///< 驱动控制类型（DriveControlType，显式宽度以钉死 wire 布局）
 
     union
     {
@@ -129,7 +129,7 @@ typedef struct
  */
 typedef struct
 {
-    MotionMode mode;     ///< 运动模式
+    uint8_t   mode;     ///< 运动模式（MotionMode，显式宽度以钉死 wire 布局）
     uint16_t   duration; ///< 执行持续时间 (ms)
     union
     {

@@ -1,70 +1,98 @@
+"""CodeMyCar Server v2.0 入口"""
+
+import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
+from app.api.routes import commands, devices
 from app.config import get_settings
-from core.exception.exceptions import register_exceptions
-from app.core.logger import setup_logging
-from mqtt.mqtt_client import MQTTClientWrapper
-from mqtt.subscription import init_subscriptions
-from web.middlewares import register_middlewares
-from web.routes import devices, status
+from app.mqtt.client import MQTTClient
+from app.mqtt.handlers import create_handlers
+from app.mqtt.topics import SUB_ACK, SUB_HEARTBEAT, SUB_LOG, SUB_SENSOR
+from app.services.device_manager import DeviceManager
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
-async def enhanced_lifespan(app: FastAPI):
-    """支持错误处理和资源排序的生命周期管理器"""
+async def lifespan(app: FastAPI):
     settings = get_settings()
-    mqtt_client = None
 
+    # 配置日志
+    logging.basicConfig(
+        level=getattr(logging, settings.log_level.upper(), logging.INFO),
+        format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
+    )
+
+    # 初始化设备管理器
+    device_manager = DeviceManager(settings)
+    app.state.device_manager = device_manager
+
+    # 初始化 MQTT 客户端
+    mqtt_client = MQTTClient(settings)
+    app.state.mqtt_client = mqtt_client
+
+    # 注册消息处理器
+    on_heartbeat, on_sensor, on_log, on_ack = create_handlers(device_manager.devices)
+    mqtt_client.register_handler(SUB_HEARTBEAT, on_heartbeat)
+    mqtt_client.register_handler(SUB_SENSOR, on_sensor)
+    mqtt_client.register_handler(SUB_LOG, on_log)
+    mqtt_client.register_handler(SUB_ACK, on_ack)
+
+    # 连接 MQTT
     try:
-        # 第一阶段：基础服务初始化
-        setup_logging(settings)
-
-        # 第二阶段：外部服务连接
-        mqtt_client = MQTTClientWrapper(settings)
         await mqtt_client.connect()
+    except Exception:
+        logger.warning("MQTT connection failed, server will run without MQTT")
 
-        # 挂载到应用状态
-        app.state.mqtt_client = mqtt_client  # type:ignore
+    logger.info("CodeMyCar Server v2.0 started")
+    yield
 
-        # 配置消息订阅
-        init_subscriptions(app)
-        yield
-
-    except Exception as e:
-        # 异常处理
-        print(f"Startup failed: {str(e)}")
-        raise
-
-    finally:
-        # 资源释放（逆序）
-        if mqtt_client:
-            await safe_shutdown(mqtt_client)
+    # 关闭
+    await mqtt_client.disconnect()
+    logger.info("Server shutdown complete")
 
 
-async def safe_shutdown(client: MQTTClientWrapper):
-    """安全关闭连接"""
-    try:
-        await client.disconnect()
-    except Exception as e:
-        print(f"Shutdown error: {str(e)}")
+app = FastAPI(
+    title="CodeMyCar Server",
+    version="2.0.0",
+    lifespan=lifespan,
+)
+
+# CORS（可通过 CMCAR_CORS_ORIGINS 收紧，逗号分隔；"*" 放开全部）
+settings = get_settings()
+_cors_origins = (
+    ["*"] if settings.cors_origins.strip() == "*"
+    else [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_cors_origins,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
+# API Key 鉴权中间件（CMCAR_API_KEY 为空则禁用，开发模式）
+_PUBLIC_PATHS = ("/", "/docs", "/openapi.json", "/redoc", "/docs/oauth2-redirect")
 
-app: FastAPI = FastAPI(lifespan=enhanced_lifespan, title="IoT Service Platform")
 
-# 注册异常处理
-register_exceptions(app)
+@app.middleware("http")
+async def api_key_middleware(request: Request, call_next):
+    if settings.api_key and request.url.path not in _PUBLIC_PATHS:
+        if request.headers.get("X-API-Key") != settings.api_key:
+            return JSONResponse(status_code=401, content={"detail": "invalid or missing X-API-Key"})
+    return await call_next(request)
 
-# 挂载路由
-app.include_router(devices.router)
-app.include_router(status.router)
 
-# 注册中间件
-register_middlewares(app)
+# 路由
+app.include_router(commands.router, prefix=settings.api_prefix)
+app.include_router(devices.router, prefix=settings.api_prefix)
 
 
 @app.get("/")
-def read_root():
-    return {"Hello": "World"}
+async def root():
+    return {"name": "CodeMyCar Server", "version": "2.0.0", "status": "running"}

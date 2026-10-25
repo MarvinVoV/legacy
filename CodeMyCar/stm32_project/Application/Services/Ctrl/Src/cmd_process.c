@@ -120,7 +120,7 @@ static int process_motion_command(CmdProcessorContext* ctx, const MotionCmd* mot
     // 模式切换前检查
     if (motion->mode != MOTION_EMERGENCY_STOP)
     {
-        ret = MotionService_SetControlMode(motionCtx, motion->mode);
+        ret = MotionService_SetControlMode(motionCtx, (MotionMode)motion->mode);
         if (ret != ERR_SUCCESS)
         {
             LOG_ERROR(LOG_MODULE_CMD, "Mode switch failed: 0x%02X, error: 0x%04X", motion->mode, ret);

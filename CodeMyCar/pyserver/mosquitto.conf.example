@@ -1,0 +1,17 @@
+# mosquitto.conf.example — 带鉴权的 broker 配置（生产建议）
+#
+# 生成密码文件：
+#   mosquitto_passwd -c /etc/mosquitto/passwd codemycar
+#   （按提示设置密码；ESP32 与 pyserver 用同一账号）
+#
+# 启动：
+#   mosquitto -c mosquitto.conf
+
+listener 1883 0.0.0.0
+allow_anonymous false
+password_file /etc/mosquitto/passwd
+
+persistence true
+persistent_client_expiration 14d
+
+# 开发模式（无鉴权）：把上面 allow_anonymous 改为 true 并注释 password_file

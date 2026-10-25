@@ -126,17 +126,17 @@ bool UART_Send_Protocol_Log(log_entry_t* log_entry)
     return UART_Send_To_Esp((uint8_t*)log_entry, total_size, PROTOCOL_TYPE_LOG);
 }
 
-static bool UART_Send_To_Esp(const uint8_t* data, const uint16_t length, const protocol_type_t type)
+bool UART_Send_Frame(const protocol_type_t type, const uint8_t seq, const uint8_t flags,
+                     const uint8_t* data, const uint16_t len)
 {
-    // 打包协议帧
+    // 打包 v2 协议帧（带 seq/flags）
     uint16_t frame_len = 0;
-    uint8_t* packed_frame = protocol_pack_frame(type, data, length, &frame_len);
+    uint8_t* packed_frame = protocol_pack_frame_ex(type, seq, flags, data, len, &frame_len);
 
     if (packed_frame != NULL && frame_len > 0 && frame_len <= UART_TX_BUFFER_SIZE)
     {
-        // 复制到静态缓冲区
         memcpy(uart_dma_buffer.tx_buffer, packed_frame, frame_len);
-        free(packed_frame);  // 立即释放动态内存
+        free(packed_frame);
 
         const HAL_StatusTypeDef status =
             HAL_UART_Transmit_DMA(&huart4, uart_dma_buffer.tx_buffer, frame_len);
@@ -147,4 +147,10 @@ static bool UART_Send_To_Esp(const uint8_t* data, const uint16_t length, const p
         free(packed_frame);
     }
     return false;
+}
+
+static bool UART_Send_To_Esp(const uint8_t* data, const uint16_t length, const protocol_type_t type)
+{
+    // seq=0, flags=0 的普通帧（兼容旧 TX 路径）
+    return UART_Send_Frame(type, 0, 0, data, length);
 }

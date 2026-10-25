@@ -1,0 +1,16 @@
+menu "CodeMyCar Configuration"
+
+    config CMCAR_DEVICE_ID
+        string "Device ID"
+        default "DEV_1"
+        help
+            设备唯一标识符，用于 MQTT topic 中区分设备。
+
+    config CMCAR_SYSTEM_READY_TIMEOUT_MS
+        int "System ready timeout (ms)"
+        default 10000
+        range 1000 60000
+        help
+            所有组件初始化完成的最大等待时间。
+
+endmenu

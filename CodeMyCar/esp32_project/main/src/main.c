@@ -1,97 +1,81 @@
-#include "app_events.h"
+/**
+ * @file main.c
+ * @brief CodeMyCar ESP32-C6 固件 v2.0 入口
+ *
+ * 事件驱动架构：app_main 完成初始化后删除自身，
+ * 所有工作由各组件任务和 esp_event 事件循环驱动。
+ */
+
+#include "bridge.h"
+#include "cmcar_events.h"
+#include "esp_event.h"
 #include "esp_log.h"
-#include "mqtt_manager.h"
+#include "esp_system.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "health_monitor.h"
+#include "mqtt_service.h"
 #include "nvs_flash.h"
-#include "queue_manager.h"
-#include "uart_manager.h"
-#include "wifi_manager.h"
-#include "mqtt_logger.h"
-#include "task_priorities.h"
+#include "remote_log.h"
+#include "uart_service.h"
+#include "wifi_service.h"
 
-const char* TAG = "APP";
-
-static void on_wifi_connected();
-static void on_wifi_got_ip();
-static void on_mqtt_connected();
+static const char* TAG = "main";
 
 void app_main(void)
 {
-    // 初始化基础组件
-    nvs_flash_init();
-    app_events_init();
+    ESP_LOGI(TAG, "=== CodeMyCar ESP32-C6 v2.0 ===");
+    ESP_LOGI(TAG, "Free heap: %zu bytes", esp_get_free_heap_size());
 
-    // 初始化队列资源
-    queue_manager_full_init();
-
-    // 初始化串口管理器
-    uart_init();
-    // 初始化模块
-    wifi_init_and_start();
-
-    // 主循环：监听事件组状态
-    while (1)
+    /* 1. NVS 初始化 */
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES ||
+        ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
     {
-        const EventBits_t bits = xEventGroupWaitBits(
-            app_events_get_group(),
-            EVENT_WIFI_CONNECTED | EVENT_WIFI_GOT_IP | EVENT_WIFI_DISCONNECTED |
-            UART_INIT_COMPLETE | EVENT_MQTT_CONNECTED,
-            pdTRUE,  // 自动清除事件位
-            pdFALSE, // 等待任意事件位发生
-            pdMS_TO_TICKS(100));
-
-        if (bits & EVENT_WIFI_CONNECTED)
-        {
-            on_wifi_connected();
-        }
-        if (bits & EVENT_WIFI_DISCONNECTED)
-        {
-            // print log
-            ESP_LOGI(TAG, "WiFi disconnected");
-        }
-        if (bits & EVENT_WIFI_GOT_IP)
-        {
-            on_wifi_got_ip();
-        }
-        if (bits & UART_INIT_COMPLETE)
-        {
-            ESP_LOGI(TAG, "UART init complete");
-        }
-        if (bits & EVENT_MQTT_CONNECTED)
-        {
-            on_mqtt_connected();
-        }
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
     }
-}
+    ESP_ERROR_CHECK(ret);
 
-// WiFi连接成功后的回调函数
-static void on_wifi_connected()
-{
-    ESP_LOGI(TAG, "WiFi connected. Heap free: %d", esp_get_free_heap_size());
-}
+    /* 2. 创建默认事件循环（WiFi/MQTT 系统事件需要） */
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
 
-// 获取IP地址后的回调函数
-static void on_wifi_got_ip()
-{
-    ESP_LOGI(TAG, "Got IP. Heap free: %d", esp_get_free_heap_size());
-    // 初始化MQTT
-    mqtt_init_and_start();
-}
+    /* 3. 按依赖顺序初始化各组件 */
+    ESP_ERROR_CHECK(health_monitor_init());
+    ESP_LOGI(TAG, "[1/7] health_monitor initialized");
 
-static void on_mqtt_connected()
-{
-    ESP_LOGI(TAG, "MQTT connected. Heap free: %d", esp_get_free_heap_size());
-    if (xTaskCreate(handle_uart_message_task, "handle_uart_message_task", 4096,
-                    NULL, TASK_PRIORITY_MQTT_HANDLE_UART_MSG, NULL) != pdPASS)
-    {
-        ESP_LOGE(TAG, "Failed to create handle_uart_message_task task");
-    }
-    else
-    {
-        // TODO change log level to debug
-        ESP_LOGI(TAG, "Created handle_uart_message_task task");
-    }
+    ESP_ERROR_CHECK(uart_service_init());
+    ESP_LOGI(TAG, "[2/7] uart_service initialized");
 
-    // 初始化日志模块
-    mqtt_logger_init();
-    vTaskDelay(pdMS_TO_TICKS(500));
+    ESP_ERROR_CHECK(wifi_service_init());
+    ESP_LOGI(TAG, "[3/7] wifi_service initialized");
+
+    ESP_ERROR_CHECK(mqtt_service_init());
+    ESP_LOGI(TAG, "[4/7] mqtt_service initialized");
+
+    ESP_ERROR_CHECK(remote_log_init());
+    ESP_LOGI(TAG, "[5/7] remote_log initialized");
+
+    ESP_ERROR_CHECK(bridge_init());
+    ESP_LOGI(TAG, "[6/7] bridge initialized");
+
+    /* 4. 启动各组件 */
+    ESP_ERROR_CHECK(uart_service_start());
+    ESP_ERROR_CHECK(bridge_start());
+    ESP_ERROR_CHECK(remote_log_start());
+    ESP_ERROR_CHECK(health_monitor_start());
+    ESP_LOGI(TAG, "[7/7] all services started");
+
+    /* 5. 启动 WiFi（后续由事件驱动 MQTT 连接和桥接） */
+    ESP_ERROR_CHECK(wifi_service_start());
+
+    ESP_LOGI(TAG, "System ready. Free heap: %zu bytes",
+             esp_get_free_heap_size());
+
+    RLOG_I(TAG, "System booted, heap=%lu",
+           (unsigned long)esp_get_free_heap_size());
+
+    /* 6. app_main 任务删除自身，所有工作由事件循环和各任务驱动 */
+    ESP_LOGI(TAG, "app_main complete, deleting self");
+    vTaskDelete(NULL);
 }
