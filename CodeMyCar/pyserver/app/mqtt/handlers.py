@@ -48,7 +48,10 @@ def create_handlers(
         state.online = True
         state.last_heartbeat = time.time()
         state.heartbeat_data = data
-        logger.debug("Heartbeat from %s: heap=%d, uptime=%ds", device_id, data.heap, data.uptime_s)
+        logger.info(
+            "Heartbeat from %s: heap=%d, heap_min=%d, uptime=%ds, stm32_connected=%s",
+            device_id, data.heap, data.heap_min, data.uptime_s, data.stm32_connected,
+        )
 
     async def on_sensor(topic: str, payload: bytes) -> None:
         device_id = extract_device_id(topic)

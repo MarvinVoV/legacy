@@ -27,6 +27,16 @@ def test_on_heartbeat_invalid_json_ignored():
     assert "DEV_1" not in devices
 
 
+def test_on_heartbeat_records_stm32_connected():
+    devices = {}
+    handlers = create_handlers(devices, PingRegistry())
+    payload = json.dumps(
+        {"heap": 1, "heap_min": 1, "uptime_s": 1, "stm32_connected": True}
+    ).encode()
+    asyncio.run(handlers.heartbeat("data/DEV_1/heartbeat", payload))
+    assert devices["DEV_1"].heartbeat_data.stm32_connected is True
+
+
 def test_on_sensor_parses_json():
     devices = {}
     handlers = create_handlers(devices, PingRegistry())
