@@ -111,7 +111,14 @@ esp_err_t health_monitor_init(void)
         .idle_core_mask = 0,
         .trigger_panic = true,
     };
-    return esp_task_wdt_init(&wdt_cfg);
+    esp_err_t err = esp_task_wdt_init(&wdt_cfg);
+    if (err == ESP_ERR_INVALID_STATE)
+    {
+        /* CONFIG_ESP_TASK_WDT_INIT=y（IDF 默认）时启动阶段已初始化过 TWDT，
+           此处不能重复 init，只能改配置 */
+        err = esp_task_wdt_reconfigure(&wdt_cfg);
+    }
+    return err;
 }
 
 esp_err_t health_monitor_start(void)
