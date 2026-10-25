@@ -5,8 +5,10 @@ import json
 
 import pytest
 
+from app.api.deps import get_ping_service
+from app.main import app
 from app.mqtt.handlers import create_pong_handler
-from app.services.ping_service import PingError, PingRegistry, PingService
+from app.services.ping_service import PingError, PingRegistry, PingReply, PingService
 
 
 class FakeMQTT:
@@ -97,3 +99,38 @@ async def test_pong_handler_ignores_bad_payloads():
 
     # 未知 seq 不得误唤醒任何等待者
     assert registry.resolve("DEV_1", 9, uptime_s=1, heap=1) is False
+
+
+class _OkPingService:
+    async def ping(self, device_id):
+        return PingReply(seq=3, rtt_ms=12.5, uptime_s=10, heap=5000)
+
+
+class _TimeoutPingService:
+    async def ping(self, device_id):
+        raise PingError("pong timeout after 3s")
+
+
+def test_ping_endpoint_success(client):
+    app.dependency_overrides[get_ping_service] = lambda: _OkPingService()
+    try:
+        resp = client.post("/api/v1/devices/DEV_1/ping")
+    finally:
+        app.dependency_overrides.clear()
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["success"] is True
+    assert body["data"]["rtt_ms"] == 12.5
+
+
+def test_ping_endpoint_reports_failure(client):
+    app.dependency_overrides[get_ping_service] = lambda: _TimeoutPingService()
+    try:
+        resp = client.post("/api/v1/devices/DEV_1/ping")
+    finally:
+        app.dependency_overrides.clear()
+
+    body = resp.json()
+    assert body["success"] is False
+    assert "timeout" in body["message"]

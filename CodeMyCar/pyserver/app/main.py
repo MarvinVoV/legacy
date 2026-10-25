@@ -10,9 +10,10 @@ from fastapi.responses import JSONResponse
 from app.api.routes import commands, devices
 from app.config import get_settings
 from app.mqtt.client import MQTTClient
-from app.mqtt.handlers import create_handlers
-from app.mqtt.topics import SUB_ACK, SUB_HEARTBEAT, SUB_LOG, SUB_SENSOR
+from app.mqtt.handlers import create_handlers, create_pong_handler
+from app.mqtt.topics import SUB_ACK, SUB_HEARTBEAT, SUB_LOG, SUB_PONG, SUB_SENSOR
 from app.services.device_manager import DeviceManager
+from app.services.ping_service import PingRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -35,12 +36,16 @@ async def lifespan(app: FastAPI):
     mqtt_client = MQTTClient(settings)
     app.state.mqtt_client = mqtt_client
 
+    # ping/pong：注册表放在 app.state，handler 与每次请求的 PingService 共享
+    app.state.ping_registry = PingRegistry()
+
     # 注册消息处理器
     on_heartbeat, on_sensor, on_log, on_ack = create_handlers(device_manager.devices)
     mqtt_client.register_handler(SUB_HEARTBEAT, on_heartbeat)
     mqtt_client.register_handler(SUB_SENSOR, on_sensor)
     mqtt_client.register_handler(SUB_LOG, on_log)
     mqtt_client.register_handler(SUB_ACK, on_ack)
+    mqtt_client.register_handler(SUB_PONG, create_pong_handler(app.state.ping_registry))
 
     # 连接 MQTT
     try:
