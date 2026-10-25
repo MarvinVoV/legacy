@@ -113,16 +113,13 @@ static void uart_rx_task(void* arg)
                 uint8_t* item = xRingbufferReceive(s_ringbuf, &item_size, 0);
                 if (item != NULL && item_size > 0)
                 {
-                    /* 解析（零 malloc） */
-                    pkt_frame_t frame;
-                    int frames_found = pkt_parser_feed_buf(
-                        &s_parser, item, item_size, &frame, 1);
-
-                    for (int i = 0; i < frames_found; i++)
+                    /* 逐字节喂入：一次读取可能聚合多帧（例如 ACK + sensor），
+                       必须把整个 chunk 都解析完，不能只取第一帧 */
+                    for (size_t i = 0; i < item_size; i++)
                     {
-                        if (s_rx_cb != NULL)
+                        if (pkt_parser_feed(&s_parser, item[i]) && s_rx_cb != NULL)
                         {
-                            s_rx_cb(&frame, s_rx_cb_ctx);
+                            s_rx_cb(&s_parser.frame, s_rx_cb_ctx);
                         }
                     }
 
