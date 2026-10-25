@@ -7,6 +7,8 @@
 
 #include "servo_task.h"
 #include "cmsis_os.h"
+#include "freertos_os2.h"
+#include "task.h"
 #include "log_manager.h"
 #include "servo_service.h"
 

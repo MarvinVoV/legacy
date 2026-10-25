@@ -50,7 +50,7 @@ else ()
     add_compile_options(-Og -g)
 endif ()
 
-include_directories(Core/Inc Drivers/STM32H7xx_HAL_Driver/Inc Drivers/STM32H7xx_HAL_Driver/Inc/Legacy Drivers/CMSIS/Device/ST/STM32H7xx/Include Drivers/CMSIS/Include Middlewares/Third_Party/FreeRTOS/Source/include Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F Application/Modules/Motor/Inc Application/Modules/Servo/Inc Application/Modules/UART/Inc Application/Modules/Log/Inc Application/System/Protocol/Inc Application/Tasks/ServoTask/Inc Application/Tasks/LogTask/Inc Application/Tasks/CtrlTask/Inc Application/Tasks/MotorTask/Inc Application/Tasks/MotionTask/Inc Application/Services/Servo/Inc Application/Services/Ctrl/Inc Application/Services/Motor/Inc Application/System/Utils/Inc Application/System/Init/Inc Application/System/Common/Inc)
+include_directories(Core/Inc Drivers/STM32H7xx_HAL_Driver/Inc Drivers/STM32H7xx_HAL_Driver/Inc/Legacy Drivers/CMSIS/Device/ST/STM32H7xx/Include Drivers/CMSIS/Include Drivers/CMSIS/RTOS2/Include Middlewares/Third_Party/FreeRTOS/Source/include Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F Application/Modules/Motor/Inc Application/Modules/Servo/Inc Application/Modules/UART/Inc Application/Modules/Log/Inc Application/System/Protocol/Inc Application/Tasks/ServoTask/Inc Application/Tasks/LogTask/Inc Application/Tasks/CtrlTask/Inc Application/Tasks/MotorTask/Inc Application/Tasks/MotionTask/Inc Application/Services/Servo/Inc Application/Services/Ctrl/Inc Application/Services/Motor/Inc Application/System/Utils/Inc Application/System/Init/Inc Application/System/Common/Inc)
 
 add_definitions(-DDEBUG -DUSE_PWR_LDO_SUPPLY -DUSE_HAL_DRIVER -DSTM32H723xx)
 
@@ -63,6 +63,7 @@ add_link_options(-mcpu=cortex-m7 -mthumb -mthumb-interwork)
 add_link_options(--specs=nano.specs -T ${LINKER_SCRIPT})
 
 add_executable(${PROJECT_NAME}.elf ${SOURCES} ${LINKER_SCRIPT})
+target_link_libraries(${PROJECT_NAME}.elf m)
 
 set(HEX_FILE ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.hex)
 set(BIN_FILE ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.bin)

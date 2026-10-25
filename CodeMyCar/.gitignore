@@ -112,3 +112,14 @@ Thumbs.db
 *.swp
 *~
 /.cache/
+
+# =======================
+# stm32_project 构建必需文件（覆盖上面的通用忽略规则）
+# 干净克隆必须能直接 cmake 构建，因此链接脚本与厂商源码入库
+# =======================
+!stm32_project/STM32H723ZGTX_FLASH.ld
+!stm32_project/Drivers/CMSIS/
+!stm32_project/Drivers/CMSIS/**
+!stm32_project/Middlewares/Third_Party/
+!stm32_project/Middlewares/Third_Party/FreeRTOS/
+!stm32_project/Middlewares/Third_Party/FreeRTOS/**
