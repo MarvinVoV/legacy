@@ -3,11 +3,16 @@
 import json
 import logging
 import time
+from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
 
 from app.models.device import DeviceState
 from app.models.telemetry import AckEvent, HeartbeatData, LogEntry, SensorData
+from app.services.ping_service import PingRegistry
 
 logger = logging.getLogger(__name__)
+
+MessageHandler = Callable[[str, bytes], Awaitable[None]]
 
 
 def extract_device_id(topic: str) -> str:
@@ -16,8 +21,21 @@ def extract_device_id(topic: str) -> str:
     return parts[1] if len(parts) >= 2 else "unknown"
 
 
-def create_handlers(devices: dict[str, DeviceState]):
-    """创建消息处理器闭包（共享 devices 字典）"""
+@dataclass(frozen=True)
+class MQTTHandlers:
+    """全部 MQTT 下行 handler；由 main 按 topic 注册到 MQTTClient"""
+
+    heartbeat: MessageHandler
+    sensor: MessageHandler
+    log: MessageHandler
+    ack: MessageHandler
+    pong: MessageHandler
+
+
+def create_handlers(
+    devices: dict[str, DeviceState], registry: PingRegistry
+) -> MQTTHandlers:
+    """创建全部 MQTT handler 闭包（共享 devices 与 ping registry）"""
 
     async def on_heartbeat(topic: str, payload: bytes) -> None:
         device_id = extract_device_id(topic)
@@ -83,13 +101,8 @@ def create_handlers(devices: dict[str, DeviceState]):
         state.last_ack_time = time.time()
         logger.debug("ACK from %s: seq=%d", device_id, ev.seq)
 
-    return on_heartbeat, on_sensor, on_log, on_ack
-
-
-def create_pong_handler(registry):
-    """ping 回执：按 (device_id, seq) 唤醒等待中的 ping 请求"""
-
     async def on_pong(topic: str, payload: bytes) -> None:
+        """ping 回执：按 (device_id, seq) 唤醒等待中的 ping 请求"""
         device_id = extract_device_id(topic)
         try:
             data = json.loads(payload)
@@ -112,4 +125,10 @@ def create_pong_handler(registry):
             return
         registry.resolve(device_id, seq & 0xFF, uptime_s, heap)
 
-    return on_pong
+    return MQTTHandlers(
+        heartbeat=on_heartbeat,
+        sensor=on_sensor,
+        log=on_log,
+        ack=on_ack,
+        pong=on_pong,
+    )

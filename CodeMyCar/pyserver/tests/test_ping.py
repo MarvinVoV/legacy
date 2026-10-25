@@ -7,7 +7,7 @@ import pytest
 
 from app.api.deps import get_ping_service
 from app.main import app
-from app.mqtt.handlers import create_pong_handler
+from app.mqtt.handlers import create_handlers
 from app.services.ping_service import PingError, PingRegistry, PingReply, PingService
 
 
@@ -78,7 +78,7 @@ async def test_concurrent_pings_are_isolated():
 async def test_pong_handler_resolves_matching_ping():
     registry = PingRegistry()
     future = registry.register("DEV_1", 7)
-    on_pong = create_pong_handler(registry)
+    on_pong = create_handlers({}, registry).pong
 
     await on_pong(
         "data/DEV_1/pong",
@@ -91,7 +91,7 @@ async def test_pong_handler_resolves_matching_ping():
 
 async def test_pong_handler_ignores_bad_payloads():
     registry = PingRegistry()
-    on_pong = create_pong_handler(registry)
+    on_pong = create_handlers({}, registry).pong
 
     await on_pong("data/DEV_1/pong", b"not-json")
     await on_pong("data/DEV_1/pong", json.dumps({"seq": 9, "pong": False}).encode())
@@ -105,7 +105,7 @@ async def test_pong_handler_ignores_non_object_and_wrong_typed_fields():
     """畸形 pong（非对象 / 字段类型错误）必须被忽略，不得让等待中的 ping 崩溃。"""
     registry = PingRegistry()
     future = registry.register("DEV_1", 5)
-    on_pong = create_pong_handler(registry)
+    on_pong = create_handlers({}, registry).pong
 
     for payload in (
         b'["not", "an", "object"]',
