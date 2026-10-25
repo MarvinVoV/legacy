@@ -84,3 +84,22 @@ def create_handlers(devices: dict[str, DeviceState]):
         logger.debug("ACK from %s: seq=%d", device_id, ev.seq)
 
     return on_heartbeat, on_sensor, on_log, on_ack
+
+
+def create_pong_handler(registry):
+    """ping 回执：按 (device_id, seq) 唤醒等待中的 ping 请求"""
+
+    async def on_pong(topic: str, payload: bytes) -> None:
+        device_id = extract_device_id(topic)
+        try:
+            data = json.loads(payload)
+        except Exception:
+            logger.debug("Invalid pong from %s", device_id)
+            return
+        seq = data.get("seq")
+        if not isinstance(seq, int) or data.get("pong") is not True:
+            logger.debug("Ignoring malformed pong from %s", device_id)
+            return
+        registry.resolve(device_id, seq & 0xFF, data.get("uptime_s"), data.get("heap"))
+
+    return on_pong
