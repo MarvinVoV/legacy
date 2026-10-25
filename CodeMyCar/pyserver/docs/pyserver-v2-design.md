@@ -129,7 +129,6 @@ pyserver/
 ├── pyproject.toml              # 项目元数据 + 依赖（替代 requirements.txt）
 ├── Dockerfile                  # 修复
 ├── docker-compose.yml          # 新增：app + mosquitto
-├── .env.example                # 环境变量模板
 ├── README.md                   # 重写
 ├── app/
 │   ├── __init__.py

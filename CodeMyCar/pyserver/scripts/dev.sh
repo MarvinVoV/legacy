@@ -12,11 +12,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-# ---- 公共：准备 .env ----
-if [[ ! -f .env ]]; then
-  echo "→ 从 .env.example 生成 .env"
-  cp .env.example .env
-fi
+# ---- 公共：准备 .env（不存在时创建空文件，下方写入 MQTT_HOST） ----
+[[ -f .env ]] || touch .env
 
 # 决定 MQTT host：显式 MQTT_HOST 优先，否则默认 localhost（本地 broker）
 MQTT_HOST="${MQTT_HOST:-localhost}"

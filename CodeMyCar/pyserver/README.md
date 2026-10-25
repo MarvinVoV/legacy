@@ -26,7 +26,7 @@ make dev
 ```
 
 `make dev` 会：
-1. 若无 `.env`，从 `.env.example` 复制一份；
+1. 若无 `.env`，自动创建一个空文件（默认连本机 broker）；
 2. 启动本机 mosquitto（用 `mosquitto.dev.conf`，无鉴权、不落盘）；
 3. 用 `.venv` 跑 `uvicorn --reload`。
 
@@ -61,7 +61,7 @@ make test-watch    # 改动自动重跑（需 brew install entr）
 
 ## 配置
 
-通过环境变量 / `.env`（前缀 `CMCAR_`），见 [`config.py`](app/config.py) 与 [`.env.example`](.env.example)：
+通过环境变量 / `.env`（前缀 `CMCAR_`），见 [`config.py`](app/config.py)：
 
 | 变量 | 默认 | 说明 |
 |---|---|---|
@@ -71,7 +71,7 @@ make test-watch    # 改动自动重跑（需 brew install entr）
 | `CMCAR_API_KEY` | 空 | 空=禁用 API Key 鉴权（仅开发）；生产务必设置 |
 | `CMCAR_CORS_ORIGINS` | `*` | 逗号分隔允许来源，或 `*` |
 
-**安全提示**：开发默认匿名 + 无 API Key。生产部署前需设 `CMCAR_API_KEY`，并给 broker 配账号（参考 [`mosquitto.conf.example`](mosquitto.conf.example)）。
+**安全提示**：开发默认匿名 + 无 API Key。生产部署前需设 `CMCAR_API_KEY`，并给 broker 配置 `password_file` 账号鉴权。
 
 ## 本地 broker
 
