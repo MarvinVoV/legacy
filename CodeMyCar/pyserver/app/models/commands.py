@@ -32,7 +32,7 @@ class MotionCommand(BaseModel):
     """运动控制命令"""
     mode: MotionMode
     duration: int = Field(0, ge=0, le=65535, description="持续时间 (ms), 0=无限")
-    params: MotionParams = Field(default_factory=MotionParams)
+    params: MotionParams = Field(default_factory=lambda: MotionParams.model_validate({}))
 
 
 class ControlCommand(BaseModel):

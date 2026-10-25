@@ -60,6 +60,7 @@ class MQTTClient:
         self._connected.clear()
 
     async def publish(self, topic: str, payload: dict | str | bytes, qos: int = 0) -> None:
+        data: str | bytes
         if isinstance(payload, dict):
             data = json.dumps(payload, ensure_ascii=False)
         elif isinstance(payload, str):
