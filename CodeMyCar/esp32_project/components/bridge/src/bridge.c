@@ -308,19 +308,17 @@ static void on_uart_frame(const pkt_frame_t* frame, void* user_ctx)
        （由 uplink 任务异步发往 CMCAR_TOPIC_ACK，不在 uart_rx 里阻塞 publish） */
     if (frame->type == PKT_TYPE_ACK && (frame->flags & PKT_FLAG_ACK_RSP))
     {
-        if (frame->payload_len >= 1)
+        /* v2：ACK 的 seq 在帧头 SEQ 字段（STM32 的 ACK payload 为空） */
+        const uint8_t ack_seq = frame->seq;
+        pending_clear(ack_seq);
+        bridge_frame_msg_t echo = {
+            .timestamp = now_ms(),
+            .is_ack_echo = true,
+            .ack_seq = ack_seq,
+        };
+        if (xQueueSend(s_frame_queue, &echo, 0) != pdPASS)
         {
-            pending_clear(frame->payload[0]);
-            bridge_frame_msg_t echo = {
-                .timestamp = now_ms(),
-                .is_ack_echo = true,
-                .ack_seq = frame->payload[0],
-            };
-            if (xQueueSend(s_frame_queue, &echo, 0) != pdPASS)
-            {
-                ESP_LOGW(TAG, "ACK echo queue full, dropping ack seq=%u",
-                         frame->payload[0]);
-            }
+            ESP_LOGW(TAG, "ACK echo queue full, dropping ack seq=%u", ack_seq);
         }
         return;
     }
