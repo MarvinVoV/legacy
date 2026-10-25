@@ -45,7 +45,7 @@ make test          # 跑全部 pytest（命令模型 / MQTT handler / API 鉴权
 make test-watch    # 改动自动重跑（需 brew install entr）
 ```
 
-测试覆盖：`tests/test_commands.py`（字段范围、枚举与 STM32 对齐）、`tests/test_mqtt.py`（topic 匹配、payload 解析）、`tests/test_api.py`（命令下发、设备状态、API Key）。共 22 项，全部在内存中用 FakeMQTT 跑，不连真实 broker。
+测试覆盖：`tests/test_commands.py`（字段范围、枚举与 STM32 对齐）、`tests/test_mqtt.py`（topic 匹配、payload 解析）、`tests/test_ping.py`（ping/pong 匹配、并发、超时）、`tests/test_api.py`（命令下发、设备状态、API Key）。共 33 项，全部在内存中用 FakeMQTT 跑，不连真实 broker。
 
 ## 常用命令（Makefile）
 
@@ -55,6 +55,7 @@ make test-watch    # 改动自动重跑（需 brew install entr）
 | `make test` | 离线单元测试 |
 | `make mqtt-sub` | 订阅全部 topic（`data/#` `cmd/#`），观察设备上报 |
 | `make mqtt-pub MODE=2` | 下发一条测试运动命令（差速模式） |
+| `make ping` | 手动 MQTT 链路自检（默认 `DEV_1`，可 `DEVICE=DEV_2`） |
 | `make shell` | 进 venv REPL，已加载 app |
 | `make clean` | 删 `.venv` 与缓存 |
 
@@ -89,3 +90,15 @@ mosquitto -c mosquitto.dev.conf
   - `data/{device_id}/sensor`
   - `data/{device_id}/heartbeat`
   - `data/{device_id}/log`
+  - `data/{device_id}/pong`（ESP32 对 `{"cmd":"ping"}` 的直接回执）
+
+### 链路自检（不依赖 STM32）
+
+ESP32 上电、pyserver 启动后：
+
+```bash
+make ping                 # 默认 DEV_1
+make ping DEVICE=DEV_1
+```
+
+成功返回 `{"success": true, "message": "pong", "data": {"seq": 0, "rtt_ms": ..., "uptime_s": ..., "heap": ...}}`；3 秒无回执则返回 `success: false` 并提示 `pong timeout`。该链路只经过 MQTT，不需要 STM32 上电。

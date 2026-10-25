@@ -52,7 +52,7 @@ Modules are started **event-driven**: WiFi GOT_IP → `mqtt_service_start()`; MQ
 
 - **`common`** — shared infra.
   - `cmcar_events`: the `ESP_EVENT_DEFINE_BASE(CMCAR_EVENTS)` + typed event IDs (WiFi connected/disconnected/got-ip, MQTT connected/disconnected, `CMCAR_UART_ERROR`, `CMCAR_SYSTEM_*`, `CMCAR_HEALTH_WARNING`). UART frames do not go through the event loop (direct `uart_service_register_rx_cb` callback). Replaces the old FreeRTOS EventGroup.
-  - `cmcar_topics`: unified MQTT topic strings + `CMCAR_DEVICE_ID`. `CMCAR_TOPIC_SENSOR/LOG/HEARTBEAT/STATUS/ACK = "data/" DEV_1 "/..."`, `CMCAR_TOPIC_CMD_SUB = "cmd/" DEV_1 "/exec"` (single device-id level — no `esp32/`/`stm32/` segment).
+  - `cmcar_topics`: unified MQTT topic strings + `CMCAR_DEVICE_ID`. `CMCAR_TOPIC_SENSOR/LOG/HEARTBEAT/STATUS/ACK/PONG = "data/" DEV_1 "/..."`, `CMCAR_TOPIC_CMD_SUB = "cmd/" DEV_1 "/exec"` (single device-id level — no `esp32/`/`stm32/` segment). **Ping/pong self-check:** pyserver sends `{"cmd":"ping","seq":N}` on the cmd topic; `bridge` replies directly on `data/DEV_1/pong` with `{"seq":N,"pong":true,"uptime_s":U,"heap":H}` — no UART/STM32 involvement (`bridge_json_is_ping()` / `bridge_pong_to_json()` in `bridge_codec`).
   - `cmcar_crc16`, `cmcar_errors`, `cmcar_types`, `task_priorities.h` (central `task_priority_t` enum: `TASK_PRIO_EVENT/UART_RX/UART_TX/BRIDGE_DOWNLINK/BRIDGE_UPLINK/REMOTE_LOG/MQTT/HEALTH`; all `_service` components include it).
 
 - **`pkt_codec`** — the v2 serial framing layer, **pure C** (only depends on `esp_err_t`), mirrored to STM32 + `serial_pkt_protocol` so it's host-testable. See "Serial packet protocol".

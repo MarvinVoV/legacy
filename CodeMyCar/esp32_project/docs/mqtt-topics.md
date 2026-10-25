@@ -26,6 +26,8 @@
 
 ESP32 订阅自身设备 id：`cmd/<本机 device_id>/exec`（不使用 `+` 通配，避免收到他人命令；多设备时由 broker ACL 隔离）。
 
+同一个 topic 也用于**链路自检**：pyserver 发送 `{"cmd":"ping","seq":N}`，ESP32 直接回 `pong`（见下表），**不转发给 STM32**，因此不接 MCU 也能验证 MQTT 上下行。
+
 ### 上行（ESP32 → Server）
 
 | Topic | 内容 | Payload |
@@ -34,8 +36,9 @@ ESP32 订阅自身设备 id：`cmd/<本机 device_id>/exec`（不使用 `+` 通�
 | `data/{device_id}/log` | 日志 | JSON `LogEntry` |
 | `data/{device_id}/heartbeat` | 心跳 | JSON `HeartbeatData` |
 | `data/{device_id}/status` | 设备状态（可选） | JSON `DeviceStatus` |
+| `data/{device_id}/pong` | ping 回执（ESP32 直接回复） | JSON `{"seq":N,"pong":true,"uptime_s":U,"heap":H}` |
 
-pyserver 订阅：`data/+/sensor`、`data/+/log`、`data/+/heartbeat`、`data/+/status`（均匹配 3 段 `data/X/kind`）。
+pyserver 订阅：`data/+/sensor`、`data/+/log`、`data/+/heartbeat`、`data/+/status`、`data/+/pong`（均匹配 3 段 `data/X/kind`）。
 
 ### device_id 约定
 
