@@ -137,6 +137,35 @@ int main(void){
     CHECK(small[n-1]=='}', "log trunc ends with }");
     printf("log trunc json (len=%d): %s\n", n, small);
 
+    /* 14. ping/pong */
+    uint8_t pseq = 0xAA;
+    const char* j_ping = "{\"cmd\":\"ping\",\"seq\":42}";
+    CHECK(bridge_json_is_ping(j_ping, strlen(j_ping), &pseq) == true, "ping detected");
+    CHECK(pseq == 42, "ping seq=42");
+
+    pseq = 0xAA;
+    CHECK(bridge_json_is_ping(j_diff, strlen(j_diff), &pseq) == false, "motion is not ping");
+    CHECK(pseq == 0xAA, "non-ping leaves seq untouched");
+
+    const char* j_ping_noseq = "{\"cmd\":\"ping\"}";
+    pseq = 0xAA;
+    CHECK(bridge_json_is_ping(j_ping_noseq, strlen(j_ping_noseq), &pseq) == true, "ping without seq");
+    CHECK(pseq == 0, "missing seq defaults to 0");
+
+    const char* j_ping_wrap = "{\"cmd\":\"ping\",\"seq\":300}";
+    pseq = 0;
+    CHECK(bridge_json_is_ping(j_ping_wrap, strlen(j_ping_wrap), &pseq) == true, "seq>255 still ping");
+    CHECK(pseq == 44, "seq 300 & 0xFF == 44");
+
+    CHECK(bridge_json_is_ping("not-json", 8, &pseq) == false, "invalid json is not ping");
+
+    char pong[96];
+    int pn = bridge_pong_to_json(42, 123ULL, 80000UL, pong, sizeof(pong));
+    CHECK(pn > 0, "pong json built");
+    CHECK(strcmp(pong, "{\"seq\":42,\"pong\":true,\"uptime_s\":123,\"heap\":80000}") == 0,
+          "pong json exact");
+    CHECK(bridge_pong_to_json(1, 1ULL, 1UL, pong, 8) == 0, "tiny buffer rejected");
+
     printf("\n%s (%d failures)\n", failures? "RESULT: FAIL":"RESULT: PASS", failures);
     return failures? 1:0;
 }

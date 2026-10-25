@@ -51,3 +51,17 @@ int bridge_sensor_to_json(const uint8_t* payload, uint8_t len,
  */
 int bridge_log_to_json(const uint8_t* payload, uint8_t len,
                        char* out, size_t out_size);
+
+/**
+ * @brief 下行：判断是否为 ping 命令并取 seq
+ * @param out_seq [out] seq（& 0xFF）；非 ping 时不修改
+ * @return true 是 ping，false 不是/解析失败
+ */
+bool bridge_json_is_ping(const char* json, size_t len, uint8_t* out_seq);
+
+/**
+ * @brief 构建 pong JSON：{"seq":N,"pong":true,"uptime_s":U,"heap":H}
+ * @return 长度（不含 \0）；缓冲区不足返回 0
+ */
+int bridge_pong_to_json(uint8_t seq, unsigned long long uptime_s,
+                        unsigned long heap, char* out, size_t out_size);

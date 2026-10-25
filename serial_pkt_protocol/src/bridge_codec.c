@@ -63,6 +63,47 @@ static bool has_number(const cJSON* obj, const char* key)
     return (item != NULL && cJSON_IsNumber(item));
 }
 
+/* ==================== 下行：ping/pong 链路自检 ==================== */
+
+bool bridge_json_is_ping(const char* json, size_t len, uint8_t* out_seq)
+{
+    if (json == NULL || out_seq == NULL)
+    {
+        return false;
+    }
+    cJSON* root = cJSON_ParseWithLength(json, len);
+    if (root == NULL)
+    {
+        return false;
+    }
+    bool is_ping = false;
+    const cJSON* cmd = cJSON_GetObjectItemCaseSensitive(root, "cmd");
+    if (cmd != NULL && cJSON_IsString(cmd) && strcmp(cmd->valuestring, "ping") == 0)
+    {
+        *out_seq = (uint8_t)(get_int(root, "seq", 0) & 0xFF);
+        is_ping = true;
+    }
+    cJSON_Delete(root);
+    return is_ping;
+}
+
+int bridge_pong_to_json(uint8_t seq, unsigned long long uptime_s,
+                        unsigned long heap, char* out, size_t out_size)
+{
+    if (out == NULL || out_size == 0)
+    {
+        return 0;
+    }
+    const int n = snprintf(out, out_size,
+                           "{\"seq\":%u,\"pong\":true,\"uptime_s\":%llu,\"heap\":%lu}",
+                           (unsigned)seq, uptime_s, heap);
+    if (n <= 0 || (size_t)n >= out_size)
+    {
+        return 0;
+    }
+    return n;
+}
+
 /* ==================== 下行：JSON → ControlCmd ==================== */
 
 int bridge_json_to_control_cmd(const char* json, size_t len,
