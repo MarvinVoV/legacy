@@ -107,6 +107,7 @@ static volatile uint32_t s_uplink_dropped = 0;   /* 上行帧队列满丢弃 */
 static volatile uint32_t s_downlink_dropped = 0;  /* 下行命令队列满丢弃 */
 static volatile uint32_t s_ack_lost = 0;         /* ACK 超时耗尽重试 */
 static volatile uint32_t s_pub_failed = 0;        /* MQTT publish 失败 */
+static volatile uint32_t s_last_stm32_frame_ms = 0; /* 最近一次有效 UART 帧时间 */
 
 static const char* state_name(sys_state_t s)
 {
@@ -123,6 +124,12 @@ static const char* state_name(sys_state_t s)
 static uint32_t now_ms(void)
 {
     return (uint32_t)(xTaskGetTickCount() * portTICK_PERIOD_MS);
+}
+
+bool bridge_stm32_connected(void)
+{
+    const uint32_t last = s_last_stm32_frame_ms;
+    return (last != 0U) && ((now_ms() - last) < BRIDGE_STM32_TIMEOUT_MS);
 }
 
 /* resend 回调（注入 uart_service_send）：ackmgr_scan 在持有 s_ack_mutex 时调用；
@@ -303,6 +310,9 @@ static void bridge_downlink_task(void* arg)
 static void on_uart_frame(const pkt_frame_t* frame, void* user_ctx)
 {
     (void)user_ctx;
+
+    /* 任意有效帧都说明 STM32 在线（用于心跳的 stm32_connected） */
+    s_last_stm32_frame_ms = now_ms();
 
     /* ACK 响应帧：清除 pending，并向 uplink 队列投递一条 ACK 回执
        （由 uplink 任务异步发往 CMCAR_TOPIC_ACK，不在 uart_rx 里阻塞 publish） */

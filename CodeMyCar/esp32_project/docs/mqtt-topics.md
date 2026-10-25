@@ -34,7 +34,7 @@ ESP32 订阅自身设备 id：`cmd/<本机 device_id>/exec`（不使用 `+` 通�
 |---|---|---|
 | `data/{device_id}/sensor` | 传感器/里程计 | JSON `SensorData` |
 | `data/{device_id}/log` | 日志 | JSON `LogEntry` |
-| `data/{device_id}/heartbeat` | 心跳 | JSON `HeartbeatData` |
+| `data/{device_id}/heartbeat` | 心跳 | JSON `{"heap":N,"heap_min":N,"uptime_s":N,"stm32_connected":true/false}` |
 | `data/{device_id}/status` | 设备状态（可选） | JSON `DeviceStatus` |
 | `data/{device_id}/pong` | ping 回执（ESP32 直接回复） | JSON `{"seq":N,"pong":true,"uptime_s":U,"heap":H}` |
 

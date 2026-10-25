@@ -14,6 +14,7 @@
 
 #include "cmcar_events.h"
 #include "cmcar_topics.h"
+#include "bridge.h"
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_system.h"
@@ -84,9 +85,10 @@ static void health_mon_task(void* arg)
                 char json[128];
                 const int len = snprintf(
                     json, sizeof(json),
-                    "{\"heap\":%zu,\"heap_min\":%zu,\"uptime_s\":%lld}",
+                    "{\"heap\":%zu,\"heap_min\":%zu,\"uptime_s\":%lld,\"stm32_connected\":%s}",
                     heap_free, heap_min,
-                    (long long)(esp_timer_get_time() / 1000000));
+                    (long long)(esp_timer_get_time() / 1000000),
+                    bridge_stm32_connected() ? "true" : "false");
 
                 /* 用超时发布：broker 卡住时不能阻塞喂狗任务，否则 TWDT 自触 panic */
                 const esp_err_t pub = mqtt_service_publish_timed(
