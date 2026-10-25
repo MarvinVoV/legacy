@@ -101,6 +101,31 @@ async def test_pong_handler_ignores_bad_payloads():
     assert registry.resolve("DEV_1", 9, uptime_s=1, heap=1) is False
 
 
+async def test_pong_handler_ignores_non_object_and_wrong_typed_fields():
+    """畸形 pong（非对象 / 字段类型错误）必须被忽略，不得让等待中的 ping 崩溃。"""
+    registry = PingRegistry()
+    future = registry.register("DEV_1", 5)
+    on_pong = create_pong_handler(registry)
+
+    for payload in (
+        b'["not", "an", "object"]',
+        b'"a string"',
+        json.dumps({"seq": 5, "pong": True, "uptime_s": "abc"}).encode(),
+        json.dumps({"seq": 5, "pong": True, "heap": [1]}).encode(),
+    ):
+        await on_pong("data/DEV_1/pong", payload)
+
+    assert future.done() is False
+
+    # 合法回执仍能正常唤醒（畸形包不污染状态）
+    await on_pong(
+        "data/DEV_1/pong",
+        json.dumps({"seq": 5, "pong": True, "uptime_s": 9, "heap": 8}).encode(),
+    )
+    assert future.done()
+    assert future.result() == {"uptime_s": 9, "heap": 8}
+
+
 class _OkPingService:
     async def ping(self, device_id):
         return PingReply(seq=3, rtt_ms=12.5, uptime_s=10, heap=5000)

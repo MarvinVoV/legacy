@@ -96,10 +96,20 @@ def create_pong_handler(registry):
         except Exception:
             logger.debug("Invalid pong from %s", device_id)
             return
+        if not isinstance(data, dict):
+            logger.debug("Ignoring non-object pong from %s", device_id)
+            return
         seq = data.get("seq")
-        if not isinstance(seq, int) or data.get("pong") is not True:
+        uptime_s = data.get("uptime_s")
+        heap = data.get("heap")
+        if (
+            not isinstance(seq, int)
+            or data.get("pong") is not True
+            or not isinstance(uptime_s, (int, type(None)))
+            or not isinstance(heap, (int, type(None)))
+        ):
             logger.debug("Ignoring malformed pong from %s", device_id)
             return
-        registry.resolve(device_id, seq & 0xFF, data.get("uptime_s"), data.get("heap"))
+        registry.resolve(device_id, seq & 0xFF, uptime_s, heap)
 
     return on_pong
