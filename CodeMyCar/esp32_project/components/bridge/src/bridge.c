@@ -20,6 +20,7 @@
 #include "cmcar_topics.h"
 #include "esp_event.h"
 #include "esp_log.h"
+#include "esp_system.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
@@ -176,10 +177,39 @@ static void pending_retransmit_scan(void)
 
 /* ==================== 下行：MQTT JSON → UART ==================== */
 
+/** 直接回复 ping（不经过 UART/STM32），用于 MQTT 链路自检 */
+static void publish_pong(uint8_t seq)
+{
+    char json[96];
+    const unsigned long long uptime_s =
+        (unsigned long long)(esp_timer_get_time() / 1000000LL);
+    const int n = bridge_pong_to_json(
+        seq, uptime_s, (unsigned long)esp_get_free_heap_size(), json, sizeof(json));
+    if (n <= 0)
+    {
+        ESP_LOGW(TAG, "pong json build failed");
+        return;
+    }
+    const esp_err_t err = mqtt_service_publish_timed(
+        CMCAR_TOPIC_PONG, json, (size_t)n, 0, 200);
+    if (err != ESP_OK)
+    {
+        ESP_LOGD(TAG, "pong publish skipped: %s", esp_err_to_name(err));
+    }
+}
+
 /** 译码 + 组帧 + 发送（在 downlink 任务上下文执行，不阻塞 MQTT client 任务） */
 static void process_downlink(const char* payload, size_t payload_len)
 {
     ESP_LOGI(TAG, "CMD downlink len=%zu", payload_len);
+
+    /* ping：MQTT 链路自检，直接回 pong，不进入 UART/STM32 路径 */
+    uint8_t ping_seq = 0;
+    if (bridge_json_is_ping(payload, payload_len, &ping_seq))
+    {
+        publish_pong(ping_seq);
+        return;
+    }
 
     /* JSON → 13 字节 ControlCmd */
     uint8_t cmd_payload[BRIDGE_CONTROL_CMD_SIZE];
