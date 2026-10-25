@@ -1,13 +1,12 @@
 """MQTT 消息处理器"""
 
-import json
 import logging
 import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 
 from app.models.device import DeviceState
-from app.models.telemetry import AckEvent, HeartbeatData, LogEntry, SensorData
+from app.models.telemetry import AckEvent, HeartbeatData, LogEntry, PongEvent, SensorData
 from app.services.ping_service import PingRegistry
 
 logger = logging.getLogger(__name__)
@@ -105,25 +104,14 @@ def create_handlers(
         """ping 回执：按 (device_id, seq) 唤醒等待中的 ping 请求"""
         device_id = extract_device_id(topic)
         try:
-            data = json.loads(payload)
+            ev = PongEvent.model_validate_json(payload)
         except Exception:
             logger.debug("Invalid pong from %s", device_id)
             return
-        if not isinstance(data, dict):
-            logger.debug("Ignoring non-object pong from %s", device_id)
+        if not ev.pong:
+            logger.debug("Ignoring non-pong reply from %s", device_id)
             return
-        seq = data.get("seq")
-        uptime_s = data.get("uptime_s")
-        heap = data.get("heap")
-        if (
-            not isinstance(seq, int)
-            or data.get("pong") is not True
-            or not isinstance(uptime_s, (int, type(None)))
-            or not isinstance(heap, (int, type(None)))
-        ):
-            logger.debug("Ignoring malformed pong from %s", device_id)
-            return
-        registry.resolve(device_id, seq & 0xFF, uptime_s, heap)
+        registry.resolve(device_id, ev.seq, ev.uptime_s, ev.heap)
 
     return MQTTHandlers(
         heartbeat=on_heartbeat,

@@ -101,6 +101,30 @@ async def test_pong_handler_ignores_bad_payloads():
     assert registry.resolve("DEV_1", 9, uptime_s=1, heap=1) is False
 
 
+def test_pong_event_model_parses_valid_payload():
+    from app.models.telemetry import PongEvent
+
+    ev = PongEvent.model_validate_json(
+        json.dumps({"seq": 7, "pong": True, "uptime_s": 5, "heap": 100})
+    )
+    assert (ev.seq, ev.pong, ev.uptime_s, ev.heap) == (7, True, 5, 100)
+
+
+def test_pong_event_model_rejects_bad_payloads():
+    from pydantic import ValidationError
+
+    from app.models.telemetry import PongEvent
+
+    for payload in (
+        b"not-json",
+        b'["not", "an", "object"]',
+        json.dumps({"seq": "x", "pong": True}).encode(),
+        json.dumps({"seq": 1, "pong": True, "heap": [1]}).encode(),
+    ):
+        with pytest.raises(ValidationError):
+            PongEvent.model_validate_json(payload)
+
+
 async def test_pong_handler_ignores_non_object_and_wrong_typed_fields():
     """畸形 pong（非对象 / 字段类型错误）必须被忽略，不得让等待中的 ping 崩溃。"""
     registry = PingRegistry()

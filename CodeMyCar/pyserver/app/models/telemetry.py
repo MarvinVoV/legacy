@@ -33,3 +33,11 @@ class AckEvent(BaseModel):
     """命令 ACK 回执（ESP32 收到 STM32 的 ACK 后发往 data/{id}/ack）"""
     seq: int
     ack: bool = True
+
+
+class PongEvent(BaseModel):
+    """Ping 回执（ESP32 直接回复 data/{id}/pong，不经过 STM32）"""
+    seq: int
+    pong: bool = True
+    uptime_s: Optional[int] = None
+    heap: Optional[int] = None
