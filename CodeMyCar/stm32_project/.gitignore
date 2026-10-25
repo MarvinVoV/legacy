@@ -59,4 +59,9 @@ dkms.conf
 cmake-build-*/
 .osx.project
 
+# 本地编辑器 / 构建配置
+/.clangd
+# 未使用的重复启动文件（实际编译 Core/Startup/startup_stm32h723zgtx.s）
+/startup_stm32h723xx.s
+
 
