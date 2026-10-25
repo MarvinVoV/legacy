@@ -73,6 +73,16 @@ static pkt_parser_t s_parser;
 static uart_frame_rx_cb_t s_rx_cb = NULL;
 static void* s_rx_cb_ctx = NULL;
 
+/** pkt_parser_feed_stream 适配器：转发到已注册的帧回调 */
+static void uart_frame_dispatch(const pkt_frame_t* frame, void* ctx)
+{
+    (void)ctx;
+    if (s_rx_cb != NULL)
+    {
+        s_rx_cb(frame, s_rx_cb_ctx);
+    }
+}
+
 /* ==================== 任务实现 ==================== */
 
 static void uart_rx_task(void* arg)
@@ -113,15 +123,10 @@ static void uart_rx_task(void* arg)
                 uint8_t* item = xRingbufferReceive(s_ringbuf, &item_size, 0);
                 if (item != NULL && item_size > 0)
                 {
-                    /* 逐字节喂入：一次读取可能聚合多帧（例如 ACK + sensor），
-                       必须把整个 chunk 都解析完，不能只取第一帧 */
-                    for (size_t i = 0; i < item_size; i++)
-                    {
-                        if (pkt_parser_feed(&s_parser, item[i]) && s_rx_cb != NULL)
-                        {
-                            s_rx_cb(&s_parser.frame, s_rx_cb_ctx);
-                        }
-                    }
+                    /* 整个 chunk 都要解析：一次读取可能聚合多帧（ACK + sensor），
+                       feed_stream 会逐字节喂入并对每一帧回调 */
+                    pkt_parser_feed_stream(
+                        &s_parser, item, item_size, uart_frame_dispatch, NULL);
 
                     vRingbufferReturnItem(s_ringbuf, item);
                 }

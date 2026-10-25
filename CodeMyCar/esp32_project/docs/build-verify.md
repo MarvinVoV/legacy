@@ -39,7 +39,7 @@ cd serial_pkt_protocol
 mkdir build && cd build && cmake .. && make
 cd tests && ctest --output-on-failure    # 注意：ctest 要在 build/tests/ 下跑
 ```
-- 两个测试套件：`serial_pkt_protocol_tests`（v2 协议 pack/parse/重组/ACK）、`bridge_codec_tests`（pyserver JSON ↔ 13 字节 ControlCmd ↔ JSON 跨语言一致性，21 项检查）。
+- 四个测试套件：`serial_pkt_protocol_tests`（v2 协议 pack/parse/重组/ACK）、`bridge_codec_tests`（pyserver JSON ↔ 13 字节 ControlCmd ↔ JSON 跨语言一致性，21 项检查）、`ack_manager_tests`（ACK 重传表）、`pkt_codec_tests`（v2 编解码：多帧 chunk 派发、分片、CRC 失败恢复、payload 上限）。
 - `enable_testing()` 在 `tests/CMakeLists.txt` 子目录里，所以从 `build/` 根跑 ctest 会报 "No tests found"——进 `build/tests/` 再跑。
 
 ## pyserver（`CodeMyCar/pyserver/`）
@@ -88,6 +88,6 @@ $CC ... $SYS/Src/pkt_protocol_buf.c -o /tmp/pkt_protocol_buf.o   # ✓
 | 项目 | 命令 | 结果（2026-08） |
 |---|---|---|
 | ESP32 固件 | `idf.py build`（venv 丢失可 `cd build && ninja`） | 全量构建，生成 .elf/.bin，✅ |
-| host 协议测试 | `cd serial_pkt_protocol/build/tests && ctest` | 3/3 套件（含 ack_manager_tests），✅ |
+| host 协议测试 | `cd serial_pkt_protocol/build/tests && ctest` | 4/4 套件（含 ack_manager_tests、pkt_codec_tests），✅ |
 | pyserver 单测 | `cd pyserver && make test` | 25 项，✅ |
 | STM32 协议层 | arm-gcc 单文件 | pkt_protocol.* ✅；其余受限于 CubeMX 缺失头 |

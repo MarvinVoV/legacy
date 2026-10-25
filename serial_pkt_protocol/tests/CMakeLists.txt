@@ -42,3 +42,15 @@ target_include_directories(${ACK_TEST_TARGET} PRIVATE
         ${CMAKE_SOURCE_DIR}/include
 )
 add_test(NAME ${ACK_TEST_TARGET} COMMAND ${ACK_TEST_TARGET})
+
+# v2 编解码器 host 测试：多帧 chunk 派发、分片重组、CRC、payload 上限
+set(CODEC_TEST_TARGET pkt_codec_tests)
+add_executable(${CODEC_TEST_TARGET}
+        test_pkt_codec.c
+        ../src/pkt_codec.c
+        ../src/pkt_protocol.c
+)
+target_include_directories(${CODEC_TEST_TARGET} PRIVATE
+        ${CMAKE_SOURCE_DIR}/include
+)
+add_test(NAME ${CODEC_TEST_TARGET} COMMAND ${CODEC_TEST_TARGET})

@@ -114,6 +114,19 @@ int pkt_parser_feed_buf(pkt_parser_t* parser, const uint8_t* data,
                         size_t len, pkt_frame_t* out_frames,
                         size_t max_frames);
 
+/** 每解析完成一帧时回调（frame 指向 parser 内部缓冲区，仅在回调期间有效） */
+typedef void (*pkt_frame_cb_t)(const pkt_frame_t* frame, void* ctx);
+
+/**
+ * @brief 流式喂入数据：把整个 chunk 解析完，每完成一帧回调一次
+ *
+ * uart_service 用它处理一次 UART 读取（可能包含多帧）。
+ *
+ * @return 完成的帧数
+ */
+int pkt_parser_feed_stream(pkt_parser_t* parser, const uint8_t* data,
+                           size_t len, pkt_frame_cb_t cb, void* ctx);
+
 /* ==================== ACK 管理器 ==================== */
 
 /** 单个 pending ACK 槽位 */

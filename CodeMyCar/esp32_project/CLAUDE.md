@@ -110,15 +110,15 @@ Defined in `components/pkt_codec/include/pkt_codec.h` + `src/pkt_codec.c`. Frame
 At the repo root (`/Users/sunyameng/github/legacy/serial_pkt_protocol`) lives the **host-side reference implementation** of the v2 packet protocol + codec — a plain CMake/C11 desktop build with a vendored Unity test suite. It exists to validate the protocol/codec on a PC before/while using it in firmware.
 
 - The protocol/codec sources are **duplicated, not shared**. `serial_pkt_protocol` is the upstream/reference copy; `esp32_project/components/pkt_codec` and `stm32_project/Application/System/Protocol` are forks with platform adaptations. **If you change the protocol/codec in one place, mirror it in all three.** The same duplication applies to `bridge_codec.c` and `ack_manager.{c,h}` — mirror changes there too.
-- The host shim `include/pkt_codec.h` lets ESP32 sources that reference `pkt_codec.h`/`PKT_MAX_*` compile unchanged on host.
-- Test suites (no broker, no board): `serial_pkt_protocol_tests` (v2 pack/parse/reassembly/ACK), `bridge_codec_tests` (pyserver JSON ↔ 13-byte `ControlCmd` ↔ JSON + log escaping/truncation), `ack_manager_tests` (retransmit table: timeout/retry/lost/clear/dup-seq/capacity).
+- The v2 codec (`include/pkt_codec.h` + `src/pkt_codec.c`) is mirrored verbatim; `include/esp_err.h` and `include/cmcar_crc16.h` are small host shims so ESP32 sources compile unchanged.
+- Test suites (no broker, no board): `serial_pkt_protocol_tests` (v2 pack/parse/reassembly/ACK), `bridge_codec_tests` (pyserver JSON ↔ 13-byte `ControlCmd` ↔ JSON + log escaping/truncation), `ack_manager_tests` (retransmit table: timeout/retry/lost/clear/dup-seq/capacity), `pkt_codec_tests` (v2 encode/parse, multi-frame chunk dispatch, split frames, CRC recovery, payload limits).
 - Build & run tests (no broker, no board needed):
   ```bash
   cd /Users/sunyameng/github/legacy/serial_pkt_protocol
   mkdir build && cd build && cmake .. && make
   cd tests && ctest --output-on-failure    # ctest MUST run from build/tests/ (enable_testing is in the subdir)
   ```
-- Two test executables: `serial_pkt_protocol_tests` (v2 pack/parse/reassembly/ACK) and `bridge_codec_tests` (21 cross-language checks).
+- Four test executables: `serial_pkt_protocol_tests` (v2 pack/parse/reassembly/ACK), `bridge_codec_tests` (21 cross-language checks), `ack_manager_tests`, `pkt_codec_tests` (multi-frame chunk dispatch / split / CRC / payload limits).
 
 ## MCP Tools
 

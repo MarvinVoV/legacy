@@ -192,6 +192,31 @@ int pkt_parser_feed_buf(pkt_parser_t* parser, const uint8_t* data,
     return count;
 }
 
+int pkt_parser_feed_stream(pkt_parser_t* parser, const uint8_t* data,
+                           size_t len, pkt_frame_cb_t cb, void* ctx)
+{
+    int count = 0;
+
+    if (parser == NULL || data == NULL)
+    {
+        return 0;
+    }
+
+    for (size_t i = 0; i < len; i++)
+    {
+        if (pkt_parser_feed(parser, data[i]))
+        {
+            if (cb != NULL)
+            {
+                cb(&parser->frame, ctx);
+            }
+            count++;
+        }
+    }
+
+    return count;
+}
+
 /* ==================== ACK 管理器 ==================== */
 
 void pkt_ack_mgr_init(pkt_ack_mgr_t* mgr)
