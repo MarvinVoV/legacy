@@ -2,16 +2,14 @@
 
 import logging
 import time
-from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 
 from app.models.device import DeviceState
 from app.models.telemetry import AckEvent, HeartbeatData, LogEntry, PongEvent, SensorData
+from app.mqtt.types import MessageHandler
 from app.services.ping_service import PingRegistry
 
 logger = logging.getLogger(__name__)
-
-MessageHandler = Callable[[str, bytes], Awaitable[None]]
 
 
 def extract_device_id(topic: str) -> str:

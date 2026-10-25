@@ -3,16 +3,14 @@
 import asyncio
 import json
 import logging
-from typing import Any, Callable, Coroutine
+from typing import Any
 
 import paho.mqtt.client as mqtt
 
 from app.config import Settings
+from app.mqtt.types import MessageHandler
 
 logger = logging.getLogger(__name__)
-
-# 消息处理器类型：async def handler(topic: str, payload: bytes) -> None
-MessageHandler = Callable[[str, bytes], Coroutine[Any, Any, None]]
 
 
 class MQTTClient:
