@@ -5,6 +5,7 @@ STM32H723ZGTx 控制固件：通过 UART 与 ESP32 桥接，解析二进制控�
 ## 文档
 
 - [编译与烧录](Docs/BuildAndFlash.md) — 命令行 / VS Code / STM32CubeIDE
+- [ESP32 ↔ STM32 接线](Docs/HardwareWiring.md) — UART4 引脚与串口参数
 - [MotionService](Docs/MotionServiceDoc.md) — 运动控制模式说明
 
 ## 快速开始
