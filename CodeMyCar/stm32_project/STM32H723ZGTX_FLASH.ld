@@ -227,6 +227,16 @@ SECTIONS
   } >DTCMRAM
   PROVIDE( __non_tls_bss_start = ADDR(.bss) );
 
+  /* DMA 缓冲区：DMA1/DMA2 无法访问 DTCM，必须放在 RAM_D1（0x2400_0000）。
+     uart_handle.c 中的 uart_dma_buffer 通过 section(".dma_buffer") 放到这里。 */
+  .dma_buffer (NOLOAD) :
+  {
+    . = ALIGN(32);
+    *(.dma_buffer)
+    *(.dma_buffer*)
+    . = ALIGN(32);
+  } >RAM_D1
+
   PROVIDE( __bss_start = __tbss_start );
   PROVIDE( __bss_size = __bss_end - __bss_start );
 

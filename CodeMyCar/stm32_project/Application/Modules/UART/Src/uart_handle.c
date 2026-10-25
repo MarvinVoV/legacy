@@ -21,7 +21,9 @@
 
 #define RAW_DATA_QUEUE_SIZE (16)  // 定义队列大小
 
-uart_dma_buffer_t uart_dma_buffer;
+/* DMA1/DMA2 不能访问 DTCM（0x2000_0000）；RX/TX 缓冲区必须放在 DMA 可达的
+   RAM_D1（0x2400_0000）。链接脚本中 .dma_buffer 段位于 RAM_D1。 */
+uart_dma_buffer_t uart_dma_buffer __attribute__((section(".dma_buffer"), aligned(32)));
 
 
 /**
@@ -33,7 +35,7 @@ uart_dma_buffer_t uart_dma_buffer;
  */
 static bool UART_Send_To_Esp(const uint8_t* data, uint16_t length, protocol_type_t type);
 
-void start_reception()
+void start_reception(void)
 {
     // 先切换缓冲区
     const uint8_t next_buffer = uart_dma_buffer.current ^ 1;
@@ -72,7 +74,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef* huart, uint16_t Size)
         // 计算实际接收数据长度
         const uint16_t actual_len = UART_RX_BUFFER_SIZE - remaining;
         uart_dma_buffer.length = actual_len;
-        start_reception(actual_len);
+        start_reception();
         BaseType_t xHigherPriorityTaskWoken = pdFALSE;
         xSemaphoreGiveFromISR(uart_dma_buffer.semaphore, &xHigherPriorityTaskWoken);
         portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
@@ -110,6 +112,10 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef* huart)
         __HAL_UART_CLEAR_FLAG(huart, UART_CLEAR_PEF | UART_CLEAR_NEF | UART_CLEAR_FEF | UART_CLEAR_OREF);
         // 重置错误码
         huart->ErrorCode = HAL_UART_ERROR_NONE;
+
+        /* 错误会使 HAL 终止接收（abort DMA、RxState=READY）。
+           必须重新挂起 DMA，否则一次 ORE 之后 RX 永久停止。 */
+        start_reception();
     }
 }
 
