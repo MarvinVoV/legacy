@@ -242,6 +242,7 @@ VS Code 没装 Cortex-Debug 时，建议调试仍用 CubeIDE（见下一节）�
 | `attempt to rename spec 'link' to already defined spec 'nano_link'` | `--specs=nano.specs` 被 toolchain 和 CMakeLists 重复添加 | 只在 `CMakeLists.txt` 中设置；toolchain 文件里删除 |
 | `undefined reference to atan2f/powf/sqrtf/cosf/sinf` | 未链接数学库 | `target_link_libraries(stm32_project.elf m)` |
 | `implicit declaration of function 'pdMS_TO_TICKS'` | 缺少 FreeRTOS 头文件 | 源文件包含 `freertos_os2.h` + `task.h` |
+| UART 收不到数据 / ACK 发不出，但引脚、波特率都正确 | DMA 缓冲区位于 DTCM（0x2000_0000），DMA1/DMA2 无法访问 | 把 DMA 缓冲区放到 RAM_D1（0x2400_0000）：链接脚本新增 `.dma_buffer` 段，缓冲区加 `section(".dma_buffer")` |
 | 产物变成 `stm32_project.elf.elf` | toolchain 里设置了 `CMAKE_EXECUTABLE_SUFFIX_*` | 移除这些设置，目标名已含 `.elf` |
 | CubeIDE 启动报 `getCProject(...) is null` | Debug 配置未选择 Project / Application | 见第 5 节 |
 

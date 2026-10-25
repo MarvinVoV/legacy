@@ -104,6 +104,7 @@ Defined in `components/pkt_codec/include/pkt_codec.h` + `src/pkt_codec.c`. Frame
 - `FLAGS`: bit7 = `ACK_REQ` (sender wants ACK), bit6 = `ACK_RSP` (this is an ACK frame).
 - `pkt_encode(frame, out, out_size, &out_len)` — encode a `pkt_frame_t` into a buffer (no malloc). `pkt_parse_byte(parser, byte)` — state-machine feeder. `pkt_ack_mgr_*` — ACK bookkeeping helpers.
 - `pkt_frame_t{type, seq, flags, payload_len, payload[120]}`. `ControlCmd` payload is a fixed **13-byte** layout (`ctrlId, fields, mode, duration(LE), params-union`) — `mode`/`driveCtrlType` are explicit `uint8_t` (not enum) so the wire layout is compiler-independent. See `docs/cmd-mapping.md`.
+- **ACK frames**: `TYPE=PKT_TYPE_ACK`, `FLAGS=PKT_FLAG_ACK_RSP`, the acknowledged **seq is in the frame header `SEQ` field** and the payload is empty. `bridge` must use `frame->seq` (not `payload[0]`) to clear the pending table.
 
 ## Sibling project: `serial_pkt_protocol/`
 

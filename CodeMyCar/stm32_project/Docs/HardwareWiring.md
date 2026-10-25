@@ -99,5 +99,7 @@ STM32 侧配置位置：
 ## 5. 协议提醒
 
 - 帧格式：`55 AA | TYPE | SEQ | FLAGS | LEN | PAYLOAD(≤120) | CRC16`，**无帧尾**，最大 128 字节。
+- **ACK 帧**：`TYPE=0x04`、`FLAGS=ACK_RSP`，**seq 在帧头 `SEQ` 字段**，payload 长度为 0。ESP32 用 `frame->seq` 清 pending，不能读 `payload[0]`。
 - UART 一次读取可能聚合多帧（例如 ACK + sensor），ESP32 的 `pkt_parser_feed_stream()` 会逐字节解析并派发每一帧。
 - 心跳由 ESP32 自产，不经过 STM32；ping/pong 也不经过 STM32。
+- **STM32 DMA 缓冲区必须放在 RAM_D1（0x2400_0000）**：H7 的 DMA1/DMA2 不能访问 DTCM（0x2000_0000），放在 DTCM 会导致 RX/TX DMA 静默失效（表现为 RXNE/ORE、收不到数据、ACK 发不出）。
