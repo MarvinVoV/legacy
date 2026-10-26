@@ -32,6 +32,8 @@ int main(void)
     CHECK(ackmgr_add(&m, 5, frame, 10, 0), "add seq=5");
     /* dup seq 拒绝 */
     CHECK(!ackmgr_add(&m, 5, frame, 10, 0), "dup seq=5 rejected");
+    CHECK(!ackmgr_is_free(&m, 5), "seq=5 in flight (not free)");
+    CHECK(ackmgr_is_free(&m, 6), "seq=6 free");
 
     /* 3. scan @ t=50（未超时 200ms）→ 0 resend, 0 lost */
     resend_count = 0;

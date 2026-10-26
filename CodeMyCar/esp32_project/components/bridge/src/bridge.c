@@ -98,6 +98,7 @@ static esp_timer_handle_t s_status_timer = NULL;
 #define BRIDGE_ACK_TIMEOUT_MS 200
 #define BRIDGE_ACK_MAX_RETRIES 3
 #define BRIDGE_RETRANSMIT_PERIOD_MS 50
+#define BRIDGE_FIELD_MOTION         0x01
 
 static ack_manager_t s_ackmgr;
 static SemaphoreHandle_t s_ack_mutex = NULL;
@@ -218,7 +219,7 @@ static void process_downlink(const char* payload, size_t payload_len)
         return;
     }
 
-    /* JSON → 13 字节 ControlCmd */
+    /* JSON → 9 字节 ControlCmd */
     uint8_t cmd_payload[BRIDGE_CONTROL_CMD_SIZE];
     uint8_t client_seq = 0;
     bool ack_req = false;
@@ -230,8 +231,13 @@ static void process_downlink(const char* payload, size_t payload_len)
         return;
     }
 
-    /* 组帧：运动命令请求 ACK，使用 ack_manager 分配的本地 seq（跳过在途 seq 防碰撞） */
-    uint8_t frame_seq = ack_req ? ackmgr_alloc_seq(&s_ackmgr) : client_seq;
+    /* 组帧：优先使用客户端 seq，便于服务端把 ACK 关联回请求；
+       若该 seq 已在途，再分配本地 seq 避免碰撞 */
+    uint8_t frame_seq = client_seq;
+    if (ack_req && !ackmgr_is_free(&s_ackmgr, client_seq))
+    {
+        frame_seq = ackmgr_alloc_seq(&s_ackmgr);
+    }
     uint8_t flags = ack_req ? PKT_FLAG_ACK_REQ : 0;
     pkt_frame_t frame = {
         .type = PKT_TYPE_CONTROL,

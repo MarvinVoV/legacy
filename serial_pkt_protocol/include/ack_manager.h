@@ -45,6 +45,9 @@ void ackmgr_init(ack_manager_t* m);
 /** 分配一个当前未在途的 seq（0..255 回绕，跳过 active 槽位以避免碰撞） */
 uint8_t ackmgr_alloc_seq(ack_manager_t* m);
 
+/** 指定 seq 是否可用（未在途） */
+bool ackmgr_is_free(const ack_manager_t* m, uint8_t seq);
+
 /** 存入已编码帧用于 ACK 跟踪。返回 false：seq 已在途（碰撞）或表满。 */
 bool ackmgr_add(ack_manager_t* m, uint8_t seq, const uint8_t* frame,
                 size_t len, uint32_t now_ms);
