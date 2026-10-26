@@ -26,8 +26,8 @@ _ESTOP_PAYLOAD = {"seq": 0, "cmd": "motion", "motion": {"mode": 0, "params": {}}
 
 
 def estimate_duration_s(req: MoveRequest) -> float:
-    """保守预估：直线时间 + 以 90°/s 计的转向时间"""
-    return abs(req.distance_cm) / req.speed_cm_s + abs(req.turn_deg) / 90.0
+    """保守预估：直线时间 + 以 90°/s 计的转向时间 + 2s 缓冲（spec §3.1）"""
+    return abs(req.distance_cm) / req.speed_cm_s + abs(req.turn_deg) / 90.0 + 2.0
 
 
 @dataclass
@@ -112,7 +112,8 @@ class AgentMotionService:
             }
             velocity = {
                 "linear_cm_s": (motion.left_mmps + motion.right_mmps) / 2.0 / 10.0,
-                "angular_deg_s": (motion.right_mmps - motion.left_mmps)
+                # 左轮更快 = 右转；与 heading 的“右正”保持一致
+                "angular_deg_s": (motion.left_mmps - motion.right_mmps)
                 / _TRACK_MM
                 * 57.29577951308232,
             }
@@ -149,6 +150,7 @@ class AgentMotionService:
             return await self._run_goal(device_id, req)
 
     async def stop(self, device_id: str) -> None:
+        self._require_alive(device_id)
         if not self._mqtt.is_connected:
             raise MotionError("offline", "MQTT not connected", 503)
         try:
@@ -158,11 +160,10 @@ class AgentMotionService:
 
         abort = MotionError("aborted_by_stop", "stopped by request", 409)
         for (dev, _seq), pending in list(self._pending.items()):
-            if dev != device_id:
+            if dev != device_id or pending.done.done():
                 continue
             pending.stop_requested = True
-            if not pending.done.done():
-                pending.done.set_exception(abort)
+            pending.done.set_exception(abort)
             if not pending.ack.done():
                 pending.ack.set_exception(abort)
 
@@ -180,7 +181,7 @@ class AgentMotionService:
         self._seq = (self._seq + 1) & 0xFF
         return seq
 
-    def _require_online(self, device_id: str) -> DeviceState:
+    def _require_alive(self, device_id: str) -> DeviceState:
         state = self._devices.get(device_id)
         now = time.time()
         if (
@@ -189,6 +190,10 @@ class AgentMotionService:
             or (now - state.last_heartbeat) >= self._settings.device_heartbeat_timeout
         ):
             raise MotionError("offline", f"device {device_id} is offline", 503)
+        return state
+
+    def _require_online(self, device_id: str) -> DeviceState:
+        state = self._require_alive(device_id)
         if not state.motion_supported:
             raise MotionError(
                 "motion_unsupported",

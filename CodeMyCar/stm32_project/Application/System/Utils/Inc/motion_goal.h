@@ -20,6 +20,7 @@ typedef struct
     float maxRpm;
     float maxAngularRadps;
     float decelMmps2;
+    float minTurnRadiusMm;
 } MotionGoalConfig;
 
 typedef struct
@@ -73,3 +74,8 @@ void motion_goal_accumulate(MotionGoalState* s, float deltaLeftMm,
  */
 MotionGoalOutput motion_goal_step(MotionGoalState* s, const MotionGoalConfig* cfg,
                                   uint32_t nowMs);
+
+/**
+ * @brief 把角度归一化到 (-180, 180]，仅用于展示
+ */
+float motion_normalize_deg(float deg);

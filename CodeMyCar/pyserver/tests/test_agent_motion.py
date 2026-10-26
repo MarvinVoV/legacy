@@ -10,7 +10,7 @@ from app.config import Settings
 from app.models.agent_motion import MoveRequest, MotionError, validate_move
 from app.models.device import DeviceState
 from app.models.telemetry import MotionStatus
-from app.services.motion_service import AgentMotionService
+from app.services.motion_service import AgentMotionService, estimate_duration_s
 
 
 def make_settings(**overrides) -> Settings:
@@ -110,6 +110,42 @@ def test_validate_duration():
     assert exc.value.code == "duration_too_long"
 
 
+@pytest.mark.parametrize(
+    "body,field",
+    [
+        ({"distance_cm": 501}, "distance_cm"),
+        ({"distance_cm": -501}, "distance_cm"),
+        ({"distance_cm": 10, "turn_deg": 361}, "turn_deg"),
+        ({"distance_cm": 10, "speed_cm_s": 0}, "speed_cm_s"),
+        ({"distance_cm": 10, "speed_cm_s": 61}, "speed_cm_s"),
+    ],
+)
+def test_validate_out_of_range_is_400(body, field):
+    """越界参数必须是 400 invalid_param，而不是 pydantic 的 422"""
+    with pytest.raises(MotionError) as exc:
+        validate_move(MoveRequest(**body), make_settings())
+    assert exc.value.code == "invalid_param"
+    assert exc.value.status_code == 400
+    assert exc.value.detail.get("field") == field
+
+
+def test_validate_uses_settings_limits():
+    """CMCAR_AGENT_MAX_DISTANCE_CM 等配置必须真正生效"""
+    with pytest.raises(MotionError) as exc:
+        validate_move(
+            MoveRequest(distance_cm=301),
+            make_settings(agent_max_distance_cm=300),
+        )
+    assert exc.value.code == "invalid_param"
+    assert exc.value.detail.get("limit") == 300
+
+
+def test_estimate_includes_two_second_buffer():
+    assert estimate_duration_s(
+        MoveRequest(distance_cm=30, speed_cm_s=30)
+    ) == pytest.approx(3.0)
+
+
 # ---------------- 同步时序 ----------------
 
 async def test_move_success():
@@ -205,6 +241,28 @@ async def test_stop_aborts_move():
     assert mqtt.published[-1][1]["motion"]["mode"] == 0
 
 
+async def test_stop_offline_device_is_503():
+    """设备心跳过期时不能假称 stopped=true"""
+    svc, mqtt, devices = make_service()
+    devices["DEV_1"].last_heartbeat = 0
+    with pytest.raises(MotionError) as exc:
+        await svc.stop("DEV_1")
+    assert exc.value.code == "offline"
+    assert exc.value.status_code == 503
+    assert mqtt.published == []
+
+
+async def test_state_angular_sign_matches_heading():
+    """左轮更快 = 右转；heading 右正，angular_deg_s 也必须为正"""
+    svc, _, devices = make_service()
+    devices["DEV_1"].last_motion = MotionStatus(
+        seq=1, state="running", left_mmps=100, right_mmps=0
+    )
+    devices["DEV_1"].last_motion_time = time.time()
+    state = svc.get_state("DEV_1")
+    assert state["velocity"]["angular_deg_s"] > 0
+
+
 async def test_aborted_by_lowlevel():
     svc, _, _ = make_service("aborted")
     with pytest.raises(MotionError) as exc:
@@ -255,3 +313,24 @@ def test_route_unknown_device_503(app):
         )
     assert r.status_code == 503
     assert r.json()["detail"]["code"] == "offline"
+
+
+def test_route_out_of_range_400(app):
+    with TestClient(app) as client:
+        r = client.post(
+            "/api/v1/agent/devices/DEV_1/move",
+            json={"distance_cm": 501, "turn_deg": 0, "speed_cm_s": 10},
+        )
+    assert r.status_code == 400
+    assert r.json()["detail"]["code"] == "invalid_param"
+
+
+def test_route_malformed_request_400(app):
+    """缺少必填字段也按 spec 的 400 结构返回，而不是 FastAPI 默认 422"""
+    with TestClient(app) as client:
+        r = client.post(
+            "/api/v1/agent/devices/DEV_1/move",
+            json={"turn_deg": 0},
+        )
+    assert r.status_code == 400
+    assert r.json()["detail"]["code"] == "invalid_request"

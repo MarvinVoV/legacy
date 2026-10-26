@@ -30,9 +30,9 @@ class MotionError(Exception):
 class MoveRequest(BaseModel):
     """相对运动请求：前进/后退 + 左转/右转同时发生"""
 
-    distance_cm: int = Field(..., ge=-500, le=500, description="路程；正=前进，负=后退")
-    turn_deg: int = Field(0, ge=-360, le=360, description="航向变化；正=右转，负=左转")
-    speed_cm_s: int = Field(30, ge=1, le=60, description="路径速度大小")
+    distance_cm: int = Field(..., description="路程；正=前进，负=后退")
+    turn_deg: int = Field(0, description="航向变化；正=右转，负=左转")
+    speed_cm_s: int = Field(30, description="路径速度大小")
 
 
 class Measured(BaseModel):
@@ -61,6 +61,23 @@ class MoveResult(BaseModel):
 
 def validate_move(req: MoveRequest, settings: Settings) -> None:
     """几何与时长校验；任何不符都在下发前拒绝"""
+    checks = (
+        ("distance_cm", req.distance_cm,
+         -settings.agent_max_distance_cm, settings.agent_max_distance_cm),
+        ("turn_deg", req.turn_deg,
+         -settings.agent_max_turn_deg, settings.agent_max_turn_deg),
+        ("speed_cm_s", req.speed_cm_s,
+         settings.agent_min_speed_cm_s, settings.agent_max_speed_cm_s),
+    )
+    for field, value, low, high in checks:
+        if value < low or value > high:
+            raise MotionError(
+                "invalid_param",
+                f"{field} must be within [{low}, {high}]",
+                400,
+                {"field": field, "limit": high if value > high else low, "value": value},
+            )
+
     if req.distance_cm == 0 and req.turn_deg == 0:
         raise MotionError("no_op", "distance_cm and turn_deg are both zero", 400)
 
@@ -82,7 +99,7 @@ def validate_move(req: MoveRequest, settings: Settings) -> None:
                 },
             )
 
-    duration_s = abs(req.distance_cm) / req.speed_cm_s + abs(req.turn_deg) / 90.0
+    duration_s = abs(req.distance_cm) / req.speed_cm_s + abs(req.turn_deg) / 90.0 + 2.0
     if duration_s > settings.agent_max_motion_duration_s:
         raise MotionError(
             "duration_too_long",

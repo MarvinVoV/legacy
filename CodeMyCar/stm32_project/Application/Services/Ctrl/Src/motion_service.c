@@ -421,7 +421,8 @@ void MotionService_GetStatus(const MotionContext* ctx, motion_status_t* out)
 
     out->xMm        = (int32_t)(ctx->state.pose.x * 1000.0f);
     out->yMm        = (int32_t)(ctx->state.pose.y * 1000.0f);
-    out->thetaMdeg  = (int32_t)(ctx->state.pose.theta * (180.0f / M_PI) * 1000.0f);
+    out->thetaMdeg  = (int32_t)(motion_normalize_deg(
+                                   ctx->state.pose.theta * (180.0f / M_PI)) * 1000.0f);
     out->odometerMm = (int32_t)(ctx->state.pose.distance * 1000.0f);
 
     out->goalDistanceMm = (int32_t)g->distanceTravelMm;
@@ -589,6 +590,7 @@ static MotionGoalConfig goal_cfg_from(const ChassisConfig* cfg)
     g.maxRpm          = MOTION_MAX_RPM;
     g.maxAngularRadps = cfg->maxAngularVelRad;
     g.decelMmps2      = 300.0f;
+    g.minTurnRadiusMm = cfg->minTurnRadiusMM;
     return g;
 }
 

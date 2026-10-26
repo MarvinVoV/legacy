@@ -45,7 +45,9 @@ int motion_goal_start(MotionGoalState* s, const MotionGoalTarget* t,
     {
         const float theta_rad = fabsf((float)t->turnDdeg * 0.1f * DEG2RAD);
         const float radius_mm = fabsf((float)t->distanceMm) / theta_rad;
-        if (radius_mm < cfg->wheelbaseMm)
+        const float min_radius =
+            (cfg->minTurnRadiusMm > 0.0f) ? cfg->minTurnRadiusMm : cfg->wheelbaseMm;
+        if (radius_mm < min_radius)
         {
             return 3;
         }
@@ -88,7 +90,10 @@ MotionGoalOutput motion_goal_step(MotionGoalState* s, const MotionGoalConfig* cf
     const float sRem  = (float)s->target.distanceMm - s->distanceTravelMm;
     const float thRem = (float)s->target.turnDdeg * 0.1f - s->headingTravelDeg;
 
-    if (fabsf(sRem) <= TOL_DISTANCE_MM && fabsf(thRem) <= TOL_TURN_DEG)
+    /* 纯旋转没有距离目标：平均轮程的微小漂移不应阻塞完成 */
+    const bool distance_done =
+        (s->target.distanceMm == 0) || (fabsf(sRem) <= TOL_DISTANCE_MM);
+    if (distance_done && fabsf(thRem) <= TOL_TURN_DEG)
     {
         s->finished  = true;
         s->finishMs  = nowMs;
@@ -174,4 +179,17 @@ MotionGoalOutput motion_goal_step(MotionGoalState* s, const MotionGoalConfig* cf
                       &out.leftRpm, &out.rightRpm);
     out.steerAngleDeg = delta;
     return out;
+}
+
+float motion_normalize_deg(float deg)
+{
+    while (deg > 180.0f)
+    {
+        deg -= 360.0f;
+    }
+    while (deg <= -180.0f)
+    {
+        deg += 360.0f;
+    }
+    return deg;
 }
