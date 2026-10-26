@@ -7,7 +7,7 @@ def test_send_command_success(client):
     body = {
         "seq": 1,
         "cmd": "motion",
-        "motion": {"mode": 2, "duration": 0, "params": {"linear_vel": 500, "angular_vel": 100}},
+        "motion": {"mode": 2, "params": {"linear_vel": 500, "angular_vel": 100}},
     }
     r = client.post("/api/v1/devices/DEV_1/commands", json=body)
     assert r.status_code == 200
@@ -23,7 +23,7 @@ def test_send_command_success(client):
 
 def test_send_command_mqtt_disconnected(client):
     client.app.state.mqtt_client.is_connected = False
-    body = {"seq": 1, "cmd": "motion", "motion": {"mode": 0, "duration": 0, "params": {}}}
+    body = {"seq": 1, "cmd": "motion", "motion": {"mode": 0, "params": {}}}
     r = client.post("/api/v1/devices/DEV_1/commands", json=body)
     assert r.status_code == 200
     assert r.json()["success"] is False
@@ -31,7 +31,7 @@ def test_send_command_mqtt_disconnected(client):
 
 def test_send_command_invalid_body(client):
     # mode 越界
-    body = {"seq": 1, "cmd": "motion", "motion": {"mode": 99, "duration": 0, "params": {}}}
+    body = {"seq": 1, "cmd": "motion", "motion": {"mode": 99, "params": {}}}
     r = client.post("/api/v1/devices/DEV_1/commands", json=body)
     assert r.status_code == 422
 
