@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     cors_origins: str = "*"  # 逗号分隔的允许来源，或 "*"
 
     # 设备
-    device_heartbeat_timeout: int = 30  # 秒，超过此时间无心跳视为离线
+    device_heartbeat_timeout: int = 60  # 秒；ESP32 心跳周期 30s，留 2 个周期避免抖动
 
     # Agent 运动 API
     agent_max_distance_cm: int = 500

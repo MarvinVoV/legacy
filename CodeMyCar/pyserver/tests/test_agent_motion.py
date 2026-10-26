@@ -24,7 +24,6 @@ def make_settings(**overrides) -> Settings:
         agent_max_motion_duration_s=60,
         agent_min_turn_radius_mm=144,
         agent_state_stale_s=2.0,
-        device_heartbeat_timeout=30,
     )
     base.update(overrides)
     return Settings(**base)
@@ -212,6 +211,13 @@ async def test_aborted_by_lowlevel():
         await svc.move("DEV_1", MoveRequest(distance_cm=10, speed_cm_s=10))
     assert exc.value.code == "aborted_by_lowlevel"
     assert exc.value.status_code == 409
+
+
+async def test_heartbeat_grace_after_45s():
+    """心跳周期 30s，离线判定必须留出至少 2 个周期，避免周期性误判离线"""
+    svc, _, devices = make_service()
+    devices["DEV_1"].last_heartbeat = time.time() - 45
+    assert svc.get_state("DEV_1")["online"] is True
 
 
 async def test_stale_status_ignored():
