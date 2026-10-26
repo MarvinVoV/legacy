@@ -47,6 +47,7 @@ typedef enum
     PROTOCOL_TYPE_ACK       = 0x04, /* 应答帧 */
     PROTOCOL_TYPE_HEARTBEAT = 0x05, /* 心跳 */
     PROTOCOL_TYPE_JSON_CMD  = 0x06, /* JSON 命令（手机控制，预留） */
+    PROTOCOL_TYPE_MOTION    = 0x07, /* 运动状态上报（36 字节） */
     PROTOCOL_TYPE_MAX
 } protocol_type_t;
 

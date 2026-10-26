@@ -54,3 +54,14 @@ target_include_directories(${CODEC_TEST_TARGET} PRIVATE
         ${CMAKE_SOURCE_DIR}/include
 )
 add_test(NAME ${CODEC_TEST_TARGET} COMMAND ${CODEC_TEST_TARGET})
+
+# 36 字节运动状态帧编解码
+set(MOTION_TEST_TARGET motion_status_tests)
+add_executable(${MOTION_TEST_TARGET}
+        test_motion_status.c
+        ../src/motion_status.c
+)
+target_include_directories(${MOTION_TEST_TARGET} PRIVATE
+        ${CMAKE_SOURCE_DIR}/include
+)
+add_test(NAME ${MOTION_TEST_TARGET} COMMAND ${MOTION_TEST_TARGET})

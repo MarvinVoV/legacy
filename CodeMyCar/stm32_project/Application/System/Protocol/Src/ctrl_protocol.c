@@ -28,10 +28,10 @@ bool isCtrlFieldsSet(const uint8_t fields, const uint8_t checkFields)
  * @brief 验证控制指令完整性
  *
  * 检查项：
- *   - 非空、长度 >= sizeof(ControlCmd)（13 字节显式宽度布局）
+ *   - 非空、长度 >= sizeof(ControlCmd)（9 字节显式宽度布局）
  *   - fields 至少含 CTRL_FIELD_MOTION
- *   - mode 在合法枚举范围 [0, MOTION_MIXED_STEER]
- *   - MIXED 模式下 driveCtrlType 合法
+ *   - mode 在合法枚举范围 [0, MOTION_GOAL]
+ *   - 各模式参数范围
  *
  * @param cmd 控制指令字节流
  * @param len 字节流长度
@@ -92,6 +92,18 @@ int validateControlCmd(const uint8_t* cmd, uint16_t len)
             const DriveCtrlParam* d = &c->motion.params.driveCtrl;
             if (d->linearVel < -1000 || d->linearVel > 1000 ||
                 d->steerAngle < -450 || d->steerAngle > 450)
+            {
+                return ERR_MOTION_INVALID_PARAM;
+            }
+            break;
+        }
+
+        case MOTION_GOAL:
+        {
+            const GoalCtrlParam* g = &c->motion.params.goalCtrl;
+            if (g->turnDdeg < -3600 || g->turnDdeg > 3600 ||
+                g->distanceMm < -5000 || g->distanceMm > 5000 ||
+                g->speedMmps < 1 || g->speedMmps > 600)
             {
                 return ERR_MOTION_INVALID_PARAM;
             }

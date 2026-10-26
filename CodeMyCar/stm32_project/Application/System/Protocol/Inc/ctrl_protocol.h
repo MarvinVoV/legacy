@@ -58,6 +58,18 @@ typedef struct
 } DriveCtrlParam;
 
 /**
+ * @brief 目标型运动参数（MOVE：相对距离 + 相对转角）
+ *
+ * turnDdeg 为相对增量，右转为正，不做归一化（270° 存 2700）。
+ */
+typedef struct
+{
+    int16_t  turnDdeg;   ///< 航向变化量 (0.1度, 右正, ±3600)
+    int16_t  distanceMm; ///< 路程 (mm, 前进正, ±5000)
+    uint16_t speedMmps;  ///< 路径速度 (mm/s, 1..600)
+} GoalCtrlParam;
+
+/**
  * @brief 运动控制指令
  */
 typedef struct
@@ -68,6 +80,7 @@ typedef struct
         DriveCtrlParam  driveCtrl;  ///< DRIVE
         DirectCtrlParam directCtrl; ///< DIRECT
         DiffCtrlParam   diffCtrl;   ///< DIFFERENTIAL
+        GoalCtrlParam   goalCtrl;   ///< MOTION_GOAL
     } params;
 } MotionCmd;
 

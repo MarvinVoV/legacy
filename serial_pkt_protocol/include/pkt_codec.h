@@ -43,6 +43,7 @@ typedef enum {
     PKT_TYPE_ACK       = 0x04, /* 应答帧 */
     PKT_TYPE_HEARTBEAT = 0x05, /* 心跳 */
     PKT_TYPE_JSON_CMD  = 0x06, /* JSON 命令（手机控制） */
+    PKT_TYPE_MOTION    = 0x07, /* 运动状态上报（36 字节） */
 } pkt_type_t;
 
 /** 完整帧结构（固定大小，可值传递） */
