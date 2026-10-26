@@ -1,12 +1,22 @@
 #!/usr/bin/env bash
-# 纯 C 运动学 host 测试（不依赖 STM32 工具链）
+# PID + 运动学 host 仿真/测试
 set -euo pipefail
 DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 CC="${CC:-clang}"
-OUT="${TMPDIR:-/tmp}/motion_kinematics_test"
+
+echo "== motion kinematics =="
 "$CC" -std=c11 -Wall -Wextra -O2 \
   -I "$DIR/Application/System/Utils/Inc" \
   "$DIR/tests/host/motion_kinematics_test.c" \
   "$DIR/Application/System/Utils/Src/motion_kinematics.c" \
-  -lm -o "$OUT"
-"$OUT"
+  -lm -o "${TMPDIR:-/tmp}/motion_kinematics_test"
+"${TMPDIR:-/tmp}/motion_kinematics_test"
+
+echo "== PID simulation =="
+"$CC" -std=c11 -Wall -Wextra -O2 \
+  -I "$DIR/tests/host/stubs" \
+  -I "$DIR/Application/Services/Motor/Inc" \
+  "$DIR/tests/host/pid_sim_test.c" \
+  "$DIR/Application/Services/Motor/Src/pid_controller.c" \
+  -lm -o "${TMPDIR:-/tmp}/pid_sim_test"
+"${TMPDIR:-/tmp}/pid_sim_test"

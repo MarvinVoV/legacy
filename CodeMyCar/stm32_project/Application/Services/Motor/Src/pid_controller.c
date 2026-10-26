@@ -9,6 +9,7 @@
 
 
 #include <math.h>
+#include <string.h>
 #include <pid_controller.h>
 #include "log_manager.h"
 
