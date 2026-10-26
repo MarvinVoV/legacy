@@ -76,7 +76,25 @@ cd CodeMyCar/pyserver && .venv/bin/python scripts/test_agent_api.py
 - `stop` 后状态从 `running` 变为 `aborted` 需要 <1s（100ms 上报周期 + 链路延迟）；E2E 断言需等待 ≥1s。
 - 未接电机时目标永远到不了点，504 超时是预期行为，且服务端会自动发 stop。
 
-## 6. 结论
+## 6. Review 修复（提交 `ca80275` 后重新烧录复测）
+
+整分支 review 报 3 个 Important + 5 个 Minor，全部处理：
+
+| 问题 | 修复 |
+|---|---|
+| 越界参数返回 422 而非 spec 的 400 | 范围校验移入 `validate_move`（settings 驱动）；Agent 路径的 `RequestValidationError` 映射为 400 `invalid_request` |
+| `CMCAR_AGENT_MAX_*` 四个配置未生效 | 校验改为读取 settings，测试覆盖 300cm 限额 |
+| 离线设备的 `stop` 假报 `stopped:true` | `stop()` 先检查心跳，过期返回 503，且不发布 |
+| 纯旋转可能因平均轮程漂移拖到 30s 超时 | `distanceMm==0` 时只看航向；host 测试覆盖 131mm 漂移 |
+| `minTurnRadius` 借用 wheelbase | `MotionGoalConfig.minTurnRadiusMm` 独立传入 |
+| `thetaMdeg` 未归一化 | 上报前 `motion_normalize_deg()` 到 (-180, 180] |
+| `angular_deg_s` 与 `heading_deg` 符号相反 | 改为 `(left-right)/track`，与右正一致 |
+| 预估时长缺少 spec 的 +2s | 已补；E2E 超时路径变为约 6s |
+
+复测结果：pyserver 64 passed；host 测试全过；STM32 重新烧录；无电机 E2E 11/11 再次通过。
+
+
+## 7. 结论
 
 - 下行：pyserver → MQTT → ESP32 → UART → STM32，mode 4 参数正确。
 - 上行：STM32 36 字节状态 → ESP32 JSON → `data/{id}/motion`，字段与符号正确。

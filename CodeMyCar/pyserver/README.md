@@ -81,6 +81,14 @@ make test-watch    # 改动自动重跑（需 brew install entr）
 mosquitto -c mosquitto.dev.conf
 ```
 
+## 日志
+
+**pyserver 不写日志文件**：`logging.basicConfig` 只挂 stdout/stderr，`scripts/dev.sh` 直接 `exec uvicorn`，没有任何文件 handler；`mosquitto.dev.conf` 也是 `log_dest stdout` + `persistence false`。因此不存在“日志文件越来越大会不会自动清理”的问题。
+
+长时间挂机时的日志量主要来自心跳（每 30s 一行 INFO，约 0.3 MB/天）；传感器/运动状态帧不逐帧打日志，设备日志只在设备主动上报 `data/{id}/log` 时按 INFO 输出。
+
+如果自行重定向到文件（如 `nohup make dev > server.log &`），该文件由 shell 创建、不会被自动轮转，需要配合 `logrotate`/`newsyslog` 或定期截断。
+
 ## MQTT topic
 
 3 段式（设备类型已并入 device_id 层级）：
