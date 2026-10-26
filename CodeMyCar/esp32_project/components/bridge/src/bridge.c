@@ -55,6 +55,7 @@ typedef struct
     uint32_t timestamp;
     bool is_ack_echo;   /* true：本条是 ACK 回执（ack_seq 有效），非上行帧 */
     uint8_t ack_seq;   /* 被确认的 seq */
+    uint8_t ack_status; /* STM32 返回的命令状态码（0=接受） */
 } bridge_frame_msg_t;
 
 static bridge_frame_msg_t s_frame_queue_storage[FRAME_QUEUE_DEPTH];
@@ -232,10 +233,17 @@ static void process_downlink(const char* payload, size_t payload_len)
     }
 
     /* 组帧：优先使用客户端 seq，便于服务端把 ACK 关联回请求；
-       若该 seq 已在途，再分配本地 seq 避免碰撞 */
+       若该 seq 已在途，再分配本地 seq 避免碰撞。
+       mode 4 例外：goal 的 seq 必须原样保留，否则服务端无法等待结果。 */
+    const uint8_t cmd_mode = cmd_payload[2];
     uint8_t frame_seq = client_seq;
     if (ack_req && !ackmgr_is_free(&s_ackmgr, client_seq))
     {
+        if (cmd_mode == BRIDGE_MODE_GOAL)
+        {
+            ESP_LOGW(TAG, "Goal seq %u already in flight, dropping", (unsigned)client_seq);
+            return;
+        }
         frame_seq = ackmgr_alloc_seq(&s_ackmgr);
     }
     uint8_t flags = ack_req ? PKT_FLAG_ACK_REQ : 0;
@@ -255,9 +263,15 @@ static void process_downlink(const char* payload, size_t payload_len)
         return;
     }
 
-    /* ACK 表满或 seq 回绕碰撞：退化为不请求 ACK 直发（不重传，但至少送达一次） */
+    /* ACK 表满或 seq 回绕碰撞：mode 0~3 退化为不请求 ACK 直发；
+       mode 4 必须保证 ACK 关联，直接丢弃让服务端超时并急停。 */
     if (ack_req && !pending_add(frame_seq, out_buf, out_len))
     {
+        if (cmd_mode == BRIDGE_MODE_GOAL)
+        {
+            ESP_LOGW(TAG, "Goal pending ACK table full, dropping");
+            return;
+        }
         ESP_LOGW(TAG, "Pending ACK table full/collision; sending without ACK");
         frame.flags = 0;
         if (pkt_encode(&frame, out_buf, sizeof(out_buf), &out_len) != ESP_OK)
@@ -324,13 +338,15 @@ static void on_uart_frame(const pkt_frame_t* frame, void* user_ctx)
        （由 uplink 任务异步发往 CMCAR_TOPIC_ACK，不在 uart_rx 里阻塞 publish） */
     if (frame->type == PKT_TYPE_ACK && (frame->flags & PKT_FLAG_ACK_RSP))
     {
-        /* v2：ACK 的 seq 在帧头 SEQ 字段（STM32 的 ACK payload 为空） */
+        /* v2：ACK 的 seq 在帧头 SEQ 字段；payload[0] 为命令状态码（可选） */
         const uint8_t ack_seq = frame->seq;
+        const uint8_t ack_status = (frame->payload_len >= 1) ? frame->payload[0] : 0;
         pending_clear(ack_seq);
         bridge_frame_msg_t echo = {
             .timestamp = now_ms(),
             .is_ack_echo = true,
             .ack_seq = ack_seq,
+            .ack_status = ack_status,
         };
         if (xQueueSend(s_frame_queue, &echo, 0) != pdPASS)
         {
@@ -351,15 +367,14 @@ static void on_uart_frame(const pkt_frame_t* frame, void* user_ctx)
 }
 
 /** 把 ACK 回执发往 CMCAR_TOPIC_ACK（端到端命令确认：pyserver 据此标记命令已送达 STM32） */
-static void publish_ack_echo(uint8_t seq)
+static void publish_ack_echo(uint8_t seq, uint8_t status)
 {
     if (!mqtt_service_is_connected())
     {
         return;
     }
-    char json[40];
-    const int n = snprintf(json, sizeof(json),
-                           "{\"seq\":%u,\"ack\":true}", (unsigned)seq);
+    char json[48];
+    const int n = bridge_ack_to_json(seq, status, json, sizeof(json));
     if (n > 0 && (size_t)n < sizeof(json))
     {
         const esp_err_t err = mqtt_service_publish_timed(
@@ -394,6 +409,11 @@ static void publish_uplink_frame(const pkt_frame_t* frame)
             n = bridge_log_to_json(frame->payload, frame->payload_len,
                                    json, sizeof(json));
             topic = CMCAR_TOPIC_LOG;
+            break;
+        case PKT_TYPE_MOTION:
+            n = bridge_motion_to_json(frame->payload, frame->payload_len,
+                                      json, sizeof(json));
+            topic = CMCAR_TOPIC_MOTION;
             break;
         default:
             return; /* HEARTBEAT 由 health_monitor 直发；其余忽略 */
@@ -435,7 +455,7 @@ static void bridge_uplink_task(void* arg)
         {
             if (msg.is_ack_echo)
             {
-                publish_ack_echo(msg.ack_seq);
+                publish_ack_echo(msg.ack_seq, msg.ack_status);
             }
             else
             {

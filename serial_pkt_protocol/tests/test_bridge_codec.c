@@ -47,12 +47,7 @@ int main(void){
     CHECK(n==9 && memcmp(out,exp_drive,9)==0, "drive bytes");
     if (memcmp(out,exp_drive,9)!=0) hex(out,9);
 
-    /* 5. 已删除的模式 4/5 必须拒绝 */
-    const char* j_spin = "{\"seq\":8,\"cmd\":\"motion\",\"motion\":{\"mode\":4,"
-        "\"params\":{\"angular_vel\":50}}}";
-    n = bridge_json_to_control_cmd(j_spin, strlen(j_spin), out, &seq, &ack);
-    CHECK(n==0, "mode 4 (SPIN) rejected");
-
+    /* 5. 越界模式（>=5）必须拒绝；mode 4 现在是 goal */
     const char* j_mixed = "{\"seq\":8,\"cmd\":\"motion\",\"motion\":{\"mode\":5,"
         "\"params\":{\"linear_vel\":300,\"steer_angle\":45}}}";
     n = bridge_json_to_control_cmd(j_mixed, strlen(j_mixed), out, &seq, &ack);
@@ -158,6 +153,42 @@ int main(void){
     CHECK(strcmp(pong, "{\"seq\":42,\"pong\":true,\"uptime_s\":123,\"heap\":80000}") == 0,
           "pong json exact");
     CHECK(bridge_pong_to_json(1, 1ULL, 1UL, pong, 8) == 0, "tiny buffer rejected");
+
+    /* 15. mode 4 goal → 9 字节（turn 右正、distance 前进正） */
+    const char* j_goal = "{\"seq\":17,\"cmd\":\"motion\",\"motion\":{\"mode\":4,"
+        "\"params\":{\"turn_ddeg\":-300,\"distance_mm\":1000,\"speed_mm_s\":300}}}";
+    n = bridge_json_to_control_cmd(j_goal, strlen(j_goal), out, &seq, &ack);
+    CHECK(n==9, "goal returns 9 bytes");
+    CHECK(seq==17 && ack==true, "goal seq/ack");
+    CHECK(out[2]==4, "goal mode=4");
+    CHECK((int16_t)(out[3] | (out[4]<<8)) == -300, "goal turn_ddeg LE");
+    CHECK((int16_t)(out[5] | (out[6]<<8)) == 1000, "goal distance_mm LE");
+    CHECK((uint16_t)(out[7] | (out[8]<<8)) == 300, "goal speed_mm_s LE");
+
+    /* 16. 36 字节运动状态 → JSON（原始单位透传，不取反） */
+    uint8_t ms[36]; memset(ms,0,sizeof(ms));
+    ms[0]=17; ms[1]=2;             /* seq=17, state=DONE */
+    ms[4]=0x5D; ms[5]=0x03;        /* xMm=861 */
+    ms[8]=0xFE; ms[9]=0x01;        /* yMm=510 */
+    ms[12]=0x10; ms[13]=0x72;      /* thetaMdeg=29200 */
+    ms[16]=0xE2; ms[17]=0x03;      /* odometerMm=994 */
+    ms[20]=0xE2; ms[21]=0x03;      /* goalDistanceMm=994 */
+    ms[24]=0xF0; ms[25]=0x8D; ms[26]=0xFF; ms[27]=0xFF; /* goalTurnMdeg=-29200 */
+    ms[28]=0x54; ms[29]=0x0D;      /* goalDurationMs=3412 */
+    n = bridge_motion_to_json(ms, sizeof(ms), jbuf, sizeof(jbuf));
+    CHECK(n>0, "motion->json produced");
+    CHECK(strstr(jbuf,"\"seq\":17")!=NULL, "motion json seq");
+    CHECK(strstr(jbuf,"\"state\":\"done\"")!=NULL, "motion json state done");
+    CHECK(strstr(jbuf,"\"y_mm\":510")!=NULL, "motion json y raw (left positive)");
+    CHECK(strstr(jbuf,"\"goal_turn_mdeg\":-29200")!=NULL, "motion json goal turn");
+    CHECK(strstr(jbuf,"\"goal_duration_ms\":3412")!=NULL, "motion json duration");
+    printf("motion json: %s\n", jbuf);
+
+    /* 17. ACK 带状态码 */
+    char ackbuf[48];
+    n = bridge_ack_to_json(17, 0, ackbuf, sizeof(ackbuf));
+    CHECK(n>0 && strcmp(ackbuf, "{\"seq\":17,\"ack\":true,\"status\":0}")==0,
+          "ack json with status");
 
     printf("\n%s (%d failures)\n", failures? "RESULT: FAIL":"RESULT: PASS", failures);
     return failures? 1:0;

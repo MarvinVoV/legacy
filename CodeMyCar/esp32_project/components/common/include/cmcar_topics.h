@@ -20,6 +20,7 @@
 #define CMCAR_TOPIC_STATUS    "data/" CMCAR_DEVICE_ID "/status"
 #define CMCAR_TOPIC_ACK       "data/" CMCAR_DEVICE_ID "/ack"
 #define CMCAR_TOPIC_PONG      "data/" CMCAR_DEVICE_ID "/pong"
+#define CMCAR_TOPIC_MOTION    "data/" CMCAR_DEVICE_ID "/motion"
 
 /* ============== 下行（Broker → ESP32） ============== */
 /* 订阅自身 device_id 的命令（不用 + 通配，避免收到他人命令） */

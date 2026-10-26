@@ -22,7 +22,8 @@ enum
     BRIDGE_MODE_DIRECT        = 1,
     BRIDGE_MODE_DIFFERENTIAL  = 2,
     BRIDGE_MODE_DRIVE         = 3,
-    BRIDGE_MODE_MAX           = 4,
+    BRIDGE_MODE_GOAL          = 4,
+    BRIDGE_MODE_MAX           = 5,
 };
 
 /**
@@ -32,7 +33,7 @@ enum
  * @param out        输出缓冲区（至少 BRIDGE_CONTROL_CMD_SIZE 字节）
  * @param out_seq    [out] 命令序列号（映射到帧头 seq，用于 ACK）
  * @param out_ack    [out] 是否请求 ACK（运动命令默认 true）
- * @return 13 成功，0 失败（解析错误/未知模式/必填字段缺失）
+ * @return 9 成功，0 失败（解析错误/未知模式/必填字段缺失）
  */
 int bridge_json_to_control_cmd(const char* json, size_t len,
                                uint8_t* out, uint8_t* out_seq, bool* out_ack);
@@ -57,6 +58,19 @@ int bridge_log_to_json(const uint8_t* payload, uint8_t len,
  * @return true 是 ping，false 不是/解析失败
  */
 bool bridge_json_is_ping(const char* json, size_t len, uint8_t* out_seq);
+
+/**
+ * @brief 上行：36 字节运动状态帧 → JSON（原始单位透传，不换算/不取反）
+ * @return JSON 长度（不含 \0），0 失败
+ */
+int bridge_motion_to_json(const uint8_t* payload, uint8_t len,
+                          char* out, size_t out_size);
+
+/**
+ * @brief 构建 ACK JSON：{"seq":N,"ack":true,"status":S}
+ * @return 长度（不含 \0）；缓冲区不足返回 0
+ */
+int bridge_ack_to_json(uint8_t seq, uint8_t status, char* out, size_t out_size);
 
 /**
  * @brief 构建 pong JSON：{"seq":N,"pong":true,"uptime_s":U,"heap":H}

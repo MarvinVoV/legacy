@@ -24,6 +24,7 @@ add_executable(${BRIDGE_TEST_TARGET}
         test_bridge_codec.c
         ../src/bridge_codec.c
         ../src/pkt_protocol.c
+        ../src/motion_status.c
         ../vendor/cjson/cJSON.c
 )
 target_include_directories(${BRIDGE_TEST_TARGET} PRIVATE

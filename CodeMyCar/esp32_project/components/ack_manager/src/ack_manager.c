@@ -45,6 +45,22 @@ uint8_t ackmgr_alloc_seq(ack_manager_t* m)
     return m->next_seq++;
 }
 
+bool ackmgr_is_free(const ack_manager_t* m, uint8_t seq)
+{
+    if (m == NULL)
+    {
+        return false;
+    }
+    for (int i = 0; i < ACK_MGR_MAX_PENDING; i++)
+    {
+        if (m->slots[i].active && m->slots[i].seq == seq)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
 bool ackmgr_add(ack_manager_t* m, uint8_t seq, const uint8_t* frame,
                 size_t len, uint32_t now_ms)
 {

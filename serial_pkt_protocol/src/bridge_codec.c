@@ -12,6 +12,7 @@
 #include <stdio.h>
 
 #include "cJSON.h"
+#include "motion_status.h"
 #include "pkt_codec.h"
 
 /* ==================== STM32 二进制布局（与 Application/System/Protocol 镜像） ==================== */
@@ -172,6 +173,13 @@ int bridge_json_to_control_cmd(const char* json, size_t len,
                 if (params == NULL) { break; }
                 put_i16le(&out[3], (int16_t)get_int(params, "linear_vel", 0));
                 put_i16le(&out[5], (int16_t)get_int(params, "steer_angle", 0));
+                break;
+
+            case BRIDGE_MODE_GOAL: /* GoalCtrlParam: turnDdeg, distanceMm, speedMmps */
+                if (params == NULL) { break; }
+                put_i16le(&out[3], (int16_t)get_int(params, "turn_ddeg", 0));
+                put_i16le(&out[5], (int16_t)get_int(params, "distance_mm", 0));
+                put_u16le(&out[7], (uint16_t)get_int(params, "speed_mm_s", 0));
                 break;
 
             default:
@@ -352,4 +360,58 @@ int bridge_log_to_json(const uint8_t* payload, uint8_t len,
     }
     out[off] = '\0';
     return off;
+}
+
+/* ==================== 上行：36 字节运动状态 ==================== */
+
+int bridge_motion_to_json(const uint8_t* payload, uint8_t len,
+                          char* out, size_t out_size)
+{
+    if (payload == NULL || out == NULL || len < MOTION_STATUS_SIZE)
+    {
+        return 0;
+    }
+
+    motion_status_t st;
+    if (motion_status_unpack(payload, len, &st) != 0)
+    {
+        return 0;
+    }
+
+    static const char* const state_names[] = {
+        "idle", "running", "done", "aborted", "error"
+    };
+    const char* state = (st.state < 5) ? state_names[st.state] : "error";
+
+    const int n = snprintf(out, out_size,
+        "{\"seq\":%u,\"state\":\"%s\",\"error\":%u,"
+        "\"x_mm\":%ld,\"y_mm\":%ld,\"theta_mdeg\":%ld,\"odometer_mm\":%ld,"
+        "\"goal_distance_mm\":%ld,\"goal_turn_mdeg\":%ld,\"goal_duration_ms\":%lu,"
+        "\"left_mmps\":%d,\"right_mmps\":%d}",
+        (unsigned)st.seq, state, (unsigned)st.error,
+        (long)st.xMm, (long)st.yMm, (long)st.thetaMdeg, (long)st.odometerMm,
+        (long)st.goalDistanceMm, (long)st.goalTurnMdeg, (unsigned long)st.goalDurationMs,
+        (int)st.leftMmps, (int)st.rightMmps);
+
+    if (n < 0 || (size_t)n >= out_size)
+    {
+        return 0;
+    }
+    return n;
+}
+
+int bridge_ack_to_json(uint8_t seq, uint8_t status, char* out, size_t out_size)
+{
+    if (out == NULL)
+    {
+        return 0;
+    }
+    const int n = snprintf(out, out_size,
+                           "{\"seq\":%u,\"ack\":true,\"status\":%u}",
+                           (unsigned)seq, (unsigned)status);
+    if (n < 0 || (size_t)n >= out_size)
+    {
+        return 0;
+    }
+    return n;
 }
