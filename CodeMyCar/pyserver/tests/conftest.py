@@ -1,7 +1,12 @@
 """pytest fixtures：FakeMQTT + FastAPI TestClient（lifespan 已跑）"""
 
+import os
+
 import pytest
 from fastapi.testclient import TestClient
+
+# 测试不写 logs/；必须在导入 app.settings 之前设置
+os.environ["CMCAR_LOG_FILE"] = ""
 
 
 class FakeMQTT:

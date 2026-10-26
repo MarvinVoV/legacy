@@ -12,6 +12,7 @@ from fastapi.responses import JSONResponse
 
 from app.api.routes import agent_motion, commands, devices
 from app.config import get_settings
+from app.logging_setup import setup_file_logging
 from app.mqtt.client import MQTTClient
 from app.mqtt.handlers import create_handlers
 from app.mqtt.topics import (
@@ -38,6 +39,7 @@ async def lifespan(app: FastAPI):
         level=getattr(logging, settings.log_level.upper(), logging.INFO),
         format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
     )
+    setup_file_logging(settings)
 
     # 初始化设备管理器
     device_manager = DeviceManager(settings)

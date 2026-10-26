@@ -83,11 +83,19 @@ mosquitto -c mosquitto.dev.conf
 
 ## 日志
 
-**pyserver 不写日志文件**：`logging.basicConfig` 只挂 stdout/stderr，`scripts/dev.sh` 直接 `exec uvicorn`，没有任何文件 handler；`mosquitto.dev.conf` 也是 `log_dest stdout` + `persistence false`。因此不存在“日志文件越来越大会不会自动清理”的问题。
+- **控制台**：stdout/stderr（`make dev` 直接可见）。
+- **文件**：`logs/server.log`，同时捕获应用日志与 uvicorn access/error 日志。
+- **自动清理**：按大小轮转，默认每 10MB 切一份、保留 5 份（`server.log.1` … `.5`），超出后自动删除最旧的；总占用上限约 50MB，不需要外部 `logrotate`。
 
-长时间挂机时的日志量主要来自心跳（每 30s 一行 INFO，约 0.3 MB/天）；传感器/运动状态帧不逐帧打日志，设备日志只在设备主动上报 `data/{id}/log` 时按 INFO 输出。
+| 变量 | 默认 | 说明 |
+|---|---|---|
+| `CMCAR_LOG_DIR` | `logs` | 日志目录（相对启动 CWD） |
+| `CMCAR_LOG_FILE` | `server.log` | 文件名；设为空字符串则只输出到控制台 |
+| `CMCAR_LOG_MAX_BYTES` | `10485760` | 单文件上限 |
+| `CMCAR_LOG_BACKUP_COUNT` | `5` | 保留的历史文件数 |
+| `CMCAR_LOG_LEVEL` | `INFO` | 控制台与文件共用 |
 
-如果自行重定向到文件（如 `nohup make dev > server.log &`），该文件由 shell 创建、不会被自动轮转，需要配合 `logrotate`/`newsyslog` 或定期截断。
+`logs/` 已加入 `.gitignore`。日志 handler 是进程内的，只适用于单 worker 部署（与本项目现有约束一致）。
 
 ## MQTT topic
 

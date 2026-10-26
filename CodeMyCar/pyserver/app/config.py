@@ -45,6 +45,10 @@ class Settings(BaseSettings):
 
     # 日志
     log_level: str = "INFO"
+    log_dir: str = "logs"
+    log_file: str = "server.log"  # 空字符串 = 不写文件，仅 stdout
+    log_max_bytes: int = 10 * 1024 * 1024
+    log_backup_count: int = 5
 
 
 @lru_cache
