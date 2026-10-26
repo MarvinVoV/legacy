@@ -47,12 +47,12 @@ typedef struct
             float angularVelocity; ///< 目标角速度 (rad/s)
         } diffCtrl;
 
-        // 前轮平行转向参数
+        // DRIVE：速度 + 平行转向
         struct
         {
             float linearVelocity; ///< 目标线速度 (m/s)
             float steerAngle;     ///< 目标转向角 (deg)
-        } parallelSteer;
+        } driveCtrl;
 
         // 直接控制参数
         struct
@@ -61,35 +61,6 @@ typedef struct
             float rightRpm;   ///< 右轮目标转速 (RPM)
             float steerAngle; ///< 目标转向角 (deg)
         } directCtrl;
-
-        struct
-        {
-            float   angularVelocity; ///< 角速度 (0.0644 rad/s步长)
-            uint8_t rotationPoint;   ///< 旋转中心点 (0=中心, 1=前轴, 2=后轴)
-        } spinCtrl;
-
-        // 混合控制参数
-        struct
-        {
-            DriveControlType driveCtrlType; ///< 驱动控制类型
-            union
-            {
-                struct
-                {
-                    float linearVelocity;  ///< 目标线速度 (m/s)
-                    float angularVelocity; ///< 目标角速度 (rad/s)
-                } velocityCtrl;
-
-                struct
-                {
-                    float leftDutyCycle;  ///< 左轮占空比 (-1.0~1.0)
-                    float rightDutyCycle; ///< 右轮占空比 (-1.0~1.0)
-                } dutyCycleCtrl;
-            } driveParams;
-
-            float steerAngle;    ///< 目标转向角 (deg)
-            float steeringBlend; ///< 转向混合比例 (0.0~1.0)
-        } mixedCtrl;
     } params;
 } MotionTarget;
 
@@ -212,77 +183,17 @@ int MotionService_SetDifferentialParams(MotionContext* ctx, float linear, float 
 int MotionService_SetDirectControlParams(MotionContext* ctx, float left_rpm, float right_rpm, float steer_angle);
 
 /**
- * @brief 设置前轮平行转向参数 (MOTION_STEER_PARALLEL/MIXED模式)
+ * @brief 设置 DRIVE 参数（速度 + 平行转向）
  *
  * @param ctx 上下文指针
  * @param linear_vel 目标线速度 (m/s)
  * @param steer_angle 目标转向角 (deg)
  *
- * @retval ERR_SUCCESS0 设置成功
+ * @retval ERR_SUCCESS 设置成功
  * @retval ERR_MOTION_INVALID_PARAM 参数无效
  * @retval ERR_MOTION_MODE_MISMATCH 模式不匹配
  */
-int MotionService_SetSteerParallelParams(MotionContext* ctx, float linear_vel, float steer_angle);
-
-/**
- * @brief 设置混合控制参数（速度控制模式）
- *
- * @param ctx 运动控制上下文
- * @param linear 目标线速度 (m/s)
- * @param angular 目标角速度 (rad/s)
- * @param steer_angle 目标转向角 (deg)
- * @param steering_blend 转向混合比例 (0.0~1.0)
- *
- * @retval ERR_SUCCESS 操作成功
- * @retval ERR_MOTION_INVALID_PARAM 无效参数
- */
-int MotionService_SetMixedVelocityParams(MotionContext* ctx,
-                                         float          linear,
-                                         float          angular,
-                                         float          steer_angle,
-                                         float          steering_blend);
-
-/**
- * @brief 设置混合控制参数（占空比控制模式）
- *
- * @param ctx 运动控制上下文
- * @param left_duty 左轮占空比 (-1.0~1.0)
- * @param right_duty 右轮占空比 (-1.0~1.0)
- * @param steer_angle 目标转向角 (deg)
- * @param steering_blend 转向混合比例 (0.0~1.0)
- *
- * @retval ERR_SUCCESS 操作成功
- * @retval ERR_MOTION_INVALID_PARAM 无效参数
- */
-int MotionService_SetMixedDutyParams(MotionContext* ctx,
-                                     float          left_duty,
-                                     float          right_duty,
-                                     float          steer_angle,
-                                     float          steering_blend);
-/**
- * @brief 设置原地旋转参数
- *
- * @param ctx 上下文指针
- * @param angular_vel 目标角速度 (rad/s)
- * @param rotation_point 旋转点 0=中心, 1=前轴, 2=后轴
- *
- * @retval ERR_SUCCESS0 设置成功
- * @retval ERR_MOTION_INVALID_PARAM 参数无效
- * @retval ERR_MOTION_MODE_MISMATCH 模式不匹配
- */
-int MotionService_SetSpinParams(MotionContext* ctx, float angular_vel, uint8_t rotation_point);
-
-/**
- * @brief 设置转向角度 （STEER_ONLY/MIXED模式）
- *
- * @param ctx 上下文指针
- * @param angle_deg 转向角度 (deg)
- *
- * @retval ERR_SUCCESS0 设置成功
- * @retval ERR_MOTION_INVALID_PARAM 参数无效
- * @retval ERR_MOTION_MODE_MISMATCH 模式不匹配
- */
-int MotionService_SetSteerAngle(MotionContext* ctx, float angle_deg);
+int MotionService_SetDriveParams(MotionContext* ctx, float linear_vel, float steer_angle);
 
 
 /**

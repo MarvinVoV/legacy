@@ -17,9 +17,10 @@ static const ChassisConfig DEFAULT_CHASSIS_CFG = {
     .wheelbaseMM = 144.0f,        // 轴距（前后轮中心距），单位：毫米(mm)
     .trackWidthMM = 167.0f,       // 轮距（左右轮中心距），单位：毫米(mm)
     .wheelRadiusMM = 32.5f,       // 驱动轮半径，单位：毫米(mm)
-    .maxLinearVelocityMPS = 1.2f, // 最大允许线速度，单位：米/秒(m/s) 正值为前进，负值为后退
-    .maxAngularVelRad = 8.2f,     // 最大允许角速度，单位：弧度/秒(rad/s)
-    .maxSteerAngleDeg = 45.0f,     // 前轮最大转向角度，单位：度(degree) 正值右转，负值左转
+    .minTurnRadiusMM = 144.0f,    // 最小转弯半径 = 轴距 / tan(45°)
+    .maxLinearVelocityMPS = 1.0f, // 保守上限：300 RPM ≈ 1.02 m/s
+    .maxAngularVelRad = 8.2f,     // 保守上限（满轮速原地旋转约 12 rad/s）
+    .maxSteerAngleDeg = 45.0f,    // 前轮最大转向角度，正右负左
     .steerCenterAngleDeg = 90.0f, // 归中角度
 };
 

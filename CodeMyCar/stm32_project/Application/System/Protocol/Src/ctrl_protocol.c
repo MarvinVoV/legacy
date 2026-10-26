@@ -52,20 +52,54 @@ int validateControlCmd(const uint8_t* cmd, uint16_t len)
         return ERR_CMD_INVALID_PARAM;
     }
 
-    /* 运动模式合法性 */
-    if (c->motion.mode > (uint8_t)MOTION_MIXED_STEER)
+    /* 运动模式合法性：仅 0-3 */
+    if (c->motion.mode >= (uint8_t)MOTION_MODE_MAX)
     {
         return ERR_MOTION_INVALID_MODE;
     }
 
-    /* MIXED 模式下驱动控制类型合法性 */
-    if (c->motion.mode == (uint8_t)MOTION_MIXED_STEER)
+    /* 按模式校验参数范围（与 pyserver/ESP32 契约一致） */
+    switch (c->motion.mode)
     {
-        const MixedCtrlParam* m = &c->motion.params.mixedCtrl;
-        if (m->driveCtrlType > (uint8_t)DRIVE_CTRL_DUTY_CYCLE)
+        case MOTION_EMERGENCY_STOP:
+            break;
+
+        case MOTION_DIRECT_CONTROL:
         {
-            return ERR_MOTION_INVALID_MODE;
+            const DirectCtrlParam* d = &c->motion.params.directCtrl;
+            if (d->leftRpm < -300 || d->leftRpm > 300 ||
+                d->rightRpm < -300 || d->rightRpm > 300 ||
+                d->steerAngle < -450 || d->steerAngle > 450)
+            {
+                return ERR_MOTION_INVALID_PARAM;
+            }
+            break;
         }
+
+        case MOTION_DIFFERENTIAL:
+        {
+            const DiffCtrlParam* d = &c->motion.params.diffCtrl;
+            if (d->linearVel < -1000 || d->linearVel > 1000 ||
+                d->angularVel < -127 || d->angularVel > 127)
+            {
+                return ERR_MOTION_INVALID_PARAM;
+            }
+            break;
+        }
+
+        case MOTION_DRIVE:
+        {
+            const DriveCtrlParam* d = &c->motion.params.driveCtrl;
+            if (d->linearVel < -1000 || d->linearVel > 1000 ||
+                d->steerAngle < -450 || d->steerAngle > 450)
+            {
+                return ERR_MOTION_INVALID_PARAM;
+            }
+            break;
+        }
+
+        default:
+            return ERR_MOTION_INVALID_MODE;
     }
 
     return ERR_SUCCESS;

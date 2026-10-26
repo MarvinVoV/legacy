@@ -9,6 +9,7 @@
 #include "error_code.h"
 #include <math.h>
 #include "motion_task.h"
+#include "motion_kinematics.h"
 
 
 //------------------------------------------------------------------------------
@@ -20,9 +21,6 @@
 
 /// 最小有效时间间隔 (ms)
 #define MIN_DELTA_TIME_MS (1)
-
-/// 模式数量
-#define MOTION_MODE_MAX (6)
 
 /// 圆周率定义
 #ifndef M_PI
@@ -37,23 +35,6 @@
 /// 毫米转米
 static inline float mm_to_m(float mm);
 
-/**
- * @brief 计算差速模型RPM
- *
- * @param linear_vel 线速度 (m/s)
- * @param angular_vel 角速度 (rad/s)
- * @param track_width_m 轮距 (m)
- * @param wheel_radius_m 轮半径 (m)
- * @param left_rpm 输出左轮RPM
- * @param right_rpm 输出右轮RPM
- */
-static void calculate_differential_rpm(float  linear_vel,
-                                       float  angular_vel,
-                                       float  track_width_m,
-                                       float  wheel_radius_m,
-                                       float* left_rpm,
-                                       float* right_rpm);
-
 /// 处理紧急停止
 static void handle_emergency_stop(MotionContext* ctx);
 
@@ -63,14 +44,8 @@ static void handle_direct_control(MotionContext* ctx, const MotionTarget* target
 /// 处理差速控制
 static void handle_differential_control(MotionContext* ctx, const MotionTarget* target);
 
-/// 处理前轮平行转向
-static void handle_parallel_steering(MotionContext* ctx, const MotionTarget* target);
-
-/// 处理原地旋转
-static void handle_spin_in_place(MotionContext* ctx, const MotionTarget* target);
-
-/// 处理混合转向
-static void handle_mixed_steering(MotionContext* ctx, const MotionTarget* target);
+/// 处理 DRIVE（速度 + 平行转向）
+static void handle_drive(MotionContext* ctx, const MotionTarget* target);
 
 /// 更新运行时状态
 static void update_runtime_state(MotionContext* ctx);
@@ -243,7 +218,7 @@ int MotionService_SetDirectControlParams(MotionContext* ctx, float left_rpm, flo
     return ERR_SUCCESS;
 }
 
-int MotionService_SetSteerParallelParams(MotionContext* ctx, float linear_vel, float steer_angle)
+int MotionService_SetDriveParams(MotionContext* ctx, float linear_vel, float steer_angle)
 {
     // 参数验证
     if (ctx == NULL || !isfinite(linear_vel) || !isfinite(steer_angle))
@@ -260,8 +235,7 @@ int MotionService_SetSteerParallelParams(MotionContext* ctx, float linear_vel, f
     }
 
     // 检查模式兼容性
-    const MotionMode mode = ctx->motionTarget.mode;
-    if (mode != MOTION_STEER_PARALLEL && mode != MOTION_MIXED_STEER)
+    if (ctx->motionTarget.mode != MOTION_DRIVE)
     {
         osMutexRelease(ctx->targetMutex);
         return ERR_MOTION_MODE_MISMATCH;
@@ -271,109 +245,10 @@ int MotionService_SetSteerParallelParams(MotionContext* ctx, float linear_vel, f
     const float max_vel   = ctx->chassisConfig.maxLinearVelocityMPS;
     const float max_angle = ctx->chassisConfig.maxSteerAngleDeg;
 
-    const float clamped_vel   = CLAMP(linear_vel, -max_vel, max_vel);
-    const float clamped_angle = CLAMP(steer_angle, -max_angle, max_angle);
-
-    ctx->motionTarget.params.parallelSteer.linearVelocity = clamped_vel;
-    ctx->motionTarget.params.parallelSteer.steerAngle     = clamped_angle;
-
-    osMutexRelease(ctx->targetMutex);
-    return ERR_SUCCESS;
-}
-
-int MotionService_SetMixedVelocityParams(MotionContext* ctx,
-                                         const float    linear,
-                                         const float    angular,
-                                         const float    steer_angle,
-                                         const float    steering_blend)
-{
-    // 参数验证
-    if (ctx == NULL || !isfinite(linear) || !isfinite(angular) ||
-        !isfinite(steer_angle) || !isfinite(steering_blend))
-    {
-        LOG_ERROR(LOG_MODULE_MOTION, "Invalid parameters");
-        return ERR_MOTION_INVALID_PARAM;
-    }
-
-    // 获取互斥锁
-    if (osMutexAcquire(ctx->targetMutex, MUTEX_TIMEOUT_MS) != osOK)
-    {
-        LOG_WARN(LOG_MODULE_MOTION, "Mutex timeout");
-        return ERR_MOTION_MUTEX_TIMEOUT;
-    }
-
-    // 检查模式兼容性
-    if (ctx->motionTarget.mode != MOTION_MIXED_STEER)
-    {
-        osMutexRelease(ctx->targetMutex);
-        return ERR_MOTION_MODE_MISMATCH;
-    }
-
-    // 参数范围校验
-    const ChassisConfig* cfg = &ctx->chassisConfig;
-
-    const float clamped_linear  = CLAMP(linear, -cfg->maxLinearVelocityMPS, cfg->maxLinearVelocityMPS);
-    const float clamped_angular = CLAMP(angular, -cfg->maxAngularVelRad, cfg->maxAngularVelRad);
-    const float clamped_steer   = CLAMP(steer_angle, -cfg->maxSteerAngleDeg, cfg->maxSteerAngleDeg);
-    const float clamped_blend   = CLAMP(steering_blend, 0.0f, 1.0f);
-
-    // 设置参数
-    ctx->motionTarget.params.mixedCtrl.driveCtrlType                            = DRIVE_CTRL_VELOCITY;
-    ctx->motionTarget.params.mixedCtrl.driveParams.velocityCtrl.linearVelocity  = clamped_linear;
-    ctx->motionTarget.params.mixedCtrl.driveParams.velocityCtrl.angularVelocity = clamped_angular;
-    ctx->motionTarget.params.mixedCtrl.steerAngle                               = clamped_steer;
-    ctx->motionTarget.params.mixedCtrl.steeringBlend                            = clamped_blend;
-
-    osMutexRelease(ctx->targetMutex);
-
-    return ERR_SUCCESS;
-}
-
-
-int MotionService_SetMixedDutyParams(MotionContext* ctx,
-                                     const float    left_duty,
-                                     const float    right_duty,
-                                     const float    steer_angle,
-                                     const float    steering_blend)
-{
-    // 参数验证
-    if (ctx == NULL ||
-        !isfinite(left_duty) || fabsf(left_duty) > 1.0f ||
-        !isfinite(right_duty) || fabsf(right_duty) > 1.0f ||
-        !isfinite(steer_angle) || !isfinite(steering_blend))
-    {
-        LOG_ERROR(LOG_MODULE_MOTION, "Invalid parameters");
-        return ERR_MOTION_INVALID_PARAM;
-    }
-
-    // 获取互斥锁
-    if (osMutexAcquire(ctx->targetMutex, MUTEX_TIMEOUT_MS) != osOK)
-    {
-        LOG_WARN(LOG_MODULE_MOTION, "Mutex timeout");
-        return ERR_MOTION_MUTEX_TIMEOUT;
-    }
-
-    // 检查模式兼容性
-    if (ctx->motionTarget.mode != MOTION_MIXED_STEER)
-    {
-        osMutexRelease(ctx->targetMutex);
-        return ERR_MOTION_MODE_MISMATCH;
-    }
-
-    // 参数范围校验
-    const ChassisConfig* cfg = &ctx->chassisConfig;
-
-    const float clamped_left_duty  = CLAMP(left_duty, -1.0f, 1.0f);
-    const float clamped_right_duty = CLAMP(right_duty, -1.0f, 1.0f);
-    const float clamped_steer      = CLAMP(steer_angle, -cfg->maxSteerAngleDeg, cfg->maxSteerAngleDeg);
-    const float clamped_blend      = CLAMP(steering_blend, 0.0f, 1.0f);
-
-    // 设置参数
-    ctx->motionTarget.params.mixedCtrl.driveCtrlType                            = DRIVE_CTRL_DUTY_CYCLE;
-    ctx->motionTarget.params.mixedCtrl.driveParams.dutyCycleCtrl.leftDutyCycle  = clamped_left_duty;
-    ctx->motionTarget.params.mixedCtrl.driveParams.dutyCycleCtrl.rightDutyCycle = clamped_right_duty;
-    ctx->motionTarget.params.mixedCtrl.steerAngle                               = clamped_steer;
-    ctx->motionTarget.params.mixedCtrl.steeringBlend                            = clamped_blend;
+    ctx->motionTarget.params.driveCtrl.linearVelocity =
+        CLAMP(linear_vel, -max_vel, max_vel);
+    ctx->motionTarget.params.driveCtrl.steerAngle =
+        CLAMP(steer_angle, -max_angle, max_angle);
 
     osMutexRelease(ctx->targetMutex);
     return ERR_SUCCESS;
@@ -394,85 +269,6 @@ void MotionService_GetState(const MotionContext* ctx, MotionState* out_state)
     }
 }
 
-
-int MotionService_SetSteerAngle(MotionContext* ctx, const float angle_deg)
-{
-    // 参数验证
-    if (ctx == NULL || !isfinite(angle_deg))
-    {
-        LOG_ERROR(LOG_MODULE_MOTION, "Invalid parameters");
-        return ERR_MOTION_INVALID_PARAM;
-    }
-
-    // 获取互斥锁
-    if (osMutexAcquire(ctx->targetMutex, MUTEX_TIMEOUT_MS) != osOK)
-    {
-        LOG_WARN(LOG_MODULE_MOTION, "Mutex timeout");
-        return ERR_MOTION_MUTEX_TIMEOUT;
-    }
-
-
-    // 检查模式兼容性
-    const MotionMode mode = ctx->motionTarget.mode;
-    if (mode != MOTION_STEER_PARALLEL && mode != MOTION_MIXED_STEER)
-    {
-        osMutexRelease(ctx->targetMutex);
-        return ERR_MOTION_MODE_MISMATCH;
-    }
-
-    // 参数范围校验
-    const float max_angle     = ctx->chassisConfig.maxSteerAngleDeg;
-    const float clamped_angle = CLAMP(angle_deg, -max_angle, max_angle);
-
-    // 设置参数
-    if (mode == MOTION_STEER_PARALLEL)
-    {
-        ctx->motionTarget.params.parallelSteer.steerAngle = clamped_angle;
-    }
-    else
-    {
-        ctx->motionTarget.params.mixedCtrl.steerAngle = clamped_angle;
-    }
-
-    osMutexRelease(ctx->targetMutex);
-
-    return ERR_SUCCESS;
-}
-
-int MotionService_SetSpinParams(MotionContext* ctx, float angular_vel, uint8_t rotation_point)
-{
-    // 参数验证
-    if (ctx == NULL || !isfinite(angular_vel))
-    {
-        LOG_ERROR(LOG_MODULE_MOTION, "Invalid parameters");
-        return ERR_MOTION_INVALID_PARAM;
-    }
-
-    // 获取互斥锁
-    if (osMutexAcquire(ctx->targetMutex, MUTEX_TIMEOUT_MS) != osOK)
-    {
-        LOG_WARN(LOG_MODULE_MOTION, "Mutex timeout");
-        return ERR_MOTION_MUTEX_TIMEOUT;
-    }
-
-    // 检查模式兼容性
-    if (ctx->motionTarget.mode != MOTION_SPIN_IN_PLACE)
-    {
-        osMutexRelease(ctx->targetMutex);
-        return ERR_MOTION_MODE_MISMATCH;
-    }
-
-    // 参数范围校验
-    const float max_angular     = ctx->chassisConfig.maxAngularVelRad;
-    const float clamped_angular = CLAMP(angular_vel, -max_angular, max_angular);
-
-    // 设置参数
-    ctx->motionTarget.params.spinCtrl.angularVelocity = clamped_angular;
-    ctx->motionTarget.params.spinCtrl.rotationPoint   = rotation_point;
-
-    osMutexRelease(ctx->targetMutex);
-    return ERR_SUCCESS;
-}
 
 int MotionService_EmergencyStop(MotionContext* ctx)
 {
@@ -540,16 +336,11 @@ void MotionService_Run(MotionContext* ctx)
             handle_differential_control(ctx, &current_target);
             break;
 
-        case MOTION_STEER_PARALLEL:
-            handle_parallel_steering(ctx, &current_target);
+        case MOTION_DRIVE:
+            handle_drive(ctx, &current_target);
             break;
 
-        case MOTION_SPIN_IN_PLACE:
-            handle_spin_in_place(ctx, &current_target);
-            break;
-
-        case MOTION_MIXED_STEER:
-            handle_mixed_steering(ctx, &current_target);
+        default:
             break;
     }
 
@@ -567,27 +358,6 @@ static inline float mm_to_m(const float mm)
     return mm / 1000.0f;
 }
 
-static void calculate_differential_rpm(const float linear_vel,
-                                       const float angular_vel,
-                                       const float track_width_m,
-                                       const float wheel_radius_m,
-                                       float*      left_rpm,
-                                       float*      right_rpm)
-{
-    // 计算左右轮线速度
-    const float half_track = track_width_m / 2.0f;
-    const float left_vel   = linear_vel - angular_vel * half_track;
-    const float right_vel  = linear_vel + angular_vel * half_track;
-
-    // 转换为RPM
-    const float factor = 60.0f / (2.0f * (float)M_PI * wheel_radius_m);
-    *left_rpm          = left_vel * factor;
-    *right_rpm         = right_vel * factor;
-
-    // 限制最大RPM
-    // TODO
-}
-
 static void handle_emergency_stop(MotionContext* ctx)
 {
     // 停止所有电机
@@ -595,19 +365,23 @@ static void handle_emergency_stop(MotionContext* ctx)
     MotorService_emergencyStop(ctx->motorService, MOTOR_RIGHT_WHEEL);
 
     // 快速归中
-    SteerService_setAngleImmediate(ctx->steerServo, 90);
+    SteerService_setAngleImmediate(ctx->steerServo, ctx->chassisConfig.steerCenterAngleDeg);
 }
 
 static void handle_direct_control(MotionContext* ctx, const MotionTarget* target)
 {
-    // 设置电机转速
+    const float max_steer = ctx->chassisConfig.maxSteerAngleDeg;
+    const float steer     = CLAMP(target->params.directCtrl.steerAngle,
+                                  -max_steer, max_steer);
+
+    // 设置电机转速（限幅，防止绕过 pyserver 直接发 MQTT 超速）
     MotorService_setTargetRPM(ctx->motorService, MOTOR_LEFT_WHEEL,
-                              target->params.directCtrl.leftRpm);
+                              motion_clamp_rpm(target->params.directCtrl.leftRpm, MOTION_MAX_RPM));
     MotorService_setTargetRPM(ctx->motorService, MOTOR_RIGHT_WHEEL,
-                              target->params.directCtrl.rightRpm);
+                              motion_clamp_rpm(target->params.directCtrl.rightRpm, MOTION_MAX_RPM));
 
     // 舵机角度
-    SteerService_setAngleSmoothly(ctx->steerServo, target->params.directCtrl.steerAngle);
+    SteerService_setAngleSmoothly(ctx->steerServo, steer);
 }
 
 static void handle_differential_control(MotionContext* ctx, const MotionTarget* target)
@@ -616,13 +390,13 @@ static void handle_differential_control(MotionContext* ctx, const MotionTarget* 
     const float          track_width_m  = mm_to_m(cfg->trackWidthMM);
     const float          wheel_radius_m = mm_to_m(cfg->wheelRadiusMM);
 
-    // 计算差速RPM
     float left_rpm, right_rpm;
-    calculate_differential_rpm(
+    motion_calc_differential(
         target->params.diffCtrl.linearVelocity,
         target->params.diffCtrl.angularVelocity,
         track_width_m,
         wheel_radius_m,
+        MOTION_MAX_RPM,
         &left_rpm,
         &right_rpm
     );
@@ -632,173 +406,32 @@ static void handle_differential_control(MotionContext* ctx, const MotionTarget* 
     MotorService_setTargetRPM(ctx->motorService, MOTOR_RIGHT_WHEEL, right_rpm);
 
     // 舵机归中
-    SteerService_setAngleImmediate(ctx->steerServo, 90);
+    SteerService_setAngleImmediate(ctx->steerServo, cfg->steerCenterAngleDeg);
 }
 
-static void handle_parallel_steering(MotionContext* ctx, const MotionTarget* target)
+static void handle_drive(MotionContext* ctx, const MotionTarget* target)
 {
     const ChassisConfig* cfg = &ctx->chassisConfig;
 
-    // 参数限幅
-    const float max_vel     = cfg->maxLinearVelocityMPS;
-    const float clamped_vel = CLAMP(target->params.parallelSteer.linearVelocity,
-                                    -max_vel, max_vel);
+    const float max_vel   = cfg->maxLinearVelocityMPS;
+    const float max_angle = cfg->maxSteerAngleDeg;
+    const float v         = CLAMP(target->params.driveCtrl.linearVelocity, -max_vel, max_vel);
+    const float steer     = CLAMP(target->params.driveCtrl.steerAngle, -max_angle, max_angle);
 
-    const float max_angle     = cfg->maxSteerAngleDeg;
-    const float clamped_angle = CLAMP(target->params.parallelSteer.steerAngle,
-                                      -max_angle, max_angle);
-    // 计算转速 (velocity to rpm)
-    const float rpm = (clamped_vel * 60.0f) /
-                      (2.0f * (float)M_PI * mm_to_m(cfg->wheelRadiusMM));
+    float left_rpm = 0.0f;
+    float right_rpm = 0.0f;
+    motion_calc_drive(v, steer,
+                      mm_to_m(cfg->wheelbaseMM),
+                      mm_to_m(cfg->trackWidthMM),
+                      mm_to_m(cfg->wheelRadiusMM),
+                      MOTION_MAX_RPM,
+                      &left_rpm, &right_rpm);
 
-    // 设置电机转速
-    MotorService_setTargetRPM(ctx->motorService, MOTOR_LEFT_WHEEL, rpm);
-    MotorService_setTargetRPM(ctx->motorService, MOTOR_RIGHT_WHEEL, rpm);
-
-    // 设置转向角
-    SteerService_setAngleSmoothly(ctx->steerServo, clamped_angle);
-}
-
-static void handle_spin_in_place(MotionContext* ctx, const MotionTarget* target)
-{
-    static const float   factor         = 60.0f / (2.0f * (float)M_PI); // 预计算
-    const ChassisConfig* cfg            = &ctx->chassisConfig;
-    const float          track_width_m  = mm_to_m(cfg->trackWidthMM);
-    const float          wheel_radius_m = mm_to_m(cfg->wheelRadiusMM);
-    const float          wheelbase_m    = mm_to_m(cfg->wheelbaseMM);
-    const float          angular_vel    = target->params.spinCtrl.angularVelocity;
-    const uint8_t        rotation_point = target->params.spinCtrl.rotationPoint;
-
-    float left_rpm    = 0.0f;
-    float right_rpm   = 0.0f;
-    float steer_angle = ctx->chassisConfig.steerCenterAngleDeg; // 默认中位
-    // 运动学计算
-    switch (rotation_point)
-    {
-        case 0: // 标准原地旋转（中心点）- 默认
-        default:
-            {
-                // 基础计算：v = ω × (W/2)
-                const float linear_vel_per_wheel = angular_vel * track_width_m / 2.0f;
-                const float rpm                  = (linear_vel_per_wheel * factor) / wheel_radius_m;
-
-                // 左右轮反向等速
-                left_rpm  = -rpm;
-                right_rpm = rpm;
-
-                // 舵机归中
-                steer_angle = ctx->chassisConfig.steerCenterAngleDeg;
-            }
-            break;
-        case 1: // 前轴为旋转中心
-            {
-                // 计算需要的转向角度
-                const float turn_angle_rad = atan2f(track_width_m / 2, wheelbase_m);
-                const float turn_angle_deg = turn_angle_rad * (180.0f / (float)M_PI);
-
-                // 计算转弯半径（前轴为支点）
-                const float turn_radius  = wheelbase_m;
-                const float outer_radius = sqrtf(powf(turn_radius, 2) + powf(track_width_m / 2, 2));
-
-                // 计算轮子线速度
-                const float linear_vel_per_wheel = angular_vel * outer_radius;
-                const float rpm                  = (linear_vel_per_wheel * factor) / wheel_radius_m;
-
-                // 对于前轴旋转，后轮需要差速
-                left_rpm  = -rpm;
-                right_rpm = rpm;
-
-                // 设置转向角（前轮需要转向）
-                steer_angle = ctx->chassisConfig.steerCenterAngleDeg + turn_angle_deg;
-            }
-            break;
-        case 2: // 后轴为旋转中心
-            {
-                // 计算需要的转向角度
-                const float turn_angle_rad = atan2f(track_width_m / 2, wheelbase_m);
-                const float turn_angle_deg = turn_angle_rad * (180.0f / (float)M_PI);
-
-                // 计算转弯半径（后轴为支点）
-                const float turn_radius  = wheelbase_m;
-                const float outer_radius = sqrtf(powf(turn_radius, 2) + powf(track_width_m / 2, 2));
-
-                // 计算轮子线速度
-                const float linear_vel_per_wheel = angular_vel * outer_radius;
-                const float rpm                  = (linear_vel_per_wheel * factor) / wheel_radius_m;
-
-                // 对于后轴旋转，前轮需要差速
-                left_rpm  = rpm;
-                right_rpm = -rpm;
-
-                // 设置转向角（前轮需要转向）
-                steer_angle =ctx->chassisConfig.steerCenterAngleDeg - turn_angle_deg;
-            }
-            break;
-    }
-    LOG_INFO(LOG_MODULE_MOTION,
-             "SPIN: ω=%.2f, rp=%d, L=%.1f, R=%.1f, steer=%.1f",
-             angular_vel, rotation_point, left_rpm, right_rpm, steer_angle);
-
-    // 设置电机转速
     MotorService_setTargetRPM(ctx->motorService, MOTOR_LEFT_WHEEL, left_rpm);
     MotorService_setTargetRPM(ctx->motorService, MOTOR_RIGHT_WHEEL, right_rpm);
 
-    // 舵机归中
-    SteerService_setAngleImmediate(ctx->steerServo, steer_angle);
-}
-
-static void handle_mixed_steering(MotionContext* ctx, const MotionTarget* target)
-{
-    const ChassisConfig* cfg = &ctx->chassisConfig;
-
-    // 处理驱动控制
-    switch (target->params.mixedCtrl.driveCtrlType)
-    {
-        case DRIVE_CTRL_VELOCITY:
-            // 速度控制模式
-            {
-                const float linear  = target->params.mixedCtrl.driveParams.velocityCtrl.linearVelocity;
-                const float angular = target->params.mixedCtrl.driveParams.velocityCtrl.angularVelocity;
-
-                // 计算差速RPM
-                float left_rpm, right_rpm;
-                calculate_differential_rpm(
-                    linear,
-                    angular,
-                    mm_to_m(cfg->trackWidthMM),
-                    mm_to_m(cfg->wheelRadiusMM),
-                    &left_rpm,
-                    &right_rpm
-                );
-
-                // 应用混合比例
-                const float blend     = target->params.mixedCtrl.steeringBlend;
-                const float steer_rpm = (blend * target->params.mixedCtrl.steerAngle) / cfg->maxSteerAngleDeg;
-
-                left_rpm -= steer_rpm;
-                right_rpm += steer_rpm;
-
-                // 设置电机转速
-                MotorService_setTargetRPM(ctx->motorService, MOTOR_LEFT_WHEEL, left_rpm);
-                MotorService_setTargetRPM(ctx->motorService, MOTOR_RIGHT_WHEEL, right_rpm);
-            }
-            break;
-
-        case DRIVE_CTRL_DUTY_CYCLE:
-            // 占空比控制模式
-            {
-                const float left_duty  = target->params.mixedCtrl.driveParams.dutyCycleCtrl.leftDutyCycle;
-                const float right_duty = target->params.mixedCtrl.driveParams.dutyCycleCtrl.rightDutyCycle;
-
-                // 设置开环占空比
-                MotorService_setOpenLoopDutyCycle(ctx->motorService, MOTOR_LEFT_WHEEL, left_duty);
-                MotorService_setOpenLoopDutyCycle(ctx->motorService, MOTOR_RIGHT_WHEEL, right_duty);
-            }
-            break;
-    }
-
-    // 设置转向角
-    SteerService_setAngleSmoothly(ctx->steerServo, target->params.mixedCtrl.steerAngle);
+    // 舵机 = 中位 + 转向角
+    SteerService_setAngleSmoothly(ctx->steerServo, cfg->steerCenterAngleDeg + steer);
 }
 
 static void update_runtime_state(MotionContext* ctx)

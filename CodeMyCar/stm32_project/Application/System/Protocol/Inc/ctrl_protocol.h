@@ -49,101 +49,31 @@ typedef struct
 } DirectCtrlParam;
 
 /**
- * @brief 平行转向参数
+ * @brief 驱动参数（DRIVE：速度 + 平行转向角）
  */
 typedef struct
 {
-    int16_t linearVel;  ///< 线速度 (0.001 m/s步长)
-    int16_t steerAngle; ///< 转向角 (0.1度步长)
-} SteerParallelParam;
-
-/**
- * @brief 混合控制参数
- */
-typedef struct
-{
-    uint8_t driveCtrlType; ///< 驱动控制类型（DriveControlType，显式宽度以钉死 wire 布局）
-
-    union
-    {
-        // 速度控制参数
-        struct
-        {
-            /**
-             * @brief 目标线速度
-             *
-             * 单位：0.001 m/s步长
-             * 范围：-32768 ~ +32767
-             * 实际速度 = linearVel * 0.001 (m/s)
-             * 示例：
-             *  1000 = 1.0 m/s
-             *  2000 = 2.0 m/s
-             *  -1500 = -1.5 m/s
-             */
-            int16_t linearVel; ///< 目标线速度 (0.001 m/s步长)
-            /**
-             * @brief 目标角速度
-             *
-             * 单位：0.0644 rad/s步长
-             * 范围：-32768 ~ +32767
-             * 实际角速度 = angularVel * 0.0644 (rad/s)
-             * 示例：
-             *  15 = 0.966 rad/s (约55.3°/s)
-             *  31 = 2.0 rad/s (约114.6°/s)
-             *  -15 = -0.966 rad/s
-             */
-            int16_t angularVel; ///< 目标角速度 (0.0644 rad/s步长)
-        } velocityCtrl;
-
-        // 占空比控制参数
-        struct
-        {
-            int16_t leftDutyCycle;  ///< 左轮占空比 (-1000~1000 表示 -100.0% ~ 100.0%)
-            int16_t rightDutyCycle; ///< 右轮占空比 (-1000~1000 表示 -100.0% ~ 100.0%)
-        } dutyCycleCtrl;
-    } driveParams;
-
-    int16_t steerAngle;       ///< 转向角 (0.1度步长)
-    uint8_t differentialGain; ///< 差速增益 (0-100%)
-} MixedCtrlParam;
-
-
-/**
- * @brief 原地旋转控制参数
- */
-typedef struct
-{
-    /**
-     * @brief 目标角速度
-     *
-     * 分辨率：0.0644 rad/s
-     * 角速度范围: 0 ~ 12rad/s （按照最大转速 300rpm 设置）
-     * 解码前设置范围 ：-186 ~ 186, angular_vel = 12 / 0.0644 ≈ 186.34
-     */
-    int16_t angularVel;    ///< 角速度 (0.0644 rad/s步长)
-    uint8_t rotationPoint; ///< 旋转中心点 (0=中心, 1=前轴, 2=后轴)
-} SpinCtrlParam;
+    int16_t linearVel;  ///< 线速度 (0.001 m/s步长, -1000..1000)
+    int16_t steerAngle; ///< 转向角 (0.1度步长, -450..450)
+} DriveCtrlParam;
 
 /**
  * @brief 运动控制指令
  */
 typedef struct
 {
-    uint8_t   mode;     ///< 运动模式（MotionMode，显式宽度以钉死 wire 布局）
-    uint16_t   duration; ///< 执行持续时间 (ms)
+    uint8_t mode; ///< 运动模式（MotionMode，显式宽度以钉死 wire 布局）
     union
     {
-        SteerParallelParam steerParallelCtrl; ///< 平行转向参数
-        DirectCtrlParam    directCtrl;        ///< 直接控制参数
-        MixedCtrlParam     mixedCtrl;         ///< 混合控制参数
-        DiffCtrlParam      diffCtrl;          ///< 差速控制参数
-        SpinCtrlParam      spinCtrl;          ///< 旋转参数
+        DriveCtrlParam  driveCtrl;  ///< DRIVE
+        DirectCtrlParam directCtrl; ///< DIRECT
+        DiffCtrlParam   diffCtrl;   ///< DIFFERENTIAL
     } params;
 } MotionCmd;
 
 
 /**
- * @brief 主控制指令
+ * @brief 主控制指令（9 字节）
  */
 typedef struct
 {
@@ -153,6 +83,12 @@ typedef struct
 } ControlCmd;
 
 #pragma pack(pop)
+
+/** wire payload 固定大小：ctrlId(1)+fields(1)+mode(1)+params(6) */
+#define CONTROL_CMD_SIZE 9
+
+_Static_assert(sizeof(ControlCmd) == CONTROL_CMD_SIZE,
+               "ControlCmd wire layout must stay 9 bytes");
 
 
 /**

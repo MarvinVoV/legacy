@@ -37,9 +37,6 @@ static float decode_steer_angle(int16_t deg);
 /// 解码角速度
 static float decode_angular_vel(int16_t angular_vel);
 
-/// 解码占空比
-static float decode_duty_cycle(int16_t duty);
-
 /// 处理运动指令
 static int process_motion_command(CmdProcessorContext* ctx, const MotionCmd* motion);
 
@@ -143,11 +140,11 @@ static int process_motion_command(CmdProcessorContext* ctx, const MotionCmd* mot
             }
             break;
 
-        case MOTION_STEER_PARALLEL:
+        case MOTION_DRIVE:
             {
-                const float linear = decode_linear_vel(motion->params.steerParallelCtrl.linearVel);
-                const float steer  = decode_steer_angle(motion->params.steerParallelCtrl.steerAngle);
-                ret                = MotionService_SetSteerParallelParams(motionCtx, linear, steer);
+                const float linear = decode_linear_vel(motion->params.driveCtrl.linearVel);
+                const float steer  = decode_steer_angle(motion->params.driveCtrl.steerAngle);
+                ret                = MotionService_SetDriveParams(motionCtx, linear, steer);
             }
             break;
 
@@ -157,41 +154,6 @@ static int process_motion_command(CmdProcessorContext* ctx, const MotionCmd* mot
                 const float rightRpm = (float)motion->params.directCtrl.rightRpm;
                 const float steer    = decode_steer_angle(motion->params.directCtrl.steerAngle);
                 ret                  = MotionService_SetDirectControlParams(motionCtx, leftRpm, rightRpm, steer);
-            }
-            break;
-
-        case MOTION_MIXED_STEER:
-            {
-                const MixedCtrlParam* mixed = &motion->params.mixedCtrl;
-                const float           steer = decode_steer_angle(mixed->steerAngle);
-                const float           gain  = (float)mixed->differentialGain / 100.0f; // 百分比转0.0~1.0
-
-                if (mixed->driveCtrlType == DRIVE_CTRL_VELOCITY)
-                {
-                    // 速度控制模式
-                    const float linear = decode_linear_vel(mixed->driveParams.velocityCtrl.linearVel);
-                    const float angular = decode_angular_vel(mixed->driveParams.velocityCtrl.angularVel);
-                    ret = MotionService_SetMixedVelocityParams(ctx->motionContext, linear, angular, steer, gain);
-                }
-                else
-                {
-                    // 占空比控制模式
-                    const float left_duty  = decode_duty_cycle(mixed->driveParams.dutyCycleCtrl.leftDutyCycle);
-                    const float right_duty = decode_duty_cycle(mixed->driveParams.dutyCycleCtrl.rightDutyCycle);
-                    // 转换为占空比系数 (-1.0 ~ 1.0)
-                    const float left_duty_factor = left_duty / 100.0f;
-                    const float right_duty_factor = right_duty / 100.0f;
-                    ret = MotionService_SetMixedDutyParams(ctx->motionContext, left_duty_factor, right_duty_factor,
-                                                           steer, gain);
-                }
-            }
-            break;
-
-        case MOTION_SPIN_IN_PLACE:
-            {
-                const float   angularVel    = decode_angular_vel(motion->params.spinCtrl.angularVel);
-                const uint8_t rotationPoint = motion->params.spinCtrl.rotationPoint;
-                ret                         = MotionService_SetSpinParams(motionCtx, angularVel, rotationPoint);
             }
             break;
 
@@ -245,19 +207,4 @@ static float decode_steer_angle(const int16_t deg)
 static float decode_angular_vel(const int16_t angular_vel)
 {
     return (float)angular_vel * 0.0644f; // 0.0644 rad/s分辨率
-}
-
-/**
- * @brief 解码占空比参数
- *
- * @param duty 原始占空比值 (0.1%步长，范围-1000~1000)
- * @return float 实际占空比百分比 (-100.0% ~ 100.0%)
- *
- * @details 将接收到的整型占空比参数转换为浮点型百分比值。
- *          输入值以0.1%为步长，即值-1000表示-100.0%，1000表示100.0%。
- */
-static float decode_duty_cycle(const int16_t duty)
-{
-    // 转换为百分比 (-100.0% ~ 100.0%)
-    return (float)duty / 10.0f;
 }

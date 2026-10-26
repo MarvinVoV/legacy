@@ -12,17 +12,10 @@
 typedef enum
 {
     MOTION_EMERGENCY_STOP = 0x00, // 紧急停止
-    MOTION_DIRECT_CONTROL = 0x01, // 直接控制模式
-    MOTION_DIFFERENTIAL   = 0x02, // 纯差速控制（舵机归中）
-    MOTION_STEER_PARALLEL = 0x03, // 前轮平行转向模式
-    MOTION_SPIN_IN_PLACE  = 0x04, // 原地旋转模式
-    MOTION_MIXED_STEER    = 0x05  // 混合转向模式(舵机+差速)
+    MOTION_DIRECT_CONTROL = 0x01, // 直接控制（左右轮 RPM + 舵机角）
+    MOTION_DIFFERENTIAL   = 0x02, // 差速控制（舵机归中，linear=0 即原地旋转）
+    MOTION_DRIVE          = 0x03, // 速度 + 平行转向（后轮内外速差补偿）
+    MOTION_MODE_MAX       = 0x04  // 有效模式数量
 } MotionMode;
-
-typedef enum
-{
-    DRIVE_CTRL_VELOCITY,  // 速度控制模式
-    DRIVE_CTRL_DUTY_CYCLE // 占空比控制模式
-} DriveControlType;
 
 #endif /* SYSTEM_COMMON_INC_MOTION_COMMON_H_ */
