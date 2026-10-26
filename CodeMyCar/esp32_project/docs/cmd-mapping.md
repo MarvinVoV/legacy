@@ -35,8 +35,9 @@ ControlCommand  ──JSON──►  cJSON 解析 + 组包 ──v2帧──► 
 | `DIRECT` | 1 | `MOTION_DIRECT_CONTROL` | `DirectCtrlParam` |
 | `DIFFERENTIAL` | 2 | `MOTION_DIFFERENTIAL` | `DiffCtrlParam` |
 | `DRIVE` | 3 | `MOTION_DRIVE` | `DriveCtrlParam` |
+| `GOAL` | 4 | `MOTION_GOAL` | `GoalCtrlParam` |
 
-**4/5 不再支持**：pyserver 枚举不存在；bridge 对 `mode>=4` 返回 0（不发送）；STM32 `validateControlCmd` 返回 `ERR_MOTION_INVALID_MODE`。
+**5 不再支持**：pyserver 枚举不存在；bridge 对 `mode>=5` 返回 0（不发送）；STM32 `validateControlCmd` 返回 `ERR_MOTION_INVALID_MODE`。
 
 ### 2.3 参数映射
 
@@ -46,6 +47,7 @@ ControlCommand  ──JSON──►  cJSON 解析 + 组包 ──v2帧──► 
 | DIRECT | `left_rpm`, `right_rpm`, `steer_angle` | left(2) + right(2) + steer(2) |
 | DIFFERENTIAL | `linear_vel`, `angular_vel` | linear(2) + angular(2) + 2B 保留 0 |
 | DRIVE | `linear_vel`, `steer_angle` | linear(2) + steer(2) + 2B 保留 0 |
+| GOAL | `turn_ddeg`, `distance_mm`, `speed_mm_s` | turn(2, 右正, 相对增量) + distance(2, 前进正) + speed(2, u16) |
 
 ## 三、二进制 payload 布局（9 字节）
 
@@ -64,14 +66,16 @@ ControlCommand  ──JSON──►  cJSON 解析 + 组包 ──v2帧──► 
 | DIRECT | leftRpm | rightRpm | steerAngle |
 | DIFFERENTIAL | linearVel | angularVel | 0 |
 | DRIVE | linearVel | steerAngle | 0 |
+| GOAL | turnDdeg | distanceMm | speedMmps |
 
 > STM32 `ControlCmd` 通过 `#pragma pack(1)` + `_Static_assert(sizeof(ControlCmd)==9)` 钉死布局；ESP32 `BRIDGE_CONTROL_CMD_SIZE=9`。
 
 ## 四、ACK 策略
 
 - 下行 CONTROL 帧默认 `flags |= PKT_FLAG_ACK_REQ`。
-- STM32 收到后回 `TYPE=ACK`、`FLAGS=ACK_RSP`，**ack 的 seq 在帧头 `SEQ` 字段，payload 为空**。
-- ESP32 用 `frame->seq` 清除 pending 并发布 `data/{id}/ack {"seq":N,"ack":true}`。
+- STM32 **先校验、处理，再回 ACK**：`TYPE=ACK`、`FLAGS=ACK_RSP`，seq 在帧头 `SEQ`，payload 1 字节状态码（0=接受，1=无效模式，2=无效参数，3=几何不满足，4=忙，5=内部错误）。
+- ESP32 用 `frame->seq` 清除 pending 并发布 `data/{id}/ack {"seq":N,"ack":true,"status":S}`。
+- mode 4 按 seq 去重：bridge 重传同一 seq 时 STM32 只重发 ACK，不重复执行；mode 0~3 不去重。
 - 超时 200ms、最多重传 3 次；超限计 `ack_lost`。
 
 ## 五、单位/范围
