@@ -91,6 +91,7 @@ MotionGoalOutput motion_goal_step(MotionGoalState* s, const MotionGoalConfig* cf
     if (fabsf(sRem) <= TOL_DISTANCE_MM && fabsf(thRem) <= TOL_TURN_DEG)
     {
         s->finished  = true;
+        s->finishMs  = nowMs;
         out.finished = true;
         return out;
     }
@@ -101,6 +102,7 @@ MotionGoalOutput motion_goal_step(MotionGoalState* s, const MotionGoalConfig* cf
     {
         s->error     = 5;
         s->finished  = true;
+        s->finishMs  = nowMs;
         out.error    = 5;
         out.finished = true;
         return out;
@@ -117,6 +119,7 @@ MotionGoalOutput motion_goal_step(MotionGoalState* s, const MotionGoalConfig* cf
     if (s->inEndgame && nowMs - s->endgameStartMs > ENDGAME_MAX_MS)
     {
         s->finished  = true;
+        s->finishMs  = nowMs;
         out.finished = true;
         return out;
     }
@@ -157,6 +160,7 @@ MotionGoalOutput motion_goal_step(MotionGoalState* s, const MotionGoalConfig* cf
     {
         s->error     = 3;
         s->finished  = true;
+        s->finishMs  = nowMs;
         out.error    = 3;
         out.finished = true;
         return out;

@@ -10,6 +10,9 @@
 #include "motion_common.h"
 #include "motor_service.h"
 #include "servo_service.h"
+#include "motion_goal.h"
+#include "motion_status.h"
+#include "seq_dedup.h"
 
 //------------------------------------------------------------------------------
 // 类型定义
@@ -115,6 +118,8 @@ typedef struct
     osMutexId_t    targetMutex;   ///< 目标参数互斥锁
     float          lastLeftRevs;  ///< 左轮上次转数
     float          lastRightRevs; ///< 右轮上次转数
+    MotionGoalState goal;         ///< 目标型运动状态
+    seq_dedup_t     goalSeqDedup; ///< 最近处理过的 goal seq
 } MotionContext;
 
 
@@ -214,6 +219,34 @@ int MotionService_EmergencyStop(MotionContext* ctx);
  * @param out_state 输出状态指针
  */
 void MotionService_GetState(const MotionContext* ctx, MotionState* out_state);
+
+/**
+ * @brief 启动一个目标型运动（距离 + 转角）
+ *
+ * @param ctx 上下文
+ * @param turnDdeg 航向变化，右正，0.1°
+ * @param distanceMm 路程，前进正，mm
+ * @param speedMmps 路径速度，mm/s
+ * @param seq 帧 seq（随状态上报回传）
+ *
+ * @retval ERR_SUCCESS 已启动
+ * @retval ERR_MOTION_BUSY 已有目标在执行
+ * @retval ERR_MOTION_GEOMETRY 曲率半径不足
+ * @retval ERR_MOTION_INVALID_PARAM 参数非法
+ */
+int MotionService_StartGoal(MotionContext* ctx, int16_t turnDdeg, int16_t distanceMm,
+                            uint16_t speedMmps, uint8_t seq);
+
+/**
+ * @brief 中止当前目标
+ * @param newState 进入的终态（MOTION_STATE_ABORTED / ERROR）
+ */
+void MotionService_AbortGoal(MotionContext* ctx, uint8_t newState);
+
+/**
+ * @brief 填充 36 字节状态帧
+ */
+void MotionService_GetStatus(const MotionContext* ctx, motion_status_t* out);
 
 /**
  * @brief 运行运动控制服务

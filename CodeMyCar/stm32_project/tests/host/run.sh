@@ -21,6 +21,14 @@ echo "== motion goal =="
   -lm -o "${TMPDIR:-/tmp}/motion_goal_test"
 "${TMPDIR:-/tmp}/motion_goal_test"
 
+echo "== seq dedup =="
+"$CC" -std=c11 -Wall -Wextra -O2 \
+  -I "$DIR/Application/System/Utils/Inc" \
+  "$DIR/tests/host/seq_dedup_test.c" \
+  "$DIR/Application/System/Utils/Src/seq_dedup.c" \
+  -lm -o "${TMPDIR:-/tmp}/seq_dedup_test"
+"${TMPDIR:-/tmp}/seq_dedup_test"
+
 echo "== PID simulation =="
 "$CC" -std=c11 -Wall -Wextra -O2 \
   -I "$DIR/tests/host/stubs" \

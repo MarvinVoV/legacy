@@ -38,7 +38,7 @@ static float decode_steer_angle(int16_t deg);
 static float decode_angular_vel(int16_t angular_vel);
 
 /// 处理运动指令
-static int process_motion_command(CmdProcessorContext* ctx, const MotionCmd* motion);
+static int process_motion_command(CmdProcessorContext* ctx, const MotionCmd* motion, uint8_t seq);
 
 
 //------------------------------------------------------------------------------
@@ -73,7 +73,7 @@ int CmdProcessor_Init(CmdProcessorContext* ctx, MotionContext* motionContext)
     return ERR_SUCCESS;
 }
 
-int CmdProcessor_ProcessCommand(CmdProcessorContext* ctx, const ControlCmd* cmd)
+int CmdProcessor_ProcessCommand(CmdProcessorContext* ctx, const ControlCmd* cmd, uint8_t seq)
 {
     // 参数验证
     if (ctx == NULL || cmd == NULL)
@@ -93,7 +93,7 @@ int CmdProcessor_ProcessCommand(CmdProcessorContext* ctx, const ControlCmd* cmd)
     // 处理运动指令
     if (cmd->fields & CTRL_FIELD_MOTION)
     {
-        ret = process_motion_command(ctx, &cmd->motion);
+        ret = process_motion_command(ctx, &cmd->motion, seq);
     }
 
     // 其他指令处理预留
@@ -109,10 +109,16 @@ int CmdProcessor_ProcessCommand(CmdProcessorContext* ctx, const ControlCmd* cmd)
 //------------------------------------------------------------------------------
 
 
-static int process_motion_command(CmdProcessorContext* ctx, const MotionCmd* motion)
+static int process_motion_command(CmdProcessorContext* ctx, const MotionCmd* motion, uint8_t seq)
 {
     MotionContext* motionCtx = ctx->motionContext;
     int            ret       = ERR_SUCCESS;
+
+    /* 任何低层运动命令都抢占正在进行的目标（调试优先） */
+    if (motion->mode != MOTION_GOAL && motionCtx->goal.active)
+    {
+        MotionService_AbortGoal(motionCtx, MOTION_STATE_ABORTED);
+    }
 
     // 模式切换前检查
     if (motion->mode != MOTION_EMERGENCY_STOP)
@@ -157,6 +163,14 @@ static int process_motion_command(CmdProcessorContext* ctx, const MotionCmd* mot
             }
             break;
 
+        case MOTION_GOAL:
+            {
+                const GoalCtrlParam* g = &motion->params.goalCtrl;
+                ret = MotionService_StartGoal(motionCtx, g->turnDdeg, g->distanceMm,
+                                              g->speedMmps, seq);
+            }
+            break;
+
         default:
             LOG_ERROR(LOG_MODULE_CMD, "Unknown motion mode: 0x%02X", motion->mode);
             ret = ERR_MOTION_INVALID_MODE;
@@ -167,7 +181,7 @@ static int process_motion_command(CmdProcessorContext* ctx, const MotionCmd* mot
     if (ret != ERR_SUCCESS)
     {
         LOG_ERROR(LOG_MODULE_CMD, "Command execute failed: mode=0x%02X, error=0x%04X", motion->mode, ret);
-        return ERR_CMD_EXECUTION_FAIL;
+        return ret;
     }
 
     return ERR_SUCCESS;

@@ -41,6 +41,7 @@ int CmdProcessor_Init(CmdProcessorContext* ctx, MotionContext* motionContext);
  *
  * @param[in] ctx 指令处理器上下文
  * @param[in] cmd 控制指令指针
+ * @param[in] seq 帧 seq（目标命令用于上报关联）
  *
  * @retval ERR_SUCCESS 处理成功
  * @retval ERR_CMD_INVALID_PARAM 无效参数
@@ -48,7 +49,7 @@ int CmdProcessor_Init(CmdProcessorContext* ctx, MotionContext* motionContext);
  * @retval ERR_CMD_MODE_TRANSITION 模式转换失败
  * @retval ERR_CMD_EXECUTION_FAIL 指令执行失败
  */
-int CmdProcessor_ProcessCommand(CmdProcessorContext* ctx, const ControlCmd* cmd);
+int CmdProcessor_ProcessCommand(CmdProcessorContext* ctx, const ControlCmd* cmd, uint8_t seq);
 
 
 #endif /* SERVICES_CTRL_INC_CMD_PROCESS_H_ */

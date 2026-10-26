@@ -6,11 +6,14 @@
  */
 #include "ctrl_task.h"
 
+#include <stdbool.h>
+
 #include "cmd_process.h"
 #include "error_code.h"
 #include "log_manager.h"
 #include "pkt_protocol_buf.h"
 #include "queue_manager.h"
+#include "seq_dedup.h"
 #include "uart_handle.h"
 #include "system_init.h"
 
@@ -20,6 +23,9 @@
 static osThreadId_t rawDataReadTaskHandle = NULL;
 // 协议解析处理器
 static protocol_receiver receiver;
+
+/* mode 4 去重窗口：bridge 重传时只重发 ACK，不重复执行 goal */
+static seq_dedup_t s_goal_seqs;
 
 static void dispatcher(uint8_t type, uint8_t seq, uint8_t flags,
                        const uint8_t* cmd_payload, uint16_t total_len);
@@ -46,6 +52,8 @@ void CtrlTask_Init()
     {
         LOG_ERROR(LOG_MODULE_SYSTEM, "Create protocol receiver error.");
     }
+
+    seq_dedup_init(&s_goal_seqs);
 }
 
 void CtrlTask_doTask(void* args)
@@ -71,38 +79,76 @@ void CtrlTask_doTask(void* args)
     }
 }
 
+static uint8_t ack_status_from_error(const int32_t error_code)
+{
+    switch (error_code)
+    {
+        case ERR_SUCCESS:               return 0;
+        case ERR_MOTION_INVALID_MODE:   return 1;
+        case ERR_MOTION_INVALID_PARAM:
+        case ERR_CMD_INVALID_PARAM:     return 2;
+        case ERR_MOTION_GEOMETRY:       return 3;
+        case ERR_MOTION_BUSY:           return 4;
+        default:                        return 5;
+    }
+}
+
+static void send_ack(const uint8_t seq, const uint8_t status)
+{
+    const uint8_t payload = status;
+    UART_Send_Frame(PROTOCOL_TYPE_ACK, seq, FRAME_FLAG_ACK_RSP, &payload, 1);
+}
+
 static void dispatcher(uint8_t type, uint8_t seq, uint8_t flags,
                        const uint8_t* cmd_payload, const uint16_t total_len)
 {
-    /* 收到带 ACK_REQ 的帧：先回 ACK（语义=帧已收到 + CRC 通过） */
-    if (flags & FRAME_FLAG_ACK_REQ)
-    {
-        UART_Send_Frame(PROTOCOL_TYPE_ACK, seq, FRAME_FLAG_ACK_RSP, NULL, 0);
-    }
+    const bool ack_req = (flags & FRAME_FLAG_ACK_REQ) != 0;
 
-    /* 仅处理控制指令 */
+    /* 非控制帧：只需确认收到 */
     if (type != PROTOCOL_TYPE_CONTROL)
     {
-        return;
-    }
-
-    const int32_t error_code = validateControlCmd(cmd_payload, total_len);
-    if (error_code != ERR_SUCCESS)
-    {
-        LOG_ERROR(LOG_MODULE_SYSTEM, "ctrl_cmd_t validation failed with error code: %d", error_code);
-        return;
-    }
-
-    const ControlCmd* cmd = (ControlCmd*)cmd_payload;
-
-    const SystemContext* system_context = System_GetContext();
-    if (system_context != NULL)
-    {
-        CmdProcessorContext* cmd_context = system_context->cmdContext;
-        if (cmd_context != NULL)
+        if (ack_req)
         {
-            CmdProcessor_ProcessCommand(cmd_context, cmd);
+            send_ack(seq, 0);
         }
+        return;
+    }
+
+    int32_t error_code = validateControlCmd(cmd_payload, total_len);
+    bool    duplicate  = false;
+
+    if (error_code == ERR_SUCCESS)
+    {
+        const ControlCmd*    cmd            = (const ControlCmd*)cmd_payload;
+        const SystemContext* system_context = System_GetContext();
+
+        if (cmd->motion.mode == MOTION_GOAL && seq_dedup_seen(&s_goal_seqs, seq))
+        {
+            duplicate = true; /* 重传：只重发 ACK，不重复执行 */
+        }
+        else if (system_context != NULL && system_context->cmdContext != NULL)
+        {
+            error_code = CmdProcessor_ProcessCommand(system_context->cmdContext, cmd, seq);
+            if (error_code == ERR_SUCCESS && cmd->motion.mode == MOTION_GOAL)
+            {
+                seq_dedup_record(&s_goal_seqs, seq);
+            }
+        }
+        else
+        {
+            error_code = ERR_CMD_EXECUTION_FAIL;
+        }
+    }
+
+    if (error_code != ERR_SUCCESS && !duplicate)
+    {
+        LOG_ERROR(LOG_MODULE_SYSTEM, "ctrl_cmd_t failed: err=0x%08X", (unsigned)error_code);
+    }
+
+    if (ack_req)
+    {
+        /* ACK 语义：帧已收到 + 命令是否被接受（0 = 接受） */
+        send_ack(seq, duplicate ? 0 : ack_status_from_error(error_code));
     }
 }
 

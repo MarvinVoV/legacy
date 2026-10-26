@@ -32,13 +32,16 @@ typedef struct
 typedef struct
 {
     MotionGoalTarget target;
+    uint8_t          seq;  /* 帧 seq，随状态上报回传 */
     float            headingTravelDeg; /* 右正，未归一化 */
     float            distanceTravelMm; /* 带行进方向 */
     uint32_t         startMs;
+    uint32_t         finishMs;
     uint32_t         endgameStartMs;
     bool             inEndgame;
     bool             active;
     bool             finished;
+    bool             aborted;
     uint8_t          error; /* 0 ok, 1 param, 3 geometry, 5 internal */
 } MotionGoalState;
 

@@ -47,6 +47,12 @@ static void handle_differential_control(MotionContext* ctx, const MotionTarget* 
 /// 处理 DRIVE（速度 + 平行转向）
 static void handle_drive(MotionContext* ctx, const MotionTarget* target);
 
+/// 处理目标型运动
+static void handle_goal(MotionContext* ctx);
+
+/// 由底盘配置构造目标执行器配置
+static MotionGoalConfig goal_cfg_from(const ChassisConfig* cfg);
+
 /// 更新运行时状态
 static void update_runtime_state(MotionContext* ctx);
 
@@ -300,6 +306,141 @@ int MotionService_EmergencyStop(MotionContext* ctx)
 }
 
 
+int MotionService_StartGoal(MotionContext* ctx, int16_t turnDdeg, int16_t distanceMm,
+                            uint16_t speedMmps, uint8_t seq)
+{
+    if (ctx == NULL)
+    {
+        return ERR_MOTION_INVALID_PARAM;
+    }
+    if (osMutexAcquire(ctx->targetMutex, MUTEX_TIMEOUT_MS) != osOK)
+    {
+        return ERR_MOTION_MUTEX_TIMEOUT;
+    }
+
+    if (ctx->goal.active)
+    {
+        osMutexRelease(ctx->targetMutex);
+        return ERR_MOTION_BUSY;
+    }
+
+    if (ctx->motionTarget.mode == MOTION_EMERGENCY_STOP &&
+        (ctx->state.drive.leftRpm != 0.0f || ctx->state.drive.rightRpm != 0.0f))
+    {
+        osMutexRelease(ctx->targetMutex);
+        return ERR_MOTION_EMERGENCY_ACTIVE;
+    }
+
+    const MotionGoalTarget target = {
+        .turnDdeg   = turnDdeg,
+        .distanceMm = distanceMm,
+        .speedMmps  = speedMmps,
+    };
+    const MotionGoalConfig cfg = goal_cfg_from(&ctx->chassisConfig);
+
+    const int rc = motion_goal_start(&ctx->goal, &target, &cfg, HAL_GetTick());
+    if (rc == 3)
+    {
+        osMutexRelease(ctx->targetMutex);
+        return ERR_MOTION_GEOMETRY;
+    }
+    if (rc != 0)
+    {
+        osMutexRelease(ctx->targetMutex);
+        return ERR_MOTION_INVALID_PARAM;
+    }
+
+    ctx->goal.seq = seq;
+    ctx->motionTarget.mode = MOTION_GOAL;
+    memset(&ctx->motionTarget.params, 0, sizeof(ctx->motionTarget.params));
+
+    osMutexRelease(ctx->targetMutex);
+    return ERR_SUCCESS;
+}
+
+void MotionService_AbortGoal(MotionContext* ctx, uint8_t newState)
+{
+    if (ctx == NULL)
+    {
+        return;
+    }
+    if (osMutexAcquire(ctx->targetMutex, MUTEX_TIMEOUT_MS) != osOK)
+    {
+        return;
+    }
+
+    if (ctx->goal.active)
+    {
+        ctx->goal.active   = false;
+        ctx->goal.finished = true;
+        ctx->goal.finishMs = HAL_GetTick();
+        ctx->goal.aborted  = (newState == MOTION_STATE_ABORTED);
+        ctx->goal.error    = (newState == MOTION_STATE_ERROR) ? MOTION_ERR_INTERNAL : 0;
+
+        MotorService_setTargetRPM(ctx->motorService, MOTOR_LEFT_WHEEL, 0.0f);
+        MotorService_setTargetRPM(ctx->motorService, MOTOR_RIGHT_WHEEL, 0.0f);
+        SteerService_setAngleImmediate(ctx->steerServo, ctx->chassisConfig.steerCenterAngleDeg);
+    }
+
+    osMutexRelease(ctx->targetMutex);
+}
+
+void MotionService_GetStatus(const MotionContext* ctx, motion_status_t* out)
+{
+    if (ctx == NULL || out == NULL)
+    {
+        return;
+    }
+    memset(out, 0, sizeof(*out));
+
+    if (osMutexAcquire(((MotionContext*)ctx)->targetMutex, MUTEX_TIMEOUT_MS) != osOK)
+    {
+        return;
+    }
+
+    const MotionGoalState* g = &ctx->goal;
+
+    out->seq   = g->seq;
+    out->error = g->error;
+    if (!g->finished)
+    {
+        out->state = g->active ? MOTION_STATE_RUNNING : MOTION_STATE_IDLE;
+    }
+    else if (g->error != 0)
+    {
+        out->state = MOTION_STATE_ERROR;
+    }
+    else if (g->aborted)
+    {
+        out->state = MOTION_STATE_ABORTED;
+    }
+    else
+    {
+        out->state = MOTION_STATE_DONE;
+    }
+
+    out->xMm        = (int32_t)(ctx->state.pose.x * 1000.0f);
+    out->yMm        = (int32_t)(ctx->state.pose.y * 1000.0f);
+    out->thetaMdeg  = (int32_t)(ctx->state.pose.theta * (180.0f / M_PI) * 1000.0f);
+    out->odometerMm = (int32_t)(ctx->state.pose.distance * 1000.0f);
+
+    out->goalDistanceMm = (int32_t)g->distanceTravelMm;
+    out->goalTurnMdeg   = (int32_t)(g->headingTravelDeg * 1000.0f);
+
+    if (g->active || g->finished)
+    {
+        const uint32_t endMs = g->finished ? g->finishMs : HAL_GetTick();
+        out->goalDurationMs  = (endMs >= g->startMs) ? (endMs - g->startMs) : 0u;
+    }
+
+    const float radius_m = ctx->chassisConfig.wheelRadiusMM / 1000.0f;
+    const float rpm_to_mmps = (2.0f * M_PI * radius_m / 60.0f) * 1000.0f;
+    out->leftMmps  = (int16_t)(ctx->state.drive.leftRpm * rpm_to_mmps);
+    out->rightMmps = (int16_t)(ctx->state.drive.rightRpm * rpm_to_mmps);
+
+    osMutexRelease(((MotionContext*)ctx)->targetMutex);
+}
+
 void MotionService_Run(MotionContext* ctx)
 {
     if (ctx == NULL)
@@ -338,6 +479,10 @@ void MotionService_Run(MotionContext* ctx)
 
         case MOTION_DRIVE:
             handle_drive(ctx, &current_target);
+            break;
+
+        case MOTION_GOAL:
+            handle_goal(ctx);
             break;
 
         default:
@@ -434,6 +579,46 @@ static void handle_drive(MotionContext* ctx, const MotionTarget* target)
     SteerService_setAngleSmoothly(ctx->steerServo, cfg->steerCenterAngleDeg + steer);
 }
 
+static MotionGoalConfig goal_cfg_from(const ChassisConfig* cfg)
+{
+    MotionGoalConfig g;
+    g.wheelbaseMm     = cfg->wheelbaseMM;
+    g.trackWidthMm    = cfg->trackWidthMM;
+    g.wheelRadiusMm   = cfg->wheelRadiusMM;
+    g.maxSteerDeg     = cfg->maxSteerAngleDeg;
+    g.maxRpm          = MOTION_MAX_RPM;
+    g.maxAngularRadps = cfg->maxAngularVelRad;
+    g.decelMmps2      = 300.0f;
+    return g;
+}
+
+static void handle_goal(MotionContext* ctx)
+{
+    if (!ctx->goal.active)
+    {
+        return;
+    }
+
+    const MotionGoalConfig cfg = goal_cfg_from(&ctx->chassisConfig);
+    const MotionGoalOutput out = motion_goal_step(&ctx->goal, &cfg, HAL_GetTick());
+
+    if (out.finished || out.error != 0)
+    {
+        MotorService_setTargetRPM(ctx->motorService, MOTOR_LEFT_WHEEL, 0.0f);
+        MotorService_setTargetRPM(ctx->motorService, MOTOR_RIGHT_WHEEL, 0.0f);
+        SteerService_setAngleImmediate(ctx->steerServo, ctx->chassisConfig.steerCenterAngleDeg);
+        ctx->goal.active = false;
+        return;
+    }
+
+    MotorService_setTargetRPM(ctx->motorService, MOTOR_LEFT_WHEEL, out.leftRpm);
+    MotorService_setTargetRPM(ctx->motorService, MOTOR_RIGHT_WHEEL, out.rightRpm);
+
+    const float steer = out.pivot ? ctx->chassisConfig.steerCenterAngleDeg
+                                  : ctx->chassisConfig.steerCenterAngleDeg + out.steerAngleDeg;
+    SteerService_setAngleSmoothly(ctx->steerServo, steer);
+}
+
 static void update_runtime_state(MotionContext* ctx)
 {
     // 获取当前时间
@@ -509,5 +694,15 @@ static void update_runtime_state(MotionContext* ctx)
         const float avg_delta = (delta_left_dist + delta_right_dist) / 2.0f;
         ctx->state.pose.x += avg_delta * cosf(ctx->state.pose.theta);
         ctx->state.pose.y += avg_delta * sinf(ctx->state.pose.theta);
+    }
+
+    /* 目标执行器的独立累加器：用同一批轮速增量推进 */
+    if (ctx->goal.active)
+    {
+        const MotionGoalConfig goal_cfg = goal_cfg_from(&ctx->chassisConfig);
+        motion_goal_accumulate(&ctx->goal,
+                               delta_left_dist * 1000.0f,
+                               delta_right_dist * 1000.0f,
+                               &goal_cfg);
     }
 }
