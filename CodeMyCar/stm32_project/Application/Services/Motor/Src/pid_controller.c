@@ -35,6 +35,7 @@ void PIDController_Init(PID_Controller* pid, const PID_Params* params)
 
 float PID_Calculate(PID_Controller* pid, float setpoint, float measurement, float delta_time, uint8_t index)
 {
+    (void)index; /* 仅用于调试日志，当前未使用 */
     // 参数检查
     if (pid == NULL)
     {

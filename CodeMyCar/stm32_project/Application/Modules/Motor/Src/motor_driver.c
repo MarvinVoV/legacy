@@ -113,6 +113,7 @@ bool MotorDriver_Init(MotorDriver* driver, const PID_Params* initialPid)
 
     // 初始化滤波系统
     driver->filter.windowSize   = DEFAULT_SPEED_FILTER_WINDOW;
+    driver->filter.sampleCount  = 0;
     driver->filter.filterBuffer = (float*)pvPortMalloc(driver->filter.windowSize * sizeof(float));
     if (driver->filter.filterBuffer == NULL)
     {
@@ -133,6 +134,7 @@ bool MotorDriver_Init(MotorDriver* driver, const PID_Params* initialPid)
 
     // 状态初始化
     memset(&driver->state, 0, sizeof(MotorDriverState));
+    driver->state.position.encoderInitialized = false;
     driver->state.mode                 = MOTOR_DRIVER_MODE_STOP;
     driver->state.direction            = MOTOR_DIR_FORWARD;
     driver->state.lastUpdateTick       = HAL_GetTick();
@@ -478,27 +480,32 @@ static float apply_speed_filter(MotorDriver* driver, float raw_speed)
         return raw_speed;
     }
 
-    // 添加新采样值
+    // 写入环形缓冲区，只对已填充的有效样本求平均（避免启动时被 0 拉低）
     driver->filter.filterBuffer[driver->filter.bufferIndex] = raw_speed;
-
-    // 加权移动平均
-    float         sum          = 0.0f;
-    float         weight_sum   = 0.0f;
-    const uint8_t center_index = driver->filter.windowSize / 2;
-    for (uint8_t i = 0; i < driver->filter.windowSize; i++)
+    driver->filter.bufferIndex = (uint8_t)((driver->filter.bufferIndex + 1) %
+                                           driver->filter.windowSize);
+    if (driver->filter.sampleCount < driver->filter.windowSize)
     {
-        const float weight = 1.0f - fabsf((float)(i - center_index)) / (float)(center_index + 1);
-        sum += driver->filter.filterBuffer[i] * weight;
-        weight_sum += weight;
+        driver->filter.sampleCount++;
     }
-    const float ma_filtered = sum / weight_sum;
 
-    // 更新索引
-    driver->filter.bufferIndex = (driver->filter.bufferIndex + 1) % driver->filter.windowSize;
+    float sum = 0.0f;
+    for (uint8_t i = 0; i < driver->filter.sampleCount; i++)
+    {
+        sum += driver->filter.filterBuffer[i];
+    }
+    const float ma_filtered = sum / (float)driver->filter.sampleCount;
 
-    // 二级低通滤波
-    const float alpha        = 0.5f; // 滤波系数
-    driver->filter.lpf_state = alpha * ma_filtered + (1 - alpha) * driver->filter.lpf_state;
+    // 二级低通滤波；首个样本直接作为初值，避免启动滞后
+    const float alpha = 0.5f;
+    if (driver->filter.sampleCount == 1)
+    {
+        driver->filter.lpf_state = ma_filtered;
+    }
+    else
+    {
+        driver->filter.lpf_state = alpha * ma_filtered + (1.0f - alpha) * driver->filter.lpf_state;
+    }
     return driver->filter.lpf_state;
 }
 
@@ -510,10 +517,11 @@ int32_t calculate_delta_pulses(MotorDriver* driver, const uint32_t current_raw)
     const int32_t  halfMax  = maxVal / 2;
     const uint32_t last_raw = driver->state.position.lastRawPulses;
 
-    // 首次调用初始化
-    if (last_raw == 0 && current_raw != 0)
+    // 首次调用初始化（不能用 last_raw==0 判断：计数器 0 是合法值）
+    if (!driver->state.position.encoderInitialized)
     {
-        driver->state.position.lastRawPulses = current_raw;
+        driver->state.position.lastRawPulses      = current_raw;
+        driver->state.position.encoderInitialized = true;
         return 0;
     }
 

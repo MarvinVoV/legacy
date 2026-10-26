@@ -57,6 +57,7 @@ typedef struct
         int32_t  totalPulses;   ///< 累计脉冲数
         float    revolutions;   ///< 累计转数
         uint32_t lastRawPulses; ///< 上次原始脉冲值
+        bool     encoderInitialized; ///< 首次采样标志（避免用 0 判断首次）
     } position;
 
     struct
@@ -96,6 +97,7 @@ typedef struct
         uint8_t windowSize;   ///< 速度滤波窗口大小
         float*  filterBuffer; ///< 滤波缓冲区
         uint8_t bufferIndex;  ///< 缓冲区索引
+        uint8_t sampleCount;  ///< 已填充的有效样本数（启动阶段避免用 0 拉低平均）
         float   lpf_state;    ///< 低通滤波状态
         // PWM输出滤波
         float pwm_filter_state;

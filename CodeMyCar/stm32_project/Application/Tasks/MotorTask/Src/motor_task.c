@@ -32,7 +32,7 @@ void MotorTask_init(MotorService* motorService)
         .priority = (osPriority_t)osPriorityNormal,
     };
     const osThreadAttr_t rightInstanceAttributes = {
-        .name = "MotorTask_Left",
+        .name = "MotorTask_Right",
         .stack_size = 512 * 4,
         .priority = (osPriority_t)osPriorityNormal,
     };
@@ -55,17 +55,16 @@ void MotorTask_init(MotorService* motorService)
 void MotorTask_doTask(void* arg)
 {
     MotorInstance* motorInstance = (MotorInstance*)arg;
-    // 固定5ms间隔
-    const TickType_t xFixedInterval = pdMS_TO_TICKS(30); // ms
+    // 控制频率 200Hz -> 5ms（与 CONTROL_FREQ_FIXED / MIN_DELTA_TIME_S 一致）
+    const TickType_t xFixedInterval = pdMS_TO_TICKS(1000 / CONTROL_FREQ_FIXED);
 
     TickType_t xLastWakeTime = xTaskGetTickCount();
 
     while (1)
     {
-        // 执行状态更新（确保原子性）
-        taskENTER_CRITICAL();
+        /* updateState 内部已用实例互斥锁保护；不要在临界区里调用可能阻塞的
+           osMutexAcquire，否则会关中断自旋等待。 */
         MotorService_updateState(motorInstance);
-        taskEXIT_CRITICAL();
 
         // 精确周期延迟（带自动补偿）
         vTaskDelayUntil(&xLastWakeTime, xFixedInterval);

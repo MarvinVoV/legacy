@@ -7,10 +7,12 @@
 
 #ifndef SERVICES_MOTOR_INC_PID_CONTROLLER_H_
 #define SERVICES_MOTOR_INC_PID_CONTROLLER_H_
-#ifndef CLAMP
-#define CLAMP(x, min, max) ((x) < (min) ? (min) : ((x) > (max) ? (max) : (x)))
+
 #include <stdbool.h>
 #include <stdint.h>
+
+#ifndef CLAMP
+#define CLAMP(x, min, max) ((x) < (min) ? (min) : ((x) > (max) ? (max) : (x)))
 #endif
 
 #define ZERO_TARGET_THRESHOLD  (0.1f)
