@@ -12,71 +12,64 @@ int main(void){
     uint8_t out[BRIDGE_CONTROL_CMD_SIZE];
     uint8_t seq; bool ack;
 
-    /* 1. differential —— pyserver 真实 JSON（含 null 字段） */
-    const char* j_diff = "{\"seq\":7,\"cmd\":\"motion\",\"motion\":{\"mode\":2,\"duration\":1000,"
-        "\"params\":{\"left_rpm\":null,\"right_rpm\":null,\"linear_vel\":500,\"angular_vel\":100,"
-        "\"steer_angle\":null,\"rotation_point\":null,\"duty_cycle\":null,\"gain\":null}}}";
+    /* 1. differential —— mode=2, linear=500, angular=100（9 字节布局） */
+    const char* j_diff = "{\"seq\":7,\"cmd\":\"motion\",\"motion\":{\"mode\":2,"
+        "\"params\":{\"linear_vel\":500,\"angular_vel\":100}}}";
     int n = bridge_json_to_control_cmd(j_diff, strlen(j_diff), out, &seq, &ack);
-    CHECK(n==13, "differential returns 13 bytes");
+    CHECK(n==9, "differential returns 9 bytes");
     CHECK(seq==7, "differential seq=7");
     CHECK(ack==true, "differential ack_req");
-    uint8_t exp_diff[13] = {0,0x01,2, 0xE8,0x03, 0xF4,0x01, 0x64,0x00, 0,0,0,0};
-    CHECK(memcmp(out, exp_diff, 13)==0, "differential bytes match ControlCmd layout");
-    if (memcmp(out,exp_diff,13)!=0) hex(out,13);
+    uint8_t exp_diff[9] = {0,0x01,2, 0xF4,0x01, 0x64,0x00, 0,0};
+    CHECK(memcmp(out, exp_diff, 9)==0, "differential bytes match 9-byte layout");
+    if (memcmp(out,exp_diff,9)!=0) hex(out,9);
 
     /* 2. emergency_stop */
-    const char* j_estop = "{\"seq\":0,\"cmd\":\"motion\",\"motion\":{\"mode\":0,\"duration\":0,\"params\":{}}}";
+    const char* j_estop = "{\"seq\":0,\"cmd\":\"motion\",\"motion\":{\"mode\":0,\"params\":{}}}";
     n = bridge_json_to_control_cmd(j_estop, strlen(j_estop), out, &seq, &ack);
-    uint8_t exp_estop[13] = {0,0x01,0,0,0, 0,0,0,0,0,0,0,0};
-    CHECK(n==13 && memcmp(out,exp_estop,13)==0, "emergency_stop all-zero params");
+    uint8_t exp_estop[9] = {0,0x01,0, 0,0,0,0, 0,0};
+    CHECK(n==9 && memcmp(out,exp_estop,9)==0, "emergency_stop all-zero params");
 
     /* 3. direct: left=120 right=-120 steer=90 */
-    const char* j_direct = "{\"seq\":1,\"cmd\":\"motion\",\"motion\":{\"mode\":1,\"duration\":0,"
+    const char* j_direct = "{\"seq\":1,\"cmd\":\"motion\",\"motion\":{\"mode\":1,"
         "\"params\":{\"left_rpm\":120,\"right_rpm\":-120,\"steer_angle\":90}}}";
     n = bridge_json_to_control_cmd(j_direct, strlen(j_direct), out, &seq, &ack);
     /* -120 = 0xFF88 -> LE 88 FF ; 120=0x0078->78 00 ; 90=0x005A->5A 00 */
-    uint8_t exp_direct[13] = {0,0x01,1, 0,0, 0x78,0x00, 0x88,0xFF, 0x5A,0x00, 0,0};
-    CHECK(n==13 && memcmp(out,exp_direct,13)==0, "direct bytes (incl negative rpm)");
-    if (memcmp(out,exp_direct,13)!=0) hex(out,13);
+    uint8_t exp_direct[9] = {0,0x01,1, 0x78,0x00, 0x88,0xFF, 0x5A,0x00};
+    CHECK(n==9 && memcmp(out,exp_direct,9)==0, "direct bytes (incl negative rpm)");
+    if (memcmp(out,exp_direct,9)!=0) hex(out,9);
 
-    /* 4. spin: angular=50 rotation_point=1 */
-    const char* j_spin = "{\"seq\":8,\"cmd\":\"motion\",\"motion\":{\"mode\":4,\"duration\":0,"
-        "\"params\":{\"angular_vel\":50,\"rotation_point\":1}}}";
+    /* 4. drive: mode=3, linear=300, steer=45 */
+    const char* j_drive = "{\"seq\":2,\"cmd\":\"motion\",\"motion\":{\"mode\":3,"
+        "\"params\":{\"linear_vel\":300,\"steer_angle\":45}}}";
+    n = bridge_json_to_control_cmd(j_drive, strlen(j_drive), out, &seq, &ack);
+    /* 300=0x012C -> 2C 01 ; 45=0x002D -> 2D 00 */
+    uint8_t exp_drive[9] = {0,0x01,3, 0x2C,0x01, 0x2D,0x00, 0,0};
+    CHECK(n==9 && memcmp(out,exp_drive,9)==0, "drive bytes");
+    if (memcmp(out,exp_drive,9)!=0) hex(out,9);
+
+    /* 5. 已删除的模式 4/5 必须拒绝 */
+    const char* j_spin = "{\"seq\":8,\"cmd\":\"motion\",\"motion\":{\"mode\":4,"
+        "\"params\":{\"angular_vel\":50}}}";
     n = bridge_json_to_control_cmd(j_spin, strlen(j_spin), out, &seq, &ack);
-    uint8_t exp_spin[13] = {0,0x01,4, 0,0, 0x32,0x00, 0x01, 0,0,0,0,0};
-    CHECK(n==13 && memcmp(out,exp_spin,13)==0, "spin bytes");
-    if (memcmp(out,exp_spin,13)!=0) hex(out,13);
+    CHECK(n==0, "mode 4 (SPIN) rejected");
 
-    /* 5. mixed velocity */
-    const char* j_mixv = "{\"seq\":2,\"cmd\":\"motion\",\"motion\":{\"mode\":5,\"duration\":0,"
-        "\"params\":{\"linear_vel\":300,\"angular_vel\":50,\"steer_angle\":45,\"gain\":80}}}";
-    n = bridge_json_to_control_cmd(j_mixv, strlen(j_mixv), out, &seq, &ack);
-    /* driveCtrlType=0(vel)@5, linear@6=300(2C 01), angular@8=50(32 00), steer@10=45(2D 00), gain@12=80(50) */
-    uint8_t exp_mixv[13] = {0,0x01,5, 0,0, 0x00, 0x2C,0x01, 0x32,0x00, 0x2D,0x00, 0x50};
-    CHECK(n==13 && memcmp(out,exp_mixv,13)==0, "mixed-velocity bytes");
-    if (memcmp(out,exp_mixv,13)!=0) hex(out,13);
+    const char* j_mixed = "{\"seq\":8,\"cmd\":\"motion\",\"motion\":{\"mode\":5,"
+        "\"params\":{\"linear_vel\":300,\"steer_angle\":45}}}";
+    n = bridge_json_to_control_cmd(j_mixed, strlen(j_mixed), out, &seq, &ack);
+    CHECK(n==0, "mode 5 (MIXED) rejected");
 
-    /* 6. mixed duty */
-    const char* j_mixd = "{\"seq\":3,\"cmd\":\"motion\",\"motion\":{\"mode\":5,\"duration\":0,"
-        "\"params\":{\"duty_cycle\":500,\"steer_angle\":30,\"gain\":60}}}";
-    n = bridge_json_to_control_cmd(j_mixd, strlen(j_mixd), out, &seq, &ack);
-    /* driveCtrlType=1(duty)@5, left@6=500(F4 01), right@8=500(F4 01), steer@10=30(1E 00), gain@12=60(3C) */
-    uint8_t exp_mixd[13] = {0,0x01,5, 0,0, 0x01, 0xF4,0x01, 0xF4,0x01, 0x1E,0x00, 0x3C};
-    CHECK(n==13 && memcmp(out,exp_mixd,13)==0, "mixed-duty bytes");
-    if (memcmp(out,exp_mixd,13)!=0) hex(out,13);
-
-    /* 7. invalid JSON */
+    /* 6. invalid JSON */
     const char* j_bad = "this is not json";
     n = bridge_json_to_control_cmd(j_bad, strlen(j_bad), out, &seq, &ack);
     CHECK(n==0, "invalid JSON rejected");
 
-    /* 8. unknown mode rejected */
-    const char* j_badmode = "{\"seq\":0,\"cmd\":\"motion\",\"motion\":{\"mode\":9,\"duration\":0,\"params\":{}}}";
+    /* 7. unknown mode rejected */
+    const char* j_badmode = "{\"seq\":0,\"cmd\":\"motion\",\"motion\":{\"mode\":9,\"params\":{}}}";
     n = bridge_json_to_control_cmd(j_badmode, strlen(j_badmode), out, &seq, &ack);
     CHECK(n==0, "unknown mode rejected");
 
-    /* 9. non-motion cmd rejected */
-    const char* j_nonmotion = "{\"seq\":0,\"cmd\":\"reboot\",\"motion\":{\"mode\":0,\"duration\":0,\"params\":{}}}";
+    /* 8. non-motion cmd rejected */
+    const char* j_nonmotion = "{\"seq\":0,\"cmd\":\"reboot\",\"motion\":{\"mode\":0,\"params\":{}}}";
     n = bridge_json_to_control_cmd(j_nonmotion, strlen(j_nonmotion), out, &seq, &ack);
     CHECK(n==0, "non-motion cmd rejected");
 

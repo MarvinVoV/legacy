@@ -4,7 +4,7 @@
  * @file bridge_codec.h
  * @brief JSON ↔ Binary 转换（见 docs/cmd-mapping.md）
  *
- * 下行：pyserver JSON ControlCommand → STM32 13 字节 ControlCmd payload
+ * 下行：pyserver JSON ControlCommand → STM32 9 字节 ControlCmd payload
  * 上行：STM32 二进制 sensor_data_t / log_entry_t → pyserver JSON
  */
 
@@ -13,7 +13,7 @@
 #include <stdbool.h>
 
 /* ControlCmd wire payload 大小（显式宽度，见 docs/cmd-mapping.md §3.2） */
-#define BRIDGE_CONTROL_CMD_SIZE 13
+#define BRIDGE_CONTROL_CMD_SIZE 9
 
 /* 运动模式（与 STM32 motion_common.h 对齐） */
 enum
@@ -21,13 +21,12 @@ enum
     BRIDGE_MODE_EMERGENCY_STOP = 0,
     BRIDGE_MODE_DIRECT        = 1,
     BRIDGE_MODE_DIFFERENTIAL  = 2,
-    BRIDGE_MODE_STEER         = 3,
-    BRIDGE_MODE_SPIN          = 4,
-    BRIDGE_MODE_MIXED         = 5,
+    BRIDGE_MODE_DRIVE         = 3,
+    BRIDGE_MODE_MAX           = 4,
 };
 
 /**
- * @brief 下行：JSON ControlCommand → 13 字节 ControlCmd
+ * @brief 下行：JSON ControlCommand → 9 字节 ControlCmd
  * @param json       JSON 文本
  * @param len        JSON 长度
  * @param out        输出缓冲区（至少 BRIDGE_CONTROL_CMD_SIZE 字节）

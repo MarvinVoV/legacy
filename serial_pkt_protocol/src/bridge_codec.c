@@ -56,13 +56,6 @@ static int get_int(const cJSON* obj, const char* key, int def)
     return def;
 }
 
-/** 从 cJSON 对象取是否存在某数值字段（用于 MIXED 判定 duty vs velocity） */
-static bool has_number(const cJSON* obj, const char* key)
-{
-    const cJSON* item = cJSON_GetObjectItemCaseSensitive(obj, key);
-    return (item != NULL && cJSON_IsNumber(item));
-}
-
 /* ==================== 下行：ping/pong 链路自检 ==================== */
 
 bool bridge_json_is_ping(const char* json, size_t len, uint8_t* out_seq)
@@ -142,21 +135,19 @@ int bridge_json_to_control_cmd(const char* json, size_t len,
         }
 
         const int mode = get_int(motion, "mode", -1);
-        const uint16_t duration = (uint16_t)(get_int(motion, "duration", 0) & 0xFFFF);
-        if (mode < BRIDGE_MODE_EMERGENCY_STOP || mode > BRIDGE_MODE_MIXED)
+        if (mode < BRIDGE_MODE_EMERGENCY_STOP || mode >= BRIDGE_MODE_MAX)
         {
-            break;
+            break; /* 只支持 0-3 */
         }
 
         const cJSON* params = cJSON_GetObjectItemCaseSensitive(motion, "params");
 
-        /* 填充 13 字节 ControlCmd */
+        /* 填充 9 字节 ControlCmd */
         memset(out, 0, BRIDGE_CONTROL_CMD_SIZE);
         out[0] = 0;                  /* ctrlId */
         out[1] = CTRL_FIELD_MOTION;  /* fields */
         out[2] = (uint8_t)mode;      /* mode */
-        put_u16le(&out[3], duration);/* duration */
-        /* out[5..12] = params union（8 字节，按 mode 填） */
+        /* out[3..8] = params union（6 字节，按 mode 填） */
 
         switch (mode)
         {
@@ -166,50 +157,22 @@ int bridge_json_to_control_cmd(const char* json, size_t len,
 
             case BRIDGE_MODE_DIRECT: /* DirectCtrlParam: leftRpm, rightRpm, steerAngle */
                 if (params == NULL) { break; }
-                put_i16le(&out[5], (int16_t)get_int(params, "left_rpm", 0));
-                put_i16le(&out[7], (int16_t)get_int(params, "right_rpm", 0));
-                put_i16le(&out[9], (int16_t)get_int(params, "steer_angle", 0));
+                put_i16le(&out[3], (int16_t)get_int(params, "left_rpm", 0));
+                put_i16le(&out[5], (int16_t)get_int(params, "right_rpm", 0));
+                put_i16le(&out[7], (int16_t)get_int(params, "steer_angle", 0));
                 break;
 
             case BRIDGE_MODE_DIFFERENTIAL: /* DiffCtrlParam: linearVel, angularVel */
                 if (params == NULL) { break; }
-                put_i16le(&out[5], (int16_t)get_int(params, "linear_vel", 0));
-                put_i16le(&out[7], (int16_t)get_int(params, "angular_vel", 0));
-                break;
-
-            case BRIDGE_MODE_STEER: /* SteerParallelParam: linearVel, steerAngle */
-                if (params == NULL) { break; }
-                put_i16le(&out[5], (int16_t)get_int(params, "linear_vel", 0));
-                put_i16le(&out[7], (int16_t)get_int(params, "steer_angle", 0));
-                break;
-
-            case BRIDGE_MODE_SPIN: /* SpinCtrlParam: angularVel(i16), rotationPoint(u8) */
-                if (params == NULL) { break; }
+                put_i16le(&out[3], (int16_t)get_int(params, "linear_vel", 0));
                 put_i16le(&out[5], (int16_t)get_int(params, "angular_vel", 0));
-                out[7] = (uint8_t)(get_int(params, "rotation_point", 0) & 0x03);
                 break;
 
-            case BRIDGE_MODE_MIXED: /* MixedCtrlParam: driveCtrlType, union, steerAngle, gain */
-            {
+            case BRIDGE_MODE_DRIVE: /* DriveCtrlParam: linearVel, steerAngle */
                 if (params == NULL) { break; }
-                /* duty_cycle 存在 → 占空比模式；否则速度模式（见 cmd-mapping §2.4） */
-                if (has_number(params, "duty_cycle"))
-                {
-                    out[5] = 1; /* DRIVE_CTRL_DUTY_CYCLE */
-                    const int16_t duty = (int16_t)get_int(params, "duty_cycle", 0);
-                    put_i16le(&out[6], duty); /* leftDutyCycle */
-                    put_i16le(&out[8], duty); /* rightDutyCycle（单值同填左右） */
-                }
-                else
-                {
-                    out[5] = 0; /* DRIVE_CTRL_VELOCITY */
-                    put_i16le(&out[6], (int16_t)get_int(params, "linear_vel", 0));
-                    put_i16le(&out[8], (int16_t)get_int(params, "angular_vel", 0));
-                }
-                put_i16le(&out[10], (int16_t)get_int(params, "steer_angle", 0));
-                out[12] = (uint8_t)(get_int(params, "gain", 0) & 0xFF);
+                put_i16le(&out[3], (int16_t)get_int(params, "linear_vel", 0));
+                put_i16le(&out[5], (int16_t)get_int(params, "steer_angle", 0));
                 break;
-            }
 
             default:
                 break;
