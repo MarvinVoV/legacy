@@ -5,8 +5,16 @@ import time
 from dataclasses import dataclass
 
 from app.models.device import DeviceState
-from app.models.telemetry import AckEvent, HeartbeatData, LogEntry, PongEvent, SensorData
+from app.models.telemetry import (
+    AckEvent,
+    HeartbeatData,
+    LogEntry,
+    MotionStatus,
+    PongEvent,
+    SensorData,
+)
 from app.mqtt.types import MessageHandler
+from app.services.motion_service import AgentMotionService
 from app.services.ping_service import PingRegistry
 
 logger = logging.getLogger(__name__)
@@ -27,10 +35,13 @@ class MQTTHandlers:
     log: MessageHandler
     ack: MessageHandler
     pong: MessageHandler
+    motion: MessageHandler
 
 
 def create_handlers(
-    devices: dict[str, DeviceState], registry: PingRegistry
+    devices: dict[str, DeviceState],
+    registry: PingRegistry,
+    motion_service: AgentMotionService | None = None,
 ) -> MQTTHandlers:
     """创建全部 MQTT handler 闭包（共享 devices 与 ping registry）"""
 
@@ -99,7 +110,9 @@ def create_handlers(
         state = devices[device_id]
         state.last_ack_seq = ev.seq
         state.last_ack_time = time.time()
-        logger.debug("ACK from %s: seq=%d", device_id, ev.seq)
+        if motion_service is not None:
+            motion_service.on_ack(device_id, ev.seq, ev.status)
+        logger.debug("ACK from %s: seq=%d status=%d", device_id, ev.seq, ev.status)
 
     async def on_pong(topic: str, payload: bytes) -> None:
         """ping 回执：按 (device_id, seq) 唤醒等待中的 ping 请求"""
@@ -114,10 +127,30 @@ def create_handlers(
             return
         registry.resolve(device_id, ev.seq, ev.uptime_s, ev.heap)
 
+    async def on_motion(topic: str, payload: bytes) -> None:
+        """运动状态帧：更新设备位姿并唤醒等待中的 move"""
+        device_id = extract_device_id(topic)
+        try:
+            status = MotionStatus.model_validate_json(payload)
+        except Exception:
+            logger.debug("Invalid motion status from %s", device_id)
+            return
+
+        if device_id not in devices:
+            devices[device_id] = DeviceState(device_id=device_id)
+        state = devices[device_id]
+        state.motion_supported = True
+        state.last_motion = status
+        state.last_motion_time = time.time()
+
+        if motion_service is not None:
+            motion_service.on_motion(device_id, status)
+
     return MQTTHandlers(
         heartbeat=on_heartbeat,
         sensor=on_sensor,
         log=on_log,
         ack=on_ack,
         pong=on_pong,
+        motion=on_motion,
     )

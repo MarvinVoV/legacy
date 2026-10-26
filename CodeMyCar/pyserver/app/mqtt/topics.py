@@ -10,6 +10,7 @@ SUB_HEARTBEAT = "data/+/heartbeat"
 SUB_STATUS = "data/+/status"
 SUB_ACK = "data/+/ack"
 SUB_PONG = "data/+/pong"
+SUB_MOTION = "data/+/motion"
 
 
 def cmd_topic(device_id: str) -> str:

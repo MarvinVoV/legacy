@@ -7,12 +7,20 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api.routes import commands, devices
+from app.api.routes import agent_motion, commands, devices
 from app.config import get_settings
 from app.mqtt.client import MQTTClient
 from app.mqtt.handlers import create_handlers
-from app.mqtt.topics import SUB_ACK, SUB_HEARTBEAT, SUB_LOG, SUB_PONG, SUB_SENSOR
+from app.mqtt.topics import (
+    SUB_ACK,
+    SUB_HEARTBEAT,
+    SUB_LOG,
+    SUB_MOTION,
+    SUB_PONG,
+    SUB_SENSOR,
+)
 from app.services.device_manager import DeviceManager
+from app.services.motion_service import AgentMotionService
 from app.services.ping_service import PingRegistry
 
 logger = logging.getLogger(__name__)
@@ -39,13 +47,22 @@ async def lifespan(app: FastAPI):
     # ping/pong：注册表放在 app.state，handler 与每次请求的 PingService 共享
     app.state.ping_registry = PingRegistry()
 
-    # 注册消息处理器（心跳/传感器/日志/ACK/pong）
-    handlers = create_handlers(device_manager.devices, app.state.ping_registry)
+    # Agent 运动服务：per-device 串行化 + ACK/状态等待
+    app.state.agent_motion = AgentMotionService(
+        mqtt_client, device_manager.devices, settings
+    )
+
+    # 注册消息处理器（心跳/传感器/日志/ACK/pong/motion）
+    handlers = create_handlers(
+        device_manager.devices, app.state.ping_registry, app.state.agent_motion
+    )
+    app.state.handlers = handlers
     mqtt_client.register_handler(SUB_HEARTBEAT, handlers.heartbeat)
     mqtt_client.register_handler(SUB_SENSOR, handlers.sensor)
     mqtt_client.register_handler(SUB_LOG, handlers.log)
     mqtt_client.register_handler(SUB_ACK, handlers.ack)
     mqtt_client.register_handler(SUB_PONG, handlers.pong)
+    mqtt_client.register_handler(SUB_MOTION, handlers.motion)
 
     # 连接 MQTT
     try:
@@ -96,6 +113,7 @@ async def api_key_middleware(request: Request, call_next):
 # 路由
 app.include_router(commands.router, prefix=settings.api_prefix)
 app.include_router(devices.router, prefix=settings.api_prefix)
+app.include_router(agent_motion.router, prefix=settings.api_prefix)
 
 
 @app.get("/")

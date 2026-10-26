@@ -32,6 +32,17 @@ class Settings(BaseSettings):
     # 设备
     device_heartbeat_timeout: int = 30  # 秒，超过此时间无心跳视为离线
 
+    # Agent 运动 API
+    agent_max_distance_cm: int = 500
+    agent_max_turn_deg: int = 360
+    agent_min_speed_cm_s: int = 1
+    agent_max_speed_cm_s: int = 60
+    agent_ack_timeout_s: float = 1.0
+    agent_motion_timeout_extra_s: float = 3.0
+    agent_state_stale_s: float = 2.0
+    agent_max_motion_duration_s: float = 60.0
+    agent_min_turn_radius_mm: int = 144
+
     # 日志
     log_level: str = "INFO"
 

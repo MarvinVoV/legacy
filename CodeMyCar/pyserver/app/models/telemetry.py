@@ -33,6 +33,23 @@ class AckEvent(BaseModel):
     """命令 ACK 回执（ESP32 收到 STM32 的 ACK 后发往 data/{id}/ack）"""
     seq: int
     ack: bool = True
+    status: int = 0
+
+
+class MotionStatus(BaseModel):
+    """运动状态帧（data/{id}/motion，原始设备单位）"""
+    seq: int = 0
+    state: str = "idle"          # idle / running / done / aborted / error
+    error: int = 0
+    x_mm: int = 0
+    y_mm: int = 0                # 设备坐标：左正
+    theta_mdeg: int = 0          # 设备坐标：CCW 正
+    odometer_mm: int = 0
+    goal_distance_mm: int = 0
+    goal_turn_mdeg: int = 0      # 右正
+    goal_duration_ms: int = 0
+    left_mmps: int = 0
+    right_mmps: int = 0
 
 
 class PongEvent(BaseModel):

@@ -5,7 +5,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from app.models.telemetry import HeartbeatData, SensorData
+from app.models.telemetry import HeartbeatData, MotionStatus, SensorData
 
 
 class DeviceState(BaseModel):
@@ -19,6 +19,9 @@ class DeviceState(BaseModel):
     log_count: int = 0
     last_ack_seq: Optional[int] = None
     last_ack_time: float = 0.0
+    motion_supported: bool = False
+    last_motion: Optional[MotionStatus] = None
+    last_motion_time: float = 0.0
 
 
 class DeviceStatus(BaseModel):
