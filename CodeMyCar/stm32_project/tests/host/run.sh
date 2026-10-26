@@ -12,6 +12,15 @@ echo "== motion kinematics =="
   -lm -o "${TMPDIR:-/tmp}/motion_kinematics_test"
 "${TMPDIR:-/tmp}/motion_kinematics_test"
 
+echo "== motion goal =="
+"$CC" -std=c11 -Wall -Wextra -O2 \
+  -I "$DIR/Application/System/Utils/Inc" \
+  "$DIR/tests/host/motion_goal_test.c" \
+  "$DIR/Application/System/Utils/Src/motion_goal.c" \
+  "$DIR/Application/System/Utils/Src/motion_kinematics.c" \
+  -lm -o "${TMPDIR:-/tmp}/motion_goal_test"
+"${TMPDIR:-/tmp}/motion_goal_test"
+
 echo "== PID simulation =="
 "$CC" -std=c11 -Wall -Wextra -O2 \
   -I "$DIR/tests/host/stubs" \
