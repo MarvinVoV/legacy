@@ -9,6 +9,7 @@
 #ifndef MODULES_MOTOR_INC_MOTOR_HAL_H_
 #define MODULES_MOTOR_INC_MOTOR_HAL_H_
 
+#include <stdbool.h>
 #include "stm32h7xx_hal.h"
 
 /**
@@ -59,6 +60,8 @@ typedef struct
         GPIO_TypeDef* in2Port; ///< IN2控制引脚GPIO端口 (如GPIOB)
         uint16_t      in2Pin;  ///< IN2控制引脚编号 (如GPIO_PIN_5)
     } gpio;
+
+    bool invertDirection; ///< 电机+编码器方向取反（接线相反时使用）
 
     HAL_MotorState state; ///< 电机状态结构体
 } HAL_MotorConfig;

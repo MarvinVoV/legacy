@@ -29,7 +29,7 @@ int SteerService_init(SteerInstance* steerInstance, SteerConfig* config, ServoDr
     steerInstance->state.actualAngleDeg = 0.0f;
     steerInstance->state.targetAngleDeg = 0.0f;
     steerInstance->state.lastUpdateTick = 0;
-    steerInstance->state.motionState = STEER_STATE_IDLE;
+    steerInstance->state.motionState = STEER_MOTION_STATE_IDLE;
     steerInstance->state.errorCode = 0;
 
     // 初始化平滑控制
@@ -197,7 +197,7 @@ int SteerService_setAngleImmediate(SteerInstance* instance, const float angle)
     }
 
     // 更新状态
-    instance->state.motionState = STEER_STATE_IDLE;
+    instance->state.motionState = STEER_MOTION_STATE_IDLE;
     instance->state.lastUpdateTick = HAL_GetTick();
 
     osMutexRelease(instance->mutex);
@@ -218,7 +218,7 @@ void SteerService_forceStop(SteerInstance* inst)
         .state = STEER_STATE_IDLE                     // 设为空闲状态
     };
     // 更新全局状态机
-    inst->state.motionState = STEER_STATE_IDLE;
+    inst->state.motionState = STEER_MOTION_STATE_IDLE;
 
     // 同步硬件角度
     const int err = ServoDriver_emergencyStop(inst->driver);
@@ -299,7 +299,7 @@ static int handleMovingState(SteerInstance* inst)
     if (remainingDist <= inst->config.deadZoneDeg)
     {
         inst->state.actualAngleDeg = ctrl->targetAngleDeg;
-        inst->state.motionState = STEER_STATE_IDLE;
+        inst->state.motionState = STEER_MOTION_STATE_IDLE;
     }
 
     // 硬件驱动
@@ -340,7 +340,7 @@ static void handleCalibratingState(SteerInstance* inst)
 
         case 3: // 记录最小值
             inst->config.minAngleDeg = inst->state.actualAngleDeg;
-            inst->state.motionState = STEER_STATE_IDLE;
+            inst->state.motionState = STEER_MOTION_STATE_IDLE;
             inst->calibCtrl.calibPhase = 0;
             break;
     }

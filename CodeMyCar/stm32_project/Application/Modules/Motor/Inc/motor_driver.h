@@ -38,6 +38,7 @@ typedef struct
     uint16_t gearRatio;     ///< 减速比（如30:1存储为30）
     float    wheelRadiusMM; ///< 轮半径（毫米）
     float    maxRPM;        ///< 最大转速（转/分钟）
+    float    feedforwardScale; ///< 前馈缩放（补偿左右机械差异）
 } MotorSpec;
 
 /**
@@ -67,6 +68,7 @@ typedef struct
     } debug;
 
     float           openLoopDuty;    ///< 当前开环占空比 [%]
+    float           appliedDuty;     ///< 实际下发的占空比 [-1.0, 1.0]（调试用）
     uint32_t        lastUpdateTick;  ///< 上次更新时间戳 [ms]
     uint32_t        lastControlTick; ///< 控制执行时间戳[ms]
     MotorDriverMode mode;            ///< 当前控制模式
@@ -86,8 +88,9 @@ typedef struct
     {
         MotorDriverMode mode;      ///< 控制模式
         MotorDirection  direction; ///< 方向
-        float           targetRPM; ///< 目标转速 [RPM],表示电机输出轴（即经过减速后的最终输出轴）的转速
-        PID_Controller  pidCtrl;   ///< PID控制器实例（非指针）
+        float           targetRPM;       ///< 目标转速 [RPM]
+        float           rampedTargetRPM; ///< 软启动斜坡后的目标转速 [RPM]
+        PID_Controller  pidCtrl;         ///< PID控制器实例（非指针）
     } control;
 
     MotorDriverState state; ///< 实时状态

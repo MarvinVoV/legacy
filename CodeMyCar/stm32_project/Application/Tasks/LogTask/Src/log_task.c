@@ -47,7 +47,7 @@ void LogTask_Init(void)
     // 配置任务属性结构体
     const osThreadAttr_t log_task_attributes = {
         .name = "LogTask",
-        .stack_size = 1024,                // 根据需求调整
+        .stack_size = 4096,                // 发送日志经过打包/CRC/DMA，1KB 太小
         .priority = osPriorityBelowNormal, // 低于关键任务
     };
 
@@ -107,11 +107,12 @@ static void LogTask_Execute(void* argument)
             // 重置错误计数器
             error_count = 0;
 
-            // TODO log it
-
-            // 释放日志内存
+            // 通过 UART 协议帧发往 ESP32 → MQTT data/{id}/log
             if (received_entry != NULL)
             {
+                (void)UART_Send_Protocol_Log(received_entry);
+
+                // 释放日志内存
                 vPortFree(received_entry);
                 received_entry = NULL;
             }

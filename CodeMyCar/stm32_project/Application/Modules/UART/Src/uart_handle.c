@@ -25,6 +25,9 @@
    RAM_D1（0x2400_0000）。链接脚本中 .dma_buffer 段位于 RAM_D1。 */
 uart_dma_buffer_t uart_dma_buffer __attribute__((section(".dma_buffer"), aligned(32)));
 
+/* TX 串行化：ACK / 日志 / 运动状态共用同一个 DMA 缓冲区 */
+static osMutexId_t s_tx_mutex = NULL;
+
 
 /**
  * 发送日志到 ESP (需要外接 ESP32)
@@ -58,6 +61,9 @@ void Init_UART_DMA(void)
     uart_dma_buffer.length = 0;
     uart_dma_buffer.semaphore = xSemaphoreCreateBinary();
     xSemaphoreGive(uart_dma_buffer.semaphore); // 初始释放
+
+    /* 注意：本函数在 osKernelInitialize() 之前调用，不能在这里 osMutexNew()。
+       TX 互斥锁在 UART_Send_Frame()（任务上下文）里懒创建。 */
 
     __HAL_UART_ENABLE_IT(&huart4, UART_IT_IDLE | UART_IT_PE | UART_IT_ERR);
     start_reception();
@@ -135,24 +141,44 @@ bool UART_Send_Protocol_Log(log_entry_t* log_entry)
 bool UART_Send_Frame(const protocol_type_t type, const uint8_t seq, const uint8_t flags,
                      const uint8_t* data, const uint16_t len)
 {
+    /* 多个任务（Ctrl/Log/Motion）共用 tx_buffer，必须串行化；
+       同时等上一帧 DMA 完成后再覆盖缓冲区。 */
+    if (s_tx_mutex == NULL)
+    {
+        s_tx_mutex = osMutexNew(NULL); /* 首次发送时创建（此时内核已启动） */
+    }
+    if (s_tx_mutex != NULL && osMutexAcquire(s_tx_mutex, 100) != osOK)
+    {
+        return false;
+    }
+
+    const uint32_t wait_start = HAL_GetTick();
+    while (huart4.gState != HAL_UART_STATE_READY &&
+           (HAL_GetTick() - wait_start) < 20u)
+    {
+        osDelay(1);
+    }
+
     // 打包 v2 协议帧（带 seq/flags）
     uint16_t frame_len = 0;
     uint8_t* packed_frame = protocol_pack_frame_ex(type, seq, flags, data, len, &frame_len);
 
+    bool ok = false;
     if (packed_frame != NULL && frame_len > 0 && frame_len <= UART_TX_BUFFER_SIZE)
     {
         memcpy(uart_dma_buffer.tx_buffer, packed_frame, frame_len);
-        free(packed_frame);
-
-        const HAL_StatusTypeDef status =
-            HAL_UART_Transmit_DMA(&huart4, uart_dma_buffer.tx_buffer, frame_len);
-        return status == HAL_OK;
+        ok = (HAL_UART_Transmit_DMA(&huart4, uart_dma_buffer.tx_buffer, frame_len) == HAL_OK);
     }
     if (packed_frame != NULL)
     {
         free(packed_frame);
     }
-    return false;
+
+    if (s_tx_mutex != NULL)
+    {
+        osMutexRelease(s_tx_mutex);
+    }
+    return ok;
 }
 
 static bool UART_Send_To_Esp(const uint8_t* data, const uint16_t length, const protocol_type_t type)

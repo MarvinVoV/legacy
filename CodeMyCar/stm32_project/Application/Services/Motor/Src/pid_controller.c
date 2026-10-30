@@ -148,7 +148,7 @@ float PID_Calculate(PID_Controller* pid, float setpoint, float measurement, floa
         fabsf(error) > 0.1f)
     {
         // 启动补偿：提供额外推力
-        const float startup_boost = 0.12f; // 12%启动推力
+        const float startup_boost = 0.04f; // 4%启动推力（降低右轮起步超调）
         if (error > 0.0f)
         {
             output = fmaxf(output, startup_boost);

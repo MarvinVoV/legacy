@@ -226,6 +226,13 @@ static void dispatch_log_entry(log_entry_t* entry)
         }
         else
         {
+            /* 内核未启动时不能向队列投递（osMessageQueuePut 会尝试阻塞，
+               而 RTOS 调度器尚未运行）。启动阶段只走 direct 通道。 */
+            if (osKernelGetState() != osKernelRunning)
+            {
+                continue;
+            }
+
             // 异步输出通道：入队处理
             const osStatus_t status = osMessageQueuePut(log_queue, &entry, osPriorityNone,
                                                         LOG_QUEUE_WAIT_TICKS);

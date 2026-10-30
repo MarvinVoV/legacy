@@ -14,7 +14,7 @@
 
 /// 默认速度滤波窗口大小
 #ifndef DEFAULT_SPEED_FILTER_WINDOW
-#define DEFAULT_SPEED_FILTER_WINDOW 5
+#define DEFAULT_SPEED_FILTER_WINDOW 10
 #endif
 
 
@@ -132,6 +132,8 @@ bool MotorDriver_Init(MotorDriver* driver, const PID_Params* initialPid)
     driver->filter.pwm_filter_state = 0.0f;
     driver->filter.pwm_alpha        = 0.7f; // 默认值
 
+    driver->control.rampedTargetRPM = 0.0f;
+
     // 状态初始化
     memset(&driver->state, 0, sizeof(MotorDriverState));
     driver->state.position.encoderInitialized = false;
@@ -200,6 +202,7 @@ void MotorDriver_SetDutyCycle(MotorDriver* driver, const float duty)
 
     // 更新状态
     driver->state.openLoopDuty = clamped_duty;
+    driver->state.appliedDuty  = clamped_duty / 100.0f;
 }
 
 void MotorDriver_SetTargetRPM(MotorDriver* driver, const float rpm)
@@ -250,7 +253,11 @@ void MotorDriver_Update(MotorDriver* driver)
     const uint32_t current_raw = HAL_Motor_ReadRawEncoder(driver->halCfg);
 
     // 计算脉冲增量（处理计数器溢出）
-    const int32_t delta_pulses = calculate_delta_pulses(driver, current_raw);
+    int32_t delta_pulses = calculate_delta_pulses(driver, current_raw);
+    if (driver->halCfg->invertDirection)
+    {
+        delta_pulses = -delta_pulses;
+    }
 
     // 计算实际脉冲率（脉冲/秒）
     float pulses_per_sec = (float)delta_pulses / delta_time_s;
@@ -279,9 +286,21 @@ void MotorDriver_Update(MotorDriver* driver)
     // 闭环控制处理
     if (driver->state.mode == MOTOR_DRIVER_MODE_CLOSED_LOOP)
     {
+        // 目标软启动：300 RPM/s 斜坡，避免双轮起步占空比突变
+        const float ramp_step  = 300.0f * delta_time_s;
+        const float target_err = driver->control.targetRPM - driver->control.rampedTargetRPM;
+        if (fabsf(target_err) <= ramp_step)
+        {
+            driver->control.rampedTargetRPM = driver->control.targetRPM;
+        }
+        else
+        {
+            driver->control.rampedTargetRPM += (target_err > 0.0f) ? ramp_step : -ramp_step;
+        }
+
         // 使用RPM直接归一化
         const float max_rpm           = driver->spec->maxRPM;
-        const float normalized_target = driver->control.targetRPM / max_rpm;
+        const float normalized_target = driver->control.rampedTargetRPM / max_rpm;
         const float normalized_actual = filtered_rpm / max_rpm;
         // 限制归一化范围
         const float safe_target = fmaxf(fminf(normalized_target, 1.0f), -1.0f);
@@ -291,7 +310,13 @@ void MotorDriver_Update(MotorDriver* driver)
         float output = PID_Calculate(&driver->control.pidCtrl, safe_target, safe_actual, delta_time_s, driver->id);
 
         // 添加前馈
-        output += calculate_feedforward(driver->control.targetRPM, filtered_rpm);
+        /* 前馈缩放只在低速段生效（30 RPM 时约为峰值的一半），避免高速超调 */
+        const float ff_speed_factor = fmaxf(0.0f,
+            1.0f - fabsf(driver->control.rampedTargetRPM) / 60.0f);
+        const float ff_scale = 1.0f +
+            (driver->spec->feedforwardScale - 1.0f) * ff_speed_factor;
+        output += calculate_feedforward(driver->control.rampedTargetRPM, filtered_rpm) *
+                  ff_scale;
 
         // 3. 应用PWM滤波
         const float filtered_output = apply_pwm_filter(driver, output);
@@ -302,6 +327,8 @@ void MotorDriver_Update(MotorDriver* driver)
                                          : (filtered_output < -1.0f)
                                          ? -1.0f
                                          : filtered_output;
+
+        driver->state.appliedDuty = clamped_output; /* 调试：实际下发占空比 */
 
         // // PID debug
         if (HAL_GetTick() - driver->state.debug.lastLogPrint >= 20)
@@ -497,7 +524,7 @@ static float apply_speed_filter(MotorDriver* driver, float raw_speed)
     const float ma_filtered = sum / (float)driver->filter.sampleCount;
 
     // 二级低通滤波；首个样本直接作为初值，避免启动滞后
-    const float alpha = 0.5f;
+    const float alpha = 0.35f;
     if (driver->filter.sampleCount == 1)
     {
         driver->filter.lpf_state = ma_filtered;

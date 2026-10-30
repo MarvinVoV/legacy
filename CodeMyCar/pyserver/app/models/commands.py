@@ -21,7 +21,7 @@ class MotionParams(BaseModel):
     right_rpm: Optional[int] = Field(None, ge=-300, le=300, description="右轮 RPM")
     linear_vel: Optional[int] = Field(None, ge=-1000, le=1000, description="线速度 (0.001 m/s, ±1.0)")
     angular_vel: Optional[int] = Field(None, ge=-127, le=127, description="角速度 (0.0644 rad/s, ±8.2)")
-    steer_angle: Optional[int] = Field(None, ge=-450, le=450, description="转向角 (0.1°)")
+    steer_angle: Optional[int] = Field(None, ge=-600, le=600, description="转向角 (0.1°)")
     turn_ddeg: Optional[int] = Field(None, ge=-3600, le=3600, description="航向变化 (0.1°, 右正)")
     distance_mm: Optional[int] = Field(None, ge=-5000, le=5000, description="路程 (mm)")
     speed_mm_s: Optional[int] = Field(None, ge=1, le=600, description="路径速度 (mm/s)")

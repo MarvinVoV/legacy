@@ -60,7 +60,7 @@ set(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/STM32H723ZGTX_FLASH.ld)
 
 add_link_options(-Wl,-gc-sections,--print-memory-usage,-Map=${PROJECT_BINARY_DIR}/${PROJECT_NAME}.map)
 add_link_options(-mcpu=cortex-m7 -mthumb -mthumb-interwork)
-add_link_options(--specs=nano.specs -T ${LINKER_SCRIPT})
+add_link_options(--specs=nano.specs -u _printf_float -T ${LINKER_SCRIPT})
 
 add_executable(${PROJECT_NAME}.elf ${SOURCES} ${LINKER_SCRIPT})
 target_link_libraries(${PROJECT_NAME}.elf m)

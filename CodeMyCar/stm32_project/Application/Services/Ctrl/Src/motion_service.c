@@ -490,6 +490,7 @@ void MotionService_Run(MotionContext* ctx)
             break;
     }
 
+
     // 更新运行时状态
     update_runtime_state(ctx);
 }
@@ -506,6 +507,9 @@ static inline float mm_to_m(const float mm)
 
 static void handle_emergency_stop(MotionContext* ctx)
 {
+    ctx->cmdLeftRpm  = 0.0f;
+    ctx->cmdRightRpm = 0.0f;
+
     // 停止所有电机
     MotorService_emergencyStop(ctx->motorService, MOTOR_LEFT_WHEEL);
     MotorService_emergencyStop(ctx->motorService, MOTOR_RIGHT_WHEEL);
@@ -521,13 +525,16 @@ static void handle_direct_control(MotionContext* ctx, const MotionTarget* target
                                   -max_steer, max_steer);
 
     // 设置电机转速（限幅，防止绕过 pyserver 直接发 MQTT 超速）
-    MotorService_setTargetRPM(ctx->motorService, MOTOR_LEFT_WHEEL,
-                              motion_clamp_rpm(target->params.directCtrl.leftRpm, MOTION_MAX_RPM));
-    MotorService_setTargetRPM(ctx->motorService, MOTOR_RIGHT_WHEEL,
-                              motion_clamp_rpm(target->params.directCtrl.rightRpm, MOTION_MAX_RPM));
+    const float left_rpm  = motion_clamp_rpm(target->params.directCtrl.leftRpm, MOTION_MAX_RPM);
+    const float right_rpm = motion_clamp_rpm(target->params.directCtrl.rightRpm, MOTION_MAX_RPM);
+    ctx->cmdLeftRpm  = left_rpm;
+    ctx->cmdRightRpm = right_rpm;
+    MotorService_setTargetRPM(ctx->motorService, MOTOR_LEFT_WHEEL, left_rpm);
+    MotorService_setTargetRPM(ctx->motorService, MOTOR_RIGHT_WHEEL, right_rpm);
 
-    // 舵机角度
-    SteerService_setAngleSmoothly(ctx->steerServo, steer);
+    // 舵机角度 = 中位 - 相对转向角（舵机/连杆方向相反：正=右）
+    SteerService_setAngleSmoothly(ctx->steerServo,
+                                  ctx->chassisConfig.steerCenterAngleDeg - steer);
 }
 
 static void handle_differential_control(MotionContext* ctx, const MotionTarget* target)
@@ -548,6 +555,8 @@ static void handle_differential_control(MotionContext* ctx, const MotionTarget* 
     );
 
     // 设置电机转速
+    ctx->cmdLeftRpm  = left_rpm;
+    ctx->cmdRightRpm = right_rpm;
     MotorService_setTargetRPM(ctx->motorService, MOTOR_LEFT_WHEEL, left_rpm);
     MotorService_setTargetRPM(ctx->motorService, MOTOR_RIGHT_WHEEL, right_rpm);
 
@@ -573,11 +582,13 @@ static void handle_drive(MotionContext* ctx, const MotionTarget* target)
                       MOTION_MAX_RPM,
                       &left_rpm, &right_rpm);
 
+    ctx->cmdLeftRpm  = left_rpm;
+    ctx->cmdRightRpm = right_rpm;
     MotorService_setTargetRPM(ctx->motorService, MOTOR_LEFT_WHEEL, left_rpm);
     MotorService_setTargetRPM(ctx->motorService, MOTOR_RIGHT_WHEEL, right_rpm);
 
-    // 舵机 = 中位 + 转向角
-    SteerService_setAngleSmoothly(ctx->steerServo, cfg->steerCenterAngleDeg + steer);
+    // 舵机 = 中位 - 转向角（正=右）
+    SteerService_setAngleSmoothly(ctx->steerServo, cfg->steerCenterAngleDeg - steer);
 }
 
 static MotionGoalConfig goal_cfg_from(const ChassisConfig* cfg)
@@ -606,6 +617,8 @@ static void handle_goal(MotionContext* ctx)
 
     if (out.finished || out.error != 0)
     {
+        ctx->cmdLeftRpm  = 0.0f;
+        ctx->cmdRightRpm = 0.0f;
         MotorService_setTargetRPM(ctx->motorService, MOTOR_LEFT_WHEEL, 0.0f);
         MotorService_setTargetRPM(ctx->motorService, MOTOR_RIGHT_WHEEL, 0.0f);
         SteerService_setAngleImmediate(ctx->steerServo, ctx->chassisConfig.steerCenterAngleDeg);
@@ -613,11 +626,13 @@ static void handle_goal(MotionContext* ctx)
         return;
     }
 
+    ctx->cmdLeftRpm  = out.leftRpm;
+    ctx->cmdRightRpm = out.rightRpm;
     MotorService_setTargetRPM(ctx->motorService, MOTOR_LEFT_WHEEL, out.leftRpm);
     MotorService_setTargetRPM(ctx->motorService, MOTOR_RIGHT_WHEEL, out.rightRpm);
 
     const float steer = out.pivot ? ctx->chassisConfig.steerCenterAngleDeg
-                                  : ctx->chassisConfig.steerCenterAngleDeg + out.steerAngleDeg;
+                                  : ctx->chassisConfig.steerCenterAngleDeg - out.steerAngleDeg;
     SteerService_setAngleSmoothly(ctx->steerServo, steer);
 }
 

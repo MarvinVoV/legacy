@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     agent_motion_timeout_extra_s: float = 3.0
     agent_state_stale_s: float = 2.0
     agent_max_motion_duration_s: float = 60.0
-    agent_min_turn_radius_mm: int = 144
+    agent_min_turn_radius_mm: int = 84  # 与 STM32 maxSteerAngleDeg=60° 对应
 
     # 日志
     log_level: str = "INFO"

@@ -17,10 +17,10 @@ static const ChassisConfig DEFAULT_CHASSIS_CFG = {
     .wheelbaseMM = 144.0f,        // 轴距（前后轮中心距），单位：毫米(mm)
     .trackWidthMM = 167.0f,       // 轮距（左右轮中心距），单位：毫米(mm)
     .wheelRadiusMM = 32.5f,       // 驱动轮半径，单位：毫米(mm)
-    .minTurnRadiusMM = 144.0f,    // 最小转弯半径 = 轴距 / tan(45°)
+    .minTurnRadiusMM = 83.1f,     // 最小转弯半径 = 轴距 / tan(60°)
     .maxLinearVelocityMPS = 1.0f, // 保守上限：300 RPM ≈ 1.02 m/s
     .maxAngularVelRad = 8.2f,     // 保守上限（满轮速原地旋转约 12 rad/s）
-    .maxSteerAngleDeg = 45.0f,    // 前轮最大转向角度，正右负左
+    .maxSteerAngleDeg = 60.0f,    // 前轮最大转向角度，正右负左（右极限约 65°，留 5° 余量）
     .steerCenterAngleDeg = 90.0f, // 归中角度
 };
 
@@ -82,7 +82,8 @@ static int init_motor_service(void)
         .gpio = {
             .in1Port = GPIOF, .in1Pin = GPIO_PIN_7,
             .in2Port = GPIOF, .in2Pin = GPIO_PIN_8
-        }
+        },
+        .invertDirection = true  // 物理右轮接线方向相反
     };
 
     // 电机规格参数
@@ -90,21 +91,23 @@ static int init_motor_service(void)
         .encoderPPR = 13,
         .gearRatio = 30,
         .maxRPM = 300,
-        .wheelRadiusMM = DEFAULT_CHASSIS_CFG.wheelRadiusMM
+        .wheelRadiusMM = DEFAULT_CHASSIS_CFG.wheelRadiusMM,
+        .feedforwardScale = 1.4f
     };
     rightMotorSpec = (MotorSpec){
         .encoderPPR = 13,
         .gearRatio = 30,
         .maxRPM = 300,
-        .wheelRadiusMM = DEFAULT_CHASSIS_CFG.wheelRadiusMM
+        .wheelRadiusMM = DEFAULT_CHASSIS_CFG.wheelRadiusMM,
+        .feedforwardScale = 1.4f  // 右轮低速静摩擦较大，增加前馈
     };
 
     // 左轮PID参数
     leftPidControllerInstance = (PID_Controller){
         .params = {
-            .kp = 0.68f,                  // 提高比例增益（增强启动能力）
-            .ki = 0.9f,                   // 提高积分增益（加速误差消除）
-            .kd = 0.09f,                  // 降低微分增益（减少噪声影响）
+            .kp = 0.50f,                  // 提高比例增益（增强启动能力）
+            .ki = 0.60f,                   // 提高积分增益（加速误差消除）
+            .kd = 0.03f,                  // 降低微分增益（减少噪声影响）
             .output_max = 1.0f,           // 输出限幅（100%占空比）
             .integral_threshold = 0.005f, // 误差阈值
             .dead_zone = 0.002f
@@ -122,9 +125,9 @@ static int init_motor_service(void)
     // 右轮PID参数
     rightPidControllerInstance = (PID_Controller){
         .params = {
-            .kp = 0.68f,                  // 提高比例增益（增强启动能力）
-            .ki = 0.9f,                   // 提高积分增益（加速误差消除）
-            .kd = 0.09f,                  // 降低微分增益（减少噪声影响）
+            .kp = 0.50f,                  // 提高比例增益（增强启动能力）
+            .ki = 0.60f,                   // 提高积分增益（加速误差消除）
+            .kd = 0.03f,                  // 降低微分增益（减少噪声影响）
             .output_max = 1.0f,           // 输出限幅（100%占空比）
             .integral_threshold = 0.005f, // 误差阈值
             .dead_zone = 0.002f
@@ -141,7 +144,7 @@ static int init_motor_service(void)
 
     motorLeftDriver = (MotorDriver){
         .id = 0,
-        .halCfg = &leftHalCfg,
+        .halCfg = &rightHalCfg,
         .spec = &leftMotorSpec,
         .control = {
             .mode = MOTOR_DRIVER_MODE_STOP,
@@ -152,7 +155,7 @@ static int init_motor_service(void)
 
     motorRightDriver = (MotorDriver){
         .id = 1,
-        .halCfg = &rightHalCfg,
+        .halCfg = &leftHalCfg,
         .spec = &rightMotorSpec,
         .control = {
             .mode = MOTOR_DRIVER_MODE_STOP,

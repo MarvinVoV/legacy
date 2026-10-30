@@ -118,6 +118,8 @@ typedef struct
     osMutexId_t    targetMutex;   ///< 目标参数互斥锁
     float          lastLeftRevs;  ///< 左轮上次转数
     float          lastRightRevs; ///< 右轮上次转数
+    float          cmdLeftRpm;    ///< 当前模式期望左轮目标（交叉耦合基准）
+    float          cmdRightRpm;   ///< 当前模式期望右轮目标
     MotionGoalState goal;         ///< 目标型运动状态
     seq_dedup_t     goalSeqDedup; ///< 最近处理过的 goal seq
 } MotionContext;

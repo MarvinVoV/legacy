@@ -8,7 +8,22 @@
 #include <string.h>
 #include <math.h>
 #include <stdlib.h>
+
 #include "motor_service.h"
+
+/*
+ * 电机调试日志：闭环且有目标时 2Hz 输出 tgt/act/duty/pulses。
+ * 调试完成后设为 0，避免长期占用 UART/MQTT 带宽。
+ */
+#ifndef MOTOR_DEBUG_LOG
+#define MOTOR_DEBUG_LOG 1
+#endif
+
+#if MOTOR_DEBUG_LOG
+static uint32_t s_lastDebugLogMs[MOTOR_MAX_NUM];
+#endif
+
+
 #include "error_code.h"
 #include "log_manager.h"
 #include "motor_task.h"
@@ -265,6 +280,27 @@ void MotorService_updateState(MotorInstance* instance)
     {
         instance->state.openLoopDuty = driverState.openLoopDuty / 100.0f;
     }
+
+#if MOTOR_DEBUG_LOG
+    // 闭环且有目标时，2Hz 输出目标/实际/占空比/累计脉冲，便于调极性/PID
+    if (driverState.mode == MOTOR_DRIVER_MODE_CLOSED_LOOP &&
+        instance->driver->control.targetRPM != 0.0f)
+    {
+        const uint32_t now = HAL_GetTick();
+        const uint8_t  id  = instance->driver->id;
+        if (id < MOTOR_MAX_NUM && (now - s_lastDebugLogMs[id]) >= 500u)
+        {
+            s_lastDebugLogMs[id] = now;
+            LOG_INFO(LOG_MODULE_MOTOR,
+                     "MOT_%c tgt=%.1f act=%.1f duty=%.2f pulses=%ld",
+                     (id == (uint8_t)MOTOR_LEFT_WHEEL) ? 'L' : 'R',
+                     instance->driver->control.targetRPM,
+                     driverState.velocity.rpm,
+                     driverState.appliedDuty,
+                     (long)driverState.position.totalPulses);
+        }
+    }
+#endif
 
     osMutexRelease(instance->mutex);
 }

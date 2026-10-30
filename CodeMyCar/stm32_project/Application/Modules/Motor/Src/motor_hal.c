@@ -153,8 +153,11 @@ void HAL_Motor_SetDuty(HAL_MotorConfig* config, const float duty)
         return;
     }
 
+    // 方向取反（接线相反时）：电机与编码器同时取反，PID 仍为负反馈
+    const float effectiveDuty = config->invertDirection ? -duty : duty;
+
     // 占空比限幅
-    const float clampedDuty = clamp_duty(duty);
+    const float clampedDuty = clamp_duty(effectiveDuty);
 
     // 获取定时器的 ARR（PWM 周期）
     const uint32_t arr = __HAL_TIM_GET_AUTORELOAD(config->pwm.tim);

@@ -173,7 +173,8 @@ int main(void)
   /* USER CODE BEGIN RTOS_THREADS */
     /* add threads, ... */
 
-  // 初始化日志模块
+  // 初始化日志模块（内核启动前只注册 direct 通道；UART4 异步通道在
+  // StartDefaultTask 里注册，避免调度器未运行时向日志队列投递）
   static log_manager_config_t log_config = {
     .channel_count = 1,
     .channels = {
@@ -184,16 +185,6 @@ int main(void)
         .module_mask = LOG_MODULE_ALL,
         .direct_output = true
         },
-
-    // 通道1: ESP32模块（UART4） - 注释掉表示未使用
-    /*
-        {
-            .huart = &huart4,
-            .level_mask = LOG_LEVEL_ALL,
-            .module_mask = LOG_MODULE_ALL,
-            .direct_output = false
-        },
-    */
     }
   };
   LogManager_Config(&log_config);
@@ -669,6 +660,15 @@ static void MX_GPIO_Init(void)
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN 5 */
+    /* 内核已启动：注册 ESP32 异步日志通道（UART4 → MQTT） */
+    static log_output_channel_t uart4_log_channel = {
+        .huart = &huart4,
+        .level_mask = LOG_LEVEL_ALL,
+        .module_mask = LOG_MODULE_ALL,
+        .direct_output = false
+    };
+    LogManager_AddOutputChannel(&uart4_log_channel);
+
     /* Infinite loop */
     for (;;)
     {
