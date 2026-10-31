@@ -19,6 +19,7 @@
 #include "sonar_hw.h"
 #include "uart_handle.h"
 #include "ultrasonic_config.h"
+#include "buzzer.h"
 
 static osThreadId_t s_taskHandle = NULL;
 
@@ -97,6 +98,17 @@ void SonarTask_doTask(void* arg)
         if ((tick % US_LOG_DIVIDER) == 0u)
         {
             log_status();
+        }
+
+        /* 蜂鸣器：按运动方向选前/后通道，8~40cm 内越近节奏越快。
+         * 只有存在运动指令时才响，停车（E-STOP / 速度为 0）一律静音。 */
+        {
+            const SafetyChannel* beep_ch =
+                safety_is_reversing() ? &s_rearSafety : &s_frontSafety;
+            const int16_t beep_dist = safety_is_motion_active()
+                                          ? beep_ch->distanceCm
+                                          : (int16_t)-1;
+            Buzzer_Update(now, beep_dist);
         }
 
         tick++;

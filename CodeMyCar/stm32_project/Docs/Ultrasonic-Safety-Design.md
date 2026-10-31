@@ -516,3 +516,46 @@ GET /api/v1/devices/{id}/status
 - `CodeMyCar/pyserver/app/services/device_manager.py`（从 `latest_sensor` 填充）
 - `CodeMyCar/pyserver/tests/test_device_status.py`
 - `CodeMyCar/esp32_project/docs/mqtt-topics.md`（SensorData 字段说明）
+
+## 16. 蜂鸣器距离提示（2026-10-31）
+
+用**有源蜂鸣器**做距离报警：不进减速区不响，进了减速区按"越近越急促"的节奏提示。
+
+### 16.1 接线
+
+| 信号 | STM32 引脚 | 说明 |
+|---|---|---|
+| 蜂鸣器 + | **PB2** | GPIO 推挽输出，高电平响 |
+| 蜂鸣器 − | GND | 3.3V 小蜂鸣器可直接驱动 |
+
+完整接线（含 5V + 三极管的方案）见 [`HardwareWiring.md`](HardwareWiring.md) 第 8 节。
+
+### 16.2 行为
+
+蜂鸣器只在**存在运动指令**时工作；停车（E-STOP 或速度为 0）一律静音，
+避免停在障碍物前时一直叫。方向与安全限速一致：前进看前向，倒车看后向。
+
+| 距离 | 节奏 |
+|---|---|
+| > 40 cm | 静音 |
+| 25–40 cm | 滴 100 ms / 停 500 ms |
+| 15–25 cm | 滴 100 ms / 停 200 ms |
+| 8–15 cm | 滴 80 ms / 停 70 ms |
+| ≤ 8 cm | 连续长鸣（此时两轮已被硬刹车） |
+
+上电自检响 3 声（`BUZZER_SELF_TEST`，确认接线用，可关）。
+
+### 16.3 实现位置
+
+- `Application/Modules/Buzzer/`：`Buzzer_Init/Set/SelfTest/Update`，`Buzzer_Update(now_ms, distance_cm)` 是无状态的按 ms 取模节奏
+- `Application/Tasks/SonarTask`：每 50 ms 取当前方向的安全通道，`motion_active` 时调用 `Buzzer_Update`
+- `Application/Services/Safety`：`safety_set_motion(active, reversing)` 由 `MotionService_Run` 每 5 ms 更新
+- 配置：`Application/System/Common/Inc/buzzer_config.h`
+
+### 16.4 踩坑
+
+1. **启动阶段不能用 `HAL_Delay`**：此时 HAL 时基（TIM6）尚未可靠运行，实测 `uwTick`
+   恒为 0，`HAL_Delay` 会永久阻塞，表现为蜂鸣器一直响、系统停在初始化。
+   自检延时改用 DWT 周期计数器。
+2. **有源 vs 无源**：有源音调固定，只能改节奏；要"越近音调越高"必须用无源 + PWM。
+3. **音量不可软件调节**：由供电电压决定，需要调小就串电阻或降电压。

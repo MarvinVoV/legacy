@@ -145,6 +145,26 @@ void safety_channel_update(SafetyChannel* ch, int16_t rawDistanceCm)
     ch->scale = 0.0f;
 }
 
+/* 当前运动状态（默认：无运动、前进）。由运动层每周期更新。 */
+static bool s_motion_active = false;
+static bool s_reversing     = false;
+
+void safety_set_motion(const bool active, const bool reversing)
+{
+    s_motion_active = active;
+    s_reversing     = reversing;
+}
+
+bool safety_is_motion_active(void)
+{
+    return s_motion_active;
+}
+
+bool safety_is_reversing(void)
+{
+    return s_reversing;
+}
+
 bool safety_channel_blocked(const SafetyChannel* ch)
 {
     if (ch == NULL || !ch->enabled)

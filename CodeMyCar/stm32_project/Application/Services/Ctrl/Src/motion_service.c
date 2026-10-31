@@ -493,6 +493,12 @@ void MotionService_Run(MotionContext* ctx)
             break;
     }
 
+    /* 记录运动状态（蜂鸣器：只有存在运动指令时才响，停车静音） */
+    {
+        const float cmd_sum = ctx->cmdLeftRpm + ctx->cmdRightRpm;
+        safety_set_motion(fabsf(cmd_sum) > 0.5f, cmd_sum < 0.0f);
+    }
+
     /* ---- 统一出口：超声波安全限速 ----
      * 所有模式的目标都在这里统一乘 scale 后下发，
      * 避免新增模式漏掉限速。EMERGENCY_STOP 已由上面直接停机。 */

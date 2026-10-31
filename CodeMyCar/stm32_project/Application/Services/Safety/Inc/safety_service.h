@@ -84,4 +84,15 @@ bool safety_channel_blocked(const SafetyChannel* ch);
  */
 bool safety_channel_clear(const SafetyChannel* ch, uint16_t releaseCm);
 
+/**
+ * @brief 记录当前运动状态（供蜂鸣器等非运动模块使用）
+ * @param active    是否存在运动指令（速度非零、且不是 E-STOP）
+ * @param reversing true = 倒车
+ *
+ * 蜂鸣器只在 active 时工作：停车（原地）时即使障碍物很近也不响。
+ */
+void safety_set_motion(bool active, bool reversing);
+bool safety_is_motion_active(void);
+bool safety_is_reversing(void);
+
 #endif /* SERVICES_SAFETY_INC_SAFETY_SERVICE_H_ */

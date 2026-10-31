@@ -8,6 +8,8 @@
 #include "error_code.h"
 #include "sonar_hw.h"
 #include "sonar_task.h"
+#include "buzzer.h"
+#include "buzzer_config.h"
 
 
 /**
@@ -307,6 +309,12 @@ int System_Initialize()
     // 5. 超声波硬件 + 测距任务（独立于运动链，失败不阻塞系统）
     SonarHw_Init();
     SonarTask_Init();
+
+    // 6. 蜂鸣器（上电自检响 3 声，便于确认接线）
+    Buzzer_Init();
+#if BUZZER_SELF_TEST
+    Buzzer_SelfTest(200, 200, 3);
+#endif
 
     // 设置系统上下文
     sysCtx.motionContext = &motionContext;
