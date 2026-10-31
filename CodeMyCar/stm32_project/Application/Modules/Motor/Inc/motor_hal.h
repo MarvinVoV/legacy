@@ -116,6 +116,13 @@ void HAL_Motor_SetDirection(HAL_MotorConfig* config, MotorDirection direction);
 void HAL_Motor_EmergencyStop(HAL_MotorConfig* config);
 
 /**
+ * @brief 短接制动（PWM=0 + IN1=IN2=1），电机快速停转
+ *
+ * 与紧急停止的区别：**不重置编码器计数器**，用于避障硬停止等需要保留里程计的场景。
+ */
+void HAL_Motor_Brake(HAL_MotorConfig* config);
+
+/**
  * @brief 读取编码器累计脉冲值
  *
  * @param[in] config 电机配置结构体指针

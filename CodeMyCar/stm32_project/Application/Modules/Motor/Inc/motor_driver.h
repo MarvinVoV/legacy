@@ -191,6 +191,14 @@ MotorDriverState MotorDriver_getState(const MotorDriver* driver);
 void MotorDriver_EmergencyStop(MotorDriver* driver);
 
 /**
+ * @brief 避障硬停止：短接制动 + 复位 PID/滤波器（不重置编码器）
+ *
+ * 与 EmergencyStop 的区别：保留里程计，适合运动中反复触发的场景。
+ * 解除后由 MotorDriver_SetMode(CLOSED_LOOP) 重新初始化控制状态。
+ */
+void MotorDriver_BrakeStop(MotorDriver* driver);
+
+/**
  * @brief 配置PID参数
  *
  * @param driver 驱动控制器实例

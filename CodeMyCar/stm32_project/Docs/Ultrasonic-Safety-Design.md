@@ -183,7 +183,31 @@ scale = 0.0                                  d < 8 cm（停止）
 
 死区取 1 RPM。两轮**同乘**同一个 scale，曲率不变。
 
-### 6.2 响应延迟预算
+### 6.2 硬停止（≤ 8 cm 立即短接刹车）
+
+只把目标降到 0 不够——实测发现轮子会靠惯性滑行：180 RPM 时从目标归零到
+实际停转要 **~0.8 s / ~19 cm**，而且左右轮摩擦不同，停得不一样齐。
+
+因此进入停止距离后改为**主动短接刹车**：
+
+| 项目 | 行为 |
+|---|---|
+| 触发 | 该方向距离 ≤ `SAFETY_STOP_CM`（8 cm）或传感器故障 |
+| 动作 | `HAL_Motor_Brake()`：PWM=0 + IN1=IN2=1（TB6612 短接电机），两轮同时 |
+| 状态复位 | `PID_Reset()`、目标斜坡归零、速度/PWM 滤波状态清零 |
+| 解除 | 距离 > `SAFETY_BRAKE_RELEASE_CM`（12 cm），迟滞 4 cm |
+| 里程计 | **不重置编码器**（区别于 `HAL_Motor_EmergencyStop`），位姿连续 |
+
+实测（轮子悬空、DIRECT 180 RPM）：
+
+| 刹车前转速 | 停死耗时 | 刹车后车轮行程 |
+|---|---|---|
+| 174 RPM | 0.24 s | 0.8 cm |
+| 53 RPM | 0.20 s | 0.3 cm |
+
+对比纯滑停的 19 cm，制动距离缩小到约 **1/20**；8 cm 触发后实际停在离障碍物约 7 cm。
+
+### 6.3 响应延迟预算
 
 - 采样 10 Hz + 处理 → 约 100–150 ms
 - 60 cm/s 时对应 6–9 cm 位移
@@ -336,6 +360,23 @@ pyserver 的 `SensorData.data` 是自由 dict，模型不用改；`latest_sensor
 - 全程无振荡、无越界，`r` 相关系数不适合用来评价（1 Hz 日志与 2 Hz 日志不同步）；
 - E-STOP 后 `MOT` 日志停止输出，两轮确实停转。
 
+#### 硬停止实测（2026-10-31，轮子悬空，DIRECT 180 RPM）
+
+临时把电机/测距日志提到 10 Hz / 5 Hz，共触发 22 次刹车/释放循环：
+
+```
+2.57  act=174  pulses=12015   全速
+2.63  safety hard stop: obstacle within 8cm
+2.67  act=103  pulses=12281
+2.77  act= 15  pulses=12346
+2.87  act=  0  pulses=12347   ← 冻结，左右轮同周期停止
+```
+
+- 174 RPM：刹车后 **0.24 s / 0.8 cm** 停死（滑停是 19 cm）
+- 53 RPM：**0.20 s / 0.3 cm**
+- 释放（>12 cm）后从 0 平滑加速，无冲击
+- 传感器故障（`F=-1 st=fault`）同样触发硬刹车，符合 fail-safe
+
 **未完成**：后向传感器安装后的倒车限速实测；落地（非悬空）距离精度与打滑。
 
 ### 12.2 后向传感器（前向通过后）
@@ -373,8 +414,10 @@ pyserver 的 `SensorData.data` 是自由 dict，模型不用改；`latest_sensor
 
 **修改**
 
-- `Application/Services/Ctrl/Src/motion_service.c`（统一出口限速）
-- `Application/Modules/Motor/Src/motor_driver.c`（非对称斜坡）
+- `Application/Services/Ctrl/Src/motion_service.c`（统一出口限速 + 硬停止）
+- `Application/Modules/Motor/Src/motor_driver.c`（非对称斜坡 + 避障短接刹车）
+- `Application/Modules/Motor/Src/motor_hal.c`（`HAL_Motor_Brake`，不重置编码器）
+- `Application/Services/Motor/Src/motor_service.c`（`MotorService_brakeAll`）
 - `Application/System/Init/Src/system_init.c`（初始化 + 启动任务）
 - `Application/System/Protocol/Inc/sensor_protocol.h`（ultrasonic 数据）
 - `CMakeLists.txt`（include 路径）

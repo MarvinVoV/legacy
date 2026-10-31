@@ -147,6 +147,16 @@ int MotorService_setOpenLoopDutyCycle(MotorService* service, MotorID motorId, fl
  */
 int MotorService_emergencyStop(MotorService* service, MotorID motorId);
 
+/**
+ * @brief 避障硬停止：两轮短接制动 + 复位 PID/滤波状态（保留里程计）
+ *
+ * 用于超声波安全层在停止距离内立即停车，避免左右轮滑行不一致。
+ *
+ * @param[in] service 服务实例
+ * @retval ERR_SUCCESS 操作成功
+ */
+int MotorService_brakeAll(MotorService* service);
+
 
 /**
  * @brief 更新所有电机状态

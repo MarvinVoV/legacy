@@ -237,6 +237,38 @@ int MotorService_emergencyStop(MotorService* service, MotorID motorId)
     return ERR_SUCCESS;
 }
 
+int MotorService_brakeAll(MotorService* service)
+{
+    if (service == NULL)
+    {
+        return ERR_MOTOR_INVALID_PARAM;
+    }
+
+    /* 两轮都短接制动；每轮独立加锁，避免和 updateState 竞争 */
+    for (uint8_t i = 0; i < MOTOR_MAX_NUM; i++)
+    {
+        MotorInstance* instance = &service->instances[i];
+        if (!instance->isInitialized)
+        {
+            continue;
+        }
+        if (osMutexAcquire(instance->mutex, MUTEX_TIMEOUT_MS) != osOK)
+        {
+            LOG_WARN(LOG_MODULE_MOTOR, "Mutex timeout for motor %u", (unsigned)i);
+            continue;
+        }
+
+        MotorDriver_BrakeStop(instance->driver);
+
+        instance->state.velocity.rpm = 0.0f;
+        instance->state.velocity.mps = 0.0f;
+        instance->state.mode         = MOTOR_DRIVER_MODE_STOP;
+
+        osMutexRelease(instance->mutex);
+    }
+    return ERR_SUCCESS;
+}
+
 void MotorService_updateState(MotorInstance* instance)
 {
     if (instance == NULL)
@@ -282,6 +314,7 @@ void MotorService_updateState(MotorInstance* instance)
     }
 
 #if MOTOR_DEBUG_LOG
+    // 闭环时输出目标/实际/占空比/累计脉冲，便于调极性/PID
     // 闭环且有目标时，2Hz 输出目标/实际/占空比/累计脉冲，便于调极性/PID
     if (driverState.mode == MOTOR_DRIVER_MODE_CLOSED_LOOP &&
         instance->driver->control.targetRPM != 0.0f)

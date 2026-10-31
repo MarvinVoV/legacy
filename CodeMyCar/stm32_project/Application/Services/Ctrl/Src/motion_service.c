@@ -508,6 +508,39 @@ void MotionService_Run(MotionContext* ctx)
 
         const float scale = safety_governor_apply(front, rear, &left, &right);
 
+        /* ---- 硬停止：进入停止距离（或传感器故障）立即短接刹车 ----
+         * 方向决定保护通道：前进看前向，倒车看后向。
+         * 刹车后保持到距离 > SAFETY_BRAKE_RELEASE_CM 才解除（迟滞）。 */
+        const float          linear = (left + right) * 0.5f;
+        const SafetyChannel* guard  = (linear >= 0.0f) ? front : rear;
+
+        if (ctx->safetyBraked)
+        {
+            if (safety_channel_clear(guard, SAFETY_BRAKE_RELEASE_CM))
+            {
+                ctx->safetyBraked = false; /* 下面重新下发目标，恢复闭环 */
+                LOG_INFO(LOG_MODULE_MOTION, "safety hard stop released");
+            }
+            else
+            {
+                left              = 0.0f;
+                right             = 0.0f;
+                ctx->cmdLeftRpm   = 0.0f;
+                ctx->cmdRightRpm  = 0.0f;
+            }
+        }
+        else if (safety_channel_blocked(guard))
+        {
+            MotorService_brakeAll(ctx->motorService);
+            ctx->safetyBraked = true;
+            left              = 0.0f;
+            right             = 0.0f;
+            ctx->cmdLeftRpm   = 0.0f;
+            ctx->cmdRightRpm  = 0.0f;
+            LOG_WARN(LOG_MODULE_MOTION, "safety hard stop: obstacle within %dcm",
+                     (int)SAFETY_STOP_CM);
+        }
+
         /* GOAL 模式下持续被挡 → 中止，避免 Agent 调用挂到硬超时 */
         if (current_target.mode == MOTION_GOAL && ctx->goal.active)
         {
@@ -540,8 +573,12 @@ void MotionService_Run(MotionContext* ctx)
         }
 #endif
 
-        MotorService_setTargetRPM(ctx->motorService, MOTOR_LEFT_WHEEL, left);
-        MotorService_setTargetRPM(ctx->motorService, MOTOR_RIGHT_WHEEL, right);
+        /* 处于硬停止时不要下发目标，否则会把驱动从制动模式切回闭环 */
+        if (!ctx->safetyBraked)
+        {
+            MotorService_setTargetRPM(ctx->motorService, MOTOR_LEFT_WHEEL, left);
+            MotorService_setTargetRPM(ctx->motorService, MOTOR_RIGHT_WHEEL, right);
+        }
     }
 
 

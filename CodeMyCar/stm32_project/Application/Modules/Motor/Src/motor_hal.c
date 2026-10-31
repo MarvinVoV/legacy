@@ -145,6 +145,22 @@ void HAL_Motor_EmergencyStop(HAL_MotorConfig* config)
     config->state.currentDuty = 0;
 }
 
+void HAL_Motor_Brake(HAL_MotorConfig* config)
+{
+    if (config == NULL)
+    {
+        LOG_ERROR(LOG_MODULE_MOTOR, "HAL MotorConfig is NULL");
+        return;
+    }
+
+    /* 短接制动：PWM 归零 + IN1=IN2=1（TB6612 短接电机），快速停转。
+       与 EmergencyStop 的区别：不重置编码器，避免破坏里程计/位姿。 */
+    __HAL_TIM_SET_COMPARE(config->pwm.tim, config->pwm.ch, 0);
+    HAL_Motor_SetDirection(config, MOTOR_BRAKE_STOP);
+
+    config->state.currentDuty = 0;
+}
+
 void HAL_Motor_SetDuty(HAL_MotorConfig* config, const float duty)
 {
     if (config == NULL)

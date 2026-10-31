@@ -385,6 +385,34 @@ void MotorDriver_EmergencyStop(MotorDriver* driver)
     PID_Reset(&driver->control.pidCtrl);
 }
 
+void MotorDriver_BrakeStop(MotorDriver* driver)
+{
+    if (driver == NULL)
+    {
+        LOG_ERROR(LOG_MODULE_MOTOR, "Motor driver is NULL");
+        return;
+    }
+
+    /* 短接制动：不重置编码器，保留里程计 */
+    HAL_Motor_Brake(driver->halCfg);
+
+    driver->control.mode            = MOTOR_DRIVER_MODE_STOP;
+    driver->control.targetRPM       = 0.0f;
+    driver->control.rampedTargetRPM = 0.0f;
+
+    /* 复位 PID 中间状态，避免解除刹车后用旧的积分/微分量 */
+    PID_Reset(&driver->control.pidCtrl);
+
+    /* 复位速度/PWM 滤波状态，避免用旧样本拉低或抬高第一拍 */
+    driver->filter.sampleCount      = 0;
+    driver->filter.bufferIndex      = 0;
+    driver->filter.lpf_state        = 0.0f;
+    driver->filter.pwm_filter_state = 0.0f;
+
+    /* 调试字段同步清零，避免日志显示上一次的占空比 */
+    driver->state.appliedDuty = 0.0f;
+}
+
 MotorDriverState MotorDriver_getState(const MotorDriver* driver)
 {
     MotorDriverState state = {0};

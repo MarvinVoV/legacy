@@ -39,6 +39,9 @@
 #define FRONT_OFFSET_CM 0
 #define REAR_OFFSET_CM 0
 
+/** 硬停止解除的迟滞距离（cm）：距离大于该值才解除短接刹车 */
+#define SAFETY_BRAKE_RELEASE_CM 12
+
 /** GOAL 模式持续被挡多久后中止（ms） */
 #define SAFETY_GOAL_BLOCK_ABORT_MS 5000u
 

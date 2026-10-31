@@ -70,4 +70,18 @@ void safety_channel_update(SafetyChannel* ch, int16_t rawDistanceCm);
 float safety_governor_apply(const SafetyChannel* front, const SafetyChannel* rear,
                             float* leftRpm, float* rightRpm);
 
+/**
+ * @brief 是否进入硬停止区（≤ stopCm 或故障）
+ *
+ * 命中后应短接刹车（而不是让轮子滑行），并复位 PID 状态。
+ * 未安装的传感器永远返回 false。
+ */
+bool safety_channel_blocked(const SafetyChannel* ch);
+
+/**
+ * @brief 是否可以解除硬停止（用于迟滞）
+ * @param releaseCm 解除距离（应大于 stopCm）
+ */
+bool safety_channel_clear(const SafetyChannel* ch, uint16_t releaseCm);
+
 #endif /* SERVICES_SAFETY_INC_SAFETY_SERVICE_H_ */

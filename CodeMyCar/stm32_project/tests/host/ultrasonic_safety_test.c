@@ -174,7 +174,41 @@ static void test_governor_rear(void)
     CHECK(l > -20.0f && l < 0.0f);
 }
 
-/* 9. 未启用的方向不参与（后向传感器未安装） */
+/* 9. 硬停止判据：进入停止距离 / 故障时刹车，离开迟滞距离后解除 */
+static void test_hard_stop_predicate(void)
+{
+    SafetyChannel ch;
+    safety_channel_init(&ch, true, 0, 8, 40);
+
+    feed(&ch, 30, 5);
+    CHECK(!safety_channel_blocked(&ch));
+    CHECK(safety_channel_clear(&ch, 12));
+
+    feed(&ch, 8, 5);
+    CHECK(safety_channel_blocked(&ch));
+    CHECK(!safety_channel_clear(&ch, 12));
+
+    feed(&ch, 10, 5); /* 8~12 之间：保持刹车（迟滞） */
+    CHECK(!safety_channel_blocked(&ch));
+    CHECK(!safety_channel_clear(&ch, 12));
+
+    feed(&ch, 13, 5);
+    CHECK(safety_channel_clear(&ch, 12));
+
+    /* 故障（工作过之后丢数据）也刹车 */
+    safety_channel_update(&ch, -1);
+    safety_channel_update(&ch, -1);
+    safety_channel_update(&ch, -1);
+    CHECK(safety_channel_blocked(&ch));
+
+    /* 未安装：永远不刹车 */
+    SafetyChannel off;
+    safety_channel_init(&off, false, 0, 8, 40);
+    feed(&off, -1, 10);
+    CHECK(!safety_channel_blocked(&off));
+}
+
+/* 10. 未启用的方向不参与（后向传感器未安装） */
 static void test_governor_rear_not_installed(void)
 {
     SafetyChannel front, rear;
@@ -199,6 +233,7 @@ int main(void)
     test_governor_direction();
     test_governor_rear();
     test_governor_rear_not_installed();
+    test_hard_stop_predicate();
 
     if (g_failures == 0)
     {

@@ -145,6 +145,36 @@ void safety_channel_update(SafetyChannel* ch, int16_t rawDistanceCm)
     ch->scale = 0.0f;
 }
 
+bool safety_channel_blocked(const SafetyChannel* ch)
+{
+    if (ch == NULL || !ch->enabled)
+    {
+        return false;
+    }
+    if (ch->fault)
+    {
+        return true;
+    }
+    return (ch->distanceCm > 0) && (ch->distanceCm <= (int16_t)ch->stopCm);
+}
+
+bool safety_channel_clear(const SafetyChannel* ch, const uint16_t releaseCm)
+{
+    if (ch == NULL || !ch->enabled)
+    {
+        return true;
+    }
+    if (ch->fault)
+    {
+        return false;
+    }
+    if (!ch->everValid)
+    {
+        return true; /* 未安装：视为畅通 */
+    }
+    return ch->distanceCm > (int16_t)releaseCm;
+}
+
 float safety_governor_apply(const SafetyChannel* front, const SafetyChannel* rear,
                             float* leftRpm, float* rightRpm)
 {
