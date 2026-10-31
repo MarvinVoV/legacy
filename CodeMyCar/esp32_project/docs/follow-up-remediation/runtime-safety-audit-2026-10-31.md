@@ -1,8 +1,8 @@
 # CodeMyCar 运行时安全审计报告
 
-> 日期：2026-10-31  
-> 状态：**Audit Complete / Awaiting Review**  
-> 性质：仅记录缺陷与证据，不代表已经修复  
+> 日期：2026-10-31
+> 状态：**Audit Complete / Awaiting Review**
+> 性质：仅记录缺陷与证据，不代表已经修复
 > 配套方案：[`runtime-safety-fix-plan-2026-10-31.md`](runtime-safety-fix-plan-2026-10-31.md)
 
 ## 1. 审计范围

@@ -1,8 +1,8 @@
 # CodeMyCar 后续安全修复计划
 
-> 日期：2026-10-31  
-> 状态：**Proposed / Awaiting Owner Review**  
-> 输入审计：[`runtime-safety-audit-2026-10-31.md`](runtime-safety-audit-2026-10-31.md)  
+> 日期：2026-10-31
+> 状态：**Proposed / Awaiting Owner Review**
+> 输入审计：[`runtime-safety-audit-2026-10-31.md`](runtime-safety-audit-2026-10-31.md)
 > 重要：本计划尚未开始执行，不表示代码已修复
 
 ## 1. 实施规则

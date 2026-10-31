@@ -1,9 +1,9 @@
 # Phase 1 急停状态修复与验证记录
 
-> 日期：2026-10-31  
-> 分支：`codex/fix-estop-state`  
-> 状态：**Implemented and Tested / Awaiting Owner Review**  
-> 对应缺陷：SAFE-01、SAFE-02  
+> 日期：2026-10-31
+> 分支：`codex/fix-estop-state`
+> 状态：**Implemented and Tested / Awaiting Owner Review**
+> 对应缺陷：SAFE-01、SAFE-02
 > 重要：本分支尚未合并到 `main`
 
 ## 1. 本阶段范围

@@ -159,4 +159,3 @@ int main(void)
     printf("motor_estop: all tests passed\n");
     return 0;
 }
-

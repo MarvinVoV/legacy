@@ -19,4 +19,3 @@ typedef enum
 } HAL_StatusTypeDef;
 
 uint32_t HAL_GetTick(void);
-
