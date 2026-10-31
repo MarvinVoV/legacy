@@ -30,10 +30,10 @@
  *---------------------------------------------------------------------------*/
 
 /** 停止距离：小于等于该值停车 */
-#define SAFETY_STOP_CM 25
+#define SAFETY_STOP_CM 8
 
 /** 开始减速距离：大于该值全速，中间线性减速 */
-#define SAFETY_SLOW_CM 100
+#define SAFETY_SLOW_CM 40
 
 /** 安装偏移：传感器端面比车身外沿内缩时填正值 */
 #define FRONT_OFFSET_CM 0
