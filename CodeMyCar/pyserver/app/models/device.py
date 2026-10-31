@@ -32,3 +32,9 @@ class DeviceStatus(BaseModel):
     uptime_s: Optional[int] = None
     heap_free: Optional[int] = None
     stm32_connected: Optional[bool] = None
+
+    # 超声波测到的**障碍物距离**（不是小车行驶里程/位姿）：
+    # 车头/车尾传感器端面到最近障碍物的距离，单位 cm；400 表示超出量程（无遮挡）。
+    front_distance_cm: Optional[int] = None
+    rear_distance_cm: Optional[int] = None
+    sensor_age_s: Optional[float] = None  # 距上次超声波上报的秒数

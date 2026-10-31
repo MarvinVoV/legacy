@@ -81,6 +81,31 @@ int main(void){
     CHECK(strstr(jbuf,"1500")!=NULL, "sensor json accel scaled x1000 (1.5->1500)");
     printf("sensor json: %s\n", jbuf);
 
+    /* 10b. 超声波 2 字节（旧格式，无后向）→ 向后兼容，只有 distance */
+    uint8_t us2[7]; memset(us2,0,sizeof(us2));
+    us2[0]=0x10; us2[4]=3; us2[5]=50; /* ts=16, type=3, distance=50 */
+    n = bridge_sensor_to_json(us2, sizeof(us2), jbuf, sizeof(jbuf));
+    CHECK(n>0, "us 2-byte -> json");
+    CHECK(strstr(jbuf,"\"type\":\"ultrasonic\"")!=NULL, "us2 json type");
+    CHECK(strstr(jbuf,"\"distance\":50")!=NULL, "us2 json front distance");
+    CHECK(strstr(jbuf,"distance_rear")==NULL, "us2 json has no rear field");
+
+    /* 10c. 超声波 9 字节（带后向 400cm）→ distance + distance_rear */
+    uint8_t us4[9]; memset(us4,0,sizeof(us4));
+    us4[0]=0x10; us4[4]=3; us4[5]=50;
+    us4[7]=144; us4[8]=1; /* rear = 400 */
+    n = bridge_sensor_to_json(us4, sizeof(us4), jbuf, sizeof(jbuf));
+    CHECK(n>0, "us 4-byte -> json");
+    CHECK(strstr(jbuf,"\"distance\":50")!=NULL, "us4 json front");
+    CHECK(strstr(jbuf,"\"distance_rear\":400")!=NULL, "us4 json rear");
+    printf("us4 json: %s\n", jbuf);
+
+    /* 10d. 红外 2 字节 → type infrared */
+    uint8_t ir2[7]; memset(ir2,0,sizeof(ir2));
+    ir2[0]=0x10; ir2[4]=2; ir2[5]=30;
+    n = bridge_sensor_to_json(ir2, sizeof(ir2), jbuf, sizeof(jbuf));
+    CHECK(n>0 && strstr(jbuf,"\"type\":\"infrared\"")!=NULL, "infrared json type");
+
     /* 11. log -> JSON（消息不含 NUL 终止，按长度传） */
     uint8_t logb[64]; memset(logb,0,sizeof(logb));
     logb[0]=0x88; logb[1]=0x13; /* ts low */

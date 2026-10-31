@@ -36,6 +36,18 @@ class DeviceManager:
         online = self.check_online(device_id)
         age = time.time() - state.last_heartbeat if state.last_heartbeat > 0 else None
 
+        # 超声波障碍物距离（不是里程计）；只取 ultrasonic 类型的最近一帧
+        front_cm = None
+        rear_cm = None
+        sensor_age = None
+        sensor = state.latest_sensor
+        if sensor is not None and sensor.type == "ultrasonic":
+            data = sensor.data or {}
+            front_cm = data.get("distance")
+            rear_cm = data.get("distance_rear")
+            if state.last_sensor > 0:
+                sensor_age = round(time.time() - state.last_sensor, 1)
+
         return DeviceStatus(
             device_id=device_id,
             online=online,
@@ -43,6 +55,9 @@ class DeviceManager:
             uptime_s=state.heartbeat_data.uptime_s if state.heartbeat_data else None,
             heap_free=state.heartbeat_data.heap if state.heartbeat_data else None,
             stm32_connected=state.heartbeat_data.stm32_connected if state.heartbeat_data else None,
+            front_distance_cm=front_cm,
+            rear_distance_cm=rear_cm,
+            sensor_age_s=sensor_age,
         )
 
     def list_devices(self) -> list[DeviceStatus]:

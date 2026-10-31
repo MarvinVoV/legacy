@@ -41,6 +41,17 @@ ESP32 订阅自身设备 id：`cmd/<本机 device_id>/exec`（不使用 `+` 通�
 
 pyserver 订阅：`data/+/sensor`、`data/+/log`、`data/+/heartbeat`、`data/+/status`、`data/+/ack`、`data/+/pong`、`data/+/motion`（均匹配 3 段 `data/X/kind`）。
 
+`sensor` 的 `SensorData.data` 按 `type` 区分：
+
+| type | data 字段 | 说明 |
+|---|---|---|
+| `imu` | `accel[3]`、`gyro[3]`（×1000） | 定点整数，避免 C6 无 FPU 时用 `%f` |
+| `infrared` | `distance`（cm） | 单路 |
+| `ultrasonic` | `distance`（cm）、`distance_rear`（cm） | 车头/车尾到**障碍物**的距离（不是里程计）；`400` = 超出量程（无遮挡），`65535` = 无效 |
+
+> `distance_rear` 是后加的：STM32 发 9 字节传感器帧（ts4 + type1 + 前2 + 后2），
+> ESP32 在 `data_len >= 4` 时输出该字段；只有 2 字节的旧帧仍只输出 `distance`，向后兼容。
+
 `data/{id}/ack` 的 payload 为 `{"seq":N,"ack":true,"status":S}`；`status` 为 STM32 的命令执行状态（0=接受）。
 
 ### device_id 约定

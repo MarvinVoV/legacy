@@ -268,10 +268,23 @@ int bridge_sensor_to_json(const uint8_t* payload, uint8_t len,
         {
             if (data_len < 2) { return 0; }
             const uint16_t distance = rd_u16le(data);
-            n = snprintf(out, out_size,
-                         "{\"type\":\"%s\",\"timestamp\":%lu,\"data\":{\"distance\":%u}}",
-                         (type == SENSOR_TYPE_INFRARED) ? "infrared" : "ultrasonic",
-                         (unsigned long)ts, distance);
+            /* 超声波帧可带后向距离（payload 9 字节：ts4+type1+前2+后2）；
+               旧的 2 字节红外/超声波帧保持原格式，向后兼容。 */
+            if (type == SENSOR_TYPE_ULTRASONIC && data_len >= 4)
+            {
+                const uint16_t distance_rear = rd_u16le(&data[2]);
+                n = snprintf(out, out_size,
+                             "{\"type\":\"ultrasonic\",\"timestamp\":%lu,"
+                             "\"data\":{\"distance\":%u,\"distance_rear\":%u}}",
+                             (unsigned long)ts, distance, distance_rear);
+            }
+            else
+            {
+                n = snprintf(out, out_size,
+                             "{\"type\":\"%s\",\"timestamp\":%lu,\"data\":{\"distance\":%u}}",
+                             (type == SENSOR_TYPE_INFRARED) ? "infrared" : "ultrasonic",
+                             (unsigned long)ts, distance);
+            }
             break;
         }
         default:
