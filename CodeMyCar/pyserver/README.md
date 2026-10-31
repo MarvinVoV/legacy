@@ -111,6 +111,11 @@ mosquitto -c mosquitto.dev.conf
   - `data/{device_id}/status`
   - `data/{device_id}/pong`（ESP32 对 `{"cmd":"ping"}` 的直接回执）
 
+超声波传感器数据：`{"type":"ultrasonic","timestamp":T,"data":{"distance":F,"distance_rear":R}}`
+（cm，`400` = 超出量程/无遮挡）。最新的障碍物距离会出现在
+`GET /api/v1/devices/{id}/status` 的 `front_distance_cm` / `rear_distance_cm` / `sensor_age_s`
+字段里 —— 这是**到障碍物的距离**，不是小车里程。
+
 ### Agent 运动 API
 
 给 AI Agent 用的同步运动接口：`POST /api/v1/agent/devices/{id}/move`、`/stop`、`GET /state`。

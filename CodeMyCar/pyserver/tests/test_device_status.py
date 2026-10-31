@@ -32,6 +32,14 @@ def test_status_old_ultrasonic_without_rear():
     assert status.rear_distance_cm is None
 
 
+def test_status_tolerates_malformed_payload():
+    """异常 payload 不应让状态接口报错"""
+    dm = _manager_with_sensor({"distance": "oops", "distance_rear": [1]})
+    status = dm.get_status("DEV_1")
+    assert status.front_distance_cm is None
+    assert status.rear_distance_cm is None
+
+
 def test_status_ignores_non_ultrasonic_sensor():
     dm = _manager_with_sensor({"accel": [1, 2, 3]}, sensor_type="imu")
     status = dm.get_status("DEV_1")

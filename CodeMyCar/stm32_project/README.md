@@ -9,6 +9,9 @@ STM32H723ZGTx 控制固件：通过 UART 与 ESP32 桥接，解析二进制控�
 - [UART4 DMA 排查记录](Docs/UART-DMA-Troubleshooting.md) — DTCM/错误回调/ACK 序号问题复盘
 - [STM32 调试速查](Docs/STM32-Debug-Cheatsheet.md) — 寄存器、DMA、缓冲区读取方法
 - [MotionService](Docs/MotionServiceDoc.md) — 运动控制模式说明
+- [电机调参与踩坑](Docs/Motor-Control-Tuning.md) — 接线/极性/舵机中位/PID/日志链路
+- [电机速度与同步测试报告](Docs/Motor-Speed-Test-Report.md) — 速度档位、加速、goal 精度
+- [超声波测距与安全限速](Docs/Ultrasonic-Safety-Design.md) — 前后避障、8cm 硬刹车、上报链路
 
 ## 快速开始
 

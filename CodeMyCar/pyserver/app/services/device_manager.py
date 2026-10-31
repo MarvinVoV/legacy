@@ -43,8 +43,11 @@ class DeviceManager:
         sensor = state.latest_sensor
         if sensor is not None and sensor.type == "ultrasonic":
             data = sensor.data or {}
-            front_cm = data.get("distance")
-            rear_cm = data.get("distance_rear")
+            front = data.get("distance")
+            rear = data.get("distance_rear")
+            # 防御异常 payload：只有整数才透出，避免状态接口 500
+            front_cm = front if isinstance(front, int) else None
+            rear_cm = rear if isinstance(rear, int) else None
             if state.last_sensor > 0:
                 sensor_age = round(time.time() - state.last_sensor, 1)
 

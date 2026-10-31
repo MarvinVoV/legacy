@@ -270,27 +270,36 @@ const SafetyChannel* guard = (linear >= 0.0f) ? front : rear;
 日志：每 1 s 一条
 `US F=<cm> R=<cm> sF=<scale> sR=<scale> st=<ok|fault|off>`
 
-## 10. 上报格式
+## 10. 上报格式（已实现）
 
-复用现有 `PROTOCOL_TYPE_SENSOR`（ESP32 无需改代码也能兼容）：
+STM32 每 200 ms（5 Hz）发一帧 `PROTOCOL_TYPE_SENSOR`：
 
 ```
 payload = [timestamp u32][type=3][front_cm u16][rear_cm u16]     共 9 字节
 ```
 
-- 无效值填 `0xFFFF`
-- 发送频率 5 Hz（每 2 个测距周期一次）
-- 现有 ESP32 bridge 只读前 2 字节 → **前向距离无需重烧 ESP32 即可上报**
-- 想让后向距离也上报，改 `bridge_codec.c` 一处（`data_len >= 4` 时多输出 `distance_rear`），并同步镜像 `serial_pkt_protocol`
+- `400` = 超出量程（无遮挡）；`0xFFFF` = 无效（仅 <2 cm 的奇异脉宽）
+- ESP32 bridge：`data_len >= 4` 时多输出 `distance_rear`；只有 2 字节的旧帧仍只输出 `distance`（向后兼容）
+- 镜像副本 `serial_pkt_protocol/src/bridge_codec.c` 已同步，并有跨语言测试（2 字节 / 4 字节 / 红外）
 
-JSON 形态：
+JSON：
 
 ```json
-{"type":"ultrasonic","timestamp":123456,"data":{"distance":52,"distance_rear":180}}
+{"type":"ultrasonic","timestamp":123456,"data":{"distance":52,"distance_rear":38}}
 ```
 
-pyserver 的 `SensorData.data` 是自由 dict，模型不用改；`latest_sensor` 一帧拿到两个值。
-（可选后续：`GET /devices/{id}/status` 暴露 `distance_cm`。）
+pyserver 存 `latest_sensor`，并通过 HTTP 暴露（**障碍物距离，不是里程计**）：
+
+```
+GET /api/v1/devices/{id}/status
+
+"front_distance_cm": 54,
+"rear_distance_cm": 400,
+"sensor_age_s": 0.1
+```
+
+实测（60 s）：MQTT 300 样本 = 稳定 5 Hz，后向 245 个样本带真实读数（34–51 cm），
+无遮挡时回到 400；pyserver 无 error/warning。
 
 ## 11. 配置项（编译开关）
 
@@ -299,7 +308,7 @@ pyserver 的 `SensorData.data` 是自由 dict，模型不用改；`latest_sensor
 ```c
 #define SAFETY_GOVERNOR_ENABLED   1   // 0 = 运动完全不受超声波影响（仍测量/上报）
 #define ULTRASONIC_FRONT_ENABLED  1
-#define ULTRASONIC_REAR_ENABLED   0   // 后传感器安装测试通过后改 1
+#define ULTRASONIC_REAR_ENABLED   1   // 2026-10-31 后向已安装并测试通过
 
 #define SAFETY_STOP_CM            8
 #define SAFETY_SLOW_CM            40
@@ -442,7 +451,29 @@ pyserver 的 `SensorData.data` 是自由 dict，模型不用改；`latest_sensor
 - 低速实测 20/50 cm 停车精度
 - 观察负载下减速是否及时
 
-## 13. 风险与待办
+## 13. 关键点与踩坑总结
+
+1. **无回波 ≠ 故障**：HC-SR04 无回波时输出约 38 ms 长脉冲（≈650 cm），
+   超过 400 cm 量程。旧代码判为无效，空旷环境会被误判成传感器故障、
+   该方向永久禁行。现在超量程统一记为 400 cm（畅通）。
+2. **Echo 是 5V**：必须 1k/2k 分压，接线后先量 PA2/PA3 对地电压 ≤3.3V。
+3. **前后错开 50 ms 触发**：两个 40 kHz 模块同时工作会互相串扰。
+4. **硬停止要主动刹车**：只把目标置 0 会滑行（180 RPM 约 19 cm / 0.8 s），
+   用 TB6612 短接（IN1=IN2=1）后 0.24 s / 0.8 cm。
+5. **方向判断必须在限速之前**：scale=0 时两轮目标为 0，方向信息丢失。
+6. **刹车要复位 PID/斜坡/滤波**：否则解除刹车后积分项会带着旧状态冲一下。
+7. **短接刹车不要重置编码器**：用 `HAL_Motor_Brake` 而不是
+   `HAL_Motor_EmergencyStop`，否则里程计/位姿会跳变。
+8. **不用 CubeMX**：TIM7/EXTI/GPIO 初始化写在 `Application/System/Init/sonar_hw.c`，
+   不修改 `Core/`，CubeMX 重新生成不会冲掉；代价是 `.ioc` 与硬件不一致。
+9. **用 EXTI + 自由计数定时器而不是输入捕获**：避免 H723 上 PA2/PA3 的
+   AF 映射配错导致静默失效；1–2 µs 中断延迟对应 <0.04 cm，可忽略。
+10. **调试日志频率**：正常 2 Hz（电机）/ 1 Hz（测距）；测瞬态时临时提到
+    10 Hz / 2 Hz，测完记得恢复（本次就临时改过）。
+11. **编译开关做分模块测试**：`SAFETY_GOVERNOR_ENABLED=0` 时超声波照常测距上报，
+    但完全不影响运动，方便单独验证电机/舵机。
+
+## 14. 风险与待办
 
 | 风险 | 处理 |
 |---|---|
@@ -451,9 +482,10 @@ pyserver 的 `SensorData.data` 是自由 dict，模型不用改；`latest_sensor
 | 悬空测试时前方有桌面/地面导致限速 | 用编译开关关闭 |
 | `.ioc` 与硬件不一致 | 本文档记录为准；改动引脚先查这里 |
 | 单个传感器故障导致整车瘫痪 | 前后独立降级，只禁对应方向 |
-| ESP32 未重烧时后向距离不上报 | 已知，前向兼容；需要时改 bridge 一处 |
+| ESP32 未重烧时后向距离不上报 | 已修复：bridge 已支持，ESP32 已重烧 |
+| 传感器运行中断线无法识别 | HC-SR04 无健康引脚，无回波与断线电气上不可区分；靠"上电从未测到"兜底 |
 
-## 14. 文件清单
+## 15. 文件清单
 
 **新增**
 
@@ -476,7 +508,11 @@ pyserver 的 `SensorData.data` 是自由 dict，模型不用改；`latest_sensor
 - `tests/host/run.sh`
 - `Docs/HardwareWiring.md`（引脚表）
 
-**后续（需要时）**
+**上报链路（已实现）**
 
-- `components/bridge/src/bridge_codec.c` + `serial_pkt_protocol/src/bridge_codec.c`（后向距离上报）
-- pyserver 暴露距离到 HTTP
+- `CodeMyCar/esp32_project/components/bridge/src/bridge_codec.c`（后向距离 JSON）
+- `serial_pkt_protocol/src/bridge_codec.c` + `tests/test_bridge_codec.c`（镜像 + 跨语言测试）
+- `CodeMyCar/pyserver/app/models/device.py`（`front_distance_cm` / `rear_distance_cm` / `sensor_age_s`）
+- `CodeMyCar/pyserver/app/services/device_manager.py`（从 `latest_sensor` 填充）
+- `CodeMyCar/pyserver/tests/test_device_status.py`
+- `CodeMyCar/esp32_project/docs/mqtt-topics.md`（SensorData 字段说明）
