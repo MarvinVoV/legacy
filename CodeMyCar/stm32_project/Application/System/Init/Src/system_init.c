@@ -6,6 +6,8 @@
  */
 #include "system_init.h"
 #include "error_code.h"
+#include "sonar_hw.h"
+#include "sonar_task.h"
 
 
 /**
@@ -301,6 +303,10 @@ int System_Initialize()
         LOG_ERROR(LOG_MODULE_SYSTEM, "Cmd processor init failed: 0x%04X", ret);
         return ret;
     }
+
+    // 5. 超声波硬件 + 测距任务（独立于运动链，失败不阻塞系统）
+    SonarHw_Init();
+    SonarTask_Init();
 
     // 设置系统上下文
     sysCtx.motionContext = &motionContext;

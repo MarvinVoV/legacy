@@ -120,3 +120,22 @@ STM32 侧配置位置：
 - **12V−、TB6612 GND、STM32 GND、ESP32 GND 必须共地**；TB6612 `VCC=3.3V`、`STBY=3.3V`、`VM=12V`。
 - 两轮目前都启用软件反相（PWM+编码器同时取反）；只反一样会让 PID 正反馈。
 - 转向固件限幅 60°（右侧机械极限约 65°）；转向符号为正=右，代码用 `center - steer`。
+
+---
+
+## 7. 超声波接线（HC-SR04 ×2）
+
+完整设计见 [`Ultrasonic-Safety-Design.md`](Ultrasonic-Safety-Design.md)。
+
+| 信号 | STM32 引脚 | 外设 | 说明 |
+|---|---|---|---|
+| 前 Trig | **PB0** | GPIO 推挽输出 | 10 µs 高脉冲 |
+| 前 Echo | **PA2** | TIM15_CH1 输入捕获 | **1k/2k 分压到 3.3V** |
+| 后 Trig | **PB1** | GPIO 推挽输出 | 后传感器安装后启用 |
+| 后 Echo | **PA3** | TIM15_CH2 输入捕获 | **1k/2k 分压到 3.3V** |
+| VCC | TB6612 5V | — | 接线前先万用表确认 4.8–5.1V |
+| GND | 公共 GND | — | 与 12V−/TB6612/STM32/ESP32 共地 |
+
+- **Echo 是 5V 输出，必须分压**：`Echo ──[1k]──┬── STM32，┬──[2k]── GND`。
+- TIM6 是 HAL 时基，不能复用；TIM15 同时接两路捕获（CH1/CH2）。
+- 两路错开 50 ms 触发，避免 40 kHz 串扰。

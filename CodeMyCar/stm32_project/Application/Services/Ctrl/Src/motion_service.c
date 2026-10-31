@@ -10,6 +10,9 @@
 #include <math.h>
 #include "motion_task.h"
 #include "motion_kinematics.h"
+#include "safety_service.h"
+#include "sonar_task.h"
+#include "ultrasonic_config.h"
 
 
 //------------------------------------------------------------------------------
@@ -490,6 +493,57 @@ void MotionService_Run(MotionContext* ctx)
             break;
     }
 
+    /* ---- 统一出口：超声波安全限速 ----
+     * 所有模式的目标都在这里统一乘 scale 后下发，
+     * 避免新增模式漏掉限速。EMERGENCY_STOP 已由上面直接停机。 */
+    if (current_target.mode != MOTION_EMERGENCY_STOP)
+    {
+        float left  = ctx->cmdLeftRpm;
+        float right = ctx->cmdRightRpm;
+
+#if SAFETY_GOVERNOR_ENABLED
+        const SafetyChannel* front = NULL;
+        const SafetyChannel* rear  = NULL;
+        Sonar_GetSafety(&front, &rear);
+
+        const float scale = safety_governor_apply(front, rear, &left, &right);
+
+        /* GOAL 模式下持续被挡 → 中止，避免 Agent 调用挂到硬超时 */
+        if (current_target.mode == MOTION_GOAL && ctx->goal.active)
+        {
+            if (scale <= 0.001f)
+            {
+                const uint32_t now = HAL_GetTick();
+                if (!ctx->goalBlocked)
+                {
+                    ctx->goalBlocked   = true;
+                    ctx->goalBlockedMs = now;
+                }
+                else if ((now - ctx->goalBlockedMs) >= SAFETY_GOAL_BLOCK_ABORT_MS)
+                {
+                    ctx->goal.active   = false;
+                    ctx->goal.finished = true;
+                    ctx->goal.aborted  = true;
+                    ctx->goal.finishMs = now;
+                    ctx->goalBlocked   = false;
+                    left               = 0.0f;
+                    right              = 0.0f;
+                    ctx->cmdLeftRpm    = 0.0f;
+                    ctx->cmdRightRpm   = 0.0f;
+                    LOG_WARN(LOG_MODULE_MOTION, "goal aborted: obstacle blocked");
+                }
+            }
+            else
+            {
+                ctx->goalBlocked = false;
+            }
+        }
+#endif
+
+        MotorService_setTargetRPM(ctx->motorService, MOTOR_LEFT_WHEEL, left);
+        MotorService_setTargetRPM(ctx->motorService, MOTOR_RIGHT_WHEEL, right);
+    }
+
 
     // 更新运行时状态
     update_runtime_state(ctx);
@@ -529,8 +583,7 @@ static void handle_direct_control(MotionContext* ctx, const MotionTarget* target
     const float right_rpm = motion_clamp_rpm(target->params.directCtrl.rightRpm, MOTION_MAX_RPM);
     ctx->cmdLeftRpm  = left_rpm;
     ctx->cmdRightRpm = right_rpm;
-    MotorService_setTargetRPM(ctx->motorService, MOTOR_LEFT_WHEEL, left_rpm);
-    MotorService_setTargetRPM(ctx->motorService, MOTOR_RIGHT_WHEEL, right_rpm);
+    /* 目标由 MotionService_Run 统一限速后下发 */
 
     // 舵机角度 = 中位 - 相对转向角（舵机/连杆方向相反：正=右）
     SteerService_setAngleSmoothly(ctx->steerServo,
@@ -554,11 +607,9 @@ static void handle_differential_control(MotionContext* ctx, const MotionTarget* 
         &right_rpm
     );
 
-    // 设置电机转速
+    // 目标由 MotionService_Run 统一限速后下发
     ctx->cmdLeftRpm  = left_rpm;
     ctx->cmdRightRpm = right_rpm;
-    MotorService_setTargetRPM(ctx->motorService, MOTOR_LEFT_WHEEL, left_rpm);
-    MotorService_setTargetRPM(ctx->motorService, MOTOR_RIGHT_WHEEL, right_rpm);
 
     // 舵机归中
     SteerService_setAngleImmediate(ctx->steerServo, cfg->steerCenterAngleDeg);
@@ -582,10 +633,9 @@ static void handle_drive(MotionContext* ctx, const MotionTarget* target)
                       MOTION_MAX_RPM,
                       &left_rpm, &right_rpm);
 
+    // 目标由 MotionService_Run 统一限速后下发
     ctx->cmdLeftRpm  = left_rpm;
     ctx->cmdRightRpm = right_rpm;
-    MotorService_setTargetRPM(ctx->motorService, MOTOR_LEFT_WHEEL, left_rpm);
-    MotorService_setTargetRPM(ctx->motorService, MOTOR_RIGHT_WHEEL, right_rpm);
 
     // 舵机 = 中位 - 转向角（正=右）
     SteerService_setAngleSmoothly(ctx->steerServo, cfg->steerCenterAngleDeg - steer);
@@ -609,6 +659,9 @@ static void handle_goal(MotionContext* ctx)
 {
     if (!ctx->goal.active)
     {
+        /* 无活动目标时明确停车，避免沿用上一个模式的目标值 */
+        ctx->cmdLeftRpm  = 0.0f;
+        ctx->cmdRightRpm = 0.0f;
         return;
     }
 
@@ -619,17 +672,14 @@ static void handle_goal(MotionContext* ctx)
     {
         ctx->cmdLeftRpm  = 0.0f;
         ctx->cmdRightRpm = 0.0f;
-        MotorService_setTargetRPM(ctx->motorService, MOTOR_LEFT_WHEEL, 0.0f);
-        MotorService_setTargetRPM(ctx->motorService, MOTOR_RIGHT_WHEEL, 0.0f);
         SteerService_setAngleImmediate(ctx->steerServo, ctx->chassisConfig.steerCenterAngleDeg);
         ctx->goal.active = false;
         return;
     }
 
+    // 目标由 MotionService_Run 统一限速后下发
     ctx->cmdLeftRpm  = out.leftRpm;
     ctx->cmdRightRpm = out.rightRpm;
-    MotorService_setTargetRPM(ctx->motorService, MOTOR_LEFT_WHEEL, out.leftRpm);
-    MotorService_setTargetRPM(ctx->motorService, MOTOR_RIGHT_WHEEL, out.rightRpm);
 
     const float steer = out.pivot ? ctx->chassisConfig.steerCenterAngleDeg
                                   : ctx->chassisConfig.steerCenterAngleDeg - out.steerAngleDeg;

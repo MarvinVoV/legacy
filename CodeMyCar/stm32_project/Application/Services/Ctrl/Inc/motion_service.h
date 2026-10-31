@@ -122,6 +122,8 @@ typedef struct
     float          cmdRightRpm;   ///< 当前模式期望右轮目标
     MotionGoalState goal;         ///< 目标型运动状态
     seq_dedup_t     goalSeqDedup; ///< 最近处理过的 goal seq
+    bool            goalBlocked;  ///< GOAL 是否因障碍持续被挡
+    uint32_t        goalBlockedMs;///< 开始被挡的时刻
 } MotionContext;
 
 

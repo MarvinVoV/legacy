@@ -36,6 +36,13 @@ typedef struct
             uint16_t distance;
         } infrared;
 
+        struct
+        {
+            // 超声波：前向/后向距离（cm），0xFFFF = 无效
+            uint16_t distance;
+            uint16_t distanceRear;
+        } ultrasonic;
+
         // ...其他传感器结构
     } data;
 } sensor_data_t;

@@ -37,3 +37,11 @@ echo "== PID simulation =="
   "$DIR/Application/Services/Motor/Src/pid_controller.c" \
   -lm -o "${TMPDIR:-/tmp}/pid_sim_test"
 "${TMPDIR:-/tmp}/pid_sim_test"
+
+echo "== ultrasonic safety =="
+"$CC" -std=c11 -Wall -Wextra -O2 \
+  -I "$DIR/Application/Services/Safety/Inc" \
+  "$DIR/tests/host/ultrasonic_safety_test.c" \
+  "$DIR/Application/Services/Safety/Src/safety_service.c" \
+  -lm -o "${TMPDIR:-/tmp}/ultrasonic_safety_test"
+"${TMPDIR:-/tmp}/ultrasonic_safety_test"

@@ -17,6 +17,12 @@
 #define DEFAULT_SPEED_FILTER_WINDOW 10
 #endif
 
+/// 目标斜坡：加速速率（RPM/s）
+#define MOTOR_ACCEL_RPM_PER_S 300.0f
+
+/// 目标斜坡：减速速率（RPM/s）——安全场景需要快速停车
+#define MOTOR_DECEL_RPM_PER_S 1000.0f
+
 
 //------------------------------------------------------------------------------
 // 静态函数声明
@@ -286,12 +292,18 @@ void MotorDriver_Update(MotorDriver* driver)
     // 闭环控制处理
     if (driver->state.mode == MOTOR_DRIVER_MODE_CLOSED_LOOP)
     {
-        // 目标软启动：300 RPM/s 斜坡，避免双轮起步占空比突变
-        const float ramp_step  = 300.0f * delta_time_s;
-        const float target_err = driver->control.targetRPM - driver->control.rampedTargetRPM;
+        /* 目标软启动：加速 300 RPM/s，减速 1000 RPM/s。
+         * 减速（|目标| < |当前| 且同号）走更快的速率，安全限速时能迅速停车；
+         * 跨 0 换向按加速处理，先收敛到 0 再建速。 */
+        const float cur       = driver->control.rampedTargetRPM;
+        const float tgt       = driver->control.targetRPM;
+        const bool  reducing  = (fabsf(tgt) < fabsf(cur)) && ((tgt * cur) >= 0.0f);
+        const float ramp_step = (reducing ? MOTOR_DECEL_RPM_PER_S : MOTOR_ACCEL_RPM_PER_S) *
+                                delta_time_s;
+        const float target_err = tgt - cur;
         if (fabsf(target_err) <= ramp_step)
         {
-            driver->control.rampedTargetRPM = driver->control.targetRPM;
+            driver->control.rampedTargetRPM = tgt;
         }
         else
         {
