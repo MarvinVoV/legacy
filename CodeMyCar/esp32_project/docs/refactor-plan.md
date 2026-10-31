@@ -3,6 +3,8 @@
 > 日期：2026-07-22
 > 依据：`v2-review.md`（问题 A–J）+ `mqtt-topics.md` + `cmd-mapping.md`
 > 目标：修掉评审列出的全部跨端契约与遗留问题，打通 pyserver ↔ ESP32 ↔ STM32 端到端通路。
+>
+> **历史文档**：本文是 2026-07-22 的 v2 重构计划（当时 ControlCmd 13 字节、ACK 无 payload）。当前契约已变为 9 字节 ControlCmd、mode 4 GOAL、ACK 带 1 字节状态码，见 [cmd-mapping.md](cmd-mapping.md)。
 
 ## 分阶段执行
 

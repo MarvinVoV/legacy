@@ -122,13 +122,14 @@ UART RX type=4 seq=149 flags=0x40 len=0
 
 但随后仍报 `ACK(s) lost`。原因：
 
-- STM32 的 ACK：`UART_Send_Frame(ACK, seq, ACK_RSP, NULL, 0)` → **seq 在帧头，payload 为空**
-- ESP32 的 `bridge` 读的是 `frame->payload[0]`，且要求 `payload_len >= 1` → 有效 ACK 被忽略
+- STM32 的 ACK：`UART_Send_Frame(ACK, seq, ACK_RSP, &status, 1)` → **seq 在帧头，payload 是 1 字节状态码**（0=接受）
+- ESP32 的 `bridge` 早期读的是 `frame->payload[0]` 当 seq，且要求 `payload_len >= 1` → 有效 ACK 被忽略/误判
 
-修复：改用 `frame->seq`：
+修复：seq 用 `frame->seq`，status 用 `payload[0]`：
 
 ```c
 const uint8_t ack_seq = frame->seq;
+const uint8_t ack_status = frame->payload_len >= 1 ? frame->payload[0] : 0;
 pending_clear(ack_seq);
 ```
 
@@ -157,7 +158,7 @@ fa6c197 fix(esp32): take the ACK seq from the v2 frame header
 |---|---|
 | STM32 自环 1 字节 | `length=1` |
 | STM32 完整帧 + ACK 自环 | `length=8` |
-| 真实 ESP32 ↔ STM32 命令 | `data/DEV_1/ack {"seq":0,"ack":true}` |
+| 真实 ESP32 ↔ STM32 命令 | `data/DEV_1/ack {"seq":0,"ack":true,"status":0}` |
 | 桥接状态 | `{"state":"ONLINE","ack_lost":0,"up_drop":0,"dn_drop":0,"pub_fail":0}` |
 
 ---
@@ -167,5 +168,22 @@ fa6c197 fix(esp32): take the ACK seq from the v2 frame header
 1. **H7 的 DMA 不能访问 DTCM**——任何 DMA 缓冲区都必须放在 AXI SRAM / D2 / D3 SRAM。
 2. **HAL 错误回调必须重新挂起接收**，否则一次 ORE 会让 RX 永久失效。
 3. **ACK/DMA 这类“静默失败”优先读寄存器**：DMA `NDTR` 不动、`UART ISR` 的 RXNE/ORE，比看代码更快定位。
-4. 协议字段位置要在两端一致：v2 的 `SEQ` 在帧头，ACK 的 payload 为空。
+4. 协议字段位置要在两端一致：v2 的 `SEQ` 在帧头，ACK 的 payload 是 1 字节状态码。
 5. 调试时保存一份完整的寄存器/缓冲区证据（本文第 2 节），比“再试一次”有效得多。
+
+---
+
+## 6. 日志链路排障（2026-10-31 补充）
+
+问题现象：`data/{id}/log` 一条都没有，but ACK/运动状态正常。
+
+| 根因 | 现象 | 修复 |
+|---|---|---|
+| `LogTask` 里只有 `// TODO log it`，日志取出后直接 `vPortFree` | 所有 STM32 日志静默丢失 | 改为 `UART_Send_Protocol_Log(received_entry)` 后再释放 |
+| UART4 日志通道在 `main.c` 里被注释掉 | 日志只到 UART1，不到 ESP32 | 启用 `direct_output=false` 的 UART4 通道 |
+| 在 `osKernelStart()` 之前向日志队列投递 | 板子启动卡住、`uwTick` 不增长 | 内核启动前只注册 UART1 direct 通道；UART4 通道在 `StartDefaultTask` 里注册 |
+| LogTask 栈 4KB + 其他任务耗尽 15KB FreeRTOS 堆 | 能烧录但不发帧/任务创建失败 | `configTOTAL_HEAP_SIZE` 提到 32KB |
+| newlib-nano 不支持 `%f` | 日志打印成 `tgt= act=`（空） | 链接加 `-u _printf_float` |
+| ACK/日志/运动状态共用 `tx_buffer` | 偶发帧损坏/丢 ACK | `UART_Send_Frame` 加 TX 互斥 + 等 `huart4.gState==READY` |
+
+调试日志：`MOT_L/MOT_R tgt/act/duty/pulses`，正常 2Hz；调参时临时 10/20Hz（只影响日志量，不影响控制）。

@@ -1,7 +1,9 @@
 # Agent Motion API 设计
 
 日期：2026-10-26
-状态：待评审
+状态：已实施（2026-10-31 更新转向/几何约束）
+
+> **实施后更新（2026-10-31）**：转向机械行程不对称（右侧约 65° 先到限位，左侧约 90°），固件取 `maxSteerAngleDeg=60°`、`minTurnRadiusMM=83.1mm`，pyserver `agent_min_turn_radius_mm=84`（即 8.4cm）。转向符号统一为 **正=右转**，代码用 `center - steer`（舵机/连杆方向与直觉相反）；舵机中位 90°/1500µs。速度环（软启动/PID/滤波/前馈）见 `stm32_project/Docs/Motor-Control-Tuning.md`。
 
 ## 1. 意图
 
@@ -72,7 +74,7 @@ L2 由 pyserver 把 Agent 语义翻译成 L1 的 wire 命令；ESP32/STM32 不�
 
 `distance_cm=0 && turn_deg=0` 视为无效调用（400 `no_op`）。
 
-几何约束：若两者都非零，曲率半径 `R = |distance_cm| / |turn_deg|`（单位 cm/deg，换算成弧长后）必须 ≥ 最小转弯半径 14.4cm。不满足返回 400 `turn_radius_too_small`，并给出该角度下的最小 `distance_cm`。
+几何约束：若两者都非零，曲率半径 `R = |distance_cm| / |turn_deg|`（单位 cm/deg，换算成弧长后）必须 ≥ 最小转弯半径 8.4cm。不满足返回 400 `turn_radius_too_small`，并给出该角度下的最小 `distance_cm`。
 
 时长约束：预估时长 = `|distance_cm| / speed_cm_s + |turn_deg| / 最大角速度 + 2s`。超过 `CMCAR_AGENT_MAX_MOTION_DURATION_S`（默认 60s）返回 400 `duration_too_long`——`move(500cm, speed=1)` 合法但要跑 500 秒，不能让同步连接被占死。
 
@@ -360,7 +362,7 @@ HTTP 请求
 | `CMCAR_AGENT_MAX_MOTION_DURATION_S` | 60 | 单次运动预估时长上限，超过直接 400 |
 | `CMCAR_AGENT_STATE_STALE_S` | 2.0 | `get_state` 标记 stale 的阈值 |
 
-底盘几何常量（最小转弯半径 14.4cm、轮距 16.7cm）从配置读取并与 STM32 的 `DEFAULT_CHASSIS_CFG` 保持一致；不一致以 STM32 为准。
+底盘几何常量（最小转弯半径 8.4cm、轮距 16.7cm）从配置读取并与 STM32 的 `DEFAULT_CHASSIS_CFG` 保持一致；不一致以 STM32 为准。
 
 ## 10. 测试计划
 
@@ -368,7 +370,7 @@ HTTP 请求
 
 - 转角符号：右转/左转、前进/后退四种组合的舵机方向。
 - 航向累加器：跨 ±180° 边界不跳变；270° 目标不反向。
-- 曲率校验：R < 14.4cm 拒绝；恰好等于边界。
+- 曲率校验：R < 8.4cm 拒绝；恰好等于边界。
 - 到达判定：距离/航向容差；收尾修正的时限与终止性。
 - 减速曲线：不同速度/距离下不超调、不倒退。
 

@@ -34,7 +34,7 @@ Content-Type: application/json
 - `move(50, -30)`：前进 50cm 并左转 30°
 - `move(-50, 30)`：后退 50cm 且车头向右转 30°
 
-几何约束：`R = |distance_cm×10| / radians(|turn_deg|) ≥ 144mm`，否则 400。预估时长 > 60s 返回 400。
+几何约束：`R = |distance_cm×10| / radians(|turn_deg|) ≥ 84mm`，否则 400。预估时长 > 60s 返回 400。
 
 成功响应：
 
@@ -75,7 +75,7 @@ GET /api/v1/agent/devices/DEV_1/state
 | HTTP | code | 含义 |
 |---|---|---|
 | 400 | `no_op` | 距离与转角都为 0 |
-| 400 | `turn_radius_too_small` | 曲率半径 < 144mm；`detail.min_distance_cm` 给出该角度最小值 |
+| 400 | `turn_radius_too_small` | 曲率半径 < 84mm；`detail.min_distance_cm` 给出该角度最小值 |
 | 400 | `duration_too_long` | 预估时长 > 60s |
 | 400 | `invalid_param` / `invalid_mode` / `geometry` | STM32 拒绝了参数 |
 | 409 | `busy` | 该设备已有动作在执行 |

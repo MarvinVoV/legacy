@@ -210,8 +210,40 @@ for base in (0x24000000, 0x240001E0):   # rx_buffer[0] / [1]
 
 ---
 
-## 8. 相关文档
+## 8. 电机 / 舵机状态读取（2026-10-31）
+
+| 目的 | 地址 / 方法 |
+|---|---|
+| 舵机 PWM（TIM2_CH1） | `0x40000034`（CCR1，1 tick=1µs，中位 1500） |
+| 左编码器计数（TIM4） | `0x40000824`（CNT） |
+| 右编码器计数（TIM5） | `0x40000C24`（CNT） |
+| 系统是否在跑 | `uwTick` `0x200008F8`、`xTickCount` `0x20004E8C`（两次读取应增长） |
+
+读运行中目标的值用 hotplug，避免连接时 halt：
+
+```bash
+STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -r32 0x40000034 4   # 舵机 CCR
+STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -r32 0x40000824 4   # TIM4 CNT
+```
+
+`SteerInstance` 状态（地址随编译变化，用 `nm` 找符号）：
+
+```bash
+arm-none-eabi-nm build/Debug/stm32_project.elf | grep steerInstance
+# 结构体偏移：actualAngleDeg +32, targetAngleDeg +36, motionState +44
+# motionState: 1=IDLE, 2=MOVING, 3=ERROR（若为 3，所有平滑转向都会被忽略）
+```
+
+`ServoDriver.spec`：符号 `servoDriver` +4 起为 `minAngle, maxAngle, minPulseUs/maxPulseUs, resolutionDeg`。
+
+**坑**：`-halt`/`-coreReg` 有时会停在复位向量（连接时 halt 的副作用），不要据此判断“固件没启动”；优先用 hotplug 读 RAM 变量或看 MQTT 帧。`Unable to get core ID` 多半是 CubeIDE/stlink-server 占用调试器或目标未供电。
+
+---
+
+## 9. 相关文档
 
 - [编译与烧录](BuildAndFlash.md)
 - [ESP32 ↔ STM32 接线](HardwareWiring.md)
 - [本次 UART4 DMA 故障的完整排查记录](UART-DMA-Troubleshooting.md)
+- [电机/舵机接线与调参](Motor-Control-Tuning.md)
+- [后轮速度与同步测试报告](Motor-Speed-Test-Report.md)

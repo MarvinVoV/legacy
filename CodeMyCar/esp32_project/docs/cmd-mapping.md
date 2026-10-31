@@ -2,7 +2,7 @@
 
 > 日期：2026-10-26
 > 范围：pyserver（JSON）↔ ESP32 bridge（翻译）↔ STM32（二进制 struct）
-> 变更：运动模式精简为 0–3；删除 SPIN/MIXED、duration、rotation_point、duty_cycle、gain；wire payload 13 → **9 字节**。
+> 变更：运动模式 0–3 + **4 GOAL**；删除 SPIN/MIXED、duration、rotation_point、duty_cycle、gain；wire payload 13 → **9 字节**。ACK payload 增加 1 字节状态码。
 
 ## 一、分层
 
@@ -84,7 +84,7 @@ ControlCommand  ──JSON──►  cJSON 解析 + 组包 ──v2帧──► 
 |---|---|---|---|
 | `linear_vel` | 0.001 m/s | **-1000..1000** | ±1.0 m/s（≈300 RPM 上限） |
 | `angular_vel` | 0.0644 rad/s | **-127..127** | ±8.2 rad/s（保守） |
-| `steer_angle` | 0.1° | -450..450 | ±45°（舵机中位 90°） |
+| `steer_angle` | 0.1° | -600..600 | ±60°（固件限幅；机械右极限约 65°，中位 90°） |
 | `left_rpm` / `right_rpm` | RPM | -300..300 | 电机最大 300 RPM |
 
 > `duration` 已删除；命令保持到下一条命令或急停。

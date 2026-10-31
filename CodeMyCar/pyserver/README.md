@@ -45,7 +45,7 @@ make test          # 跑全部 pytest（命令模型 / MQTT handler / API 鉴权
 make test-watch    # 改动自动重跑（需 brew install entr）
 ```
 
-测试覆盖：`tests/test_commands.py`（字段范围、枚举与 STM32 对齐）、`tests/test_mqtt.py`（topic 匹配、payload 解析）、`tests/test_ping.py`（ping/pong 匹配、并发、超时）、`tests/test_api.py`（命令下发、设备状态、API Key）。共 33 项，全部在内存中用 FakeMQTT 跑，不连真实 broker。
+测试覆盖：`tests/test_commands.py`（字段范围、枚举与 STM32 对齐）、`tests/test_mqtt.py`（topic 匹配、payload 解析）、`tests/test_ping.py`（ping/pong 匹配、并发、超时）、`tests/test_api.py`（命令下发、设备状态、API Key）、`tests/test_agent_motion.py`（Agent move/stop/state、同步时序、超时/并发）、`tests/test_logging_setup.py`（文件日志轮转/清理）。共 68 项，全部在内存中用 FakeMQTT 跑，不连真实 broker。
 
 ## 常用命令（Makefile）
 
@@ -106,7 +106,23 @@ mosquitto -c mosquitto.dev.conf
   - `data/{device_id}/sensor`
   - `data/{device_id}/heartbeat`
   - `data/{device_id}/log`
+  - `data/{device_id}/ack`（`{"seq":N,"ack":true,"status":S}`）
+  - `data/{device_id}/motion`（36 字节运动状态转成的 JSON，含位姿/实测距离/转角）
+  - `data/{device_id}/status`
   - `data/{device_id}/pong`（ESP32 对 `{"cmd":"ping"}` 的直接回执）
+
+### Agent 运动 API
+
+给 AI Agent 用的同步运动接口：`POST /api/v1/agent/devices/{id}/move`、`/stop`、`GET /state`。
+完整契约、单位和错误码见 [`agent-motion-api.md`](../esp32_project/docs/agent-motion-api.md)。
+
+### 实机测试脚本
+
+| 脚本 | 用途 |
+|---|---|
+| `scripts/test_agent_api.py` | Agent API 验收（前进/后退/转向/非法参数/停止） |
+| `scripts/motor_speed_test.py` | 双轮速度稳态/同步扫描（轮子悬空，需 10Hz 调试日志） |
+| `scripts/motor_accel_test.py` | 0→目标转速加速测试（需 20Hz 调试日志） |
 
 ### 链路自检（不依赖 STM32）
 

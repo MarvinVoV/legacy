@@ -39,7 +39,7 @@ ESP32 订阅自身设备 id：`cmd/<本机 device_id>/exec`（不使用 `+` 通�
 | `data/{device_id}/pong` | ping 回执（ESP32 直接回复） | JSON `{"seq":N,"pong":true,"uptime_s":U,"heap":H}` |
 | `data/{device_id}/motion` | 运动状态（STM32 目标执行） | JSON `{"seq":N,"state":"idle|running|done|aborted|error","x_mm":...,"goal_turn_mdeg":...}` |
 
-pyserver 订阅：`data/+/sensor`、`data/+/log`、`data/+/heartbeat`、`data/+/status`、`data/+/pong`、`data/+/motion`（均匹配 3 段 `data/X/kind`）。
+pyserver 订阅：`data/+/sensor`、`data/+/log`、`data/+/heartbeat`、`data/+/status`、`data/+/ack`、`data/+/pong`、`data/+/motion`（均匹配 3 段 `data/X/kind`）。
 
 `data/{id}/ack` 的 payload 为 `{"seq":N,"ack":true,"status":S}`；`status` 为 STM32 的命令执行状态（0=接受）。
 

@@ -39,7 +39,7 @@ cd serial_pkt_protocol
 mkdir build && cd build && cmake .. && make
 cd tests && ctest --output-on-failure    # 注意：ctest 要在 build/tests/ 下跑
 ```
-- 四个测试套件：`serial_pkt_protocol_tests`（v2 协议 pack/parse/重组/ACK）、`bridge_codec_tests`（pyserver JSON ↔ 13 字节 ControlCmd ↔ JSON 跨语言一致性，21 项检查）、`ack_manager_tests`（ACK 重传表）、`pkt_codec_tests`（v2 编解码：多帧 chunk 派发、分片、CRC 失败恢复、payload 上限）。
+- 五个测试套件：`serial_pkt_protocol_tests`（v2 协议 pack/parse/重组/ACK）、`bridge_codec_tests`（pyserver JSON ↔ 9 字节 ControlCmd ↔ JSON 跨语言一致性，含 mode 4 与 36 字节运动状态）、`ack_manager_tests`（ACK 重传表）、`pkt_codec_tests`（v2 编解码：多帧 chunk 派发、分片、CRC 失败恢复、payload 上限）、`motion_status_tests`（36 字节状态帧 pack/unpack）。
 - `enable_testing()` 在 `tests/CMakeLists.txt` 子目录里，所以从 `build/` 根跑 ctest 会报 "No tests found"——进 `build/tests/` 再跑。
 
 ## pyserver（`CodeMyCar/pyserver/`）
@@ -47,7 +47,7 @@ cd tests && ctest --output-on-failure    # 注意：ctest 要在 build/tests/ �
 **离线测试**（不连 broker、不连板子）：
 ```bash
 cd CodeMyCar/pyserver
-make test          # 25 项 pytest，内存中用 FakeMQTT（含 on_ack 端到端确认）
+make test          # 68 项 pytest，内存中用 FakeMQTT（含 on_ack 端到端确认、agent motion API）
 ```
 **一键开发环境**（mosquitto + uvicorn --reload，Ctrl-C 自动清理）：
 ```bash
