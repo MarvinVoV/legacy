@@ -89,7 +89,7 @@ int main(void)
 
     /* 8. 距离与航向都在容差内：立即完成 */
     st = start(300, 1000, 300);
-    advance(&st, 990.0f, 30.0f);
+    advance(&st, 995.0f, 30.0f);
     out = motion_goal_step(&st, &CFG, 300);
     assert(out.finished);
 

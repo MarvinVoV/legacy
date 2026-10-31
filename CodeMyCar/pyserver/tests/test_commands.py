@@ -54,10 +54,10 @@ def test_rpm_range():
 
 
 def test_steer_range():
-    MotionParams(steer_angle=450)
-    MotionParams(steer_angle=-450)
+    MotionParams(steer_angle=600)
+    MotionParams(steer_angle=-600)
     with pytest.raises(ValidationError):
-        MotionParams(steer_angle=451)
+        MotionParams(steer_angle=601)
 
 
 def test_removed_params_are_gone():
