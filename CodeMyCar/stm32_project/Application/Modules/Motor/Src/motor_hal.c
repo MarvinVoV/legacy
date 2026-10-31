@@ -137,11 +137,14 @@ void HAL_Motor_EmergencyStop(HAL_MotorConfig* config)
     // 激活硬件刹车模式
     HAL_Motor_SetDirection(config, MOTOR_BRAKE_STOP);
 
-    // 复位编码器
-    __HAL_TIM_SET_COUNTER(config->encoder.tim, 0);
-    config->state.encoderTicks = 0;
+    /*
+     * Do not reset the encoder here.  Position measurement is independent
+     * from actuator output; resetting the hardware counter during a stop
+     * makes the upper odometry layer interpret the reset as a large reverse
+     * movement.  Odometry reset is a separate, explicit operation.
+     */
 
-    // 更新状态
+    // 更新执行器状态；编码器基准保持不变
     config->state.currentDuty = 0;
 }
 

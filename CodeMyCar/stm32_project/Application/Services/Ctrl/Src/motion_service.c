@@ -19,6 +19,10 @@
 /// 互斥锁超时时间 (ms)
 #define MUTEX_TIMEOUT_MS (50)
 
+/* 编码器量化和滤波噪声会在硬件刹车后留下极小的非零RPM；精确浮点
+   比较会让服务永久锁在ESTOP。 */
+#define MOTION_STOP_RPM_EPSILON (1.0f)
+
 /// 最小有效时间间隔 (ms)
 #define MIN_DELTA_TIME_MS (1)
 
@@ -49,6 +53,9 @@ static void handle_drive(MotionContext* ctx, const MotionTarget* target);
 
 /// 处理目标型运动
 static void handle_goal(MotionContext* ctx);
+
+/// 左右轮是否已低于安全停稳阈值
+static bool drive_is_stopped(const MotionContext* ctx);
 
 /// 由底盘配置构造目标执行器配置
 static MotionGoalConfig goal_cfg_from(const ChassisConfig* cfg);
@@ -121,8 +128,7 @@ int MotionService_SetControlMode(MotionContext* ctx, MotionMode new_mode)
     // 特殊条件检查（如急停未解除）
     if (current_mode == MOTION_EMERGENCY_STOP && new_mode != MOTION_EMERGENCY_STOP)
     {
-        // 检查错误状态是否清除
-        if (ctx->state.drive.leftRpm != 0 || ctx->state.drive.rightRpm != 0)
+        if (!drive_is_stopped(ctx))
         {
             osMutexRelease(ctx->targetMutex);
             return ERR_MOTION_EMERGENCY_ACTIVE;
@@ -324,8 +330,7 @@ int MotionService_StartGoal(MotionContext* ctx, int16_t turnDdeg, int16_t distan
         return ERR_MOTION_BUSY;
     }
 
-    if (ctx->motionTarget.mode == MOTION_EMERGENCY_STOP &&
-        (ctx->state.drive.leftRpm != 0.0f || ctx->state.drive.rightRpm != 0.0f))
+    if (ctx->motionTarget.mode == MOTION_EMERGENCY_STOP && !drive_is_stopped(ctx))
     {
         osMutexRelease(ctx->targetMutex);
         return ERR_MOTION_EMERGENCY_ACTIVE;
@@ -505,16 +510,21 @@ static inline float mm_to_m(const float mm)
     return mm / 1000.0f;
 }
 
+static bool drive_is_stopped(const MotionContext* ctx)
+{
+    return fabsf(ctx->state.drive.leftRpm) <= MOTION_STOP_RPM_EPSILON &&
+           fabsf(ctx->state.drive.rightRpm) <= MOTION_STOP_RPM_EPSILON;
+}
+
 static void handle_emergency_stop(MotionContext* ctx)
 {
     ctx->cmdLeftRpm  = 0.0f;
     ctx->cmdRightRpm = 0.0f;
 
-    // 停止所有电机
-    MotorService_emergencyStop(ctx->motorService, MOTOR_LEFT_WHEEL);
-    MotorService_emergencyStop(ctx->motorService, MOTOR_RIGHT_WHEEL);
-
-    // 快速归中
+    /* MotionService_EmergencyStop() performs the hard stop on entry.  The
+       200Hz run loop only maintains the safe command and steering position;
+       repeating the full reset here would hide encoder motion and continually
+       reset controller history. */
     SteerService_setAngleImmediate(ctx->steerServo, ctx->chassisConfig.steerCenterAngleDeg);
 }
 

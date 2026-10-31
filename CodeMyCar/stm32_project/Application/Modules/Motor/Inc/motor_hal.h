@@ -111,7 +111,7 @@ void HAL_Motor_SetDirection(HAL_MotorConfig* config, MotorDirection direction);
  * @note 此函数执行以下操作：
  *       1. 设置占空比为0%
  *       2. 激活刹车模式
- *       3. 复位编码器计数器
+ *       3. 保持编码器计数连续（停车不等于里程计归零）
  */
 void HAL_Motor_EmergencyStop(HAL_MotorConfig* config);
 

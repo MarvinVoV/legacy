@@ -186,7 +186,9 @@ MotorDriverState MotorDriver_getState(const MotorDriver* driver);
  * @note 执行以下操作：
  *       1. 切断PWM输出
  *       2. 激活硬件刹车
- *       3. 切换到STOP模式
+ *       3. 清空目标、斜坡、PID与滤波动态状态
+ *       4. 切换到STOP模式
+ *       5. 保留编码器位置与累计里程
  */
 void MotorDriver_EmergencyStop(MotorDriver* driver);
 
