@@ -506,13 +506,16 @@ void MotionService_Run(MotionContext* ctx)
         const SafetyChannel* rear  = NULL;
         Sonar_GetSafety(&front, &rear);
 
+        /* 方向必须用**限速前**的指令判断：scale=0 时两轮目标都归零，
+           若放在限速之后会丢掉方向，导致倒车时去检查前向传感器。 */
+        const float linear = (left + right) * 0.5f;
+
         const float scale = safety_governor_apply(front, rear, &left, &right);
 
         /* ---- 硬停止：进入停止距离（或传感器故障）立即短接刹车 ----
          * 方向决定保护通道：前进看前向，倒车看后向。
          * 刹车后保持到距离 > SAFETY_BRAKE_RELEASE_CM 才解除（迟滞）。 */
-        const float          linear = (left + right) * 0.5f;
-        const SafetyChannel* guard  = (linear >= 0.0f) ? front : rear;
+        const SafetyChannel* guard = (linear >= 0.0f) ? front : rear;
 
         if (ctx->safetyBraked)
         {

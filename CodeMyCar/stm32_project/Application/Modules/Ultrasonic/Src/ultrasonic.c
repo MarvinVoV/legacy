@@ -33,9 +33,17 @@ static int16_t width_to_cm(uint16_t widthUs)
     const uint32_t minUs = (uint32_t)US_MIN_DISTANCE_CM * US_US_PER_CM;
     const uint32_t maxUs = (uint32_t)US_MAX_DISTANCE_CM * US_US_PER_CM;
 
-    if (widthUs < minUs || widthUs > maxUs)
+    /* 太近/噪声脉冲：无效 */
+    if (widthUs < minUs)
     {
         return -1;
+    }
+
+    /* 超出量程：HC-SR04 无回波时输出约 38ms 长脉冲（远超 400cm），
+       应视为"远端畅通"而不是故障，否则空旷环境会被判成传感器故障。 */
+    if (widthUs > maxUs)
+    {
+        return (int16_t)US_MAX_DISTANCE_CM;
     }
     return (int16_t)(((uint32_t)widthUs + US_US_PER_CM / 2u) / US_US_PER_CM);
 }
@@ -82,22 +90,27 @@ bool Ultrasonic_Poll(UltrasonicSensor* s, const uint32_t nowMs, int16_t* distanc
         return false;
     }
 
-    /* 超时判定：等不到边沿就作废本次测量 */
+    /* 超时判定：两种超时都按"超出量程 = 畅通"处理。
+     *
+     * 实测该模块在没有回波时**不输出任何脉冲**（不是 datasheet 说的 38ms），
+     * 所以"没有上升沿"与"传感器断线"在电气上无法区分。若把无回波判成故障，
+     * 空旷环境下该方向会被永久禁行。因此统一视为远端畅通（400cm）；
+     * "从未测到过有效值"的情形由安全层的 everValid 规则放行/告警。 */
     if (s->phase == US_PHASE_WAIT_RISE &&
         (nowMs - s->triggerMs) >= US_RISE_TIMEOUT_MS)
     {
         s->phase       = US_PHASE_IDLE;
         s->result      = 1u;
-        s->resultValid = 0u;
-        s->resultCm    = -1;
+        s->resultValid = 1u;
+        s->resultCm    = US_MAX_DISTANCE_CM;
     }
     else if (s->phase == US_PHASE_WAIT_FALL &&
              (nowMs - s->triggerMs) >= US_FALL_TIMEOUT_MS)
     {
         s->phase       = US_PHASE_IDLE;
         s->result      = 1u;
-        s->resultValid = 0u;
-        s->resultCm    = -1;
+        s->resultValid = 1u;
+        s->resultCm    = US_MAX_DISTANCE_CM;
     }
 
     if (!s->result)
