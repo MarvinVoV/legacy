@@ -70,6 +70,32 @@ static bool get_required_int(const cJSON* obj, const char* key,
     return true;
 }
 
+/** Encode steering as signed 0.1% units.  New callers use steer_percent.
+ *  Legacy steer_angle (0.1 degree, ±60 degree) remains accepted during the
+ *  migration and is scaled onto the normalized ±100% range. */
+static bool get_steer_permille(const cJSON* params, int32_t* out)
+{
+    const cJSON* percent_item = cJSON_GetObjectItemCaseSensitive(params, "steer_percent");
+    int32_t percent = 0;
+    if (percent_item != NULL)
+    {
+        if (!get_required_int(params, "steer_percent", -100, 100, &percent))
+        {
+            return false;
+        }
+        *out = percent * 10;
+        return true;
+    }
+
+    int32_t legacy_ddeg = 0;
+    if (get_required_int(params, "steer_angle", -600, 600, &legacy_ddeg))
+    {
+        *out = (legacy_ddeg * 1000) / 600;
+        return true;
+    }
+    return false;
+}
+
 /* ==================== 下行：ping/pong 链路自检 ==================== */
 
 bool bridge_json_is_ping(const char* json, size_t len, uint8_t* out_seq)
@@ -195,7 +221,7 @@ int bridge_json_to_control_cmd(const char* json, size_t len,
             case BRIDGE_MODE_DIRECT: /* DirectCtrlParam: leftRpm, rightRpm, steerAngle */
                 valid = get_required_int(params, "left_rpm", INT16_MIN, INT16_MAX, &p0) &&
                         get_required_int(params, "right_rpm", INT16_MIN, INT16_MAX, &p1) &&
-                        get_required_int(params, "steer_angle", INT16_MIN, INT16_MAX, &p2);
+                        get_steer_permille(params, &p2);
                 if (valid)
                 {
                     put_i16le(&out[3], (int16_t)p0);
@@ -216,7 +242,7 @@ int bridge_json_to_control_cmd(const char* json, size_t len,
 
             case BRIDGE_MODE_DRIVE: /* DriveCtrlParam: linearVel, steerAngle */
                 valid = get_required_int(params, "linear_vel", INT16_MIN, INT16_MAX, &p0) &&
-                        get_required_int(params, "steer_angle", INT16_MIN, INT16_MAX, &p1);
+                        get_steer_permille(params, &p1);
                 if (valid)
                 {
                     put_i16le(&out[3], (int16_t)p0);

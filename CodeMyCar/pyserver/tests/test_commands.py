@@ -3,6 +3,7 @@
 import pytest
 from pydantic import ValidationError
 
+from app.config import Settings
 from app.models.commands import ControlCommand, MotionCommand, MotionMode, MotionParams
 
 
@@ -54,10 +55,20 @@ def test_rpm_range():
 
 
 def test_steer_range():
+    MotionParams(steer_percent=100)
+    MotionParams(steer_percent=-100)
+    with pytest.raises(ValidationError):
+        MotionParams(steer_percent=101)
+
+    # Legacy field remains accepted during migration.
     MotionParams(steer_angle=600)
     MotionParams(steer_angle=-600)
     with pytest.raises(ValidationError):
         MotionParams(steer_angle=601)
+
+
+def test_default_turn_radius_matches_stm32_nominal_limit():
+    assert Settings(_env_file=None).agent_min_turn_radius_mm == 309
 
 
 def test_removed_params_are_gone():

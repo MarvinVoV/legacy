@@ -29,7 +29,7 @@ typedef struct
     float wheelbaseMM;          ///< 轴距 (mm)
     float wheelRadiusMM;        ///< 车轮半径 (mm)
     float minTurnRadiusMM;      ///< 最小转弯半径 (mm)
-    float maxSteerAngleDeg;     ///< 最大转向角度 (deg)
+    float maxSteerAngleDeg;     ///< 最大标称等效转向角度 (deg)
     float maxAngularVelRad;     ///< 最大角速度 (rad/s)
     float maxLinearVelocityMPS; ///< 最大线速度 (m/s)
     float steerCenterAngleDeg;  ///< 中心角度 (deg)
@@ -56,7 +56,7 @@ typedef struct
         struct
         {
             float linearVelocity; ///< 目标线速度 (m/s)
-            float steerAngle;     ///< 目标转向角 (deg)
+            float steerPercent;   ///< 目标转向百分比 (-100..100)
         } driveCtrl;
 
         // 直接控制参数
@@ -64,7 +64,7 @@ typedef struct
         {
             float leftRpm;    ///< 左轮目标转速 (RPM)
             float rightRpm;   ///< 右轮目标转速 (RPM)
-            float steerAngle; ///< 目标转向角 (deg)
+            float steerPercent; ///< 目标转向百分比 (-100..100)
         } directCtrl;
     } params;
 } MotionTarget;
@@ -180,7 +180,7 @@ int MotionService_SetDifferentialParams(MotionContext* ctx, float linear, float 
  * @param ctx 上下文指针
  * @param left_rpm 左轮目标转速 (RPM)
  * @param right_rpm 右轮目标转速 (RPM)
- * @param steer_angle 目标转向角 (deg)
+ * @param steer_angle 目标转向百分比 (-100..100)
  *
  * @retval ERR_SUCCESS 设置成功
  * @retval ERR_MOTION_INVALID_PARAM 参数无效
@@ -195,7 +195,7 @@ int MotionService_SetDirectControlParams(MotionContext* ctx, float left_rpm,
  *
  * @param ctx 上下文指针
  * @param linear_vel 目标线速度 (m/s)
- * @param steer_angle 目标转向角 (deg)
+ * @param steer_angle 目标转向百分比 (-100..100)
  *
  * @retval ERR_SUCCESS 设置成功
  * @retval ERR_MOTION_INVALID_PARAM 参数无效

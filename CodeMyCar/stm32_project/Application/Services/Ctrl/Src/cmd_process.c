@@ -31,8 +31,8 @@
 /// 解码线速度
 static float decode_linear_vel(int16_t value);
 
-/// 解码转向角
-static float decode_steer_angle(int16_t deg);
+/// 解码转向百分比
+static float decode_steer_percent(int16_t permille);
 
 /// 解码角速度
 static float decode_angular_vel(int16_t angular_vel);
@@ -132,7 +132,7 @@ static int process_motion_command(CmdProcessorContext* ctx, const MotionCmd* mot
         case MOTION_DRIVE:
             {
                 const float linear = decode_linear_vel(motion->params.driveCtrl.linearVel);
-                const float steer  = decode_steer_angle(motion->params.driveCtrl.steerAngle);
+                const float steer  = decode_steer_percent(motion->params.driveCtrl.steerPercent);
                 ret = MotionService_SetDriveParams(motionCtx, linear, steer, seq);
             }
             break;
@@ -141,7 +141,7 @@ static int process_motion_command(CmdProcessorContext* ctx, const MotionCmd* mot
             {
                 const float leftRpm  = (float)motion->params.directCtrl.leftRpm;
                 const float rightRpm = (float)motion->params.directCtrl.rightRpm;
-                const float steer    = decode_steer_angle(motion->params.directCtrl.steerAngle);
+                const float steer    = decode_steer_percent(motion->params.directCtrl.steerPercent);
                 ret = MotionService_SetDirectControlParams(motionCtx, leftRpm, rightRpm,
                                                            steer, seq);
             }
@@ -187,17 +187,14 @@ static float decode_linear_vel(const int16_t value)
 }
 
 /**
- * @brief 解码转向角参数
+ * @brief 解码转向百分比参数
  *
- * @param deg 原始转向角值 (0.1度步长)
- * @return float 实际转向角 (度)
- *
- * @details 将接收到的整型转向角参数转换为浮点型角度值。
- *          输入值以0.1度为步长，即值10表示1.0度，100表示10.0度。
+ * @param permille 原始百分比值 (0.1%步长)
+ * @return float 转向百分比 (-100..100)
  */
-static float decode_steer_angle(const int16_t deg)
+static float decode_steer_percent(const int16_t permille)
 {
-    return (float)deg * 0.1f; // 0.1度分辨率
+    return (float)permille * 0.1f;
 }
 
 /**

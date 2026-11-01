@@ -29,23 +29,32 @@ int main(void){
     uint8_t exp_estop[9] = {0,0x01,0, 0,0,0,0, 0,0};
     CHECK(n==9 && memcmp(out,exp_estop,9)==0, "emergency_stop all-zero params");
 
-    /* 3. direct: left=120 right=-120 steer=90 */
+    /* 3. direct: left=120 right=-120 steering=90% -> 900 permille */
     const char* j_direct = "{\"seq\":1,\"cmd\":\"motion\",\"motion\":{\"mode\":1,"
-        "\"params\":{\"left_rpm\":120,\"right_rpm\":-120,\"steer_angle\":90}}}";
+        "\"params\":{\"left_rpm\":120,\"right_rpm\":-120,\"steer_percent\":90}}}";
     n = bridge_json_to_control_cmd(j_direct, strlen(j_direct), out, &seq, &ack);
-    /* -120 = 0xFF88 -> LE 88 FF ; 120=0x0078->78 00 ; 90=0x005A->5A 00 */
-    uint8_t exp_direct[9] = {0,0x01,1, 0x78,0x00, 0x88,0xFF, 0x5A,0x00};
+    uint8_t exp_direct[9] = {0,0x01,1, 0x78,0x00, 0x88,0xFF, 0x84,0x03};
     CHECK(n==9 && memcmp(out,exp_direct,9)==0, "direct bytes (incl negative rpm)");
     if (memcmp(out,exp_direct,9)!=0) hex(out,9);
 
-    /* 4. drive: mode=3, linear=300, steer=45 */
+    /* 4. drive: mode=3, linear=300, steering=45% -> 450 permille */
     const char* j_drive = "{\"seq\":2,\"cmd\":\"motion\",\"motion\":{\"mode\":3,"
-        "\"params\":{\"linear_vel\":300,\"steer_angle\":45}}}";
+        "\"params\":{\"linear_vel\":300,\"steer_percent\":45}}}";
     n = bridge_json_to_control_cmd(j_drive, strlen(j_drive), out, &seq, &ack);
-    /* 300=0x012C -> 2C 01 ; 45=0x002D -> 2D 00 */
-    uint8_t exp_drive[9] = {0,0x01,3, 0x2C,0x01, 0x2D,0x00, 0,0};
+    uint8_t exp_drive[9] = {0,0x01,3, 0x2C,0x01, 0xC2,0x01, 0,0};
     CHECK(n==9 && memcmp(out,exp_drive,9)==0, "drive bytes");
     if (memcmp(out,exp_drive,9)!=0) hex(out,9);
+
+    const char* j_legacy_steer = "{\"seq\":3,\"cmd\":\"motion\",\"motion\":{\"mode\":1,"
+        "\"params\":{\"left_rpm\":0,\"right_rpm\":0,\"steer_angle\":600}}}";
+    n = bridge_json_to_control_cmd(j_legacy_steer, strlen(j_legacy_steer), out, &seq, &ack);
+    CHECK(n==9 && (int16_t)(out[7] | (out[8]<<8)) == 1000,
+          "legacy 60deg scales to 100 percent");
+
+    const char* j_percent_over = "{\"seq\":3,\"cmd\":\"motion\",\"motion\":{\"mode\":1,"
+        "\"params\":{\"left_rpm\":0,\"right_rpm\":0,\"steer_percent\":101}}}";
+    CHECK(bridge_json_to_control_cmd(j_percent_over, strlen(j_percent_over), out, &seq, &ack)==0,
+          "steering percent overflow rejected");
 
     /* 5. mode 5 是零参数的故障清除命令 */
     const char* j_mixed = "{\"seq\":8,\"cmd\":\"motion\",\"motion\":{\"mode\":5,"

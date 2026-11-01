@@ -13,6 +13,7 @@
 #include "safety_service.h"
 #include "sonar_task.h"
 #include "ultrasonic_config.h"
+#include "steering_map.h"
 
 
 //------------------------------------------------------------------------------
@@ -224,9 +225,8 @@ int MotionService_SetDirectControlParams(MotionContext* ctx, float left_rpm, flo
     ctx->motionTarget.mode = MOTION_DIRECT_CONTROL;
     ctx->motionTarget.params.directCtrl.leftRpm = motion_clamp_rpm(left_rpm, MOTION_MAX_RPM);
     ctx->motionTarget.params.directCtrl.rightRpm = motion_clamp_rpm(right_rpm, MOTION_MAX_RPM);
-    ctx->motionTarget.params.directCtrl.steerAngle =
-        CLAMP(steer_angle, -ctx->chassisConfig.maxSteerAngleDeg,
-              ctx->chassisConfig.maxSteerAngleDeg);
+    ctx->motionTarget.params.directCtrl.steerPercent =
+        CLAMP(steer_angle, STEERING_PERCENT_MIN, STEERING_PERCENT_MAX);
     ctx->statusSeq = seq;
     ctx->urgentStatus = true;
     control_lease_renew(&ctx->commandLease, HAL_GetTick());
@@ -261,15 +261,14 @@ int MotionService_SetDriveParams(MotionContext* ctx, float linear_vel, float ste
 
     // 参数范围校验
     const float max_vel   = ctx->chassisConfig.maxLinearVelocityMPS;
-    const float max_angle = ctx->chassisConfig.maxSteerAngleDeg;
 
     abort_goal_locked(ctx, MOTION_STATE_ABORTED);
     memset(&ctx->motionTarget.params, 0, sizeof(ctx->motionTarget.params));
     ctx->motionTarget.mode = MOTION_DRIVE;
     ctx->motionTarget.params.driveCtrl.linearVelocity =
         CLAMP(linear_vel, -max_vel, max_vel);
-    ctx->motionTarget.params.driveCtrl.steerAngle =
-        CLAMP(steer_angle, -max_angle, max_angle);
+    ctx->motionTarget.params.driveCtrl.steerPercent =
+        CLAMP(steer_angle, STEERING_PERCENT_MIN, STEERING_PERCENT_MAX);
     ctx->statusSeq = seq;
     ctx->urgentStatus = true;
     control_lease_renew(&ctx->commandLease, HAL_GetTick());
@@ -834,9 +833,13 @@ static void handle_emergency_stop(MotionContext* ctx)
 
 static void handle_direct_control(MotionContext* ctx, const MotionTarget* target)
 {
-    const float max_steer = ctx->chassisConfig.maxSteerAngleDeg;
-    const float steer     = CLAMP(target->params.directCtrl.steerAngle,
-                                  -max_steer, max_steer);
+    const float percent = CLAMP(target->params.directCtrl.steerPercent,
+                                STEERING_PERCENT_MIN, STEERING_PERCENT_MAX);
+    float raw_steer = 0.0f;
+    if (!steering_map_percent_to_raw(percent, &raw_steer))
+    {
+        raw_steer = 0.0f;
+    }
 
     // 设置电机转速（限幅，防止绕过 pyserver 直接发 MQTT 超速）
     const float left_rpm  = motion_clamp_rpm(target->params.directCtrl.leftRpm, MOTION_MAX_RPM);
@@ -847,7 +850,7 @@ static void handle_direct_control(MotionContext* ctx, const MotionTarget* target
 
     // 舵机角度 = 中位 - 相对转向角（舵机/连杆方向相反：正=右）
     SteerService_setAngleSmoothly(ctx->steerServo,
-                                  ctx->chassisConfig.steerCenterAngleDeg - steer);
+                                  ctx->chassisConfig.steerCenterAngleDeg - raw_steer);
 }
 
 static void handle_differential_control(MotionContext* ctx, const MotionTarget* target)
@@ -880,13 +883,21 @@ static void handle_drive(MotionContext* ctx, const MotionTarget* target)
     const ChassisConfig* cfg = &ctx->chassisConfig;
 
     const float max_vel   = cfg->maxLinearVelocityMPS;
-    const float max_angle = cfg->maxSteerAngleDeg;
     const float v         = CLAMP(target->params.driveCtrl.linearVelocity, -max_vel, max_vel);
-    const float steer     = CLAMP(target->params.driveCtrl.steerAngle, -max_angle, max_angle);
+    const float percent   = CLAMP(target->params.driveCtrl.steerPercent,
+                                  STEERING_PERCENT_MIN, STEERING_PERCENT_MAX);
+    float equivalent_steer = 0.0f;
+    float raw_steer = 0.0f;
+    if (!steering_map_percent_to_equivalent(percent, &equivalent_steer) ||
+        !steering_map_percent_to_raw(percent, &raw_steer))
+    {
+        equivalent_steer = 0.0f;
+        raw_steer = 0.0f;
+    }
 
     float left_rpm = 0.0f;
     float right_rpm = 0.0f;
-    motion_calc_drive(v, steer,
+    motion_calc_drive(v, equivalent_steer,
                       mm_to_m(cfg->wheelbaseMM),
                       mm_to_m(cfg->trackWidthMM),
                       mm_to_m(cfg->wheelRadiusMM),
@@ -898,7 +909,7 @@ static void handle_drive(MotionContext* ctx, const MotionTarget* target)
     ctx->cmdRightRpm = right_rpm;
 
     // 舵机 = 中位 - 转向角（正=右）
-    SteerService_setAngleSmoothly(ctx->steerServo, cfg->steerCenterAngleDeg - steer);
+    SteerService_setAngleSmoothly(ctx->steerServo, cfg->steerCenterAngleDeg - raw_steer);
 }
 
 static MotionGoalConfig goal_cfg_from(const ChassisConfig* cfg)
@@ -942,8 +953,15 @@ static void handle_goal(MotionContext* ctx)
     ctx->cmdLeftRpm  = out.leftRpm;
     ctx->cmdRightRpm = out.rightRpm;
 
-    const float steer = out.pivot ? ctx->chassisConfig.steerCenterAngleDeg
-                                  : ctx->chassisConfig.steerCenterAngleDeg - out.steerAngleDeg;
+    float percent = 0.0f;
+    float raw_steer = 0.0f;
+    if (!out.pivot &&
+        (!steering_map_equivalent_to_percent(out.steerAngleDeg, &percent) ||
+         !steering_map_percent_to_raw(percent, &raw_steer)))
+    {
+        raw_steer = 0.0f;
+    }
+    const float steer = ctx->chassisConfig.steerCenterAngleDeg - raw_steer;
     SteerService_setAngleSmoothly(ctx->steerServo, steer);
 }
 
