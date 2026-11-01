@@ -60,7 +60,7 @@ class Collector:
 
 
 def send(client: httpx.Client, base: str, seq: int, left: int, right: int):
-    client.post(
+    response = client.post(
         base,
         json={
             "seq": seq & 0xFF,
@@ -72,6 +72,17 @@ def send(client: httpx.Client, base: str, seq: int, left: int, right: int):
         },
         timeout=10,
     )
+    response.raise_for_status()
+
+
+def hold_command(client, base, seq, left, right, duration, refresh_s=0.2):
+    """Keep the STM32 command lease alive while returning the next sequence."""
+    deadline = time.monotonic() + duration
+    while time.monotonic() < deadline:
+        send(client, base, seq, left, right)
+        seq = (seq + 1) & 0xFF
+        time.sleep(min(refresh_s, max(0.0, deadline - time.monotonic())))
+    return seq
 
 
 def analyze(samples, target, t_start, t_steady_from):
@@ -161,9 +172,7 @@ def main():
                 time.sleep(0.6)
                 collector.clear()
                 t0 = time.monotonic()
-                send(client, base, seq, target, target)
-                seq += 1
-                time.sleep(args.hold)
+                seq = hold_command(client, base, seq, target, target, args.hold)
                 send(client, base, seq, 0, 0)
                 seq += 1
                 time.sleep(0.5)

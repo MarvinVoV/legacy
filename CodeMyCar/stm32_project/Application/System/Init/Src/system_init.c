@@ -97,14 +97,16 @@ static int init_motor_service(void)
         .gearRatio = 30,
         .maxRPM = 300,
         .wheelRadiusMM = DEFAULT_CHASSIS_CFG.wheelRadiusMM,
-        .feedforwardScale = 1.4f
+        .feedforwardScale = 1.4f,
+        .forwardScale = 1.15f  // 悬空实测：正转所需占空比较反转高约 12%~18%
     };
     rightMotorSpec = (MotorSpec){
         .encoderPPR = 13,
         .gearRatio = 30,
         .maxRPM = 300,
         .wheelRadiusMM = DEFAULT_CHASSIS_CFG.wheelRadiusMM,
-        .feedforwardScale = 1.4f  // 右轮低速静摩擦较大，增加前馈
+        .feedforwardScale = 1.4f,
+        .forwardScale = 1.15f
     };
 
     // 左轮PID参数

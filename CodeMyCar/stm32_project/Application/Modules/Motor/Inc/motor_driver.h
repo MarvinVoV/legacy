@@ -38,7 +38,8 @@ typedef struct
     uint16_t gearRatio;     ///< 减速比（如30:1存储为30）
     float    wheelRadiusMM; ///< 轮半径（毫米）
     float    maxRPM;        ///< 最大转速（转/分钟）
-    float    feedforwardScale; ///< 前馈缩放（补偿左右机械差异）
+    float    feedforwardScale; ///< 低速前馈缩放
+    float    forwardScale;     ///< 正转方向标定；<=0 时按 1.0 处理
 } MotorSpec;
 
 /**

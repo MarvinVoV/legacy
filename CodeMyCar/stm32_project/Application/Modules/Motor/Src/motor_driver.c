@@ -332,8 +332,12 @@ void MotorDriver_Update(MotorDriver* driver)
             1.0f - fabsf(driver->control.rampedTargetRPM) / 60.0f);
         const float ff_scale = 1.0f +
             (driver->spec->feedforwardScale - 1.0f) * ff_speed_factor;
+        const float direction_scale =
+            (driver->control.rampedTargetRPM > 0.0f && driver->spec->forwardScale > 0.0f)
+                ? driver->spec->forwardScale
+                : 1.0f;
         output += calculate_feedforward(driver->control.rampedTargetRPM, filtered_rpm) *
-                  ff_scale;
+                  ff_scale * direction_scale;
 
         // 3. 应用PWM滤波
         const float filtered_output = apply_pwm_filter(driver, output);
