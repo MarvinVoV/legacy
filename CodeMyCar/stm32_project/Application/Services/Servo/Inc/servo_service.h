@@ -24,7 +24,7 @@ typedef struct
     float deadZoneDeg;            // 死区角度（度）
     float defaultStepDeg;         // 默认单步角度（度）
     float maxSpeedDegPerSec;      // 最大速度：90°/秒（即 0.025°/ms）
-    float accelerationDegPerSec2; // 加速度：180°/秒²（即 0.18°/ms²）
+    float accelerationDegPerSec2; // 加速度：180°/秒²（即 0.00018°/ms²）
     uint16_t updateIntervalMs;    // 控制周期（毫秒）
 } SteerConfig;
 

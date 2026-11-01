@@ -14,6 +14,12 @@ static bool checkPositionReached(const SteerInstance* inst);
 static void handleCalibratingState(SteerInstance* inst);
 static int handleMovingState(SteerInstance* inst);
 
+static float acceleration_to_deg_per_ms2(const float degPerSec2)
+{
+    /* 1 s² = 1,000,000 ms². */
+    return degPerSec2 * 1.0e-6f;
+}
+
 int SteerService_init(SteerInstance* steerInstance, SteerConfig* config, ServoDriver* driver)
 {
     if (!steerInstance || !config || !driver)
@@ -36,7 +42,7 @@ int SteerService_init(SteerInstance* steerInstance, SteerConfig* config, ServoDr
     steerInstance->smoothCtrl = (SmoothControlContext){
         .targetAngleDeg = 0.0f,
         .currentSpeedDegPerMs = 0.0f,                                      // 初始速度为0
-        .accelerationDegPerMs2 = config->accelerationDegPerSec2 / 1000000.0f,
+        .accelerationDegPerMs2 = acceleration_to_deg_per_ms2(config->accelerationDegPerSec2),
         .maxSpeedDegPerMs = config->maxSpeedDegPerSec / 1000.0f,           // 单位转换
         .state = STEER_STATE_IDLE
     };
@@ -98,7 +104,7 @@ int SteerService_setAngleSmoothly(SteerInstance* instance, float targetAngle)
     instance->smoothCtrl = (SmoothControlContext){
         .targetAngleDeg = clampedAngle,
         .currentSpeedDegPerMs = 0.0f,
-        .accelerationDegPerMs2 = instance->config.accelerationDegPerSec2 / 1000000.0f,
+        .accelerationDegPerMs2 = acceleration_to_deg_per_ms2(instance->config.accelerationDegPerSec2),
         .maxSpeedDegPerMs = instance->config.maxSpeedDegPerSec / 1000.0f,           // 转换为度/毫秒
         .state = STEER_STATE_ACCEL
     };
