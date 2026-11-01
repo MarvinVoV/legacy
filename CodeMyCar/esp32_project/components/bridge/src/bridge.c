@@ -52,7 +52,7 @@ static uint8_t s_stm32_protocol_version = 0;
 
 /* ==================== 上行帧队列（uart_rx → uplink task） ==================== */
 
-#define FRAME_QUEUE_DEPTH 8
+#define FRAME_QUEUE_DEPTH 64
 
 typedef struct
 {
@@ -447,7 +447,7 @@ static void on_uart_frame(const pkt_frame_t* frame, void* user_ctx)
             .ack_seq = client_seq,
             .ack_status = ack_status,
         };
-        if (xQueueSend(s_frame_queue, &echo, 0) != pdPASS)
+        if (xQueueSendToFront(s_frame_queue, &echo, 0) != pdPASS)
         {
             ESP_LOGW(TAG, "ACK echo queue full, dropping ack seq=%u", client_seq);
         }
@@ -478,7 +478,7 @@ static void publish_ack_echo(uint8_t seq, uint8_t status)
     if (n > 0 && append_session_id(json, &json_len, sizeof(json)))
     {
         const esp_err_t err = mqtt_service_publish_timed(
-            CMCAR_TOPIC_ACK, json, json_len, 0, 200);
+            CMCAR_TOPIC_ACK, json, json_len, 0, 100);
         if (err != ESP_OK)
         {
             ESP_LOGD(TAG, "ACK echo publish skipped: %s", esp_err_to_name(err));
