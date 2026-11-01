@@ -970,7 +970,7 @@ static void update_runtime_state(MotionContext* ctx)
     ctx->state.drive.rightRpm = right_state.velocity.rpm;
 
     // 更新转向状态
-    ctx->state.steering.actualAngle = steer_state.actualAngleDeg;
+    ctx->state.steering.commandedAngle = steer_state.commandedAngleDeg;
     ctx->state.steering.targetAngle = steer_state.targetAngleDeg;
 
     // ==================== 更新运动学状态 ====================

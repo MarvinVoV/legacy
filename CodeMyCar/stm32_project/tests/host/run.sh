@@ -57,6 +57,16 @@ echo "== encoder fault monitor =="
   -lm -o "${TMPDIR:-/tmp}/encoder_fault_monitor_test"
 "${TMPDIR:-/tmp}/encoder_fault_monitor_test"
 
+echo "== servo service =="
+"$CC" -std=c11 -Wall -Wextra -O2 \
+  -I "$DIR/tests/host/stubs" \
+  -I "$DIR/Application/Services/Servo/Inc" \
+  -I "$DIR/Application/System/Utils/Inc" \
+  "$DIR/tests/host/servo_service_test.c" \
+  "$DIR/Application/Services/Servo/Src/servo_service.c" \
+  -lm -o "${TMPDIR:-/tmp}/servo_service_test"
+"${TMPDIR:-/tmp}/servo_service_test"
+
 echo "== PID simulation =="
 "$CC" -std=c11 -Wall -Wextra -O2 \
   -I "$DIR/tests/host/stubs" \

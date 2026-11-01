@@ -40,7 +40,7 @@ typedef enum
 
 typedef struct
 {
-    float actualAngleDeg;    // 实际角度（度）
+    float commandedAngleDeg; // 已下发 PWM 对应的估计角度；无位置传感器，不代表机械实测角度
     float targetAngleDeg;    // 目标角度（度）
     uint32_t lastUpdateTick; // 最后更新时间戳
     uint16_t motionState;    // 运动状态枚举值

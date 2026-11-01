@@ -85,7 +85,7 @@ typedef struct
 
     struct
     {
-        float actualAngle; ///< 实际转向角 (deg)
+        float commandedAngle; ///< 已下发舵机 PWM 对应角度 (deg)，不是位置传感器实测值
         float targetAngle; ///< 目标转向角 (deg)
     } steering;
 

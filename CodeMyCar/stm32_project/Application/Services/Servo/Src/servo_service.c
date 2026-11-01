@@ -26,7 +26,7 @@ int SteerService_init(SteerInstance* steerInstance, SteerConfig* config, ServoDr
     steerInstance->driver = driver;
 
     // 初始化运行时状态
-    steerInstance->state.actualAngleDeg = 0.0f;
+    steerInstance->state.commandedAngleDeg = 0.0f;
     steerInstance->state.targetAngleDeg = 0.0f;
     steerInstance->state.lastUpdateTick = 0;
     steerInstance->state.motionState = STEER_MOTION_STATE_IDLE;
@@ -36,7 +36,7 @@ int SteerService_init(SteerInstance* steerInstance, SteerConfig* config, ServoDr
     steerInstance->smoothCtrl = (SmoothControlContext){
         .targetAngleDeg = 0.0f,
         .currentSpeedDegPerMs = 0.0f,                                      // 初始速度为0
-        .accelerationDegPerMs2 = config->accelerationDegPerSec2 / 1000.0f, // 单位转换
+        .accelerationDegPerMs2 = config->accelerationDegPerSec2 / 1000000.0f,
         .maxSpeedDegPerMs = config->maxSpeedDegPerSec / 1000.0f,           // 单位转换
         .state = STEER_STATE_IDLE
     };
@@ -78,10 +78,18 @@ int SteerService_setAngleSmoothly(SteerInstance* instance, float targetAngle)
                                      fminf(targetAngle, instance->config.maxAngleDeg));
 
     // 计算角度差（浮点）
-    const float delta = clampedAngle - instance->state.actualAngleDeg;
+    const float delta = clampedAngle - instance->state.commandedAngleDeg;
 
     // 死区判断（浮点容差）
     if (fabsf(delta) <= instance->config.deadZoneDeg)
+    {
+        osMutexRelease(instance->mutex);
+        return ERR_SUCCESS;
+    }
+    /* MotionService may refresh the same steering target every control cycle.
+       Preserve the active trajectory instead of resetting its speed to zero. */
+    if (instance->state.motionState == STEER_MOTION_STATE_MOVING &&
+        fabsf(clampedAngle - instance->smoothCtrl.targetAngleDeg) <= 0.001f)
     {
         osMutexRelease(instance->mutex);
         return ERR_SUCCESS;
@@ -90,10 +98,11 @@ int SteerService_setAngleSmoothly(SteerInstance* instance, float targetAngle)
     instance->smoothCtrl = (SmoothControlContext){
         .targetAngleDeg = clampedAngle,
         .currentSpeedDegPerMs = 0.0f,
-        .accelerationDegPerMs2 = instance->config.accelerationDegPerSec2 / 1000.0f, // 转换为度/毫秒²
+        .accelerationDegPerMs2 = instance->config.accelerationDegPerSec2 / 1000000.0f,
         .maxSpeedDegPerMs = instance->config.maxSpeedDegPerSec / 1000.0f,           // 转换为度/毫秒
         .state = STEER_STATE_ACCEL
     };
+    instance->state.targetAngleDeg = clampedAngle;
 
     // 状态机更新
     instance->state.motionState = STEER_MOTION_STATE_MOVING;
@@ -167,7 +176,7 @@ int SteerService_setAngleImmediate(SteerInstance* instance, const float angle)
 
 
     // 计算角度差（浮点）
-    const float delta = clampedAngle - instance->state.actualAngleDeg;
+    const float delta = clampedAngle - instance->state.commandedAngleDeg;
 
     // 死区判断（浮点容差）
     if (fabsf(delta) <= instance->config.deadZoneDeg)
@@ -178,7 +187,7 @@ int SteerService_setAngleImmediate(SteerInstance* instance, const float angle)
 
     // 强制更新实际角度（绕过平滑控制）
     instance->state.targetAngleDeg = clampedAngle;
-    instance->state.actualAngleDeg = clampedAngle;
+    instance->state.commandedAngleDeg = clampedAngle;
 
     // 清除平滑控制上下文（适配新状态结构）
     instance->smoothCtrl = (SmoothControlContext){
@@ -213,7 +222,7 @@ void SteerService_forceStop(SteerInstance* inst)
 
     // 停止平滑运动（完全重置控制上下文）
     inst->smoothCtrl = (SmoothControlContext){
-        .targetAngleDeg = inst->state.actualAngleDeg, // 保持当前位置
+        .targetAngleDeg = inst->state.commandedAngleDeg, // 保持最后下发位置
         .currentSpeedDegPerMs = 0.0f,                 // 速度归零
         .state = STEER_STATE_IDLE                     // 设为空闲状态
     };
@@ -247,7 +256,7 @@ SteerState SteerService_getState(const SteerInstance* inst)
 static int handleMovingState(SteerInstance* inst)
 {
     SmoothControlContext* ctrl = &inst->smoothCtrl;
-    const float delta = ctrl->targetAngleDeg - inst->state.actualAngleDeg;
+    const float delta = ctrl->targetAngleDeg - inst->state.commandedAngleDeg;
     const float remainingDist = fabsf(delta);
     const float direction = (delta >= 0) ? 1.0f : -1.0f;
     // 计算理论停止距离
@@ -292,18 +301,20 @@ static int handleMovingState(SteerInstance* inst)
             break;
     }
     // 计算本次步长
-    const float step = ctrl->currentSpeedDegPerMs * (float)inst->config.updateIntervalMs * direction;
-    inst->state.actualAngleDeg += step;
+    const float stepMagnitude = fminf(
+        ctrl->currentSpeedDegPerMs * (float)inst->config.updateIntervalMs,
+        remainingDist);
+    inst->state.commandedAngleDeg += stepMagnitude * direction;
 
     // 终点判断
     if (remainingDist <= inst->config.deadZoneDeg)
     {
-        inst->state.actualAngleDeg = ctrl->targetAngleDeg;
+        inst->state.commandedAngleDeg = ctrl->targetAngleDeg;
         inst->state.motionState = STEER_MOTION_STATE_IDLE;
     }
 
     // 硬件驱动
-    const int err = ServoDriver_setAngle(inst->driver, inst->state.actualAngleDeg);
+    const int err = ServoDriver_setAngle(inst->driver, inst->state.commandedAngleDeg);
     if (err != ERR_SUCCESS)
     {
         LOG_ERROR(LOG_MODULE_SERVO, "ServoDriver_setAngle failed");
@@ -326,7 +337,7 @@ static void handleCalibratingState(SteerInstance* inst)
             break;
 
         case 1: // 记录最大值
-            inst->config.maxAngleDeg = inst->state.actualAngleDeg;
+            inst->config.maxAngleDeg = inst->state.commandedAngleDeg;
             inst->calibCtrl.calibPhase++;
             break;
 
@@ -339,7 +350,7 @@ static void handleCalibratingState(SteerInstance* inst)
             break;
 
         case 3: // 记录最小值
-            inst->config.minAngleDeg = inst->state.actualAngleDeg;
+            inst->config.minAngleDeg = inst->state.commandedAngleDeg;
             inst->state.motionState = STEER_MOTION_STATE_IDLE;
             inst->calibCtrl.calibPhase = 0;
             break;
@@ -350,6 +361,6 @@ static void handleCalibratingState(SteerInstance* inst)
 static bool checkPositionReached(const SteerInstance* inst)
 {
     // 实际角度与目标角度偏差在死区范围内视为到达
-    const float delta = fabsf(inst->state.targetAngleDeg - inst->state.actualAngleDeg);
+    const float delta = fabsf(inst->state.targetAngleDeg - inst->state.commandedAngleDeg);
     return (delta <= inst->config.deadZoneDeg);
 }

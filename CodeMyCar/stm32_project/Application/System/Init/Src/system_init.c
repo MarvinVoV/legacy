@@ -206,8 +206,8 @@ static int init_steer_servo_service(void)
         .maxAngleDeg = SERVO_ANGLE_MAX,
         .deadZoneDeg = 2,
         .updateIntervalMs = 20,
-        .maxSpeedDegPerSec = 90.0f,      // 最大速度：90°/秒（即 0.025°/ms）
-        .accelerationDegPerSec2 = 180.0f // 加速度：180°/秒²（即 0.18°/ms²）
+        .maxSpeedDegPerSec = 90.0f,      // 最大速度：90°/秒（0.09°/ms）
+        .accelerationDegPerSec2 = 180.0f // 加速度：180°/秒²（0.00018°/ms²）
     };
 
     servoDriver = (ServoDriver){
