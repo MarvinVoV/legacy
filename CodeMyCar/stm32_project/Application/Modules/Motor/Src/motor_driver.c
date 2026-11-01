@@ -9,6 +9,8 @@
 #include "motor_driver.h"
 #include "log_manager.h"
 
+#include <string.h>
+
 /// 最小有效时间间隔 (5ms)
 #define MIN_DELTA_TIME_S (0.005f)
 
@@ -138,6 +140,9 @@ bool MotorDriver_Init(MotorDriver* driver, const PID_Params* initialPid)
     driver->filter.pwm_filter_state = 0.0f;
     driver->filter.pwm_alpha        = 0.7f; // 默认值
 
+    driver->control.mode            = MOTOR_DRIVER_MODE_STOP;
+    driver->control.direction       = MOTOR_COAST_STOP;
+    driver->control.targetRPM       = 0.0f;
     driver->control.rampedTargetRPM = 0.0f;
 
     // 状态初始化
@@ -380,9 +385,35 @@ void MotorDriver_EmergencyStop(MotorDriver* driver)
         return;
     }
 
+    /* Cut the actuator first, then make every software control state agree
+       with the hard-stop output.  Position/encoder state is intentionally
+       preserved: stopping an actuator must not reset the measurement domain. */
     HAL_Motor_EmergencyStop(driver->halCfg);
-    driver->control.mode = MOTOR_DRIVER_MODE_STOP;
+
+    driver->control.mode            = MOTOR_DRIVER_MODE_STOP;
+    driver->control.direction       = MOTOR_BRAKE_STOP;
+    driver->control.targetRPM       = 0.0f;
+    driver->control.rampedTargetRPM = 0.0f;
     PID_Reset(&driver->control.pidCtrl);
+
+    if (driver->filter.filterBuffer != NULL && driver->filter.windowSize > 0u)
+    {
+        memset(driver->filter.filterBuffer, 0,
+               driver->filter.windowSize * sizeof(driver->filter.filterBuffer[0]));
+    }
+    driver->filter.bufferIndex      = 0u;
+    driver->filter.sampleCount      = 0u;
+    driver->filter.lpf_state        = 0.0f;
+    driver->filter.pwm_filter_state = 0.0f;
+
+    driver->state.velocity.rpm   = 0.0f;
+    driver->state.velocity.radps = 0.0f;
+    driver->state.velocity.mps   = 0.0f;
+    driver->state.openLoopDuty   = 0.0f;
+    driver->state.appliedDuty    = 0.0f;
+    driver->state.mode           = MOTOR_DRIVER_MODE_STOP;
+    driver->state.direction      = MOTOR_BRAKE_STOP;
+    driver->state.lastUpdateTick = HAL_GetTick();
 }
 
 void MotorDriver_BrakeStop(MotorDriver* driver)

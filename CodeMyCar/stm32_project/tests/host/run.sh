@@ -29,6 +29,17 @@ echo "== seq dedup =="
   -lm -o "${TMPDIR:-/tmp}/seq_dedup_test"
 "${TMPDIR:-/tmp}/seq_dedup_test"
 
+echo "== motor emergency stop =="
+"$CC" -std=c11 -Wall -Wextra -O2 \
+  -I "$DIR/tests/host/stubs" \
+  -I "$DIR/Application/Modules/Motor/Inc" \
+  -I "$DIR/Application/Services/Motor/Inc" \
+  "$DIR/tests/host/motor_estop_test.c" \
+  "$DIR/Application/Modules/Motor/Src/motor_driver.c" \
+  "$DIR/Application/Services/Motor/Src/pid_controller.c" \
+  -lm -o "${TMPDIR:-/tmp}/motor_estop_test"
+"${TMPDIR:-/tmp}/motor_estop_test"
+
 echo "== PID simulation =="
 "$CC" -std=c11 -Wall -Wextra -O2 \
   -I "$DIR/tests/host/stubs" \
