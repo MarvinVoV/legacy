@@ -25,7 +25,7 @@ void MotionTask_init(MotionContext* motionCtx)
     const osThreadAttr_t taskAttributes = {
         .name = "MotionTask",
         .stack_size = 512 * 4,
-        .priority = (osPriority_t)osPriorityNormal,
+        .priority = (osPriority_t)osPriorityHigh,
     };
     taskHandle = osThreadNew(MotionTask_doTask, motionCtx, &taskAttributes);
     if (taskHandle == NULL)

@@ -5,6 +5,7 @@
 #include "log_manager.h"
 #include "stm32h7xx.h"
 #include "stm32h7xx_hal.h"
+#include "task_timing.h"
 
 #define SUPERVISOR_PERIOD_MS 50u
 #define TASK_STALE_TIMEOUT_MS 250u
@@ -14,6 +15,13 @@ static TaskHealthMonitor s_health;
 static MotionContext* s_motionContext;
 static osThreadId_t s_taskHandle;
 static bool s_ready;
+static TaskTimingStats s_timing[TASK_HEALTH_COUNT];
+
+static const char* timing_name(const TaskHealthId id)
+{
+    static const char* names[TASK_HEALTH_COUNT] = {"motion", "motor_l", "motor_r", "ctrl", "servo"};
+    return id < TASK_HEALTH_COUNT ? names[id] : "unknown";
+}
 
 static void watchdog_start(void)
 {
@@ -73,6 +81,12 @@ int SafetySupervisor_Init(MotionContext* motionContext)
                               (1u << TASK_HEALTH_SERVO);
     s_motionContext = motionContext;
     task_health_init(&s_health, required, HAL_GetTick(), STARTUP_GRACE_MS);
+    const uint32_t now = HAL_GetTick();
+    task_timing_init(&s_timing[TASK_HEALTH_MOTION], 5u, 2u, now);
+    task_timing_init(&s_timing[TASK_HEALTH_MOTOR_LEFT], 5u, 2u, now);
+    task_timing_init(&s_timing[TASK_HEALTH_MOTOR_RIGHT], 5u, 2u, now);
+    task_timing_init(&s_timing[TASK_HEALTH_CTRL], 50u, 20u, now);
+    task_timing_init(&s_timing[TASK_HEALTH_SERVO], 20u, 5u, now);
     s_ready = true;
     watchdog_start();
 
@@ -87,8 +101,22 @@ int SafetySupervisor_Init(MotionContext* motionContext)
 
 void SafetySupervisor_Heartbeat(TaskHealthId id)
 {
-    if (s_ready)
+    if (s_ready && id < TASK_HEALTH_COUNT)
     {
-        task_health_beat(&s_health, id, HAL_GetTick());
+        const uint32_t now = HAL_GetTick();
+        task_health_beat(&s_health, id, now);
+        TaskTimingStats* timing = &s_timing[id];
+        task_timing_record(timing, now);
+        if (task_timing_report_due(timing, now, 10000u))
+        {
+            LOG_INFO(LOG_MODULE_SYSTEM,
+                     "RTOS %s n=%lu min=%lums max=%lums miss=%lu budget=%lums",
+                     timing_name(id), (unsigned long)timing->samples,
+                     (unsigned long)timing->minIntervalMs,
+                     (unsigned long)timing->maxIntervalMs,
+                     (unsigned long)timing->deadlineMisses,
+                     (unsigned long)(timing->expectedPeriodMs + timing->toleranceMs));
+            task_timing_reset_window(timing, now);
+        }
     }
 }

@@ -40,7 +40,7 @@ void CtrlTask_Init()
     const osThreadAttr_t rawDataReadTaskAttrs = {
         .name = "RawDataReadTask",
         .stack_size = 768 * 4,
-        .priority = (osPriority_t)osPriorityNormal
+        .priority = (osPriority_t)osPriorityAboveNormal
     };
     rawDataReadTaskHandle = osThreadNew(CtrlTask_doTask, NULL, &rawDataReadTaskAttrs);
     if (rawDataReadTaskHandle == NULL)

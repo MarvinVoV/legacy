@@ -30,12 +30,12 @@ void MotorTask_init(MotorService* motorService)
     const osThreadAttr_t leftInstanceAttributes = {
         .name = "MotorTask_Left",
         .stack_size = 512 * 4,
-        .priority = (osPriority_t)osPriorityNormal,
+        .priority = (osPriority_t)osPriorityHigh,
     };
     const osThreadAttr_t rightInstanceAttributes = {
         .name = "MotorTask_Right",
         .stack_size = 512 * 4,
-        .priority = (osPriority_t)osPriorityNormal,
+        .priority = (osPriority_t)osPriorityHigh,
     };
 
     leftInstanceTaskHandle = osThreadNew(MotorTask_doTask, &motorService->instances[0], &leftInstanceAttributes);

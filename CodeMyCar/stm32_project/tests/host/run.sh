@@ -49,6 +49,14 @@ echo "== runtime safety =="
   -o "${TMPDIR:-/tmp}/runtime_safety_test"
 "${TMPDIR:-/tmp}/runtime_safety_test"
 
+echo "== task timing =="
+"$CC" -std=c11 -Wall -Wextra -O2 \
+  -I "$DIR/Application/System/Utils/Inc" \
+  "$DIR/tests/host/task_timing_test.c" \
+  "$DIR/Application/System/Utils/Src/task_timing.c" \
+  -o "${TMPDIR:-/tmp}/task_timing_test"
+"${TMPDIR:-/tmp}/task_timing_test"
+
 echo "== encoder fault monitor =="
 "$CC" -std=c11 -Wall -Wextra -O2 \
   -I "$DIR/Application/System/Utils/Inc" \
