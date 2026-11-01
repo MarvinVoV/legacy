@@ -49,6 +49,7 @@ typedef enum
     PROTOCOL_TYPE_JSON_CMD  = 0x06, /* JSON 命令（手机控制，预留） */
     PROTOCOL_TYPE_MOTION    = 0x07, /* 运动状态上报（36 字节） */
     PROTOCOL_TYPE_SESSION   = 0x08, /* ESP32 启动代次同步 */
+    PROTOCOL_TYPE_BUILD_INFO = 0x09, /* STM32 build identity */
     PROTOCOL_TYPE_MAX
 } protocol_type_t;
 

@@ -46,6 +46,9 @@ typedef enum
 
 static sys_state_t s_state = SYS_STATE_INIT;
 static uint32_t s_session_id = 0;
+static char s_stm32_build_sha[13] = "unknown";
+static bool s_stm32_build_dirty = true;
+static uint8_t s_stm32_protocol_version = 0;
 
 /* ==================== 上行帧队列（uart_rx → uplink task） ==================== */
 
@@ -140,6 +143,10 @@ uint32_t bridge_session_id(void)
 {
     return s_session_id;
 }
+
+const char* bridge_stm32_build_sha(void) { return s_stm32_build_sha; }
+bool bridge_stm32_build_dirty(void) { return s_stm32_build_dirty; }
+uint8_t bridge_stm32_protocol_version(void) { return s_stm32_protocol_version; }
 
 static bool append_session_id(char* json, size_t* len, size_t capacity)
 {
@@ -408,6 +415,18 @@ static void on_uart_frame(const pkt_frame_t* frame, void* user_ctx)
 
     /* 任意有效帧都说明 STM32 在线（用于心跳的 stm32_connected） */
     s_last_stm32_frame_ms = now_ms();
+
+    if (frame->type == PKT_TYPE_BUILD_INFO && frame->payload_len == 14u)
+    {
+        s_stm32_protocol_version = frame->payload[0];
+        s_stm32_build_dirty = frame->payload[1] != 0u;
+        memcpy(s_stm32_build_sha, &frame->payload[2], 12u);
+        s_stm32_build_sha[12] = '\0';
+        ESP_LOGI(TAG, "STM32 build=%s dirty=%d proto=%u",
+                 s_stm32_build_sha, s_stm32_build_dirty,
+                 (unsigned)s_stm32_protocol_version);
+        return;
+    }
 
     /* ACK 响应帧：清除 pending，并向 uplink 队列投递一条 ACK 回执
        （由 uplink 任务异步发往 CMCAR_TOPIC_ACK，不在 uart_rx 里阻塞 publish） */

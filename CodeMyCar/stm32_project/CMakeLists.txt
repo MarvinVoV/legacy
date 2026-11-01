@@ -19,6 +19,25 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_EXTENSIONS ON)
 
+execute_process(
+    COMMAND git -C ${CMAKE_SOURCE_DIR} rev-parse --short=12 HEAD
+    OUTPUT_VARIABLE CMCAR_GIT_SHA
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET)
+if (NOT CMCAR_GIT_SHA)
+    set(CMCAR_GIT_SHA "unknown")
+endif ()
+execute_process(
+    COMMAND git -C ${CMAKE_SOURCE_DIR} status --porcelain --untracked-files=no -- .
+    OUTPUT_VARIABLE CMCAR_GIT_STATUS
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET)
+if (CMCAR_GIT_STATUS)
+    set(CMCAR_GIT_DIRTY 1)
+else ()
+    set(CMCAR_GIT_DIRTY 0)
+endif ()
+
 #Uncomment for hardware floating point
 #add_compile_definitions(ARM_MATH_CM4;ARM_MATH_MATRIX_CHECK;ARM_MATH_ROUNDING)
 add_compile_options(-mfloat-abi=hard -mfpu=fpv5-d16)
@@ -63,6 +82,10 @@ add_link_options(-mcpu=cortex-m7 -mthumb -mthumb-interwork)
 add_link_options(--specs=nano.specs -u _printf_float -T ${LINKER_SCRIPT})
 
 add_executable(${PROJECT_NAME}.elf ${SOURCES} ${LINKER_SCRIPT})
+target_compile_definitions(${PROJECT_NAME}.elf PRIVATE
+        CMCAR_GIT_SHA="${CMCAR_GIT_SHA}"
+        CMCAR_GIT_DIRTY=${CMCAR_GIT_DIRTY}
+        CMCAR_PROTOCOL_VERSION=2)
 target_link_libraries(${PROJECT_NAME}.elf m)
 
 set(HEX_FILE ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.hex)

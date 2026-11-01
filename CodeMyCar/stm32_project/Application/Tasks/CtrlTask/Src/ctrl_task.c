@@ -91,6 +91,26 @@ static void send_ack(const uint8_t seq, const uint8_t status)
     UART_Send_Frame(PROTOCOL_TYPE_ACK, seq, FRAME_FLAG_ACK_RSP, &payload, 1);
 }
 
+static void send_build_info(void)
+{
+#ifndef CMCAR_GIT_SHA
+#define CMCAR_GIT_SHA "unknown"
+#endif
+#ifndef CMCAR_GIT_DIRTY
+#define CMCAR_GIT_DIRTY 1
+#endif
+#ifndef CMCAR_PROTOCOL_VERSION
+#define CMCAR_PROTOCOL_VERSION 0
+#endif
+    uint8_t payload[14] = {(uint8_t)CMCAR_PROTOCOL_VERSION,
+                           (uint8_t)CMCAR_GIT_DIRTY};
+    const char sha[] = CMCAR_GIT_SHA;
+    const size_t sha_len = sizeof(sha) - 1u;
+    const size_t copy_len = sha_len < 12u ? sha_len : 12u;
+    memcpy(&payload[2], sha, copy_len);
+    UART_Send_Frame(PROTOCOL_TYPE_BUILD_INFO, 0u, 0u, payload, sizeof(payload));
+}
+
 static void dispatcher(uint8_t type, uint8_t seq, uint8_t flags,
                        const uint8_t* cmd_payload, const uint16_t total_len)
 {
@@ -107,6 +127,7 @@ static void dispatcher(uint8_t type, uint8_t seq, uint8_t flags,
         {
             send_ack(seq, total_len == 4u ? 0u : 2u);
         }
+        send_build_info();
         return;
     }
 

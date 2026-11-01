@@ -16,6 +16,8 @@
 #include "cmcar_topics.h"
 #include "bridge.h"
 #include "esp_event.h"
+#include "esp_app_desc.h"
+#include "esp_idf_version.h"
 #include "esp_log.h"
 #include "esp_system.h"
 #include "esp_task_wdt.h"
@@ -82,14 +84,20 @@ static void health_mon_task(void* arg)
 
             if (mqtt_service_is_connected())
             {
-                char json[160];
+                char json[320];
+                const esp_app_desc_t* app = esp_app_get_description();
                 const int len = snprintf(
                     json, sizeof(json),
-                    "{\"heap\":%zu,\"heap_min\":%zu,\"uptime_s\":%lld,\"stm32_connected\":%s,\"session_id\":%lu}",
+                    "{\"heap\":%zu,\"heap_min\":%zu,\"uptime_s\":%lld,\"stm32_connected\":%s,\"session_id\":%lu,"
+                    "\"esp_build\":\"%s\",\"esp_idf\":\"%s\",\"stm32_build\":\"%s\","
+                    "\"stm32_dirty\":%s,\"protocol_version\":%u}",
                     heap_free, heap_min,
                     (long long)(esp_timer_get_time() / 1000000),
                     bridge_stm32_connected() ? "true" : "false",
-                    (unsigned long)bridge_session_id());
+                    (unsigned long)bridge_session_id(), app->version,
+                    esp_get_idf_version(), bridge_stm32_build_sha(),
+                    bridge_stm32_build_dirty() ? "true" : "false",
+                    (unsigned)bridge_stm32_protocol_version());
 
                 /* 用超时发布：broker 卡住时不能阻塞喂狗任务，否则 TWDT 自触 panic */
                 const esp_err_t pub = mqtt_service_publish_timed(

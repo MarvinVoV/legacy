@@ -24,6 +24,11 @@ bool bridge_stm32_connected(void);
 /** 当前 ESP32 启动代次；每次启动随机生成，供上行关联请求。 */
 uint32_t bridge_session_id(void);
 
+/** Latest STM32 build identity received after session sync. */
+const char* bridge_stm32_build_sha(void);
+bool bridge_stm32_build_dirty(void);
+uint8_t bridge_stm32_protocol_version(void);
+
 /** 把桥接运行指标格式化为 status JSON 写入 out，返回字节数（≤ n-1）。
  *  形如 {"state":"ONLINE","up_drop":N,"dn_drop":N,"ack_lost":N,"pub_fail":N}
  *  供 health_monitor 周期发往 CMCAR_TOPIC_STATUS。失败返回 0。 */
