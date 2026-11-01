@@ -56,6 +56,10 @@ def create_handlers(
         if device_id not in devices:
             devices[device_id] = DeviceState(device_id=device_id)
         state = devices[device_id]
+        if motion_service is not None:
+            motion_service.on_session(device_id, data.session_id)
+        elif data.session_id is not None:
+            state.session_id = data.session_id
         state.online = True
         state.last_heartbeat = time.time()
         state.heartbeat_data = data
@@ -108,10 +112,21 @@ def create_handlers(
         if device_id not in devices:
             devices[device_id] = DeviceState(device_id=device_id)
         state = devices[device_id]
+        if ev.session_id is not None and state.session_id is None:
+            if motion_service is not None:
+                motion_service.on_session(device_id, ev.session_id)
+            else:
+                state.session_id = ev.session_id
+        if (
+            ev.session_id is not None
+            and state.session_id != ev.session_id
+        ):
+            logger.debug("Ignoring stale-session ACK from %s", device_id)
+            return
         state.last_ack_seq = ev.seq
         state.last_ack_time = time.time()
         if motion_service is not None:
-            motion_service.on_ack(device_id, ev.seq, ev.status)
+            motion_service.on_ack(device_id, ev.seq, ev.status, ev.session_id)
         logger.debug("ACK from %s: seq=%d status=%d", device_id, ev.seq, ev.status)
 
     async def on_pong(topic: str, payload: bytes) -> None:
@@ -139,6 +154,17 @@ def create_handlers(
         if device_id not in devices:
             devices[device_id] = DeviceState(device_id=device_id)
         state = devices[device_id]
+        if status.session_id is not None and state.session_id is None:
+            if motion_service is not None:
+                motion_service.on_session(device_id, status.session_id)
+            else:
+                state.session_id = status.session_id
+        if (
+            status.session_id is not None
+            and state.session_id != status.session_id
+        ):
+            logger.debug("Ignoring stale-session motion from %s", device_id)
+            return
         state.motion_supported = True
         state.last_motion = status
         state.last_motion_time = time.time()

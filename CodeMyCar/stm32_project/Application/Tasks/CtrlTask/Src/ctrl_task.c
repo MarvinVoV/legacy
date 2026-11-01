@@ -96,6 +96,20 @@ static void dispatcher(uint8_t type, uint8_t seq, uint8_t flags,
 {
     const bool ack_req = (flags & FRAME_FLAG_ACK_REQ) != 0;
 
+    /* ESP32 每次启动先同步新代次，清空跨启动残留的 GOAL seq 去重窗口。 */
+    if (type == PROTOCOL_TYPE_SESSION)
+    {
+        if (total_len == 4u)
+        {
+            seq_dedup_init(&s_goal_seqs);
+        }
+        if (ack_req)
+        {
+            send_ack(seq, total_len == 4u ? 0u : 2u);
+        }
+        return;
+    }
+
     /* 非控制帧：只需确认收到 */
     if (type != PROTOCOL_TYPE_CONTROL)
     {

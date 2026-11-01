@@ -82,13 +82,14 @@ static void health_mon_task(void* arg)
 
             if (mqtt_service_is_connected())
             {
-                char json[128];
+                char json[160];
                 const int len = snprintf(
                     json, sizeof(json),
-                    "{\"heap\":%zu,\"heap_min\":%zu,\"uptime_s\":%lld,\"stm32_connected\":%s}",
+                    "{\"heap\":%zu,\"heap_min\":%zu,\"uptime_s\":%lld,\"stm32_connected\":%s,\"session_id\":%lu}",
                     heap_free, heap_min,
                     (long long)(esp_timer_get_time() / 1000000),
-                    bridge_stm32_connected() ? "true" : "false");
+                    bridge_stm32_connected() ? "true" : "false",
+                    (unsigned long)bridge_session_id());
 
                 /* 用超时发布：broker 卡住时不能阻塞喂狗任务，否则 TWDT 自触 panic */
                 const esp_err_t pub = mqtt_service_publish_timed(

@@ -20,6 +20,7 @@
 #include "cmcar_topics.h"
 #include "esp_event.h"
 #include "esp_log.h"
+#include "esp_random.h"
 #include "esp_system.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
@@ -44,6 +45,7 @@ typedef enum
 } sys_state_t;
 
 static sys_state_t s_state = SYS_STATE_INIT;
+static uint32_t s_session_id = 0;
 
 /* ==================== 上行帧队列（uart_rx → uplink task） ==================== */
 
@@ -134,6 +136,53 @@ bool bridge_stm32_connected(void)
     return (last != 0U) && ((now_ms() - last) < BRIDGE_STM32_TIMEOUT_MS);
 }
 
+uint32_t bridge_session_id(void)
+{
+    return s_session_id;
+}
+
+static bool append_session_id(char* json, size_t* len, size_t capacity)
+{
+    if (json == NULL || len == NULL || *len == 0 || json[*len - 1] != '}')
+    {
+        return false;
+    }
+    const int added = snprintf(
+        &json[*len - 1], capacity - (*len - 1),
+        ",\"session_id\":%lu}", (unsigned long)s_session_id);
+    if (added <= 0 || (size_t)added >= capacity - (*len - 1))
+    {
+        return false;
+    }
+    *len = (*len - 1) + (size_t)added;
+    return true;
+}
+
+static esp_err_t send_session_sync(void)
+{
+    pkt_frame_t frame = {
+        .type = PKT_TYPE_SESSION,
+        .seq = 0,
+        .flags = 0,
+        .payload_len = 4,
+        .payload = {
+            (uint8_t)s_session_id,
+            (uint8_t)(s_session_id >> 8),
+            (uint8_t)(s_session_id >> 16),
+            (uint8_t)(s_session_id >> 24),
+        },
+    };
+    uint8_t encoded[PKT_MAX_FRAME_SIZE];
+    size_t encoded_len = 0;
+    const esp_err_t err = pkt_encode(
+        &frame, encoded, sizeof(encoded), &encoded_len);
+    if (err != ESP_OK)
+    {
+        return err;
+    }
+    return uart_service_send_priority(encoded, encoded_len);
+}
+
 typedef struct
 {
     uint8_t frames[ACK_MGR_MAX_PENDING][PKT_MAX_FRAME_SIZE];
@@ -156,12 +205,12 @@ static void ack_collect_retry(const uint8_t* frame, size_t len, void* ctx)
 }
 
 /** 收到 ACK：清除对应 seq 的在途槽位 */
-static bool pending_clear(uint8_t seq)
+static bool pending_clear(uint8_t wire_seq, uint8_t* out_client_seq)
 {
     bool found = false;
     if (xSemaphoreTake(s_ack_mutex, pdMS_TO_TICKS(10)) == pdTRUE)
     {
-        found = ackmgr_clear(&s_ackmgr, seq);
+        found = ackmgr_clear_mapped(&s_ackmgr, wire_seq, out_client_seq);
         xSemaphoreGive(s_ack_mutex);
     }
     return found;
@@ -258,7 +307,7 @@ static void process_downlink(const char* payload, size_t payload_len)
             return;
         }
         ack_locked = true;
-        if (!priority && !ackmgr_is_free(&s_ackmgr, client_seq))
+        if (!ackmgr_is_free(&s_ackmgr, client_seq))
         {
             if (cmd_mode == BRIDGE_MODE_GOAL)
             {
@@ -289,9 +338,8 @@ static void process_downlink(const char* payload, size_t payload_len)
 
     if (ack_req)
     {
-        const bool added = priority
-            ? ackmgr_add_priority(&s_ackmgr, frame_seq, out_buf, out_len, now_ms())
-            : ackmgr_add(&s_ackmgr, frame_seq, out_buf, out_len, now_ms());
+        const bool added = ackmgr_add_mapped(
+            &s_ackmgr, frame_seq, client_seq, out_buf, out_len, now_ms(), priority);
         xSemaphoreGive(s_ack_mutex);
         ack_locked = false;
         if (!added)
@@ -366,22 +414,23 @@ static void on_uart_frame(const pkt_frame_t* frame, void* user_ctx)
     if (frame->type == PKT_TYPE_ACK && (frame->flags & PKT_FLAG_ACK_RSP))
     {
         /* v2：ACK 的 seq 在帧头 SEQ 字段；payload[0] 为命令状态码（可选） */
-        const uint8_t ack_seq = frame->seq;
+        const uint8_t wire_seq = frame->seq;
+        uint8_t client_seq = 0;
         const uint8_t ack_status = (frame->payload_len >= 1) ? frame->payload[0] : 0;
-        if (!pending_clear(ack_seq))
+        if (!pending_clear(wire_seq, &client_seq))
         {
-            ESP_LOGD(TAG, "Ignoring unknown/late ACK seq=%u", (unsigned)ack_seq);
+            ESP_LOGD(TAG, "Ignoring unknown/late ACK seq=%u", (unsigned)wire_seq);
             return;
         }
         bridge_frame_msg_t echo = {
             .timestamp = now_ms(),
             .is_ack_echo = true,
-            .ack_seq = ack_seq,
+            .ack_seq = client_seq,
             .ack_status = ack_status,
         };
         if (xQueueSend(s_frame_queue, &echo, 0) != pdPASS)
         {
-            ESP_LOGW(TAG, "ACK echo queue full, dropping ack seq=%u", ack_seq);
+            ESP_LOGW(TAG, "ACK echo queue full, dropping ack seq=%u", client_seq);
         }
         return;
     }
@@ -404,12 +453,13 @@ static void publish_ack_echo(uint8_t seq, uint8_t status)
     {
         return;
     }
-    char json[48];
-    const int n = bridge_ack_to_json(seq, status, json, sizeof(json));
-    if (n > 0 && (size_t)n < sizeof(json))
+    char json[80];
+    int n = bridge_ack_to_json(seq, status, json, sizeof(json));
+    size_t json_len = n > 0 ? (size_t)n : 0;
+    if (n > 0 && append_session_id(json, &json_len, sizeof(json)))
     {
         const esp_err_t err = mqtt_service_publish_timed(
-            CMCAR_TOPIC_ACK, json, (size_t)n, 0, 200);
+            CMCAR_TOPIC_ACK, json, json_len, 0, 200);
         if (err != ESP_OK)
         {
             ESP_LOGD(TAG, "ACK echo publish skipped: %s", esp_err_to_name(err));
@@ -452,7 +502,14 @@ static void publish_uplink_frame(const pkt_frame_t* frame)
 
     if (n > 0)
     {
-        const esp_err_t err = mqtt_service_publish(topic, json, (size_t)n, 0);
+        size_t json_len = (size_t)n;
+        if (frame->type == PKT_TYPE_MOTION &&
+            !append_session_id(json, &json_len, sizeof(json)))
+        {
+            ESP_LOGW(TAG, "Motion session append failed");
+            return;
+        }
+        const esp_err_t err = mqtt_service_publish(topic, json, json_len, 0);
         if (err != ESP_OK)
         {
             ESP_LOGW(TAG, "Publish failed: %s", esp_err_to_name(err));
@@ -573,6 +630,11 @@ static void on_system_event(void* arg, esp_event_base_t base,
 
 esp_err_t bridge_init(void)
 {
+    do
+    {
+        s_session_id = esp_random();
+    } while (s_session_id == 0);
+
     s_frame_queue = xQueueCreateStatic(
         FRAME_QUEUE_DEPTH, sizeof(bridge_frame_msg_t),
         (uint8_t*)s_frame_queue_storage, &s_frame_queue_struct);
@@ -641,7 +703,14 @@ esp_err_t bridge_start(void)
     (void)esp_timer_start_periodic(
         s_status_timer, BRIDGE_STATUS_PERIOD_MS * 1000ULL);
 
-    ESP_LOGI(TAG, "Bridge started");
+    const esp_err_t sync_err = send_session_sync();
+    if (sync_err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "Session sync send failed: %s", esp_err_to_name(sync_err));
+        return sync_err;
+    }
+
+    ESP_LOGI(TAG, "Bridge started, session=%lu", (unsigned long)s_session_id);
     return (up_handle != NULL && dn_handle != NULL) ? ESP_OK : ESP_FAIL;
 }
 

@@ -78,6 +78,18 @@ int main(void)
     CHECK(ackmgr_clear(&m, 200), "priority seq cleared");
     CHECK(!ackmgr_clear(&m, 200), "unknown/late ACK rejected");
 
+    ackmgr_init(&m);
+    CHECK(ackmgr_add_mapped(&m, 42, 7, frame, 10, 0, false),
+          "mapped wire/client seq added");
+    uint8_t client_seq = 0xFF;
+    CHECK(ackmgr_clear_mapped(&m, 42, &client_seq),
+          "mapped ACK clears by wire seq");
+    CHECK(client_seq == 7, "mapped ACK restores client seq");
+    client_seq = 0xFF;
+    CHECK(!ackmgr_clear_mapped(&m, 42, &client_seq),
+          "mapped late ACK rejected");
+    CHECK(client_seq == 0xFF, "rejected mapped ACK leaves output untouched");
+
     printf("\n%s (%d failures)\n", failures? "RESULT: FAIL":"RESULT: PASS", failures);
     return failures? 1:0;
 }

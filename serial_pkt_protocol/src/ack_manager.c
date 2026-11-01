@@ -61,8 +61,9 @@ bool ackmgr_is_free(const ack_manager_t* m, uint8_t seq)
     return true;
 }
 
-static bool add_internal(ack_manager_t* m, uint8_t seq, const uint8_t* frame,
-                         size_t len, uint32_t now_ms, bool priority)
+static bool add_internal(ack_manager_t* m, uint8_t seq, uint8_t client_seq,
+                         const uint8_t* frame, size_t len, uint32_t now_ms,
+                         bool priority)
 {
     if (m == NULL || frame == NULL || len > PKT_MAX_FRAME_SIZE)
     {
@@ -97,6 +98,7 @@ static bool add_internal(ack_manager_t* m, uint8_t seq, const uint8_t* frame,
     if (target < 0) return false;
     m->slots[target].active = true;
     m->slots[target].seq = seq;
+    m->slots[target].client_seq = client_seq;
     memcpy(m->slots[target].frame, frame, len);
     m->slots[target].frame_len = len;
     m->slots[target].send_time_ms = now_ms;
@@ -107,13 +109,21 @@ static bool add_internal(ack_manager_t* m, uint8_t seq, const uint8_t* frame,
 
 bool ackmgr_add(ack_manager_t* m, uint8_t seq, const uint8_t* frame,
                 size_t len, uint32_t now_ms)
-{ return add_internal(m, seq, frame, len, now_ms, false); }
+{ return add_internal(m, seq, seq, frame, len, now_ms, false); }
 
 bool ackmgr_add_priority(ack_manager_t* m, uint8_t seq, const uint8_t* frame,
                          size_t len, uint32_t now_ms)
-{ return add_internal(m, seq, frame, len, now_ms, true); }
+{ return add_internal(m, seq, seq, frame, len, now_ms, true); }
 
-bool ackmgr_clear(ack_manager_t* m, uint8_t seq)
+bool ackmgr_add_mapped(ack_manager_t* m, uint8_t wire_seq, uint8_t client_seq,
+                       const uint8_t* frame, size_t len, uint32_t now_ms,
+                       bool priority)
+{
+    return add_internal(m, wire_seq, client_seq, frame, len, now_ms, priority);
+}
+
+bool ackmgr_clear_mapped(ack_manager_t* m, uint8_t seq,
+                         uint8_t* out_client_seq)
 {
     if (m == NULL)
     {
@@ -123,11 +133,20 @@ bool ackmgr_clear(ack_manager_t* m, uint8_t seq)
     {
         if (m->slots[i].active && m->slots[i].seq == seq)
         {
+            if (out_client_seq != NULL)
+            {
+                *out_client_seq = m->slots[i].client_seq;
+            }
             m->slots[i].active = false;
             return true;
         }
     }
     return false;
+}
+
+bool ackmgr_clear(ack_manager_t* m, uint8_t seq)
+{
+    return ackmgr_clear_mapped(m, seq, NULL);
 }
 
 uint32_t ackmgr_scan(ack_manager_t* m, uint32_t now_ms, uint32_t timeout_ms,

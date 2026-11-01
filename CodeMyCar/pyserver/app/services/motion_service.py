@@ -51,29 +51,87 @@ class AgentMotionService:
         self._devices = devices
         self._settings = settings
         self._locks: dict[str, asyncio.Lock] = {}
-        self._pending: dict[tuple[str, int], _Pending] = {}
+        self._pending: dict[tuple[str, int | None, int], _Pending] = {}
         self._seq = 0
 
     # ---------------- MQTT 事件 ----------------
 
-    def on_ack(self, device_id: str, seq: int, status: int) -> None:
+    def on_session(self, device_id: str, session_id: int | None) -> None:
+        if session_id is None:
+            return
         state = self._devices.get(device_id)
+        if state is None or state.session_id == session_id:
+            return
+
+        previous = state.session_id
+        state.session_id = session_id
+        if previous is None:
+            for key, pending in list(self._pending.items()):
+                dev, pending_session, seq = key
+                if dev != device_id or pending_session is not None:
+                    continue
+                self._pending.pop(key)
+                self._pending[(dev, session_id, seq)] = pending
+            return
+
+        state.motion_supported = False
+        state.last_motion = None
+        state.last_motion_time = 0.0
+        state.last_ack_seq = None
+        state.last_ack_time = 0.0
+
+        restarted = MotionError(
+            "device_restarted",
+            f"device session changed from {previous} to {session_id}",
+            503,
+        )
+        for (dev, pending_session, _), pending in list(self._pending.items()):
+            if dev != device_id or pending_session == session_id:
+                continue
+            if not pending.ack.done():
+                pending.ack.set_exception(restarted)
+            elif not pending.done.done():
+                pending.done.set_exception(restarted)
+
+    def on_ack(
+        self, device_id: str, seq: int, status: int,
+        session_id: int | None = None,
+    ) -> None:
+        state = self._devices.get(device_id)
+        if (
+            state is not None
+            and session_id is not None
+            and state.session_id != session_id
+        ):
+            return
         if state is not None:
             state.last_ack_seq = seq
             state.last_ack_time = time.time()
 
-        pending = self._pending.get((device_id, seq))
+        current_session = session_id if session_id is not None else (
+            state.session_id if state is not None else None
+        )
+        pending = self._pending.get((device_id, current_session, seq))
         if pending is not None and not pending.ack.done():
             pending.ack.set_result(status)
 
     def on_motion(self, device_id: str, status: MotionStatus) -> None:
         state = self._devices.get(device_id)
+        if (
+            state is not None
+            and status.session_id is not None
+            and state.session_id != status.session_id
+        ):
+            return
         if state is not None:
             state.motion_supported = True
             state.last_motion = status
             state.last_motion_time = time.time()
 
-        pending = self._pending.get((device_id, status.seq))
+        current_session = status.session_id if status.session_id is not None else (
+            state.session_id if state is not None else None
+        )
+        pending = self._pending.get((device_id, current_session, status.seq))
         stopped = (
             status.mode == 0
             and abs(status.left_mmps) <= 1
@@ -163,19 +221,24 @@ class AgentMotionService:
         if not self._mqtt.is_connected:
             raise MotionError("offline", "MQTT not connected", 503)
 
-        seq = self._next_seq(device_id)
+        session_id = self._devices[device_id].session_id
+        seq = self._next_seq(device_id, session_id)
         loop = asyncio.get_running_loop()
         stop_pending = _Pending(ack=loop.create_future(), done=loop.create_future())
-        self._pending[(device_id, seq)] = stop_pending
+        self._pending[(device_id, session_id, seq)] = stop_pending
         try:
             await self._mqtt.publish(cmd_topic(device_id), _estop_payload(seq), qos=0)
         except Exception as exc:  # noqa: BLE001 - 对外统一成 502
-            self._pending.pop((device_id, seq), None)
+            self._pending.pop((device_id, session_id, seq), None)
             raise MotionError("publish_failed", str(exc), 502) from exc
 
         abort = MotionError("aborted_by_stop", "stopped by request", 409)
-        for (dev, pending_seq), pending in list(self._pending.items()):
-            if dev != device_id or pending_seq == seq or pending.done.done():
+        for (dev, pending_session, pending_seq), pending in list(self._pending.items()):
+            if (
+                dev != device_id
+                or (pending_session == session_id and pending_seq == seq)
+                or pending.done.done()
+            ):
                 continue
             pending.stop_requested = True
             pending.done.set_exception(abort)
@@ -209,7 +272,7 @@ class AgentMotionService:
             return {"ok": True, "stopped": True, "accepted": True,
                     "confirmed": True, "seq": seq}
         finally:
-            self._pending.pop((device_id, seq), None)
+            self._pending.pop((device_id, session_id, seq), None)
 
     # ---------------- 内部 ----------------
 
@@ -220,11 +283,11 @@ class AgentMotionService:
             self._locks[device_id] = lock
         return lock
 
-    def _next_seq(self, device_id: str) -> int:
+    def _next_seq(self, device_id: str, session_id: int | None = None) -> int:
         for _ in range(256):
             seq = self._seq
             self._seq = (self._seq + 1) & 0xFF
-            if (device_id, seq) not in self._pending:
+            if (device_id, session_id, seq) not in self._pending:
                 return seq
         raise MotionError("busy", "all command sequence numbers are in use", 409)
 
@@ -261,13 +324,14 @@ class AgentMotionService:
         if not self._mqtt.is_connected:
             raise MotionError("offline", "MQTT not connected", 503)
 
-        seq = self._next_seq(device_id)
+        session_id = self._devices[device_id].session_id
+        seq = self._next_seq(device_id, session_id)
         loop = asyncio.get_running_loop()
         pending = _Pending(
             ack=loop.create_future(),
             done=loop.create_future(),
         )
-        self._pending[(device_id, seq)] = pending
+        self._pending[(device_id, session_id, seq)] = pending
 
         payload = {
             "seq": seq,
@@ -332,12 +396,17 @@ class AgentMotionService:
 
             return self._result(seq, req, status)
         finally:
-            self._pending.pop((device_id, seq), None)
+            self._pending.pop((device_id, session_id, seq), None)
 
     async def _send_stop(self, device_id: str) -> None:
         try:
             await self._mqtt.publish(
-                cmd_topic(device_id), _estop_payload(self._next_seq(device_id)), qos=0
+                cmd_topic(device_id),
+                _estop_payload(self._next_seq(
+                    device_id, self._devices.get(device_id).session_id
+                    if self._devices.get(device_id) is not None else None
+                )),
+                qos=0,
             )
         except Exception:  # noqa: BLE001 - 兜底尝试，不覆盖原始错误
             logger.warning("Failed to send emergency stop to %s", device_id)

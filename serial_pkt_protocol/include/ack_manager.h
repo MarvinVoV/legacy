@@ -24,7 +24,8 @@
 typedef struct
 {
     bool active;
-    uint8_t seq;
+    uint8_t seq;        /**< UART wire seq */
+    uint8_t client_seq; /**< MQTT/API seq echoed upstream */
     uint8_t frame[PKT_MAX_FRAME_SIZE];
     size_t frame_len;
     uint32_t send_time_ms;
@@ -56,8 +57,15 @@ bool ackmgr_add(ack_manager_t* m, uint8_t seq, const uint8_t* frame,
 bool ackmgr_add_priority(ack_manager_t* m, uint8_t seq, const uint8_t* frame,
                          size_t len, uint32_t now_ms);
 
+bool ackmgr_add_mapped(ack_manager_t* m, uint8_t wire_seq, uint8_t client_seq,
+                       const uint8_t* frame, size_t len, uint32_t now_ms,
+                       bool priority);
+
 /** 收到 ACK：清除对应 seq 的在途槽位 */
 bool ackmgr_clear(ack_manager_t* m, uint8_t seq);
+
+bool ackmgr_clear_mapped(ack_manager_t* m, uint8_t wire_seq,
+                         uint8_t* out_client_seq);
 
 /** 扫描超时：对每个超时槽位，未达 max_retries 则调 resend 并更新 send_time，
  *  达到 max_retries 则标记丢失（active=false）。返回本次新标记丢失的条数。 */

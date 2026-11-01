@@ -310,12 +310,77 @@ async def test_stale_status_ignored():
     )
     await asyncio.sleep(0)
     # 用错误的 seq 发终态，不能唤醒当前等待
-    seq = next(iter(svc._pending))[1]  # noqa: SLF001
+    pending_key = next(iter(svc._pending))  # noqa: SLF001
+    seq = pending_key[2]
     svc.on_motion("DEV_1", done_status((seq + 1) & 0xFF))
-    assert not svc._pending[("DEV_1", seq)].done.done()  # noqa: SLF001
+    assert not svc._pending[pending_key].done.done()  # noqa: SLF001
     task.cancel()
     with pytest.raises(asyncio.CancelledError):
         await task
+
+
+async def test_session_change_aborts_old_pending_and_rejects_stale_ack():
+    svc, _, devices = make_service("silent")
+    devices["DEV_1"].session_id = 100
+    task = asyncio.create_task(
+        svc.move("DEV_1", MoveRequest(distance_cm=1, speed_cm_s=60))
+    )
+    await asyncio.sleep(0)
+    pending_key = next(iter(svc._pending))  # noqa: SLF001
+    seq = pending_key[2]
+
+    svc.on_ack("DEV_1", seq, 0, session_id=99)
+    assert not svc._pending[pending_key].ack.done()  # noqa: SLF001
+
+    svc.on_session("DEV_1", 101)
+    with pytest.raises(MotionError) as exc:
+        await task
+    assert exc.value.code == "device_restarted"
+    assert devices["DEV_1"].session_id == 101
+    assert devices["DEV_1"].motion_supported is False
+
+
+async def test_session_change_aborts_pending_after_ack():
+    svc, _, devices = make_service("silent")
+    devices["DEV_1"].session_id = 100
+    task = asyncio.create_task(
+        svc.move("DEV_1", MoveRequest(distance_cm=1, speed_cm_s=60))
+    )
+    await asyncio.sleep(0)
+    pending_key = next(iter(svc._pending))  # noqa: SLF001
+    seq = pending_key[2]
+
+    svc.on_ack("DEV_1", seq, 0, session_id=100)
+    await asyncio.sleep(0)
+    svc.on_session("DEV_1", 101)
+
+    with pytest.raises(MotionError) as exc:
+        await task
+    assert exc.value.code == "device_restarted"
+
+
+async def test_initial_session_binding_migrates_pending_command():
+    svc, _, devices = make_service("silent")
+    assert devices["DEV_1"].session_id is None
+    task = asyncio.create_task(
+        svc.move("DEV_1", MoveRequest(distance_cm=1, speed_cm_s=60))
+    )
+    await asyncio.sleep(0)
+    old_key = next(iter(svc._pending))  # noqa: SLF001
+    seq = old_key[2]
+    assert old_key[1] is None
+
+    svc.on_session("DEV_1", 101)
+    new_key = ("DEV_1", 101, seq)
+    assert old_key not in svc._pending  # noqa: SLF001
+    assert new_key in svc._pending  # noqa: SLF001
+
+    svc.on_ack("DEV_1", seq, 0, session_id=101)
+    svc.on_motion(
+        "DEV_1", done_status(seq).model_copy(update={"session_id": 101})
+    )
+    result = await task
+    assert result.seq == seq
 
 
 # ---------------- 路由层 ----------------

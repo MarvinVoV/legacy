@@ -12,6 +12,7 @@ class HeartbeatData(BaseModel):
     uptime_s: int = 0
     wifi_rssi: Optional[int] = None
     stm32_connected: Optional[bool] = None
+    session_id: Optional[int] = None
 
 
 class SensorData(BaseModel):
@@ -34,6 +35,7 @@ class AckEvent(BaseModel):
     seq: int
     ack: bool = True
     status: int = 0
+    session_id: Optional[int] = None
 
 
 class MotionStatus(BaseModel):
@@ -53,6 +55,7 @@ class MotionStatus(BaseModel):
     goal_duration_ms: int = 0
     left_mmps: int = 0
     right_mmps: int = 0
+    session_id: Optional[int] = None
 
 
 class PongEvent(BaseModel):

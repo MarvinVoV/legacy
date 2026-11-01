@@ -37,6 +37,16 @@ def test_on_heartbeat_records_stm32_connected():
     assert devices["DEV_1"].heartbeat_data.stm32_connected is True
 
 
+def test_on_heartbeat_records_session_id():
+    devices = {}
+    handlers = create_handlers(devices, PingRegistry())
+    payload = json.dumps(
+        {"heap": 1, "uptime_s": 1, "session_id": 0x12345678}
+    ).encode()
+    asyncio.run(handlers.heartbeat("data/DEV_1/heartbeat", payload))
+    assert devices["DEV_1"].session_id == 0x12345678
+
+
 def test_on_sensor_parses_json():
     devices = {}
     handlers = create_handlers(devices, PingRegistry())

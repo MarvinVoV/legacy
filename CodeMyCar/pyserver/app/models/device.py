@@ -22,6 +22,7 @@ class DeviceState(BaseModel):
     motion_supported: bool = False
     last_motion: Optional[MotionStatus] = None
     last_motion_time: float = 0.0
+    session_id: Optional[int] = None
 
 
 class DeviceStatus(BaseModel):
