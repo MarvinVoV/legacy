@@ -21,6 +21,7 @@ int main(void)
     assert(control_lease_poll(&lease, 401u));
     control_lease_cancel(&lease);
     assert(!control_lease_poll(&lease, 5000u));
+    assert(!lease.expired);
 
     const uint32_t required = (1u << TASK_HEALTH_MOTION) |
                               (1u << TASK_HEALTH_MOTOR_LEFT) |

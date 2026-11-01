@@ -24,6 +24,7 @@ Phase 1 已验证的 ESTOP 状态修复已单独合并到 main（merge commit `1
 - DIRECT、DIFFERENTIAL、DRIVE 每次成功命令刷新 500ms 租约；
 - 租约超时由 STM32 本地切到 ESTOP，清零命令并硬停双轮，不依赖 ESP32/MQTT/pyserver；
 - 状态帧保留最近命令 seq，并用 `lease_expired=true` 显式说明停车原因；
+- 后续显式 STOP、GOAL 或故障路径取消租约时清除历史 `lease_expired`，避免新 seq 沿用旧停车原因；
 - tick 回绕已由 host test 覆盖。
 
 ### 2.2 事务式命令/GOAL
@@ -82,12 +83,22 @@ ACK manager 新增回归覆盖：表满时 STOP 抢占普通槽、优先 seq 清
 
 ### 4.2 指令租约
 
-DIRECT seq=10，左右 60RPM：
+首先以 DIRECT seq=10、左右 60RPM 验证：
 
 1. ACK `status=0`；
 2. 状态进入 `seq=10, mode=1, state=running, lease_expired=false`；
 3. 约 495ms 后日志出现 `command lease expired`；
 4. 状态变为 `seq=10, mode=0, state=idle, lease_expired=true, left_mmps=0, right_mmps=0`。
+
+随后对三个连续控制模式做完整矩阵复测：
+
+| 模式 | 指令 | 结果 |
+|---|---|---|
+| DIRECT | seq=31，左右 40RPM | ACK 成功；进入 mode=1/running；约 500ms 后本地停车、零速、`lease_expired=true` |
+| DIFFERENTIAL | seq=32，`linear_vel=100` | ACK 成功；进入 mode=2/running；约 500ms 后本地停车、零速、`lease_expired=true` |
+| DRIVE | seq=33，`linear_vel=100, steer_angle=100` | ACK 成功；进入 mode=3/running；约 500ms 后本地停车、零速、`lease_expired=true` |
+
+矩阵测试发现并修复了一个状态语义问题：租约超时后再发送显式 STOP，原实现仍保留旧的 `lease_expired=true`。`control_lease_cancel()` 现会清除该历史原因，并新增 host 断言。HIL 复测 seq=40 租约超时后发送 STOP seq=41，确认 ACK 成功、mode=0、双轮零速且 `lease_expired=false`。
 
 ### 4.3 事务式 GOAL 拒绝
 
@@ -106,13 +117,22 @@ DIRECT seq=10，左右 60RPM：
 - 长 GOAL 运行中 `/stop`：STOP `seq=3` 完成 ACK+零速双确认，原 move 返回 `aborted_by_stop`；
 - STOP 不再在只完成 MQTT publish 时返回成功。
 
+### 4.5 安全监督/IWDG 故障注入
+
+使用只用于本轮 HIL 的临时固件，在启动 5s 后强制把 CtrlTask 心跳标记为过期：
+
+1. 监督器在约 5s 报告 `task health stale mask=0x08`，并锁存硬停；
+2. 监督器停止喂 IWDG，约 4s 后 MCU 被硬件看门狗复位；
+3. 下一启动周期又在约 5s 报告同一失联，两个告警相隔约 10s，证明完整的“检测 → 停止喂狗 → 复位 → 重启”链路生效；
+4. 故障处理改为每个启动周期只锁存和记录一次，避免等待 IWDG 期间每 50ms 重复硬停/刷日志；
+5. 测试后已移除临时注入、重新构建并刷回正式固件。正式固件持续输出传感器遥测和 ESP32 心跳，超过注入观察窗口未再出现失联告警；最终 `/stop` 返回 `accepted=true, confirmed=true`，状态为 idle、双轮零速。
+
 ## 5. 未完成/需要后续环境的验证
 
 1. GOAL stall 锁存的软件逻辑已编译和单元基础验证，但本轮车轮悬空，没有人为卡死转子；
-2. IWDG 实际复位路径未主动卡住关键任务验证；本轮只证明正常运行不误触发；
-3. 超声波硬停与 GOAL stall 互锁已代码复核，但本轮没有把障碍物推入停止距离；
-4. 车轮落地后的制动距离、打滑、GOAL stall 阈值仍需单独低速标定；
-5. 原审计中的 UART DMA 缓冲区和 session/reboot 语义属于后续 Phase 4–5，不在本次四项修复范围内。
+2. 超声波硬停与 GOAL stall 互锁已代码复核，但本轮没有把障碍物推入停止距离；
+3. 车轮落地后的制动距离、打滑、GOAL stall 阈值仍需单独低速标定；
+4. 原审计中的 UART DMA 缓冲区和 session/reboot 语义属于后续 Phase 4–5，不在本次四项修复范围内。
 
 ## 6. Review 结论
 

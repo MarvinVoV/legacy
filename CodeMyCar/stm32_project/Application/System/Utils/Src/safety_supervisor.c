@@ -36,6 +36,7 @@ static void watchdog_refresh(void)
 static void supervisor_task(void* argument)
 {
     (void)argument;
+    bool faultHandled = false;
     while (1)
     {
         const uint32_t stale = task_health_check(&s_health, HAL_GetTick(),
@@ -46,9 +47,13 @@ static void supervisor_task(void* argument)
         }
         else
         {
-            LOG_ERROR(LOG_MODULE_SYSTEM, "task health stale mask=0x%02X",
-                      (unsigned)stale);
-            MotionService_LatchFault(s_motionContext, MOTION_ERR_TASK_STALE);
+            if (!faultHandled)
+            {
+                faultHandled = true;
+                LOG_ERROR(LOG_MODULE_SYSTEM, "task health stale mask=0x%02X",
+                          (unsigned)stale);
+                MotionService_LatchFault(s_motionContext, MOTION_ERR_TASK_STALE);
+            }
             /* Do not refresh: hardware reset is the recovery path. */
         }
         osDelay(SUPERVISOR_PERIOD_MS);

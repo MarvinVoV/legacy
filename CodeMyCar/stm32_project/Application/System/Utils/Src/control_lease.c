@@ -32,6 +32,7 @@ void control_lease_cancel(ControlLease* lease)
         return;
     }
     lease->active = false;
+    lease->expired = false;
 }
 
 bool control_lease_poll(ControlLease* lease, const uint32_t nowMs)
