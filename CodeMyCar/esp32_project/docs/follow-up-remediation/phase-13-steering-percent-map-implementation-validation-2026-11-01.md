@@ -65,3 +65,15 @@ STOP 后 pyserver 状态为 `idle`、左右轮速均为 0、设备在线、STM32
 4. 最后下发 STOP 并确认舵机归中、系统无故障。
 
 肉眼/相机测量存在误差，因此本表是当前机械装配下的工程标定，不声称实现严格的“真实角度闭环”。若机械结构、舵机臂安装齿位或中位发生变化，必须重新标定。
+
+## 后续变更（2026-11-01 晚）
+
+按项目负责人决定，兼容字段 `steer_angle` **已从契约中删除**：
+
+- pyserver `MotionParams` 改为 `extra="forbid"`，发送 `steer_angle` 直接 422；
+- ESP32 bridge（含 `serial_pkt_protocol` 镜像）只认 `steer_percent`，缺失或为
+  `null` 时整条命令按无效处理；
+- 原因：pyserver 的 `model_dump()` 会把未设置字段序列化成 `null`，旧实现只判断
+  `steer_percent` 键是否存在，导致经 pyserver 下发的 `steer_angle` 被静默丢弃。
+
+以上改动已通过 host 协议测试（含"删除字段必须被拒绝"用例）与 pyserver 测试。

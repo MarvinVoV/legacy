@@ -3,6 +3,14 @@
 > 日期：2026-07-21
 > 范围：pyserver 重构（重点）+ STM32 协议适配
 
+> **注（2026-11-01 更新）**：本文是 v2.0 重构时的设计记录，其中"控制命令 JSON
+> 格式"一节的 mode 表已过时（`steer` / `spin` / `mixed` 已删除）。当前模式为
+> 0 ESTOP、1 DIRECT、2 DIFFERENTIAL、3 DRIVE、4 GOAL、5 CLEAR_FAULT，权威契约见
+> [`esp32_project/docs/cmd-mapping.md`](../../esp32_project/docs/cmd-mapping.md)；
+> `/stop` 语义、命令租约与故障锁存见
+> [`agent-motion-api.md`](../../esp32_project/docs/agent-motion-api.md) 和
+> [`runtime-safety-fix-plan-2026-10-31.md`](../../esp32_project/docs/follow-up-remediation/runtime-safety-fix-plan-2026-10-31.md)。
+
 ---
 
 ## 一、现有问题总结

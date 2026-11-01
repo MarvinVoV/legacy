@@ -45,7 +45,7 @@ make test          # 跑全部 pytest（命令模型 / MQTT handler / API 鉴权
 make test-watch    # 改动自动重跑（需 brew install entr）
 ```
 
-测试覆盖：`tests/test_commands.py`（字段范围、枚举与 STM32 对齐）、`tests/test_mqtt.py`（topic 匹配、payload 解析）、`tests/test_ping.py`（ping/pong 匹配、并发、超时）、`tests/test_api.py`（命令下发、设备状态、API Key）、`tests/test_agent_motion.py`（Agent move/stop/state、同步时序、超时/并发）、`tests/test_logging_setup.py`（文件日志轮转/清理）。共 68 项，全部在内存中用 FakeMQTT 跑，不连真实 broker。
+测试覆盖：`tests/test_commands.py`（字段范围、枚举与 STM32 对齐）、`tests/test_mqtt.py`（topic 匹配、payload 解析、session）、`tests/test_ping.py`（ping/pong 匹配、并发、超时）、`tests/test_api.py`（命令下发、设备状态、API Key）、`tests/test_agent_motion.py`（Agent move/stop/state、可靠 STOP 双确认、session 隔离、pivot 拒绝）、`tests/test_device_status.py`（超声波障碍距离字段）、`tests/test_logging_setup.py`（文件日志轮转/清理）。共 81 项，全部在内存中用 FakeMQTT 跑；conftest 会禁用真实 MQTT 连接，即使本机跑着 broker 也不会读到真实设备数据。
 
 ## 常用命令（Makefile）
 
@@ -54,7 +54,7 @@ make test-watch    # 改动自动重跑（需 brew install entr）
 | `make dev` | 一键本地开发环境（mosquitto + uvicorn --reload） |
 | `make test` | 离线单元测试 |
 | `make mqtt-sub` | 订阅全部 topic（`data/#` `cmd/#`），观察设备上报 |
-| `make mqtt-pub MODE=2` | 下发一条测试运动命令（差速模式） |
+| `make mqtt-pub MODE=2` | 下发测试运动命令并保持 `HOLD` 秒（默认 2s，5Hz 刷新以维持 500ms 租约，结束自动 STOP） |
 | `make ping` | 手动 MQTT 链路自检（默认 `DEV_1`，可 `DEVICE=DEV_2`） |
 | `make shell` | 进 venv REPL，已加载 app |
 | `make clean` | 删 `.venv` 与缓存 |
@@ -121,13 +121,21 @@ mosquitto -c mosquitto.dev.conf
 给 AI Agent 用的同步运动接口：`POST /api/v1/agent/devices/{id}/move`、`/stop`、`GET /state`。
 完整契约、单位和错误码见 [`agent-motion-api.md`](../esp32_project/docs/agent-motion-api.md)。
 
+- `/stop` 只有在 STM32 ACK 与零速运动状态都到达时才返回 `confirmed=true`；
+  否则返回 504 `stop_unconfirmed`。
+- `distance_cm=0` 的纯旋转 GOAL 在 Ackermann 底盘上被拒绝（400 `unsupported_maneuver`）。
+
+低层命令 `POST /api/v1/devices/{id}/commands` 的 mode 1–3 受 **500ms 命令租约**
+约束：必须 ≥2Hz 持续刷新，否则 STM32 本地停车（`lease_expired=true`）。
+
 ### 实机测试脚本
 
 | 脚本 | 用途 |
 |---|---|
-| `scripts/test_agent_api.py` | Agent API 验收（前进/后退/转向/非法参数/停止） |
-| `scripts/motor_speed_test.py` | 双轮速度稳态/同步扫描（轮子悬空，需 10Hz 调试日志） |
-| `scripts/motor_accel_test.py` | 0→目标转速加速测试（需 20Hz 调试日志） |
+| `scripts/test_agent_api.py` | Agent API 验收（前进/后退/圆弧/非法参数/pivot 拒绝/可靠 STOP） |
+| `scripts/motor_speed_test.py` | 双轮速度稳态/同步扫描（轮子悬空；每 0.2s 刷新命令租约） |
+| `scripts/motor_accel_test.py` | 0→目标转速加速测试（自动刷新租约；细粒度曲线需临时 20Hz 日志） |
+| `scripts/uart_stress_test.py` | UART/MQTT 30 分钟压力验收（`--log-rate` 为两轮合计日志频率：生产固件 4，压力固件 20） |
 
 ### 链路自检（不依赖 STM32）
 

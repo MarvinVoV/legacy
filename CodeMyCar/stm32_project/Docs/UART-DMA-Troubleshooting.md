@@ -4,6 +4,12 @@
 > 现象：ESP32 能收到 MQTT 命令并发出 UART，但 STM32 不回应 ACK；`ack_lost` 递增；STM32 收不到任何字节。
 > 平台：STM32H723ZGTx + ESP32-C6，UART4（PA11/PA12，115200 8N1），ST-LINK + CP2102 双串口。
 
+> **注（2026-11-01 更新）**：本文是当时的排查记录。`uart_dma_buffer` 已重构——
+> 共享的 `length` 字段和二值信号量被删除，ISR 现在把完成的块复制进 FreeRTOS
+> stream buffer，CtrlTask 通过 `UART_Receive()` 消费；TX 互斥锁改为静态创建，
+> 编解码直接在静态 TX buffer 上完成（无热路径 malloc），并增加了 D-Cache
+> clean/invalidate。文中 `length=N` 的诊断输出只适用于 2026-11-01 之前的固件。
+
 ---
 
 ## 1. 现象

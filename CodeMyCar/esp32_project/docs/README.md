@@ -22,8 +22,11 @@ docs/
 ├── v2-review.md                     # v2.0 重构方案评审（跨端契约问题 / 待办优先级修订 / 执行顺序）
 ├── mqtt-topics.md                   # MQTT topic 统一契约（pyserver ↔ ESP32）
 ├── cmd-mapping.md                   # JSON ↔ Binary 命令映射契约（pyserver ↔ ESP32 ↔ STM32）
+├── agent-motion-api.md              # Agent 同步运动 API（/move /stop /state）契约与错误码
 ├── refactor-plan.md                 # 重构/优化执行 plan（分阶段）
 ├── build-verify.md                  # 构建与验证备忘（四端编译/测试命令 + 踩坑）
+├── follow-up-remediation/           # 运行时安全审计、修复计划与 phase 1–12 验证记录
+│   └── remediation-handoff-and-closure-status-2026-11-01.md  # 交接入口：状态表与遗留项
 └── architecture/                    # 架构设计
     └── v2-architecture-design.md    # v2.0 完整架构设计（1520 行：组件/协议/任务/内存/事件/Kconfig/数据流）
 ```

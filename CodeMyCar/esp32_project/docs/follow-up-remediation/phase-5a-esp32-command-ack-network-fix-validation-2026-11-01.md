@@ -57,7 +57,9 @@ build/tests/serial_pkt_protocol_tests
 
 结果：全部通过；`serial_pkt_protocol_tests` 为 11/11，通过且 0 failure。新增严格 schema 用例覆盖：缺少 cmd、缺少 seq、seq 越界、seq 小数、缺少 params、缺少字段、int16 越界、控制字段小数、uint16 负数，以及 ping seq 缺失/越界。
 
-备注：该项目当前没有把测试二进制注册到 CTest，因此 `ctest` 显示 `No tests were found`；本次直接逐个执行了全部生成的测试程序。
+备注：`ctest` 必须从 `serial_pkt_protocol/build/tests/` 目录运行（`enable_testing()`
+在 `tests/CMakeLists.txt` 里）；从 `build/` 根目录跑会显示 `No tests were found`。
+在正确目录下是 5/5 套件，本次也逐个执行了全部生成的测试程序。
 
 ### 3.2 ESP32 构建
 

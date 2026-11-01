@@ -267,6 +267,11 @@ const SafetyChannel* guard = (linear >= 0.0f) ? front : rear;
 | DIRECT / DIFFERENTIAL / DRIVE | scale 降到 0 → 停车，保留当前模式；障碍移开**自动恢复** |
 | GOAL | 同上；持续被挡 **5 s** 后中止 goal，上报 `state=aborted`（pyserver 现有逻辑返回 409），避免 Agent 调用挂到硬超时 |
 
+> mode 1–3 现在受 **500ms 命令租约**约束：被挡住期间上游必须继续刷新命令。
+> 一旦停止刷新，租约到期会让 STM32 进入 ESTOP，此时障碍移开也不会自动恢复，
+> 需要重新下发运动命令。超声波安全制动（`safetyBraked`）期间 stall 与编码器
+> 监督被抑制，不会被误判为故障。
+
 日志：每 1 s 一条
 `US F=<cm> R=<cm> sF=<scale> sR=<scale> st=<ok|fault|off>`
 

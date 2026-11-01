@@ -5,6 +5,14 @@
 > **日期**: 2026-07-21
 > **设计者**: 系统架构师
 
+> **注（2026-11-01 更新）**：本文是 v2.0 设计记录。之后的运行时安全修复改变了
+> 以下实现细节，以代码和 `docs/follow-up-remediation/` 为准：
+> - `frame_queue` 深度 **8 → 64**，ACK echo 用 `xQueueSendToFront()` 插队；
+> - ACK 表新增 wire seq ↔ client seq 映射与 STOP 优先槽；
+> - 新增 `session_id`（heartbeat / motion / ack 携带）和 `TYPE=SESSION` 同步帧；
+> - Flash 配置按实际 **8MB** 处理（原文档按 2MB）；
+> - Wi-Fi/MQTT 事件回调改为非阻塞重连，队列/任务表其余数值未变。
+
 ---
 
 ## 目录

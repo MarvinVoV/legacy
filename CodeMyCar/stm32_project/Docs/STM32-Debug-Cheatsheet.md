@@ -230,7 +230,8 @@ STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -r32 0x40000824 4   # TIM4 CNT
 
 ```bash
 arm-none-eabi-nm build/Debug/stm32_project.elf | grep steerInstance
-# 结构体偏移：actualAngleDeg +32, targetAngleDeg +36, motionState +44
+# 结构体偏移：commandedAngleDeg +32, targetAngleDeg +36, motionState +44
+# （2026-11-01 起由 actualAngleDeg 改名：该值是已下发角度，不是位置传感器读数）
 # motionState: 1=IDLE, 2=MOVING, 3=ERROR（若为 3，所有平滑转向都会被忽略）
 ```
 
