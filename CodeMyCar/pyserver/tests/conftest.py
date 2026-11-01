@@ -20,6 +20,24 @@ class FakeMQTT:
         self.published.append((topic, payload))
 
 
+@pytest.fixture(autouse=True)
+def isolated_mqtt(monkeypatch):
+    """测试进程绝不连接真实 broker。
+
+    lifespan 会创建真实 MQTT 客户端并订阅 `data/+/...`。本机同时跑着
+    mosquitto + 在线小车时，真实心跳会写进 DeviceManager，使
+    `test_list_devices_empty` 偶发失败（约 1/5），并让整套测试变慢。
+    """
+
+    from app.mqtt.client import MQTTClient
+
+    async def _noop(self):
+        return None
+
+    monkeypatch.setattr(MQTTClient, "connect", _noop)
+    monkeypatch.setattr(MQTTClient, "disconnect", _noop)
+
+
 @pytest.fixture()
 def app():
     from app.main import app as _app

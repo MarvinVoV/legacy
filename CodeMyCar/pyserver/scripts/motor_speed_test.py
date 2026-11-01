@@ -4,7 +4,11 @@
 用法：
     .venv/bin/python scripts/motor_speed_test.py [--device DEV_1] [--hold 8]
 
-依赖：pyserver 正在运行（HTTP 8000）、mosquitto 1883、STM32 调试日志 10Hz。
+依赖：pyserver 正在运行（HTTP 8000）、mosquitto 1883。
+
+STM32 对 mode 1–3 启用 500ms 命令租约，`hold_command()` 每 0.2s 刷新同一
+目标，既维持租约又保持稳态。电机调试日志正式固件为 500ms（2Hz），扫描时
+可临时改到 100ms/10Hz 以提高采样密度。
 """
 
 import argparse
@@ -67,7 +71,7 @@ def send(client: httpx.Client, base: str, seq: int, left: int, right: int):
             "cmd": "motion",
             "motion": {
                 "mode": 1,
-                "params": {"left_rpm": left, "right_rpm": right, "steer_angle": 0},
+                "params": {"left_rpm": left, "right_rpm": right, "steer_percent": 0},
             },
         },
         timeout=10,

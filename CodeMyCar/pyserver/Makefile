@@ -3,6 +3,7 @@
 
 ROOT := $(shell pwd)
 PY   := .venv/bin/python
+HOLD ?= 2
 
 .DEFAULT_GOAL := help
 
@@ -30,10 +31,16 @@ test-watch:  ## 改动自动重跑测试（需 entr：brew install entr）
 mqtt-sub:  ## 订阅全部 topic（本地 broker）
 	mosquitto_sub -h localhost -p 1883 -t 'data/#' -t 'cmd/#' -v
 
-mqtt-pub:  ## 下发一条测试命令：make mqtt-pub MODE=2
-	@test -n "$(MODE)" || { echo "用法: make mqtt-pub MODE=2"; exit 1; }
-	@mosquitto_pub -h localhost -p 1883 -t 'cmd/DEV_1/exec' \
-		-m '{"seq":1,"cmd":"motion","motion":{"mode":$(MODE),"duration":1000,"params":{"linear_vel":500,"angular_vel":100}}}'
+mqtt-pub:  ## 下发测试命令并保持（mode 0-3）：make mqtt-pub MODE=2 [HOLD=2]
+	@test -n "$(MODE)" || { echo "用法: make mqtt-pub MODE=2 [HOLD=2]"; exit 1; }
+	@i=0; total=$$(( $(HOLD) * 5 )); \
+	while [ $$i -lt $$total ]; do \
+		mosquitto_pub -h localhost -p 1883 -t 'cmd/DEV_1/exec' \
+			-m '{"seq":'$$i',"cmd":"motion","motion":{"mode":$(MODE),"params":{"left_rpm":30,"right_rpm":30,"steer_percent":0,"linear_vel":300,"angular_vel":0}}}'; \
+		i=$$((i+1)); sleep 0.2; \
+	done; \
+	mosquitto_pub -h localhost -p 1883 -t 'cmd/DEV_1/exec' \
+		-m '{"seq":'$$i',"cmd":"motion","motion":{"mode":0,"params":{}}}'
 
 ping:  ## 手动链路自检：make ping [DEVICE=DEV_1]
 	@curl -s -X POST "http://127.0.0.1:8000/api/v1/devices/$(or $(DEVICE),DEV_1)/ping" \

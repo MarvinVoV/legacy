@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""30-minute UART/MQTT pressure acceptance for a suspended car."""
+"""30-minute UART/MQTT pressure acceptance for a suspended car.
+
+正式固件电机调试日志是每轮 500ms（2Hz），两轮合计 4 条/秒；20Hz 压力场景需要
+临时把日志周期改到 50ms（每轮 10Hz）并重新刷写 STM32，此时合计 20 条/秒。
+`--log-rate` 是**两轮合计**频率：压力固件用默认 20，生产固件用 `--log-rate 4`，
+否则日志吞吐门槛必然不达标。
+"""
 
 import argparse
 import json
@@ -41,6 +47,10 @@ def main():
     parser.add_argument("--duration", type=int, default=1800)
     parser.add_argument("--rate", type=float, default=10.0)
     parser.add_argument("--rpm", type=int, default=30)
+    parser.add_argument(
+        "--log-rate", type=float, default=20.0,
+        help="两轮合计电机日志频率（Hz）：20=压力固件(每轮10Hz)，4=生产固件(每轮2Hz)",
+    )
     args = parser.parse_args()
 
     counters = Counters()
@@ -68,7 +78,7 @@ def main():
             payload = json.dumps({
                 "seq": seq, "cmd": "motion",
                 "motion": {"mode": 1, "params": {
-                    "left_rpm": args.rpm, "right_rpm": args.rpm, "steer_angle": 0,
+                    "left_rpm": args.rpm, "right_rpm": args.rpm, "steer_percent": 0,
                 }},
             }, separators=(",", ":"))
             info = client.publish(topic, payload, qos=0)
@@ -101,7 +111,7 @@ def main():
         **counters.max_metric, "stop": stop,
     }
     print(json.dumps(result, indent=2), flush=True)
-    expected_logs = args.duration * 20 * 0.95
+    expected_logs = args.duration * args.log_rate * 0.95
     ok = (
         publish_errors == 0 and counters.acks >= sent * 0.999 and
         counters.motion >= args.duration * args.rate * 0.95 and

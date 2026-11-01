@@ -4,7 +4,14 @@
 用法：
     .venv/bin/python scripts/motor_accel_test.py [--device DEV_1] [--target 300] [--hold 5]
 
-依赖：pyserver 8000、mosquitto 1883、STM32 调试日志 20Hz（50ms）。
+依赖：pyserver 8000、mosquitto 1883。
+
+STM32 从 2026-11-01 起对 mode 1–3 启用 500ms 命令租约：只发一次命令，
+车会在 0.5s 后本地停车（状态帧 lease_expired=true），加速曲线因此失真。
+本脚本在保持期间按 LEASE_REFRESH_S 持续刷新同一目标。
+
+电机调试日志正式固件为 500ms（2Hz），足以看趋势；要测 t10/t50/t90 这类
+细粒度指标，需要临时把 `MOTOR_DEBUG_LOG` 的周期改到 50ms（20Hz）。
 """
 
 import argparse
@@ -14,6 +21,9 @@ import time
 
 import httpx
 from paho.mqtt import client as mqtt
+
+# STM32 命令租约 500ms；按 2.5 倍余量刷新，避免网络抖动导致误停车
+LEASE_REFRESH_S = 0.2
 
 LOG_RE = re.compile(
     r"MOT_([LR]) tgt=(-?[\d.]+) act=(-?[\d.]+) duty=(-?[\d.]+) pulses=(-?\d+)"
@@ -58,19 +68,44 @@ class Collector:
         self.client.disconnect()
 
 
-def send(client: httpx.Client, base: str, seq: int, left: int, right: int):
-    client.post(
+def send(client: httpx.Client, base: str, seq: int, left: int, right: int) -> None:
+    response = client.post(
         base,
         json={
             "seq": seq & 0xFF,
             "cmd": "motion",
             "motion": {
                 "mode": 1,
-                "params": {"left_rpm": left, "right_rpm": right, "steer_angle": 0},
+                "params": {"left_rpm": left, "right_rpm": right, "steer_percent": 0},
             },
         },
         timeout=10,
     )
+    response.raise_for_status()
+
+
+def hold_command(
+    client: httpx.Client,
+    base: str,
+    seq: int,
+    left: int,
+    right: int,
+    duration: float,
+    refresh_s: float = LEASE_REFRESH_S,
+) -> int:
+    """在 duration 秒内持续刷新同一目标，返回下一个可用 seq。
+
+    每次成功命令都会给 STM32 的 command lease 续期；只发一次会让车在
+    500ms 后由本地安全监督停车。
+    """
+    deadline = time.monotonic() + duration
+    while True:
+        send(client, base, seq, left, right)
+        seq = (seq + 1) & 0xFF
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            return seq
+        time.sleep(min(refresh_s, remaining))
 
 
 def first_cross(rows, frac, target):
@@ -114,18 +149,20 @@ def main():
     seq = 200
     target = args.target
 
-    print(f"加速测试: 0 -> {target} RPM, 保持 {args.hold:g}s, 20Hz 采样")
+    print(
+        f"加速测试: 0 -> {target} RPM, 保持 {args.hold:g}s, "
+        f"每 {LEASE_REFRESH_S:g}s 刷新命令"
+    )
     try:
-        with httpx.Client() as client:
+        with httpx.Client(timeout=10) as client:
             send(client, base, seq, 0, 0)
             seq += 1
             time.sleep(0.8)
             collector.clear()
             t_cmd = time.monotonic()
-            send(client, base, seq, target, target)
-            seq += 1
-            time.sleep(args.hold)
+            seq = hold_command(client, base, seq, target, target, args.hold)
             send(client, base, seq, 0, 0)
+            seq += 1
 
         rows = {
             w: [s for s in collector.samples if s["wheel"] == w and s["t"] >= t_cmd - 0.1]
@@ -163,8 +200,11 @@ def main():
             if t in left or t in right:
                 print(f"{t:>4.1f} {left.get(t, float('nan')):>7.1f} {right.get(t, float('nan')):>7.1f}")
     finally:
-        with httpx.Client() as client:
-            send(client, base, seq, 0, 0)
+        try:
+            with httpx.Client(timeout=10) as client:
+                send(client, base, seq, 0, 0)
+        except Exception as exc:  # noqa: BLE001 - 收尾失败不应掩盖原错误
+            print(f"警告: 收尾急停下发失败: {exc}")
         collector.stop()
 
 
