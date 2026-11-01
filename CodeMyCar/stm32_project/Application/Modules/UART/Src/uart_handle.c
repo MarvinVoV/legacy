@@ -6,7 +6,6 @@
  */
 #include "uart_handle.h"
 
-#include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -26,7 +25,38 @@
 uart_dma_buffer_t uart_dma_buffer __attribute__((section(".dma_buffer"), aligned(32)));
 
 /* TX 串行化：ACK / 日志 / 运动状态共用同一个 DMA 缓冲区 */
-static osMutexId_t s_tx_mutex = NULL;
+static StaticSemaphore_t s_tx_mutex_storage;
+static SemaphoreHandle_t s_tx_mutex;
+
+/* ISR 是唯一生产者，CtrlTask 是唯一消费者。ISR 在重新启用 DMA 前先把
+   完成块复制进 stream buffer，因此两个 DMA buffer 都不会被任务侧引用。 */
+static StaticStreamBuffer_t s_rx_stream_struct;
+static uint8_t s_rx_stream_storage[UART_RX_STREAM_SIZE];
+static StreamBufferHandle_t s_rx_stream;
+static volatile uint32_t s_rx_dropped_bytes;
+
+static uint32_t cache_span(uint16_t length)
+{
+    return ((uint32_t)length + 31u) & ~31u;
+}
+
+static void dma_rx_prepare(uint8_t* buffer)
+{
+    SCB_CleanInvalidateDCache_by_Addr((uint32_t*)buffer, UART_RX_BUFFER_SIZE);
+}
+
+static void dma_rx_complete(uint8_t* buffer, uint16_t length)
+{
+    if (length > 0u)
+    {
+        SCB_InvalidateDCache_by_Addr((uint32_t*)buffer, (int32_t)cache_span(length));
+    }
+}
+
+static void dma_tx_prepare(uint8_t* buffer, uint16_t length)
+{
+    SCB_CleanDCache_by_Addr((uint32_t*)buffer, (int32_t)cache_span(length));
+}
 
 
 /**
@@ -38,14 +68,11 @@ static osMutexId_t s_tx_mutex = NULL;
  */
 static bool UART_Send_To_Esp(const uint8_t* data, uint16_t length, protocol_type_t type);
 
-void start_reception(void)
+static void start_reception(uint8_t buffer_index)
 {
-    // 先切换缓冲区
-    const uint8_t next_buffer = uart_dma_buffer.current ^ 1;
-    uart_dma_buffer.current = next_buffer;
-
-    // 启动DMA接收，交替使用缓冲区
-    HAL_StatusTypeDef status = HAL_UARTEx_ReceiveToIdle_DMA(&huart4, uart_dma_buffer.rx_buffer[next_buffer],
+    uart_dma_buffer.current = buffer_index;
+    dma_rx_prepare(uart_dma_buffer.rx_buffer[buffer_index]);
+    HAL_StatusTypeDef status = HAL_UARTEx_ReceiveToIdle_DMA(&huart4, uart_dma_buffer.rx_buffer[buffer_index],
                                                             UART_RX_BUFFER_SIZE);
     if (status != HAL_OK)
     {
@@ -58,15 +85,14 @@ void start_reception(void)
 void Init_UART_DMA(void)
 {
     uart_dma_buffer.current = 0;
-    uart_dma_buffer.length = 0;
-    uart_dma_buffer.semaphore = xSemaphoreCreateBinary();
-    xSemaphoreGive(uart_dma_buffer.semaphore); // 初始释放
-
-    /* 注意：本函数在 osKernelInitialize() 之前调用，不能在这里 osMutexNew()。
-       TX 互斥锁在 UART_Send_Frame()（任务上下文）里懒创建。 */
+    s_rx_dropped_bytes = 0;
+    s_tx_mutex = xSemaphoreCreateMutexStatic(&s_tx_mutex_storage);
+    s_rx_stream = xStreamBufferCreateStatic(UART_RX_STREAM_SIZE, 1u,
+                                             s_rx_stream_storage,
+                                             &s_rx_stream_struct);
 
     __HAL_UART_ENABLE_IT(&huart4, UART_IT_IDLE | UART_IT_PE | UART_IT_ERR);
-    start_reception();
+    start_reception(0u);
 }
 
 
@@ -75,14 +101,21 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef* huart, uint16_t Size)
 {
     if (huart == &huart4)
     {
-        // 获取DMA剩余计数
-        const uint16_t remaining = __HAL_DMA_GET_COUNTER(huart->hdmarx);
-        // 计算实际接收数据长度
-        const uint16_t actual_len = UART_RX_BUFFER_SIZE - remaining;
-        uart_dma_buffer.length = actual_len;
-        start_reception();
+        const uint8_t completed = uart_dma_buffer.current;
+        const uint16_t actual_len = Size <= UART_RX_BUFFER_SIZE
+                                        ? Size : UART_RX_BUFFER_SIZE;
+        uint8_t* const data = uart_dma_buffer.rx_buffer[completed];
+        dma_rx_complete(data, actual_len);
+
         BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-        xSemaphoreGiveFromISR(uart_dma_buffer.semaphore, &xHigherPriorityTaskWoken);
+        const size_t sent = xStreamBufferSendFromISR(
+            s_rx_stream, data, actual_len, &xHigherPriorityTaskWoken);
+        if (sent < actual_len)
+        {
+            s_rx_dropped_bytes += (uint32_t)(actual_len - sent);
+        }
+
+        start_reception(completed ^ 1u);
         portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
     }
 }
@@ -121,7 +154,7 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef* huart)
 
         /* 错误会使 HAL 终止接收（abort DMA、RxState=READY）。
            必须重新挂起 DMA，否则一次 ORE 之后 RX 永久停止。 */
-        start_reception();
+        start_reception(uart_dma_buffer.current ^ 1u);
     }
 }
 
@@ -141,13 +174,8 @@ bool UART_Send_Protocol_Log(log_entry_t* log_entry)
 bool UART_Send_Frame(const protocol_type_t type, const uint8_t seq, const uint8_t flags,
                      const uint8_t* data, const uint16_t len)
 {
-    /* 多个任务（Ctrl/Log/Motion）共用 tx_buffer，必须串行化；
-       同时等上一帧 DMA 完成后再覆盖缓冲区。 */
-    if (s_tx_mutex == NULL)
-    {
-        s_tx_mutex = osMutexNew(NULL); /* 首次发送时创建（此时内核已启动） */
-    }
-    if (s_tx_mutex != NULL && osMutexAcquire(s_tx_mutex, 100) != osOK)
+    if ((data == NULL && len > 0u) || len > PROTOCOL_MAX_PAYLOAD ||
+        s_tx_mutex == NULL || xSemaphoreTake(s_tx_mutex, pdMS_TO_TICKS(100u)) != pdTRUE)
     {
         return false;
     }
@@ -158,27 +186,50 @@ bool UART_Send_Frame(const protocol_type_t type, const uint8_t seq, const uint8_
     {
         osDelay(1);
     }
+    if (huart4.gState != HAL_UART_STATE_READY)
+    {
+        xSemaphoreGive(s_tx_mutex);
+        return false;
+    }
 
-    // 打包 v2 协议帧（带 seq/flags）
-    uint16_t frame_len = 0;
-    uint8_t* packed_frame = protocol_pack_frame_ex(type, seq, flags, data, len, &frame_len);
+    protocol_frame_t frame = {
+        .type = (uint8_t)type,
+        .seq = seq,
+        .flags = flags,
+        .payload_len = (uint8_t)len,
+    };
+    if (len > 0u)
+    {
+        memcpy(frame.payload, data, len);
+    }
 
     bool ok = false;
-    if (packed_frame != NULL && frame_len > 0 && frame_len <= UART_TX_BUFFER_SIZE)
+    size_t frame_len = 0;
+    if (protocol_encode(&frame, uart_dma_buffer.tx_buffer,
+                        UART_TX_BUFFER_SIZE, &frame_len) == 0 && frame_len > 0u)
     {
-        memcpy(uart_dma_buffer.tx_buffer, packed_frame, frame_len);
-        ok = (HAL_UART_Transmit_DMA(&huart4, uart_dma_buffer.tx_buffer, frame_len) == HAL_OK);
-    }
-    if (packed_frame != NULL)
-    {
-        free(packed_frame);
+        dma_tx_prepare(uart_dma_buffer.tx_buffer, (uint16_t)frame_len);
+        ok = (HAL_UART_Transmit_DMA(&huart4, uart_dma_buffer.tx_buffer,
+                                    (uint16_t)frame_len) == HAL_OK);
     }
 
-    if (s_tx_mutex != NULL)
-    {
-        osMutexRelease(s_tx_mutex);
-    }
+    xSemaphoreGive(s_tx_mutex);
     return ok;
+}
+
+size_t UART_Receive(uint8_t* out, size_t capacity, uint32_t timeout_ms)
+{
+    if (out == NULL || capacity == 0u || s_rx_stream == NULL)
+    {
+        return 0u;
+    }
+    return xStreamBufferReceive(s_rx_stream, out, capacity,
+                                pdMS_TO_TICKS(timeout_ms));
+}
+
+uint32_t UART_GetRxDropCount(void)
+{
+    return s_rx_dropped_bytes;
 }
 
 static bool UART_Send_To_Esp(const uint8_t* data, const uint16_t length, const protocol_type_t type)

@@ -16,11 +16,13 @@
 #include "log_protocol.h"
 #include "FreeRTOS.h"
 #include "semphr.h"
+#include "stream_buffer.h"
 #include "stm32h7xx_hal.h"
 
 // 定义UART缓冲区大小
 #define UART_RX_BUFFER_SIZE (PROTOCOL_MAX_DATA_LEN * 4)
 #define UART_TX_BUFFER_SIZE (PROTOCOL_MAX_DATA_LEN * 4)
+#define UART_RX_STREAM_SIZE (UART_RX_BUFFER_SIZE * 4)
 
 
 typedef struct
@@ -34,15 +36,19 @@ typedef struct
 {
     uint8_t rx_buffer[2][UART_RX_BUFFER_SIZE] __ALIGNED(32);
     uint8_t tx_buffer[UART_TX_BUFFER_SIZE] __ALIGNED(32);
-    volatile uint8_t current;    // 当前接收缓冲区索引
-    volatile uint16_t length;    // 有效数据长度
-    SemaphoreHandle_t semaphore; // 二值信号量
+    volatile uint8_t current; // 当前 DMA 正在写入的缓冲区索引
 } uart_dma_buffer_t;
 
 #define QUEUE_ITEM_SIZE sizeof(uart_msg_t*) // 存储数据指针
 
 extern uart_dma_buffer_t uart_dma_buffer;
 void Init_UART_DMA(void);
+
+/** 从 ISR 填充的静态 RX stream buffer 读取数据。 */
+size_t UART_Receive(uint8_t* out, size_t capacity, uint32_t timeout_ms);
+
+/** 因 RX stream buffer 空间不足而丢弃的字节数。 */
+uint32_t UART_GetRxDropCount(void);
 
 
 /**

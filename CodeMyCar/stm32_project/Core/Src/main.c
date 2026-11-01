@@ -137,13 +137,14 @@ int main(void)
   MX_TIM5_Init();
   /* USER CODE BEGIN 2 */
 
-  // 初始化UART空闲中断
-  Init_UART_DMA();
-
   /* USER CODE END 2 */
 
   /* Init scheduler */
   osKernelInitialize();
+
+  /* UART DMA owns static FreeRTOS mutex/stream-buffer objects, so initialize
+     it only after the CMSIS kernel has been initialized. */
+  Init_UART_DMA();
 
   /* USER CODE BEGIN RTOS_MUTEX */
     /* add mutexes, ... */

@@ -22,6 +22,7 @@
 #define ACCUMULATE_BUF_SIZE ( 5 * PROTOCOL_MAX_DATA_LEN)
 
 static osThreadId_t rawDataReadTaskHandle = NULL;
+static uint8_t s_raw_data[UART_RX_BUFFER_SIZE];
 // 协议解析处理器
 static protocol_receiver receiver;
 
@@ -38,7 +39,7 @@ void CtrlTask_Init()
 {
     const osThreadAttr_t rawDataReadTaskAttrs = {
         .name = "RawDataReadTask",
-        .stack_size = 512 * 4,
+        .stack_size = 768 * 4,
         .priority = (osPriority_t)osPriorityNormal
     };
     rawDataReadTaskHandle = osThreadNew(CtrlTask_doTask, NULL, &rawDataReadTaskAttrs);
@@ -61,19 +62,10 @@ void CtrlTask_doTask(void* args)
 {
     while (1)
     {
-        if (xSemaphoreTake(uart_dma_buffer.semaphore, pdMS_TO_TICKS(50u)) == pdTRUE)
+        const size_t len = UART_Receive(s_raw_data, sizeof(s_raw_data), 50u);
+        if (len > 0u)
         {
-            if (uart_dma_buffer.length > 0)
-            {
-                // 获取非活动缓冲区的索引和长度
-                const uint8_t  inactive_buffer = uart_dma_buffer.current ^ 1;
-                uint8_t*       data            = uart_dma_buffer.rx_buffer[inactive_buffer];
-                const uint16_t len             = uart_dma_buffer.length;
-                // 无效化 Cache（H7 的 Cache 行大小为 32 字节）
-                SCB_InvalidateDCache_by_Addr(data, len);
-                // 处理数据
-                process_raw_data(data, len);
-            }
+            process_raw_data(s_raw_data, (uint16_t)len);
         }
         SafetySupervisor_Heartbeat(TASK_HEALTH_CTRL);
     }
