@@ -2,7 +2,7 @@
  * @file mqtt_service.c
  * @brief MQTT 客户端服务实现
  *
- * 特性：mutex 保护句柄、指数退避重连、直接引用 Kconfig 字符串（不 strdup）
+ * 特性：mutex 保护句柄、ESP-MQTT 异步自动重连、直接引用 Kconfig 字符串（不 strdup）
  */
 
 #include "mqtt_service.h"
@@ -22,23 +22,10 @@ static const char* TAG = "mqtt_svc";
 static esp_mqtt_client_handle_t s_client = NULL;
 static SemaphoreHandle_t s_mutex = NULL;
 static bool s_connected = false;
-static int s_retry_count = 0;
+static bool s_running = false;
 
 static mqtt_rx_cb_t s_rx_cb = NULL;
 static void* s_rx_cb_ctx = NULL;
-
-/* 指数退避 */
-static uint32_t backoff_ms(int attempt)
-{
-    uint32_t delay = 1000;
-    for (int i = 0; i < attempt && delay < CONFIG_CMCAR_MQTT_RECONNECT_MAX_MS; i++)
-    {
-        delay *= 2;
-    }
-    return (delay > CONFIG_CMCAR_MQTT_RECONNECT_MAX_MS)
-               ? CONFIG_CMCAR_MQTT_RECONNECT_MAX_MS
-               : delay;
-}
 
 /* MQTT 事件处理器 */
 static void mqtt_event_handler(void* handler_args, esp_event_base_t base,
@@ -49,9 +36,12 @@ static void mqtt_event_handler(void* handler_args, esp_event_base_t base,
     switch (event->event_id)
     {
         case MQTT_EVENT_CONNECTED:
+            if (!s_running)
+            {
+                break;
+            }
             ESP_LOGI(TAG, "Connected to broker");
             s_connected = true;
-            s_retry_count = 0;
 
             /* 自动订阅本机命令 topic（单一 device_id 层级，见 docs/mqtt-topics.md） */
             esp_mqtt_client_subscribe(s_client, CMCAR_TOPIC_CMD_SUB, 0);
@@ -66,15 +56,10 @@ static void mqtt_event_handler(void* handler_args, esp_event_base_t base,
             esp_event_post(CMCAR_EVENTS, CMCAR_MQTT_DISCONNECTED, NULL, 0,
                            pdMS_TO_TICKS(100));
 
-            /* 指数退避重连 */
-            if (s_retry_count < 20)
+            /* ESP-MQTT 自身的重连状态机负责延时和重试；事件回调不得阻塞。 */
+            if (s_running)
             {
-                const uint32_t delay = backoff_ms(s_retry_count);
-                ESP_LOGI(TAG, "Reconnecting in %lu ms (attempt %d)",
-                         (unsigned long)delay, s_retry_count + 1);
-                vTaskDelay(pdMS_TO_TICKS(delay));
-                s_retry_count++;
-                esp_mqtt_client_reconnect(s_client);
+                ESP_LOGI(TAG, "Waiting for ESP-MQTT automatic reconnect");
             }
             break;
 
@@ -125,6 +110,8 @@ esp_err_t mqtt_service_init(void)
     if (s_client == NULL)
     {
         ESP_LOGE(TAG, "Failed to init MQTT client");
+        vSemaphoreDelete(s_mutex);
+        s_mutex = NULL;
         return ESP_FAIL;
     }
 
@@ -142,7 +129,13 @@ esp_err_t mqtt_service_start(void)
     {
         return ESP_ERR_INVALID_STATE;
     }
-    return esp_mqtt_client_start(s_client);
+    s_running = true;
+    const esp_err_t err = esp_mqtt_client_start(s_client);
+    if (err != ESP_OK)
+    {
+        s_running = false;
+    }
+    return err;
 }
 
 esp_err_t mqtt_service_stop(void)
@@ -151,12 +144,14 @@ esp_err_t mqtt_service_stop(void)
     {
         return ESP_ERR_INVALID_STATE;
     }
+    s_running = false;
     s_connected = false;
     return esp_mqtt_client_stop(s_client);
 }
 
 esp_err_t mqtt_service_destroy(void)
 {
+    s_running = false;
     if (s_client != NULL)
     {
         esp_mqtt_client_destroy(s_client);

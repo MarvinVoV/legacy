@@ -46,15 +46,28 @@ static void put_i16le(uint8_t* p, int16_t v)
     put_u16le(p, (uint16_t)v);
 }
 
-/** 从 cJSON 对象取可选整数，缺失返回 def */
-static int get_int(const cJSON* obj, const char* key, int def)
+/** 读取必需的整数并在缩窄转换前完成类型和范围检查。 */
+static bool get_required_int(const cJSON* obj, const char* key,
+                             int32_t min_value, int32_t max_value,
+                             int32_t* out)
 {
     const cJSON* item = cJSON_GetObjectItemCaseSensitive(obj, key);
-    if (item != NULL && cJSON_IsNumber(item))
+    if (item == NULL || !cJSON_IsNumber(item) || out == NULL)
     {
-        return item->valueint;
+        return false;
     }
-    return def;
+    const double value = item->valuedouble;
+    if (value < (double)min_value || value > (double)max_value)
+    {
+        return false;
+    }
+    const int32_t integer = (int32_t)value;
+    if ((double)integer != value)
+    {
+        return false;
+    }
+    *out = integer;
+    return true;
 }
 
 /* ==================== 下行：ping/pong 链路自检 ==================== */
@@ -74,8 +87,12 @@ bool bridge_json_is_ping(const char* json, size_t len, uint8_t* out_seq)
     const cJSON* cmd = cJSON_GetObjectItemCaseSensitive(root, "cmd");
     if (cmd != NULL && cJSON_IsString(cmd) && strcmp(cmd->valuestring, "ping") == 0)
     {
-        *out_seq = (uint8_t)(get_int(root, "seq", 0) & 0xFF);
-        is_ping = true;
+        int32_t seq = 0;
+        if (get_required_int(root, "seq", 0, UINT8_MAX, &seq))
+        {
+            *out_seq = (uint8_t)seq;
+            is_ping = true;
+        }
     }
     cJSON_Delete(root);
     return is_ping;
@@ -117,17 +134,24 @@ int bridge_json_to_control_cmd(const char* json, size_t len,
     int result = 0;
     do
     {
-        /* cmd 必须是 "motion" */
-        const cJSON* cmd_item = cJSON_GetObjectItemCaseSensitive(root, "cmd");
-        if (cmd_item != NULL && cJSON_IsString(cmd_item) &&
-            strcmp(cmd_item->valuestring, "motion") != 0)
+        if (!cJSON_IsObject(root))
         {
-            break; /* 非 motion 命令，不支持 */
+            break;
         }
 
-        /* seq → 帧头 seq（用于 ACK） */
-        *out_seq = (uint8_t)(get_int(root, "seq", 0) & 0xFF);
-        *out_ack = true; /* 运动命令默认请求 ACK */
+        /* cmd 必须存在且严格等于 "motion"。 */
+        const cJSON* cmd_item = cJSON_GetObjectItemCaseSensitive(root, "cmd");
+        if (!cJSON_IsString(cmd_item) ||
+            strcmp(cmd_item->valuestring, "motion") != 0)
+        {
+            break;
+        }
+
+        int32_t seq = 0;
+        if (!get_required_int(root, "seq", 0, UINT8_MAX, &seq))
+        {
+            break;
+        }
 
         const cJSON* motion = cJSON_GetObjectItemCaseSensitive(root, "motion");
         if (motion == NULL || !cJSON_IsObject(motion))
@@ -135,13 +159,24 @@ int bridge_json_to_control_cmd(const char* json, size_t len,
             break;
         }
 
-        const int mode = get_int(motion, "mode", -1);
-        if (mode < BRIDGE_MODE_EMERGENCY_STOP || mode >= BRIDGE_MODE_MAX)
+        int32_t mode = 0;
+        if (!get_required_int(motion, "mode", BRIDGE_MODE_EMERGENCY_STOP,
+                              BRIDGE_MODE_MAX - 1, &mode))
         {
-            break; /* 只支持 0-3 */
+            break;
         }
 
         const cJSON* params = cJSON_GetObjectItemCaseSensitive(motion, "params");
+        int32_t p0 = 0;
+        int32_t p1 = 0;
+        int32_t p2 = 0;
+        bool valid = true;
+
+        if (mode != BRIDGE_MODE_EMERGENCY_STOP && mode != BRIDGE_MODE_CLEAR_FAULT &&
+            !cJSON_IsObject(params))
+        {
+            break;
+        }
 
         /* 填充 9 字节 ControlCmd */
         memset(out, 0, BRIDGE_CONTROL_CMD_SIZE);
@@ -154,39 +189,64 @@ int bridge_json_to_control_cmd(const char* json, size_t len,
         {
             case BRIDGE_MODE_EMERGENCY_STOP:
             case BRIDGE_MODE_CLEAR_FAULT:
-                /* 无参数 */
+                valid = params == NULL || cJSON_IsObject(params);
                 break;
 
             case BRIDGE_MODE_DIRECT: /* DirectCtrlParam: leftRpm, rightRpm, steerAngle */
-                if (params == NULL) { break; }
-                put_i16le(&out[3], (int16_t)get_int(params, "left_rpm", 0));
-                put_i16le(&out[5], (int16_t)get_int(params, "right_rpm", 0));
-                put_i16le(&out[7], (int16_t)get_int(params, "steer_angle", 0));
+                valid = get_required_int(params, "left_rpm", INT16_MIN, INT16_MAX, &p0) &&
+                        get_required_int(params, "right_rpm", INT16_MIN, INT16_MAX, &p1) &&
+                        get_required_int(params, "steer_angle", INT16_MIN, INT16_MAX, &p2);
+                if (valid)
+                {
+                    put_i16le(&out[3], (int16_t)p0);
+                    put_i16le(&out[5], (int16_t)p1);
+                    put_i16le(&out[7], (int16_t)p2);
+                }
                 break;
 
             case BRIDGE_MODE_DIFFERENTIAL: /* DiffCtrlParam: linearVel, angularVel */
-                if (params == NULL) { break; }
-                put_i16le(&out[3], (int16_t)get_int(params, "linear_vel", 0));
-                put_i16le(&out[5], (int16_t)get_int(params, "angular_vel", 0));
+                valid = get_required_int(params, "linear_vel", INT16_MIN, INT16_MAX, &p0) &&
+                        get_required_int(params, "angular_vel", INT16_MIN, INT16_MAX, &p1);
+                if (valid)
+                {
+                    put_i16le(&out[3], (int16_t)p0);
+                    put_i16le(&out[5], (int16_t)p1);
+                }
                 break;
 
             case BRIDGE_MODE_DRIVE: /* DriveCtrlParam: linearVel, steerAngle */
-                if (params == NULL) { break; }
-                put_i16le(&out[3], (int16_t)get_int(params, "linear_vel", 0));
-                put_i16le(&out[5], (int16_t)get_int(params, "steer_angle", 0));
+                valid = get_required_int(params, "linear_vel", INT16_MIN, INT16_MAX, &p0) &&
+                        get_required_int(params, "steer_angle", INT16_MIN, INT16_MAX, &p1);
+                if (valid)
+                {
+                    put_i16le(&out[3], (int16_t)p0);
+                    put_i16le(&out[5], (int16_t)p1);
+                }
                 break;
 
             case BRIDGE_MODE_GOAL: /* GoalCtrlParam: turnDdeg, distanceMm, speedMmps */
-                if (params == NULL) { break; }
-                put_i16le(&out[3], (int16_t)get_int(params, "turn_ddeg", 0));
-                put_i16le(&out[5], (int16_t)get_int(params, "distance_mm", 0));
-                put_u16le(&out[7], (uint16_t)get_int(params, "speed_mm_s", 0));
+                valid = get_required_int(params, "turn_ddeg", INT16_MIN, INT16_MAX, &p0) &&
+                        get_required_int(params, "distance_mm", INT16_MIN, INT16_MAX, &p1) &&
+                        get_required_int(params, "speed_mm_s", 0, UINT16_MAX, &p2);
+                if (valid)
+                {
+                    put_i16le(&out[3], (int16_t)p0);
+                    put_i16le(&out[5], (int16_t)p1);
+                    put_u16le(&out[7], (uint16_t)p2);
+                }
                 break;
 
             default:
+                valid = false;
                 break;
         }
 
+        if (!valid)
+        {
+            break;
+        }
+        *out_seq = (uint8_t)seq;
+        *out_ack = true;
         result = BRIDGE_CONTROL_CMD_SIZE;
     } while (0);
 

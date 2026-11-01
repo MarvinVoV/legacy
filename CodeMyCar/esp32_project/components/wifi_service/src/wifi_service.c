@@ -14,6 +14,7 @@
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_netif.h"
+#include "esp_timer.h"
 #include "esp_wifi.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -23,7 +24,9 @@ static const char* TAG = "wifi_svc";
 #define WIFI_RECONNECT_MAX_MS 60000
 
 static bool s_connected = false;
+static bool s_running = false;
 static int s_retry_count = 0;
+static esp_timer_handle_t s_reconnect_timer;
 
 /* 指数退避计算 */
 static uint32_t backoff_ms(int attempt)
@@ -34,6 +37,35 @@ static uint32_t backoff_ms(int attempt)
         delay *= 2;
     }
     return (delay > WIFI_RECONNECT_MAX_MS) ? WIFI_RECONNECT_MAX_MS : delay;
+}
+
+static void reconnect_timer_cb(void* arg)
+{
+    (void)arg;
+    if (!s_running)
+    {
+        return;
+    }
+    const esp_err_t err = esp_wifi_connect();
+    if (err != ESP_OK)
+    {
+        ESP_LOGW(TAG, "esp_wifi_connect failed: %s", esp_err_to_name(err));
+    }
+}
+
+static void schedule_reconnect(uint32_t delay_ms)
+{
+    if (s_reconnect_timer == NULL)
+    {
+        return;
+    }
+    (void)esp_timer_stop(s_reconnect_timer);
+    const esp_err_t err = esp_timer_start_once(s_reconnect_timer,
+                                                (uint64_t)delay_ms * 1000u);
+    if (err != ESP_OK)
+    {
+        ESP_LOGW(TAG, "reconnect timer start failed: %s", esp_err_to_name(err));
+    }
 }
 
 /* WiFi + IP 事件处理器 */
@@ -50,9 +82,14 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
                 break;
 
             case WIFI_EVENT_STA_CONNECTED:
+                if (!s_running)
+                {
+                    break;
+                }
                 ESP_LOGI(TAG, "Associated with AP");
                 s_retry_count = 0;
                 s_connected = true;
+                if (s_reconnect_timer != NULL) (void)esp_timer_stop(s_reconnect_timer);
                 esp_event_post(CMCAR_EVENTS, CMCAR_WIFI_CONNECTED, NULL, 0,
                                pdMS_TO_TICKS(100));
                 break;
@@ -68,14 +105,13 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
 
                 /* 指数退避重连 */
                 const int max_retry = CONFIG_CMCAR_WIFI_MAX_RETRY;
-                if (max_retry == 0 || s_retry_count < max_retry)
+                if (s_running && (max_retry == 0 || s_retry_count < max_retry))
                 {
                     const uint32_t delay = backoff_ms(s_retry_count);
                     ESP_LOGI(TAG, "Reconnecting in %lu ms (attempt %d)",
                              (unsigned long)delay, s_retry_count + 1);
-                    vTaskDelay(pdMS_TO_TICKS(delay));
                     s_retry_count++;
-                    esp_wifi_connect();
+                    schedule_reconnect(delay);
                 }
                 else
                 {
@@ -106,6 +142,17 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
 esp_err_t wifi_service_init(void)
 {
     esp_err_t ret;
+
+    const esp_timer_create_args_t reconnect_timer_args = {
+        .callback = reconnect_timer_cb,
+        .name = "wifi_reconnect",
+    };
+    ret = esp_timer_create(&reconnect_timer_args, &s_reconnect_timer);
+    if (ret != ESP_OK)
+    {
+        ESP_LOGE(TAG, "reconnect timer create failed: %s", esp_err_to_name(ret));
+        return ret;
+    }
 
     /* 初始化 TCP/IP 栈 */
     ret = esp_netif_init();
@@ -142,6 +189,7 @@ esp_err_t wifi_service_init(void)
 
 esp_err_t wifi_service_start(void)
 {
+    s_running = true;
     /* 配置 WiFi 参数 */
     wifi_config_t wifi_config = {
         .sta = {
@@ -154,6 +202,7 @@ esp_err_t wifi_service_start(void)
     esp_err_t ret = esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
     if (ret != ESP_OK)
     {
+        s_running = false;
         ESP_LOGE(TAG, "set_config failed: %s", esp_err_to_name(ret));
         return ret;
     }
@@ -161,6 +210,7 @@ esp_err_t wifi_service_start(void)
     ret = esp_wifi_start();
     if (ret != ESP_OK)
     {
+        s_running = false;
         ESP_LOGE(TAG, "wifi_start failed: %s", esp_err_to_name(ret));
         return ret;
     }
@@ -171,7 +221,9 @@ esp_err_t wifi_service_start(void)
 
 esp_err_t wifi_service_stop(void)
 {
+    s_running = false;
     s_connected = false;
+    if (s_reconnect_timer != NULL) (void)esp_timer_stop(s_reconnect_timer);
     return esp_wifi_stop();
 }
 

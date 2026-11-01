@@ -134,12 +134,25 @@ bool bridge_stm32_connected(void)
     return (last != 0U) && ((now_ms() - last) < BRIDGE_STM32_TIMEOUT_MS);
 }
 
-/* resend 回调（注入 uart_service_send）：ackmgr_scan 在持有 s_ack_mutex 时调用；
-   uart_service_send 内部 xQueueSend 非阻塞，不会自死锁 */
-static void ack_resend_cb(const uint8_t* frame, size_t len, void* ctx)
+typedef struct
 {
-    (void)ctx;
-    uart_service_send(frame, len);
+    uint8_t frames[ACK_MGR_MAX_PENDING][PKT_MAX_FRAME_SIZE];
+    size_t lengths[ACK_MGR_MAX_PENDING];
+    size_t count;
+} ack_retry_batch_t;
+
+/* ackmgr_scan 在锁内只复制待重传帧，绝不调用可能等待 UART 队列的 API。 */
+static void ack_collect_retry(const uint8_t* frame, size_t len, void* ctx)
+{
+    ack_retry_batch_t* batch = (ack_retry_batch_t*)ctx;
+    if (batch == NULL || frame == NULL || len > PKT_MAX_FRAME_SIZE ||
+        batch->count >= ACK_MGR_MAX_PENDING)
+    {
+        return;
+    }
+    memcpy(batch->frames[batch->count], frame, len);
+    batch->lengths[batch->count] = len;
+    batch->count++;
 }
 
 /** 收到 ACK：清除对应 seq 的在途槽位 */
@@ -157,6 +170,7 @@ static bool pending_clear(uint8_t seq)
 /** 周期扫描：超时重传，达上限则标记丢失 */
 static void pending_retransmit_scan(void)
 {
+    ack_retry_batch_t batch = {0};
     if (xSemaphoreTake(s_ack_mutex, 0) != pdTRUE)
     {
         return; /* 非阻塞：拿不到锁就下个周期再扫 */
@@ -164,14 +178,23 @@ static void pending_retransmit_scan(void)
     const uint32_t lost = ackmgr_scan(&s_ackmgr, now_ms(),
                                       BRIDGE_ACK_TIMEOUT_MS,
                                       BRIDGE_ACK_MAX_RETRIES,
-                                      ack_resend_cb, NULL);
+                                      ack_collect_retry, &batch);
+    xSemaphoreGive(s_ack_mutex);
+
     if (lost > 0)
     {
         s_ack_lost += lost;
         ESP_LOGW(TAG, "%lu ACK(s) lost after %d retries",
                  (unsigned long)lost, BRIDGE_ACK_MAX_RETRIES);
     }
-    xSemaphoreGive(s_ack_mutex);
+    for (size_t i = 0; i < batch.count; i++)
+    {
+        if (uart_service_send(batch.frames[i], batch.lengths[i]) != ESP_OK)
+        {
+            ESP_LOGW(TAG, "ACK retry queue full, seq=%u",
+                     (unsigned)batch.frames[i][3]);
+        }
+    }
 }
 
 /* ==================== 下行：MQTT JSON → UART ==================== */
@@ -442,9 +465,8 @@ static void publish_uplink_frame(const pkt_frame_t* frame)
     }
 }
 
-/* ACK 重传扫描定时器回调（esp_timer 任务上下文）：
-   pending_retransmit_scan 用非阻塞 mutex + uart_service_send(xQueueSend 非阻塞)，满足
-   timer 回调不阻塞的约束。从 uplink 任务剥离，避免 publish 阻塞拖累重传时序。 */
+/* ACK 重传扫描定时器回调（esp_timer 任务上下文）：锁内只做表扫描和复制，
+   UART 投队在解锁后执行，避免 UART 队列等待阻塞 ACK clear/add。 */
 static void on_retransmit_timer(void* arg)
 {
     (void)arg;

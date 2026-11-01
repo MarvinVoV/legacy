@@ -68,6 +68,35 @@ int main(void){
     n = bridge_json_to_control_cmd(j_nonmotion, strlen(j_nonmotion), out, &seq, &ack);
     CHECK(n==0, "non-motion cmd rejected");
 
+    /* 9. strict schema / conversion bounds */
+    const char* j_missing_cmd = "{\"seq\":1,\"motion\":{\"mode\":0,\"params\":{}}}";
+    CHECK(bridge_json_to_control_cmd(j_missing_cmd, strlen(j_missing_cmd), out, &seq, &ack)==0,
+          "missing cmd rejected");
+    const char* j_missing_seq = "{\"cmd\":\"motion\",\"motion\":{\"mode\":0,\"params\":{}}}";
+    CHECK(bridge_json_to_control_cmd(j_missing_seq, strlen(j_missing_seq), out, &seq, &ack)==0,
+          "missing seq rejected");
+    const char* j_seq_over = "{\"seq\":256,\"cmd\":\"motion\",\"motion\":{\"mode\":0,\"params\":{}}}";
+    CHECK(bridge_json_to_control_cmd(j_seq_over, strlen(j_seq_over), out, &seq, &ack)==0,
+          "seq overflow rejected");
+    const char* j_seq_fraction = "{\"seq\":1.5,\"cmd\":\"motion\",\"motion\":{\"mode\":0,\"params\":{}}}";
+    CHECK(bridge_json_to_control_cmd(j_seq_fraction, strlen(j_seq_fraction), out, &seq, &ack)==0,
+          "fractional seq rejected");
+    const char* j_missing_params = "{\"seq\":1,\"cmd\":\"motion\",\"motion\":{\"mode\":1}}";
+    CHECK(bridge_json_to_control_cmd(j_missing_params, strlen(j_missing_params), out, &seq, &ack)==0,
+          "missing direct params rejected");
+    const char* j_missing_field = "{\"seq\":1,\"cmd\":\"motion\",\"motion\":{\"mode\":1,\"params\":{\"left_rpm\":1,\"right_rpm\":1}}}";
+    CHECK(bridge_json_to_control_cmd(j_missing_field, strlen(j_missing_field), out, &seq, &ack)==0,
+          "missing required field rejected");
+    const char* j_i16_over = "{\"seq\":1,\"cmd\":\"motion\",\"motion\":{\"mode\":1,\"params\":{\"left_rpm\":32768,\"right_rpm\":0,\"steer_angle\":0}}}";
+    CHECK(bridge_json_to_control_cmd(j_i16_over, strlen(j_i16_over), out, &seq, &ack)==0,
+          "int16 overflow rejected");
+    const char* j_field_fraction = "{\"seq\":1,\"cmd\":\"motion\",\"motion\":{\"mode\":2,\"params\":{\"linear_vel\":1.25,\"angular_vel\":0}}}";
+    CHECK(bridge_json_to_control_cmd(j_field_fraction, strlen(j_field_fraction), out, &seq, &ack)==0,
+          "fractional control field rejected");
+    const char* j_speed_negative = "{\"seq\":1,\"cmd\":\"motion\",\"motion\":{\"mode\":4,\"params\":{\"turn_ddeg\":0,\"distance_mm\":10,\"speed_mm_s\":-1}}}";
+    CHECK(bridge_json_to_control_cmd(j_speed_negative, strlen(j_speed_negative), out, &seq, &ack)==0,
+          "negative uint16 speed rejected");
+
     /* 10. sensor IMU -> JSON */
     float imu[6] = {1.5f, -2.0f, 9.8f, 0.1f, 0.2f, 0.3f};
     uint8_t sensor[29]; memset(sensor,0,sizeof(sensor));
@@ -162,13 +191,15 @@ int main(void){
 
     const char* j_ping_noseq = "{\"cmd\":\"ping\"}";
     pseq = 0xAA;
-    CHECK(bridge_json_is_ping(j_ping_noseq, strlen(j_ping_noseq), &pseq) == true, "ping without seq");
-    CHECK(pseq == 0, "missing seq defaults to 0");
+    CHECK(bridge_json_is_ping(j_ping_noseq, strlen(j_ping_noseq), &pseq) == false,
+          "ping without seq rejected");
+    CHECK(pseq == 0xAA, "rejected ping leaves seq untouched");
 
     const char* j_ping_wrap = "{\"cmd\":\"ping\",\"seq\":300}";
-    pseq = 0;
-    CHECK(bridge_json_is_ping(j_ping_wrap, strlen(j_ping_wrap), &pseq) == true, "seq>255 still ping");
-    CHECK(pseq == 44, "seq 300 & 0xFF == 44");
+    pseq = 0xAA;
+    CHECK(bridge_json_is_ping(j_ping_wrap, strlen(j_ping_wrap), &pseq) == false,
+          "ping seq overflow rejected");
+    CHECK(pseq == 0xAA, "overflow ping leaves seq untouched");
 
     CHECK(bridge_json_is_ping("not-json", 8, &pseq) == false, "invalid json is not ping");
 
