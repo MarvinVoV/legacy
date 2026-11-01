@@ -154,6 +154,25 @@ int main(void)
         assert(out.finished && out.error == 5 && !out.pivot);
     }
 
+    /* 17. 接近终点时航向残留使所需转角超过标称上限：钳位到上限继续，
+       不能以 geometry 中止（实车直线 GOAL 曾频繁触发）。 */
+    {
+        MotionGoalConfig ackermann = CFG;
+        ackermann.maxSteerDeg = 25.0f;
+        ackermann.minTurnRadiusMm = 308.8f;
+        ackermann.allowPivot = false;
+        MotionGoalState nearEnd;
+        MotionGoalTarget t = {.turnDdeg = 0, .distanceMm = 200, .speedMmps = 200};
+        memset(&nearEnd, 0, sizeof(nearEnd));
+        assert(motion_goal_start(&nearEnd, &t, &ackermann, 0) == 0);
+        advance(&nearEnd, 190.0f, 2.0f); /* 还剩 10mm，航向偏了 2° */
+        out = motion_goal_step(&nearEnd, &ackermann, 100);
+        assert(!out.finished);
+        assert(out.error == 0);
+        assert(fabsf(out.steerAngleDeg) <= 25.0f + 1e-3f);
+        assert(fabsf(out.steerAngleDeg) > 20.0f); /* 仍按最大能力纠正 */
+    }
+
     printf("motion_goal: all tests passed\n");
     return 0;
 }

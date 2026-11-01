@@ -177,15 +177,14 @@ MotionGoalOutput motion_goal_step(MotionGoalState* s, const MotionGoalConfig* cf
     }
 
     const float kappa = (thRem * DEG2RAD) / (sRem / 1000.0f);
-    const float delta = atanf((cfg->wheelbaseMm / 1000.0f) * kappa) * RAD2DEG;
+    float delta = atanf((cfg->wheelbaseMm / 1000.0f) * kappa) * RAD2DEG;
     if (fabsf(delta) > cfg->maxSteerDeg)
     {
-        s->error     = 3;
-        s->finished  = true;
-        s->finishMs  = nowMs;
-        out.error    = 3;
-        out.finished = true;
-        return out;
+        /* 航向残差 ÷ 很小的剩余距离会让曲率趋于无穷。终点附近这是正常的
+           修正需求，不是几何不可行：标称上限（25°）远小于执行器能力，
+           钳位后按最大转向继续纠正即可；"距离到、航向不到"仍由上面的
+           Ackermann 分支判 ERROR，整体不可行的路径在 start 时已拒绝。 */
+        delta = (delta > 0.0f) ? cfg->maxSteerDeg : -cfg->maxSteerDeg;
     }
 
     motion_calc_drive(v_mmps / 1000.0f, delta,
