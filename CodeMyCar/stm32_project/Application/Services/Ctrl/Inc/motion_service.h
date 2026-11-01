@@ -180,14 +180,14 @@ int MotionService_SetDifferentialParams(MotionContext* ctx, float linear, float 
  * @param ctx 上下文指针
  * @param left_rpm 左轮目标转速 (RPM)
  * @param right_rpm 右轮目标转速 (RPM)
- * @param steer_angle 目标转向百分比 (-100..100)
+ * @param steer_percent 目标转向百分比 (-100..100)
  *
  * @retval ERR_SUCCESS 设置成功
  * @retval ERR_MOTION_INVALID_PARAM 参数无效
  * @retval ERR_MOTION_MODE_MISMATCH 模式不匹配
  */
 int MotionService_SetDirectControlParams(MotionContext* ctx, float left_rpm,
-                                         float right_rpm, float steer_angle,
+                                         float right_rpm, float steer_percent,
                                          uint8_t seq);
 
 /**
@@ -195,14 +195,14 @@ int MotionService_SetDirectControlParams(MotionContext* ctx, float left_rpm,
  *
  * @param ctx 上下文指针
  * @param linear_vel 目标线速度 (m/s)
- * @param steer_angle 目标转向百分比 (-100..100)
+ * @param steer_percent 目标转向百分比 (-100..100)
  *
  * @retval ERR_SUCCESS 设置成功
  * @retval ERR_MOTION_INVALID_PARAM 参数无效
  * @retval ERR_MOTION_MODE_MISMATCH 模式不匹配
  */
 int MotionService_SetDriveParams(MotionContext* ctx, float linear_vel,
-                                 float steer_angle, uint8_t seq);
+                                 float steer_percent, uint8_t seq);
 
 
 /**

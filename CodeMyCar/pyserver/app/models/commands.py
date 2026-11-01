@@ -3,7 +3,7 @@
 from enum import IntEnum
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class MotionMode(IntEnum):
@@ -16,13 +16,19 @@ class MotionMode(IntEnum):
 
 
 class MotionParams(BaseModel):
-    """运动参数（所有字段可选，按 mode 使用）"""
+    """运动参数（所有字段可选，按 mode 使用）
+
+    `extra="forbid"`：未知字段直接 422。已删除的旧字段（如 `steer_angle`）
+    必须显式报错，而不是被静默忽略后由 ESP32 丢弃整条命令。
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
     left_rpm: Optional[int] = Field(None, ge=-300, le=300, description="左轮 RPM")
     right_rpm: Optional[int] = Field(None, ge=-300, le=300, description="右轮 RPM")
     linear_vel: Optional[int] = Field(None, ge=-1000, le=1000, description="线速度 (0.001 m/s, ±1.0)")
     angular_vel: Optional[int] = Field(None, ge=-127, le=127, description="角速度 (0.0644 rad/s, ±8.2)")
-    steer_percent: Optional[int] = Field(None, ge=-100, le=100, description="归一化转向百分比")
-    steer_angle: Optional[int] = Field(None, ge=-600, le=600, description="兼容字段：旧转向角 (0.1°)")
+    steer_percent: Optional[int] = Field(None, ge=-100, le=100, description="归一化转向百分比 (-100..100)")
     turn_ddeg: Optional[int] = Field(None, ge=-3600, le=3600, description="航向变化 (0.1°, 右正)")
     distance_mm: Optional[int] = Field(None, ge=-5000, le=5000, description="路程 (mm)")
     speed_mm_s: Optional[int] = Field(None, ge=1, le=600, description="路径速度 (mm/s)")

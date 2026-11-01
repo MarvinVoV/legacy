@@ -198,10 +198,10 @@ int MotionService_SetDifferentialParams(MotionContext* ctx, float linear, float 
 }
 
 int MotionService_SetDirectControlParams(MotionContext* ctx, float left_rpm, float right_rpm,
-                                         float steer_angle, uint8_t seq)
+                                         float steer_percent, uint8_t seq)
 {
     // 参数验证
-    if (ctx == NULL || !isfinite(left_rpm) || !isfinite(right_rpm) || !isfinite(steer_angle))
+    if (ctx == NULL || !isfinite(left_rpm) || !isfinite(right_rpm) || !isfinite(steer_percent))
     {
         LOG_ERROR(LOG_MODULE_MOTION, "Invalid parameters");
         return ERR_MOTION_INVALID_PARAM;
@@ -226,7 +226,7 @@ int MotionService_SetDirectControlParams(MotionContext* ctx, float left_rpm, flo
     ctx->motionTarget.params.directCtrl.leftRpm = motion_clamp_rpm(left_rpm, MOTION_MAX_RPM);
     ctx->motionTarget.params.directCtrl.rightRpm = motion_clamp_rpm(right_rpm, MOTION_MAX_RPM);
     ctx->motionTarget.params.directCtrl.steerPercent =
-        CLAMP(steer_angle, STEERING_PERCENT_MIN, STEERING_PERCENT_MAX);
+        CLAMP(steer_percent, STEERING_PERCENT_MIN, STEERING_PERCENT_MAX);
     ctx->statusSeq = seq;
     ctx->urgentStatus = true;
     control_lease_renew(&ctx->commandLease, HAL_GetTick());
@@ -236,11 +236,11 @@ int MotionService_SetDirectControlParams(MotionContext* ctx, float left_rpm, flo
     return ERR_SUCCESS;
 }
 
-int MotionService_SetDriveParams(MotionContext* ctx, float linear_vel, float steer_angle,
+int MotionService_SetDriveParams(MotionContext* ctx, float linear_vel, float steer_percent,
                                  uint8_t seq)
 {
     // 参数验证
-    if (ctx == NULL || !isfinite(linear_vel) || !isfinite(steer_angle))
+    if (ctx == NULL || !isfinite(linear_vel) || !isfinite(steer_percent))
     {
         LOG_ERROR(LOG_MODULE_MOTION, "Invalid parameters");
         return ERR_MOTION_INVALID_PARAM;
@@ -268,7 +268,7 @@ int MotionService_SetDriveParams(MotionContext* ctx, float linear_vel, float ste
     ctx->motionTarget.params.driveCtrl.linearVelocity =
         CLAMP(linear_vel, -max_vel, max_vel);
     ctx->motionTarget.params.driveCtrl.steerPercent =
-        CLAMP(steer_angle, STEERING_PERCENT_MIN, STEERING_PERCENT_MAX);
+        CLAMP(steer_percent, STEERING_PERCENT_MIN, STEERING_PERCENT_MAX);
     ctx->statusSeq = seq;
     ctx->urgentStatus = true;
     control_lease_renew(&ctx->commandLease, HAL_GetTick());

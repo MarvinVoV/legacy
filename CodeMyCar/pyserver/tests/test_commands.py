@@ -60,11 +60,12 @@ def test_steer_range():
     with pytest.raises(ValidationError):
         MotionParams(steer_percent=101)
 
-    # Legacy field remains accepted during migration.
-    MotionParams(steer_angle=600)
-    MotionParams(steer_angle=-600)
+
+def test_removed_steer_angle_is_rejected():
+    # 旧字段已删除；必须显式 422，不能被静默忽略后由 ESP32 丢弃整条命令。
+    assert "steer_angle" not in MotionParams.model_fields
     with pytest.raises(ValidationError):
-        MotionParams(steer_angle=601)
+        MotionParams(steer_angle=600)
 
 
 def test_default_turn_radius_matches_stm32_nominal_limit():

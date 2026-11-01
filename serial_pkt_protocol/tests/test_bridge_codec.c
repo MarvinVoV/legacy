@@ -45,11 +45,18 @@ int main(void){
     CHECK(n==9 && memcmp(out,exp_drive,9)==0, "drive bytes");
     if (memcmp(out,exp_drive,9)!=0) hex(out,9);
 
-    const char* j_legacy_steer = "{\"seq\":3,\"cmd\":\"motion\",\"motion\":{\"mode\":1,"
+    /* steer_angle 已从契约删除：必须拒绝，不能被当成合法零值下发 */
+    const char* j_removed_steer = "{\"seq\":3,\"cmd\":\"motion\",\"motion\":{\"mode\":1,"
         "\"params\":{\"left_rpm\":0,\"right_rpm\":0,\"steer_angle\":600}}}";
-    n = bridge_json_to_control_cmd(j_legacy_steer, strlen(j_legacy_steer), out, &seq, &ack);
-    CHECK(n==9 && (int16_t)(out[7] | (out[8]<<8)) == 1000,
-          "legacy 60deg scales to 100 percent");
+    CHECK(bridge_json_to_control_cmd(j_removed_steer, strlen(j_removed_steer),
+                                     out, &seq, &ack) == 0,
+          "removed steer_angle rejected");
+
+    const char* j_percent_null = "{\"seq\":3,\"cmd\":\"motion\",\"motion\":{\"mode\":1,"
+        "\"params\":{\"left_rpm\":0,\"right_rpm\":0,\"steer_percent\":null}}}";
+    CHECK(bridge_json_to_control_cmd(j_percent_null, strlen(j_percent_null),
+                                     out, &seq, &ack) == 0,
+          "null steer_percent rejected");
 
     const char* j_percent_over = "{\"seq\":3,\"cmd\":\"motion\",\"motion\":{\"mode\":1,"
         "\"params\":{\"left_rpm\":0,\"right_rpm\":0,\"steer_percent\":101}}}";

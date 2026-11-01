@@ -70,30 +70,18 @@ static bool get_required_int(const cJSON* obj, const char* key,
     return true;
 }
 
-/** Encode steering as signed 0.1% units.  New callers use steer_percent.
- *  Legacy steer_angle (0.1 degree, ±60 degree) remains accepted during the
- *  migration and is scaled onto the normalized ±100% range. */
+/** Encode steering as signed 0.1% units (-1000..1000).
+ *  `steer_angle` was removed from the contract; it is rejected like any
+ *  other missing/invalid field so the command is never silently dropped. */
 static bool get_steer_permille(const cJSON* params, int32_t* out)
 {
-    const cJSON* percent_item = cJSON_GetObjectItemCaseSensitive(params, "steer_percent");
     int32_t percent = 0;
-    if (percent_item != NULL)
+    if (!get_required_int(params, "steer_percent", -100, 100, &percent))
     {
-        if (!get_required_int(params, "steer_percent", -100, 100, &percent))
-        {
-            return false;
-        }
-        *out = percent * 10;
-        return true;
+        return false;
     }
-
-    int32_t legacy_ddeg = 0;
-    if (get_required_int(params, "steer_angle", -600, 600, &legacy_ddeg))
-    {
-        *out = (legacy_ddeg * 1000) / 600;
-        return true;
-    }
-    return false;
+    *out = percent * 10;
+    return true;
 }
 
 /* ==================== 下行：ping/pong 链路自检 ==================== */
