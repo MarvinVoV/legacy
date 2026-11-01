@@ -47,6 +47,8 @@ typedef struct
     } position;
 
     float           openLoopDuty; ///< 当前开环占空比 (0.0~1.0)
+    float           targetRpm;    ///< 闭环目标转速 [RPM]
+    float           appliedDuty;  ///< 实际下发占空比 [-1.0, 1.0]
     MotorDriverMode mode;         ///< 当前控制模式
 
     uint32_t lastUpdate; ///< 上次更新时间戳 (ms)

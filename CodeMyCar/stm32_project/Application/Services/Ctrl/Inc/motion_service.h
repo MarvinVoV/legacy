@@ -14,6 +14,7 @@
 #include "motion_status.h"
 #include "seq_dedup.h"
 #include "control_lease.h"
+#include "encoder_fault_monitor.h"
 
 //------------------------------------------------------------------------------
 // 类型定义
@@ -134,6 +135,7 @@ typedef struct
     uint32_t        goalLastProgressTick;
     float           goalLastProgressDistanceMm;
     float           goalLastProgressHeadingDeg;
+    EncoderFaultMonitor encoderMonitor[MOTOR_MAX_NUM];
 } MotionContext;
 
 

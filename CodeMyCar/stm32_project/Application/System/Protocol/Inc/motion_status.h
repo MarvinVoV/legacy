@@ -28,6 +28,7 @@
 #define MOTION_ERR_INTERNAL 5
 #define MOTION_ERR_STALL    6
 #define MOTION_ERR_TASK_STALE 7
+#define MOTION_ERR_ENCODER  8
 
 #pragma pack(push, 1)
 typedef struct

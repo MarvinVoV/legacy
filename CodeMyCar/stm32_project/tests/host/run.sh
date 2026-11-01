@@ -49,6 +49,14 @@ echo "== runtime safety =="
   -o "${TMPDIR:-/tmp}/runtime_safety_test"
 "${TMPDIR:-/tmp}/runtime_safety_test"
 
+echo "== encoder fault monitor =="
+"$CC" -std=c11 -Wall -Wextra -O2 \
+  -I "$DIR/Application/System/Utils/Inc" \
+  "$DIR/tests/host/encoder_fault_monitor_test.c" \
+  "$DIR/Application/System/Utils/Src/encoder_fault_monitor.c" \
+  -lm -o "${TMPDIR:-/tmp}/encoder_fault_monitor_test"
+"${TMPDIR:-/tmp}/encoder_fault_monitor_test"
+
 echo "== PID simulation =="
 "$CC" -std=c11 -Wall -Wextra -O2 \
   -I "$DIR/tests/host/stubs" \

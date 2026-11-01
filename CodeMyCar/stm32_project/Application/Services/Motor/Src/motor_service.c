@@ -304,6 +304,8 @@ void MotorService_updateState(MotorInstance* instance)
         driverState.position.revolutions,
         instance->driver->spec->wheelRadiusMM
     );
+    instance->state.targetRpm   = instance->driver->control.targetRPM;
+    instance->state.appliedDuty = driverState.appliedDuty;
     instance->state.mode       = driverState.mode;
     instance->state.lastUpdate = HAL_GetTick();
 

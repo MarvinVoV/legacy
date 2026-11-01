@@ -80,6 +80,11 @@ static bool poll_command_lease(MotionContext* ctx, uint32_t nowMs);
 
 static bool goal_is_stalled(const MotionContext* ctx, uint32_t nowMs);
 
+static bool encoder_fault_detected(MotionContext* ctx,
+                                   const MotorState* left,
+                                   const MotorState* right,
+                                   uint32_t nowMs);
+
 /// 由底盘配置构造目标执行器配置
 static MotionGoalConfig goal_cfg_from(const ChassisConfig* cfg);
 
@@ -122,6 +127,8 @@ int MotionContext_Init(MotionContext* ctx, MotorService* motor, SteerInstance* s
     ctx->motionTarget.mode = MOTION_EMERGENCY_STOP;
     ctx->state.currentMode = MOTION_EMERGENCY_STOP;
     control_lease_init(&ctx->commandLease, MOTION_COMMAND_LEASE_MS);
+    encoder_fault_monitor_init(&ctx->encoderMonitor[MOTOR_LEFT_WHEEL]);
+    encoder_fault_monitor_init(&ctx->encoderMonitor[MOTOR_RIGHT_WHEEL]);
     ctx->urgentStatus = true;
 
 
@@ -795,6 +802,24 @@ static bool goal_is_stalled(const MotionContext* ctx, uint32_t nowMs)
     return (uint32_t)(nowMs - ctx->goalLastProgressTick) > MOTION_GOAL_STALL_MS;
 }
 
+static bool encoder_fault_detected(MotionContext* ctx,
+                                   const MotorState* left,
+                                   const MotorState* right,
+                                   const uint32_t nowMs)
+{
+    const bool inhibited = ctx->motionTarget.mode == MOTION_EMERGENCY_STOP ||
+                           ctx->safetyBraked || ctx->goalBlocked;
+    const bool left_fault = encoder_fault_monitor_poll(
+        &ctx->encoderMonitor[MOTOR_LEFT_WHEEL], nowMs,
+        ctx->cmdLeftRpm, left->appliedDuty, left->velocity.rpm,
+        left->position.revolutions, inhibited);
+    const bool right_fault = encoder_fault_monitor_poll(
+        &ctx->encoderMonitor[MOTOR_RIGHT_WHEEL], nowMs,
+        ctx->cmdRightRpm, right->appliedDuty, right->velocity.rpm,
+        right->position.revolutions, inhibited);
+    return left_fault || right_fault;
+}
+
 static void handle_emergency_stop(MotionContext* ctx)
 {
     ctx->cmdLeftRpm  = 0.0f;
@@ -1016,5 +1041,12 @@ static void update_runtime_state(MotionContext* ctx)
             ctx->goalLastProgressDistanceMm = ctx->goal.distanceTravelMm;
             ctx->goalLastProgressHeadingDeg = ctx->goal.headingTravelDeg;
         }
+    }
+
+    if (!ctx->faultLatched &&
+        encoder_fault_detected(ctx, &left_state, &right_state, current_time))
+    {
+        LOG_ERROR(LOG_MODULE_MOTION, "encoder no-progress fault");
+        MotionService_LatchFault(ctx, MOTION_ERR_ENCODER);
     }
 }
