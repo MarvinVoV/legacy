@@ -142,26 +142,16 @@ static void ack_resend_cb(const uint8_t* frame, size_t len, void* ctx)
     uart_service_send(frame, len);
 }
 
-/** 存入已编码帧用于 ACK 跟踪；失败（dup seq / 表满）时调用方退化为不请求 ACK 直发 */
-static bool pending_add(uint8_t seq, const uint8_t* frame, size_t frame_len)
-{
-    bool ok = false;
-    if (xSemaphoreTake(s_ack_mutex, pdMS_TO_TICKS(10)) == pdTRUE)
-    {
-        ok = ackmgr_add(&s_ackmgr, seq, frame, frame_len, now_ms());
-        xSemaphoreGive(s_ack_mutex);
-    }
-    return ok;
-}
-
 /** 收到 ACK：清除对应 seq 的在途槽位 */
-static void pending_clear(uint8_t seq)
+static bool pending_clear(uint8_t seq)
 {
+    bool found = false;
     if (xSemaphoreTake(s_ack_mutex, pdMS_TO_TICKS(10)) == pdTRUE)
     {
-        ackmgr_clear(&s_ackmgr, seq);
+        found = ackmgr_clear(&s_ackmgr, seq);
         xSemaphoreGive(s_ack_mutex);
     }
+    return found;
 }
 
 /** 周期扫描：超时重传，达上限则标记丢失 */
@@ -232,19 +222,29 @@ static void process_downlink(const char* payload, size_t payload_len)
         return;
     }
 
-    /* 组帧：优先使用客户端 seq，便于服务端把 ACK 关联回请求；
-       若该 seq 已在途，再分配本地 seq 避免碰撞。
-       mode 4 例外：goal 的 seq 必须原样保留，否则服务端无法等待结果。 */
+    /* seq 选择和 pending 入表必须在同一把锁内，否则并发下会重用 seq。 */
     const uint8_t cmd_mode = cmd_payload[2];
+    const bool priority = cmd_mode == BRIDGE_MODE_EMERGENCY_STOP;
     uint8_t frame_seq = client_seq;
-    if (ack_req && !ackmgr_is_free(&s_ackmgr, client_seq))
+    bool ack_locked = false;
+    if (ack_req)
     {
-        if (cmd_mode == BRIDGE_MODE_GOAL)
+        if (xSemaphoreTake(s_ack_mutex, pdMS_TO_TICKS(10)) != pdTRUE)
         {
-            ESP_LOGW(TAG, "Goal seq %u already in flight, dropping", (unsigned)client_seq);
+            ESP_LOGW(TAG, "ACK table busy, dropping command");
             return;
         }
-        frame_seq = ackmgr_alloc_seq(&s_ackmgr);
+        ack_locked = true;
+        if (!priority && !ackmgr_is_free(&s_ackmgr, client_seq))
+        {
+            if (cmd_mode == BRIDGE_MODE_GOAL)
+            {
+                xSemaphoreGive(s_ack_mutex);
+                ESP_LOGW(TAG, "Goal seq %u already in flight, dropping", (unsigned)client_seq);
+                return;
+            }
+            frame_seq = ackmgr_alloc_seq(&s_ackmgr);
+        }
     }
     uint8_t flags = ack_req ? PKT_FLAG_ACK_REQ : 0;
     pkt_frame_t frame = {
@@ -259,29 +259,33 @@ static void process_downlink(const char* payload, size_t payload_len)
     size_t out_len = 0;
     if (pkt_encode(&frame, out_buf, sizeof(out_buf), &out_len) != ESP_OK)
     {
+        if (ack_locked) xSemaphoreGive(s_ack_mutex);
         ESP_LOGW(TAG, "pkt_encode failed");
         return;
     }
 
-    /* ACK 表满或 seq 回绕碰撞：mode 0~3 退化为不请求 ACK 直发；
-       mode 4 必须保证 ACK 关联，直接丢弃让服务端超时并急停。 */
-    if (ack_req && !pending_add(frame_seq, out_buf, out_len))
+    if (ack_req)
     {
-        if (cmd_mode == BRIDGE_MODE_GOAL)
+        const bool added = priority
+            ? ackmgr_add_priority(&s_ackmgr, frame_seq, out_buf, out_len, now_ms())
+            : ackmgr_add(&s_ackmgr, frame_seq, out_buf, out_len, now_ms());
+        xSemaphoreGive(s_ack_mutex);
+        ack_locked = false;
+        if (!added)
         {
-            ESP_LOGW(TAG, "Goal pending ACK table full, dropping");
-            return;
-        }
-        ESP_LOGW(TAG, "Pending ACK table full/collision; sending without ACK");
-        frame.flags = 0;
-        if (pkt_encode(&frame, out_buf, sizeof(out_buf), &out_len) != ESP_OK)
-        {
-            ESP_LOGW(TAG, "pkt_encode(plain) failed");
+            ESP_LOGW(TAG, "Pending ACK table full/collision, dropping command");
             return;
         }
     }
 
-    uart_service_send(out_buf, out_len);
+    if (priority)
+    {
+        uart_service_send_priority(out_buf, out_len);
+    }
+    else
+    {
+        uart_service_send(out_buf, out_len);
+    }
 }
 
 /* MQTT 下行回调（esp_mqtt client 任务上下文）：仅投队列即返回，不阻塞 client 任务 */
@@ -341,7 +345,11 @@ static void on_uart_frame(const pkt_frame_t* frame, void* user_ctx)
         /* v2：ACK 的 seq 在帧头 SEQ 字段；payload[0] 为命令状态码（可选） */
         const uint8_t ack_seq = frame->seq;
         const uint8_t ack_status = (frame->payload_len >= 1) ? frame->payload[0] : 0;
-        pending_clear(ack_seq);
+        if (!pending_clear(ack_seq))
+        {
+            ESP_LOGD(TAG, "Ignoring unknown/late ACK seq=%u", (unsigned)ack_seq);
+            return;
+        }
         bridge_frame_msg_t echo = {
             .timestamp = now_ms(),
             .is_ack_echo = true,

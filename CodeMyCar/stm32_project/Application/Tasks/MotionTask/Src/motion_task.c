@@ -10,6 +10,7 @@
 #include "task.h"
 #include "motion_status.h"
 #include "uart_handle.h"
+#include "safety_supervisor.h"
 
 #define CONTROL_FREQ  200
 static osThreadId_t taskHandle = NULL;
@@ -52,12 +53,15 @@ void MotionTask_doTask(void* arg)
     while (1)
     {
         MotionService_Run(motionCtx);
+        SafetySupervisor_Heartbeat(TASK_HEALTH_MOTION);
         tick++;
 
         /* 状态上报：运动中 100ms，静止 1Hz。每帧都带最近 seq 与终态，
            单帧丢失可由下一帧补上。 */
-        const bool report = motionCtx->goal.active ? ((tick % 20u) == 0u)
-                                                   : ((tick % 200u) == 0u);
+        const bool urgent = MotionService_ConsumeUrgentStatus(motionCtx);
+        const bool fast = MotionService_ShouldReportFast(motionCtx);
+        const bool report = urgent || (fast ? ((tick % 20u) == 0u)
+                                            : ((tick % 200u) == 0u));
         if (report)
         {
             motion_status_t status;

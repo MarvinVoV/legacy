@@ -67,7 +67,12 @@ class MQTTClient:
             data = payload
         else:
             data = payload
-        self._client.publish(topic, data, qos=qos)
+        info = self._client.publish(topic, data, qos=qos)
+        if info.rc != mqtt.MQTT_ERR_SUCCESS:
+            raise RuntimeError(f"MQTT publish rejected: {mqtt.error_string(info.rc)}")
+        await asyncio.to_thread(info.wait_for_publish, 5.0)
+        if not info.is_published():
+            raise TimeoutError("MQTT publish was not confirmed within 5s")
 
     @property
     def is_connected(self) -> bool:
@@ -76,6 +81,11 @@ class MQTTClient:
     # --- paho 回调（在 paho 线程中执行，通过 loop.call_soon_threadsafe 调度到 asyncio） ---
 
     def _on_connect(self, client: mqtt.Client, userdata: Any, flags: Any, rc: Any, properties: Any = None) -> None:
+        reason_failure = getattr(rc, "is_failure", None)
+        failed = bool(reason_failure) if reason_failure is not None else rc != 0
+        if failed:
+            logger.error("MQTT connection rejected (rc=%s)", rc)
+            return
         if self._loop:
             self._loop.call_soon_threadsafe(self._connected.set)
         # 订阅所有注册的 topic

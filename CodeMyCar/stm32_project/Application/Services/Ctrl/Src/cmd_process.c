@@ -114,35 +114,18 @@ static int process_motion_command(CmdProcessorContext* ctx, const MotionCmd* mot
     MotionContext* motionCtx = ctx->motionContext;
     int            ret       = ERR_SUCCESS;
 
-    /* 任何低层运动命令都抢占正在进行的目标（调试优先） */
-    if (motion->mode != MOTION_GOAL && motionCtx->goal.active)
-    {
-        MotionService_AbortGoal(motionCtx, MOTION_STATE_ABORTED);
-    }
-
-    // 模式切换前检查
-    if (motion->mode != MOTION_EMERGENCY_STOP)
-    {
-        ret = MotionService_SetControlMode(motionCtx, (MotionMode)motion->mode);
-        if (ret != ERR_SUCCESS)
-        {
-            LOG_ERROR(LOG_MODULE_CMD, "Mode switch failed: 0x%02X, error: 0x%04X", motion->mode, ret);
-            return ERR_MOTION_MODE_TRANSITION;
-        }
-    }
-
-    // 模式分派处理
+    /* 每个 service API 先验证、再原子提交模式+参数，禁止部分切换。 */
     switch (motion->mode)
     {
         case MOTION_EMERGENCY_STOP:
-            ret = MotionService_EmergencyStop(motionCtx);
+            ret = MotionService_EmergencyStop(motionCtx, seq);
             break;
 
         case MOTION_DIFFERENTIAL:
             {
                 const float linear  = decode_linear_vel(motion->params.diffCtrl.linearVel);
                 const float angular = decode_angular_vel(motion->params.diffCtrl.angularVel);
-                ret                 = MotionService_SetDifferentialParams(motionCtx, linear, angular);
+                ret = MotionService_SetDifferentialParams(motionCtx, linear, angular, seq);
             }
             break;
 
@@ -150,7 +133,7 @@ static int process_motion_command(CmdProcessorContext* ctx, const MotionCmd* mot
             {
                 const float linear = decode_linear_vel(motion->params.driveCtrl.linearVel);
                 const float steer  = decode_steer_angle(motion->params.driveCtrl.steerAngle);
-                ret                = MotionService_SetDriveParams(motionCtx, linear, steer);
+                ret = MotionService_SetDriveParams(motionCtx, linear, steer, seq);
             }
             break;
 
@@ -159,8 +142,13 @@ static int process_motion_command(CmdProcessorContext* ctx, const MotionCmd* mot
                 const float leftRpm  = (float)motion->params.directCtrl.leftRpm;
                 const float rightRpm = (float)motion->params.directCtrl.rightRpm;
                 const float steer    = decode_steer_angle(motion->params.directCtrl.steerAngle);
-                ret                  = MotionService_SetDirectControlParams(motionCtx, leftRpm, rightRpm, steer);
+                ret = MotionService_SetDirectControlParams(motionCtx, leftRpm, rightRpm,
+                                                           steer, seq);
             }
+            break;
+
+        case MOTION_CLEAR_FAULT:
+            ret = MotionService_ClearFault(motionCtx, seq);
             break;
 
         case MOTION_GOAL:

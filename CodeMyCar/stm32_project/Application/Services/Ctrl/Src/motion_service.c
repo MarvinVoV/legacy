@@ -26,6 +26,16 @@
    比较会让服务永久锁在ESTOP。 */
 #define MOTION_STOP_RPM_EPSILON (1.0f)
 
+/// mode 1-3 必须由上游持续刷新；超时后 STM32 本地硬停
+#define MOTION_COMMAND_LEASE_MS (500u)
+
+/// GOAL 有有效输出但无里程/航向进展时判定堵转
+#define MOTION_GOAL_STALL_MS (1500u)
+#define MOTION_GOAL_STALL_ARM_MS (750u)
+#define MOTION_GOAL_PROGRESS_MM (1.0f)
+#define MOTION_GOAL_PROGRESS_DEG (0.25f)
+#define MOTION_GOAL_ACTIVE_RPM (10.0f)
+
 /// 最小有效时间间隔 (ms)
 #define MIN_DELTA_TIME_MS (1)
 
@@ -59,6 +69,16 @@ static void handle_goal(MotionContext* ctx);
 
 /// 左右轮是否已低于安全停稳阈值
 static bool drive_is_stopped(const MotionContext* ctx);
+
+static bool can_accept_motion_locked(const MotionContext* ctx);
+
+static void abort_goal_locked(MotionContext* ctx, uint8_t newState);
+
+static void stop_actuators(MotionContext* ctx);
+
+static bool poll_command_lease(MotionContext* ctx, uint32_t nowMs);
+
+static bool goal_is_stalled(const MotionContext* ctx, uint32_t nowMs);
 
 /// 由底盘配置构造目标执行器配置
 static MotionGoalConfig goal_cfg_from(const ChassisConfig* cfg);
@@ -101,6 +121,8 @@ int MotionContext_Init(MotionContext* ctx, MotorService* motor, SteerInstance* s
     // 初始化为紧急停止模式
     ctx->motionTarget.mode = MOTION_EMERGENCY_STOP;
     ctx->state.currentMode = MOTION_EMERGENCY_STOP;
+    control_lease_init(&ctx->commandLease, MOTION_COMMAND_LEASE_MS);
+    ctx->urgentStatus = true;
 
 
     // 创建任务 TODO
@@ -109,60 +131,23 @@ int MotionContext_Init(MotionContext* ctx, MotorService* motor, SteerInstance* s
     return ERR_SUCCESS;
 }
 
-int MotionService_SetControlMode(MotionContext* ctx, MotionMode new_mode)
-{
-    // 参数验证
-    if (ctx == NULL || new_mode >= MOTION_MODE_MAX)
-    {
-        LOG_ERROR(LOG_MODULE_MOTION, "Invalid parameters");
-        return ERR_MOTION_MODE_MISMATCH;
-    }
-
-
-    // 获取互斥锁
-    if (osMutexAcquire(ctx->targetMutex, MUTEX_TIMEOUT_MS) != osOK)
-    {
-        LOG_WARN(LOG_MODULE_MOTION, "Mutex timeout");
-        return ERR_MOTION_MUTEX_TIMEOUT;
-    }
-
-    const MotionMode current_mode = ctx->motionTarget.mode;
-
-    // 特殊条件检查（如急停未解除）
-    if (current_mode == MOTION_EMERGENCY_STOP && new_mode != MOTION_EMERGENCY_STOP)
-    {
-        if (!drive_is_stopped(ctx))
-        {
-            osMutexRelease(ctx->targetMutex);
-            return ERR_MOTION_EMERGENCY_ACTIVE;
-        }
-    }
-
-    // 执行模式切换
-    if (ctx->motionTarget.mode != new_mode)
-    {
-        // 重置参数
-        memset(&ctx->motionTarget.params, 0, sizeof(ctx->motionTarget.params));
-        // 执行模式切换
-        ctx->motionTarget.mode = new_mode;
-    }
-
-    osMutexRelease(ctx->targetMutex);
-
-    return ERR_SUCCESS;
-}
-
-
 MotionMode MotionService_GetCurrentMode(const MotionContext* ctx)
 {
     if (ctx == NULL)
     {
         return MOTION_EMERGENCY_STOP;
     }
-    return ctx->state.currentMode;
+    MotionMode mode = MOTION_EMERGENCY_STOP;
+    if (osMutexAcquire(((MotionContext*)ctx)->targetMutex, MUTEX_TIMEOUT_MS) == osOK)
+    {
+        mode = ctx->motionTarget.mode;
+        osMutexRelease(((MotionContext*)ctx)->targetMutex);
+    }
+    return mode;
 }
 
-int MotionService_SetDifferentialParams(MotionContext* ctx, float linear, float angular)
+int MotionService_SetDifferentialParams(MotionContext* ctx, float linear, float angular,
+                                        uint8_t seq)
 {
     // 参数验证
     if (ctx == NULL || !isfinite(linear) || !isfinite(angular))
@@ -178,11 +163,10 @@ int MotionService_SetDifferentialParams(MotionContext* ctx, float linear, float 
         return ERR_MOTION_MUTEX_TIMEOUT;
     }
 
-    // 检查模式兼容性
-    if (ctx->motionTarget.mode != MOTION_DIFFERENTIAL)
+    if (!can_accept_motion_locked(ctx))
     {
         osMutexRelease(ctx->targetMutex);
-        return ERR_MOTION_MODE_MISMATCH;
+        return ctx->faultLatched ? ERR_MOTION_FAULT_LATCHED : ERR_MOTION_EMERGENCY_ACTIVE;
     }
 
     // 参数范围校验
@@ -192,18 +176,24 @@ int MotionService_SetDifferentialParams(MotionContext* ctx, float linear, float 
     const float clamped_linear  = CLAMP(linear, -max_linear, max_linear);
     const float clamped_angular = CLAMP(angular, -max_angular, max_angular);
 
-    // 设置参数
+    abort_goal_locked(ctx, MOTION_STATE_ABORTED);
+    memset(&ctx->motionTarget.params, 0, sizeof(ctx->motionTarget.params));
+    ctx->motionTarget.mode = MOTION_DIFFERENTIAL;
     ctx->motionTarget.params.diffCtrl.linearVelocity  = clamped_linear;
     ctx->motionTarget.params.diffCtrl.angularVelocity = clamped_angular;
+    ctx->statusSeq = seq;
+    ctx->urgentStatus = true;
+    control_lease_renew(&ctx->commandLease, HAL_GetTick());
 
     osMutexRelease(ctx->targetMutex);
     return ERR_SUCCESS;
 }
 
-int MotionService_SetDirectControlParams(MotionContext* ctx, float left_rpm, float right_rpm, float steer_angle)
+int MotionService_SetDirectControlParams(MotionContext* ctx, float left_rpm, float right_rpm,
+                                         float steer_angle, uint8_t seq)
 {
     // 参数验证
-    if (ctx == NULL || !isfinite(left_rpm) || !isfinite(right_rpm))
+    if (ctx == NULL || !isfinite(left_rpm) || !isfinite(right_rpm) || !isfinite(steer_angle))
     {
         LOG_ERROR(LOG_MODULE_MOTION, "Invalid parameters");
         return ERR_MOTION_INVALID_PARAM;
@@ -216,24 +206,31 @@ int MotionService_SetDirectControlParams(MotionContext* ctx, float left_rpm, flo
         return ERR_MOTION_MUTEX_TIMEOUT;
     }
 
-    // 检查模式兼容性
-    if (ctx->motionTarget.mode != MOTION_DIRECT_CONTROL)
+    if (!can_accept_motion_locked(ctx))
     {
         osMutexRelease(ctx->targetMutex);
-        return ERR_MOTION_MODE_MISMATCH;
+        return ctx->faultLatched ? ERR_MOTION_FAULT_LATCHED : ERR_MOTION_EMERGENCY_ACTIVE;
     }
 
-    // 设置参数
-    ctx->motionTarget.params.directCtrl.leftRpm    = left_rpm;
-    ctx->motionTarget.params.directCtrl.rightRpm   = right_rpm;
-    ctx->motionTarget.params.directCtrl.steerAngle = steer_angle;
+    abort_goal_locked(ctx, MOTION_STATE_ABORTED);
+    memset(&ctx->motionTarget.params, 0, sizeof(ctx->motionTarget.params));
+    ctx->motionTarget.mode = MOTION_DIRECT_CONTROL;
+    ctx->motionTarget.params.directCtrl.leftRpm = motion_clamp_rpm(left_rpm, MOTION_MAX_RPM);
+    ctx->motionTarget.params.directCtrl.rightRpm = motion_clamp_rpm(right_rpm, MOTION_MAX_RPM);
+    ctx->motionTarget.params.directCtrl.steerAngle =
+        CLAMP(steer_angle, -ctx->chassisConfig.maxSteerAngleDeg,
+              ctx->chassisConfig.maxSteerAngleDeg);
+    ctx->statusSeq = seq;
+    ctx->urgentStatus = true;
+    control_lease_renew(&ctx->commandLease, HAL_GetTick());
 
     osMutexRelease(ctx->targetMutex);
 
     return ERR_SUCCESS;
 }
 
-int MotionService_SetDriveParams(MotionContext* ctx, float linear_vel, float steer_angle)
+int MotionService_SetDriveParams(MotionContext* ctx, float linear_vel, float steer_angle,
+                                 uint8_t seq)
 {
     // 参数验证
     if (ctx == NULL || !isfinite(linear_vel) || !isfinite(steer_angle))
@@ -249,21 +246,26 @@ int MotionService_SetDriveParams(MotionContext* ctx, float linear_vel, float ste
         return ERR_MOTION_MUTEX_TIMEOUT;
     }
 
-    // 检查模式兼容性
-    if (ctx->motionTarget.mode != MOTION_DRIVE)
+    if (!can_accept_motion_locked(ctx))
     {
         osMutexRelease(ctx->targetMutex);
-        return ERR_MOTION_MODE_MISMATCH;
+        return ctx->faultLatched ? ERR_MOTION_FAULT_LATCHED : ERR_MOTION_EMERGENCY_ACTIVE;
     }
 
     // 参数范围校验
     const float max_vel   = ctx->chassisConfig.maxLinearVelocityMPS;
     const float max_angle = ctx->chassisConfig.maxSteerAngleDeg;
 
+    abort_goal_locked(ctx, MOTION_STATE_ABORTED);
+    memset(&ctx->motionTarget.params, 0, sizeof(ctx->motionTarget.params));
+    ctx->motionTarget.mode = MOTION_DRIVE;
     ctx->motionTarget.params.driveCtrl.linearVelocity =
         CLAMP(linear_vel, -max_vel, max_vel);
     ctx->motionTarget.params.driveCtrl.steerAngle =
         CLAMP(steer_angle, -max_angle, max_angle);
+    ctx->statusSeq = seq;
+    ctx->urgentStatus = true;
+    control_lease_renew(&ctx->commandLease, HAL_GetTick());
 
     osMutexRelease(ctx->targetMutex);
     return ERR_SUCCESS;
@@ -285,7 +287,7 @@ void MotionService_GetState(const MotionContext* ctx, MotionState* out_state)
 }
 
 
-int MotionService_EmergencyStop(MotionContext* ctx)
+int MotionService_EmergencyStop(MotionContext* ctx, uint8_t seq)
 {
     // 参数验证
     if (ctx == NULL)
@@ -302,16 +304,71 @@ int MotionService_EmergencyStop(MotionContext* ctx)
         return ERR_MOTION_MUTEX_TIMEOUT;
     }
 
-    // 设置紧急停止模式
+    abort_goal_locked(ctx, MOTION_STATE_ABORTED);
     ctx->motionTarget.mode = MOTION_EMERGENCY_STOP;
     memset(&ctx->motionTarget.params, 0, sizeof(ctx->motionTarget.params));
-
-    // 执行急停
-    MotorService_emergencyStop(ctx->motorService, MOTOR_LEFT_WHEEL);
-    MotorService_emergencyStop(ctx->motorService, MOTOR_RIGHT_WHEEL);
+    ctx->cmdLeftRpm = 0.0f;
+    ctx->cmdRightRpm = 0.0f;
+    ctx->statusSeq = seq;
+    ctx->urgentStatus = true;
+    control_lease_cancel(&ctx->commandLease);
 
     osMutexRelease(ctx->targetMutex);
+    stop_actuators(ctx);
     return ERR_SUCCESS;
+}
+
+int MotionService_ClearFault(MotionContext* ctx, uint8_t seq)
+{
+    if (ctx == NULL)
+    {
+        return ERR_MOTION_INVALID_PARAM;
+    }
+    if (osMutexAcquire(ctx->targetMutex, MUTEX_TIMEOUT_MS) != osOK)
+    {
+        return ERR_MOTION_MUTEX_TIMEOUT;
+    }
+    if (!drive_is_stopped(ctx))
+    {
+        osMutexRelease(ctx->targetMutex);
+        return ERR_MOTION_CLEAR_FAILED;
+    }
+    ctx->faultLatched = false;
+    ctx->faultCode = MOTION_ERR_NONE;
+    ctx->motionTarget.mode = MOTION_EMERGENCY_STOP;
+    memset(&ctx->motionTarget.params, 0, sizeof(ctx->motionTarget.params));
+    control_lease_cancel(&ctx->commandLease);
+    ctx->commandLease.expired = false;
+    ctx->statusSeq = seq;
+    ctx->urgentStatus = true;
+    osMutexRelease(ctx->targetMutex);
+    stop_actuators(ctx);
+    return ERR_SUCCESS;
+}
+
+void MotionService_LatchFault(MotionContext* ctx, uint8_t faultCode)
+{
+    if (ctx == NULL)
+    {
+        return;
+    }
+    if (osMutexAcquire(ctx->targetMutex, MUTEX_TIMEOUT_MS) != osOK)
+    {
+        stop_actuators(ctx);
+        return;
+    }
+    abort_goal_locked(ctx, MOTION_STATE_ERROR);
+    ctx->goal.error = faultCode;
+    ctx->faultCode = faultCode;
+    ctx->faultLatched = true;
+    ctx->motionTarget.mode = MOTION_EMERGENCY_STOP;
+    memset(&ctx->motionTarget.params, 0, sizeof(ctx->motionTarget.params));
+    ctx->cmdLeftRpm = 0.0f;
+    ctx->cmdRightRpm = 0.0f;
+    ctx->urgentStatus = true;
+    control_lease_cancel(&ctx->commandLease);
+    osMutexRelease(ctx->targetMutex);
+    stop_actuators(ctx);
 }
 
 
@@ -327,6 +384,11 @@ int MotionService_StartGoal(MotionContext* ctx, int16_t turnDdeg, int16_t distan
         return ERR_MOTION_MUTEX_TIMEOUT;
     }
 
+    if (ctx->faultLatched)
+    {
+        osMutexRelease(ctx->targetMutex);
+        return ERR_MOTION_FAULT_LATCHED;
+    }
     if (ctx->goal.active)
     {
         osMutexRelease(ctx->targetMutex);
@@ -346,7 +408,9 @@ int MotionService_StartGoal(MotionContext* ctx, int16_t turnDdeg, int16_t distan
     };
     const MotionGoalConfig cfg = goal_cfg_from(&ctx->chassisConfig);
 
-    const int rc = motion_goal_start(&ctx->goal, &target, &cfg, HAL_GetTick());
+    MotionGoalState candidate;
+    const uint32_t now = HAL_GetTick();
+    const int rc = motion_goal_start(&candidate, &target, &cfg, now);
     if (rc == 3)
     {
         osMutexRelease(ctx->targetMutex);
@@ -358,9 +422,16 @@ int MotionService_StartGoal(MotionContext* ctx, int16_t turnDdeg, int16_t distan
         return ERR_MOTION_INVALID_PARAM;
     }
 
-    ctx->goal.seq = seq;
+    candidate.seq = seq;
+    ctx->goal = candidate;
     ctx->motionTarget.mode = MOTION_GOAL;
     memset(&ctx->motionTarget.params, 0, sizeof(ctx->motionTarget.params));
+    control_lease_cancel(&ctx->commandLease);
+    ctx->statusSeq = seq;
+    ctx->urgentStatus = true;
+    ctx->goalLastProgressTick = now;
+    ctx->goalLastProgressDistanceMm = 0.0f;
+    ctx->goalLastProgressHeadingDeg = 0.0f;
 
     osMutexRelease(ctx->targetMutex);
     return ERR_SUCCESS;
@@ -377,20 +448,13 @@ void MotionService_AbortGoal(MotionContext* ctx, uint8_t newState)
         return;
     }
 
-    if (ctx->goal.active)
-    {
-        ctx->goal.active   = false;
-        ctx->goal.finished = true;
-        ctx->goal.finishMs = HAL_GetTick();
-        ctx->goal.aborted  = (newState == MOTION_STATE_ABORTED);
-        ctx->goal.error    = (newState == MOTION_STATE_ERROR) ? MOTION_ERR_INTERNAL : 0;
-
-        MotorService_setTargetRPM(ctx->motorService, MOTOR_LEFT_WHEEL, 0.0f);
-        MotorService_setTargetRPM(ctx->motorService, MOTOR_RIGHT_WHEEL, 0.0f);
-        SteerService_setAngleImmediate(ctx->steerServo, ctx->chassisConfig.steerCenterAngleDeg);
-    }
+    abort_goal_locked(ctx, newState);
+    ctx->cmdLeftRpm = 0.0f;
+    ctx->cmdRightRpm = 0.0f;
+    ctx->urgentStatus = true;
 
     osMutexRelease(ctx->targetMutex);
+    stop_actuators(ctx);
 }
 
 void MotionService_GetStatus(const MotionContext* ctx, motion_status_t* out)
@@ -408,9 +472,24 @@ void MotionService_GetStatus(const MotionContext* ctx, motion_status_t* out)
 
     const MotionGoalState* g = &ctx->goal;
 
-    out->seq   = g->seq;
-    out->error = g->error;
-    if (!g->finished)
+    const MotionMode mode = ctx->motionTarget.mode;
+    out->seq = ctx->statusSeq;
+    out->error = ctx->faultLatched ? ctx->faultCode : g->error;
+    out->flags = (uint8_t)(((uint8_t)mode << MOTION_STATUS_FLAG_MODE_SHIFT) &
+                           MOTION_STATUS_FLAG_MODE_MASK);
+    if (ctx->faultLatched)
+    {
+        out->flags |= MOTION_STATUS_FLAG_FAULT;
+        out->state = MOTION_STATE_ERROR;
+    }
+    else if (mode != MOTION_GOAL)
+    {
+        out->state = (mode != MOTION_EMERGENCY_STOP &&
+                      (fabsf(ctx->cmdLeftRpm) > MOTION_STOP_RPM_EPSILON ||
+                       fabsf(ctx->cmdRightRpm) > MOTION_STOP_RPM_EPSILON ||
+                       !drive_is_stopped(ctx))) ? MOTION_STATE_RUNNING : MOTION_STATE_IDLE;
+    }
+    else if (!g->finished)
     {
         out->state = g->active ? MOTION_STATE_RUNNING : MOTION_STATE_IDLE;
     }
@@ -447,7 +526,31 @@ void MotionService_GetStatus(const MotionContext* ctx, motion_status_t* out)
     out->leftMmps  = (int16_t)(ctx->state.drive.leftRpm * rpm_to_mmps);
     out->rightMmps = (int16_t)(ctx->state.drive.rightRpm * rpm_to_mmps);
 
+    if (ctx->commandLease.expired)
+    {
+        out->flags |= MOTION_STATUS_FLAG_LEASE_EXPIRED;
+    }
+
     osMutexRelease(((MotionContext*)ctx)->targetMutex);
+}
+
+bool MotionService_ConsumeUrgentStatus(MotionContext* ctx)
+{
+    if (ctx == NULL || osMutexAcquire(ctx->targetMutex, MUTEX_TIMEOUT_MS) != osOK)
+    {
+        return false;
+    }
+    const bool urgent = ctx->urgentStatus;
+    ctx->urgentStatus = false;
+    osMutexRelease(ctx->targetMutex);
+    return urgent;
+}
+
+bool MotionService_ShouldReportFast(const MotionContext* ctx)
+{
+    const MotionMode mode = MotionService_GetCurrentMode(ctx);
+    return mode == MOTION_DIRECT_CONTROL || mode == MOTION_DIFFERENTIAL ||
+           mode == MOTION_DRIVE || mode == MOTION_GOAL;
 }
 
 void MotionService_Run(MotionContext* ctx)
@@ -460,8 +563,10 @@ void MotionService_Run(MotionContext* ctx)
 
     // 互斥锁获取目标参数
     MotionTarget current_target;
+    bool leaseExpired = false;
     if (osMutexAcquire(ctx->targetMutex, MUTEX_TIMEOUT_MS) == osOK)
     {
+        leaseExpired = poll_command_lease(ctx, HAL_GetTick());
         // 拷贝整个结构体（确保内存布局一致）
         memcpy(&current_target, &ctx->motionTarget, sizeof(MotionTarget));
         osMutexRelease(ctx->targetMutex);
@@ -469,6 +574,11 @@ void MotionService_Run(MotionContext* ctx)
     else
     {
         return;
+    }
+
+    if (leaseExpired)
+    {
+        stop_actuators(ctx);
     }
 
     // 根据模式执行控制
@@ -598,6 +708,12 @@ void MotionService_Run(MotionContext* ctx)
 
     // 更新运行时状态
     update_runtime_state(ctx);
+
+    if (goal_is_stalled(ctx, HAL_GetTick()))
+    {
+        LOG_ERROR(LOG_MODULE_MOTION, "goal stalled");
+        MotionService_LatchFault(ctx, MOTION_ERR_STALL);
+    }
 }
 
 
@@ -614,6 +730,69 @@ static bool drive_is_stopped(const MotionContext* ctx)
 {
     return fabsf(ctx->state.drive.leftRpm) <= MOTION_STOP_RPM_EPSILON &&
            fabsf(ctx->state.drive.rightRpm) <= MOTION_STOP_RPM_EPSILON;
+}
+
+static bool can_accept_motion_locked(const MotionContext* ctx)
+{
+    if (ctx->faultLatched)
+    {
+        return false;
+    }
+    return ctx->motionTarget.mode != MOTION_EMERGENCY_STOP || drive_is_stopped(ctx);
+}
+
+static void abort_goal_locked(MotionContext* ctx, uint8_t newState)
+{
+    if (!ctx->goal.active)
+    {
+        return;
+    }
+    ctx->goal.active = false;
+    ctx->goal.finished = true;
+    ctx->goal.finishMs = HAL_GetTick();
+    ctx->goal.aborted = (newState == MOTION_STATE_ABORTED);
+    ctx->goal.error = (newState == MOTION_STATE_ERROR) ? MOTION_ERR_INTERNAL : MOTION_ERR_NONE;
+    ctx->goalBlocked = false;
+}
+
+static void stop_actuators(MotionContext* ctx)
+{
+    MotorService_emergencyStop(ctx->motorService, MOTOR_LEFT_WHEEL);
+    MotorService_emergencyStop(ctx->motorService, MOTOR_RIGHT_WHEEL);
+    SteerService_setAngleImmediate(ctx->steerServo, ctx->chassisConfig.steerCenterAngleDeg);
+}
+
+/* Called with targetMutex held. */
+static bool poll_command_lease(MotionContext* ctx, uint32_t nowMs)
+{
+    if (!control_lease_poll(&ctx->commandLease, nowMs))
+    {
+        return false;
+    }
+    ctx->motionTarget.mode = MOTION_EMERGENCY_STOP;
+    memset(&ctx->motionTarget.params, 0, sizeof(ctx->motionTarget.params));
+    ctx->cmdLeftRpm = 0.0f;
+    ctx->cmdRightRpm = 0.0f;
+    ctx->urgentStatus = true;
+    LOG_WARN(LOG_MODULE_MOTION, "command lease expired");
+    return true;
+}
+
+static bool goal_is_stalled(const MotionContext* ctx, uint32_t nowMs)
+{
+    if (!ctx->goal.active || ctx->safetyBraked || ctx->goalBlocked)
+    {
+        return false;
+    }
+    if ((uint32_t)(nowMs - ctx->goal.startMs) < MOTION_GOAL_STALL_ARM_MS)
+    {
+        return false;
+    }
+    if (fmaxf(fabsf(ctx->cmdLeftRpm), fabsf(ctx->cmdRightRpm)) < MOTION_GOAL_ACTIVE_RPM)
+    {
+        return false;
+    }
+    return (uint32_t)(nowMs - ctx->goalLastProgressTick) > MOTION_GOAL_STALL_MS;
 }
 
 static void handle_emergency_stop(MotionContext* ctx)
@@ -827,5 +1006,14 @@ static void update_runtime_state(MotionContext* ctx)
                                delta_left_dist * 1000.0f,
                                delta_right_dist * 1000.0f,
                                &goal_cfg);
+        if (fabsf(ctx->goal.distanceTravelMm - ctx->goalLastProgressDistanceMm) >=
+                MOTION_GOAL_PROGRESS_MM ||
+            fabsf(ctx->goal.headingTravelDeg - ctx->goalLastProgressHeadingDeg) >=
+                MOTION_GOAL_PROGRESS_DEG)
+        {
+            ctx->goalLastProgressTick = current_time;
+            ctx->goalLastProgressDistanceMm = ctx->goal.distanceTravelMm;
+            ctx->goalLastProgressHeadingDeg = ctx->goal.headingTravelDeg;
+        }
     }
 }

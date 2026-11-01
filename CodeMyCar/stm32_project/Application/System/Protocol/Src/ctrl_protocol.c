@@ -62,6 +62,7 @@ int validateControlCmd(const uint8_t* cmd, uint16_t len)
     switch (c->motion.mode)
     {
         case MOTION_EMERGENCY_STOP:
+        case MOTION_CLEAR_FAULT:
             break;
 
         case MOTION_DIRECT_CONTROL:

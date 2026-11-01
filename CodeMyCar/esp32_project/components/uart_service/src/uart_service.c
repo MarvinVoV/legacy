@@ -297,6 +297,22 @@ esp_err_t uart_service_send(const uint8_t* data, size_t len)
     return ESP_OK;
 }
 
+esp_err_t uart_service_send_priority(const uint8_t* data, size_t len)
+{
+    if (data == NULL || len == 0 || len > PKT_MAX_FRAME_SIZE)
+    {
+        return ESP_ERR_INVALID_ARG;
+    }
+    uart_tx_msg_t msg = { .len = (uint8_t)len };
+    memcpy(msg.data, data, len);
+    if (xQueueSendToFront(s_tx_queue, &msg, pdMS_TO_TICKS(100)) != pdPASS)
+    {
+        ESP_LOGW(TAG, "TX queue full, priority frame dropped");
+        return CMCAR_ERR_QUEUE_FULL;
+    }
+    return ESP_OK;
+}
+
 esp_err_t uart_service_stop(void)
 {
     uart_driver_delete(UART_PORT);

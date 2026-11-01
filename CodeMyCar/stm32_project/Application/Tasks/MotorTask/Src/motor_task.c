@@ -13,6 +13,7 @@
 #include "motor_service.h"
 #include "freertos_os2.h"
 #include "task.h"
+#include "safety_supervisor.h"
 
 #define CONTROL_FREQ_FIXED   (200)   // 固定控制频率 (Hz) = 5ms
 
@@ -65,6 +66,9 @@ void MotorTask_doTask(void* arg)
         /* updateState 内部已用实例互斥锁保护；不要在临界区里调用可能阻塞的
            osMutexAcquire，否则会关中断自旋等待。 */
         MotorService_updateState(motorInstance);
+        SafetySupervisor_Heartbeat(motorInstance->driver->id == 0u
+                                       ? TASK_HEALTH_MOTOR_LEFT
+                                       : TASK_HEALTH_MOTOR_RIGHT);
 
         // 精确周期延迟（带自动补偿）
         vTaskDelayUntil(&xLastWakeTime, xFixedInterval);

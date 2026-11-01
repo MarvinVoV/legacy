@@ -13,6 +13,7 @@
 #include "motion_goal.h"
 #include "motion_status.h"
 #include "seq_dedup.h"
+#include "control_lease.h"
 
 //------------------------------------------------------------------------------
 // 类型定义
@@ -125,6 +126,14 @@ typedef struct
     bool            goalBlocked;  ///< GOAL 是否因障碍持续被挡
     uint32_t        goalBlockedMs;///< 开始被挡的时刻
     bool            safetyBraked; ///< 是否处于避障硬停止（短接制动）
+    ControlLease    commandLease; ///< mode 1-3 本地命令租约
+    uint8_t         statusSeq;    ///< 最近一次成功接受的命令 seq
+    uint8_t         faultCode;    ///< MOTION_ERR_* 锁存故障码
+    bool            faultLatched; ///< 发生安全故障后只允许 STOP/CLEAR_FAULT
+    bool            urgentStatus; ///< 请求 MotionTask 立即发送状态
+    uint32_t        goalLastProgressTick;
+    float           goalLastProgressDistanceMm;
+    float           goalLastProgressHeadingDeg;
 } MotionContext;
 
 
@@ -144,23 +153,7 @@ typedef struct
  */
 int MotionContext_Init(MotionContext* ctx, MotorService* motor, SteerInstance* steer, const ChassisConfig* config);
 
-/**
- * @brief 设置运动控制模式
- *
- * @param ctx 上下文指针
- * @param new_mode 目标控制模式
- *
- * @retval ERR_SUCCESS 设置成功
- * @retval ERR_MOTION_INVALID_MODE 无效模式
- */
-int MotionService_SetControlMode(MotionContext* ctx, MotionMode new_mode);
-
-/**
- * @brief 获取当前运动控制模式
- *
- * @param ctx 运动控制上下文指针
- * @return MotionMode 当前控制模式
- */
+/** 获取当前已提交的运动控制模式。 */
 MotionMode MotionService_GetCurrentMode(const MotionContext* ctx);
 
 
@@ -176,7 +169,8 @@ MotionMode MotionService_GetCurrentMode(const MotionContext* ctx);
  * @retval ERR_MOTION_MODE_MISMATCH 当前非差速模式
  * @retval ERR_MOTION_MUTEX_TIMEOUT 互斥锁超时
  */
-int MotionService_SetDifferentialParams(MotionContext* ctx, float linear, float angular);
+int MotionService_SetDifferentialParams(MotionContext* ctx, float linear, float angular,
+                                        uint8_t seq);
 
 /**
  * @brief 设置直接控制参数
@@ -190,7 +184,9 @@ int MotionService_SetDifferentialParams(MotionContext* ctx, float linear, float 
  * @retval ERR_MOTION_INVALID_PARAM 参数无效
  * @retval ERR_MOTION_MODE_MISMATCH 模式不匹配
  */
-int MotionService_SetDirectControlParams(MotionContext* ctx, float left_rpm, float right_rpm, float steer_angle);
+int MotionService_SetDirectControlParams(MotionContext* ctx, float left_rpm,
+                                         float right_rpm, float steer_angle,
+                                         uint8_t seq);
 
 /**
  * @brief 设置 DRIVE 参数（速度 + 平行转向）
@@ -203,7 +199,8 @@ int MotionService_SetDirectControlParams(MotionContext* ctx, float left_rpm, flo
  * @retval ERR_MOTION_INVALID_PARAM 参数无效
  * @retval ERR_MOTION_MODE_MISMATCH 模式不匹配
  */
-int MotionService_SetDriveParams(MotionContext* ctx, float linear_vel, float steer_angle);
+int MotionService_SetDriveParams(MotionContext* ctx, float linear_vel,
+                                 float steer_angle, uint8_t seq);
 
 
 /**
@@ -214,7 +211,13 @@ int MotionService_SetDriveParams(MotionContext* ctx, float linear_vel, float ste
  * @retval ERR_SUCCESS0 设置成功
  * @retval ERR_MOTION_INVALID_PARAM 参数无效
  */
-int MotionService_EmergencyStop(MotionContext* ctx);
+int MotionService_EmergencyStop(MotionContext* ctx, uint8_t seq);
+
+/** 清除锁存故障；仅在双轮已停稳时允许。 */
+int MotionService_ClearFault(MotionContext* ctx, uint8_t seq);
+
+/** 安全监督器/堵转检测进入锁存故障并立即硬停。 */
+void MotionService_LatchFault(MotionContext* ctx, uint8_t faultCode);
 
 
 /**
@@ -252,6 +255,12 @@ void MotionService_AbortGoal(MotionContext* ctx, uint8_t newState);
  * @brief 填充 36 字节状态帧
  */
 void MotionService_GetStatus(const MotionContext* ctx, motion_status_t* out);
+
+/** 原子消费一次即时状态上报请求。 */
+bool MotionService_ConsumeUrgentStatus(MotionContext* ctx);
+
+/** 当前是否需要 100ms 快速状态上报。 */
+bool MotionService_ShouldReportFast(const MotionContext* ctx);
 
 /**
  * @brief 运行运动控制服务

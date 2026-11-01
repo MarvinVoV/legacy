@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 from app.config import Settings
 from app.models.agent_motion import MoveRequest, MotionError, validate_move
 from app.models.device import DeviceState
-from app.models.telemetry import MotionStatus
+from app.models.telemetry import HeartbeatData, MotionStatus
 from app.services.motion_service import AgentMotionService, estimate_duration_s
 
 
@@ -34,6 +34,9 @@ def online_state(device_id="DEV_1") -> DeviceState:
     st.online = True
     st.last_heartbeat = time.time()
     st.motion_supported = True
+    st.heartbeat_data = HeartbeatData(stm32_connected=True)
+    st.last_motion = MotionStatus(mode=0)
+    st.last_motion_time = time.time()
     return st
 
 
@@ -58,6 +61,15 @@ class ScriptedMQTT:
     async def publish(self, topic, payload, qos=0):
         self.published.append((topic, payload))
         mode = payload.get("motion", {}).get("mode") if isinstance(payload, dict) else None
+        if mode == 0:
+            seq = payload["seq"]
+            loop = asyncio.get_running_loop()
+            loop.call_soon(self.svc.on_ack, "DEV_1", seq, 0)
+            loop.call_soon(
+                self.svc.on_motion, "DEV_1",
+                done_status(seq, state="idle").model_copy(update={"mode": 0}),
+            )
+            return
         if mode != 4:
             return
         seq = payload["seq"]
@@ -233,7 +245,8 @@ async def test_stop_aborts_move():
         svc.move("DEV_1", MoveRequest(distance_cm=10, speed_cm_s=10))
     )
     await asyncio.sleep(0)
-    await svc.stop("DEV_1")
+    result = await svc.stop("DEV_1")
+    assert result["confirmed"] is True
     with pytest.raises(MotionError) as exc:
         await task
     assert exc.value.code == "aborted_by_stop"
@@ -241,15 +254,27 @@ async def test_stop_aborts_move():
     assert mqtt.published[-1][1]["motion"]["mode"] == 0
 
 
-async def test_stop_offline_device_is_503():
-    """设备心跳过期时不能假称 stopped=true"""
+async def test_stop_stale_heartbeat_still_attempts_and_confirms():
+    """已知设备心跳过期时 STOP 仍 best-effort 下发。"""
     svc, mqtt, devices = make_service()
     devices["DEV_1"].last_heartbeat = 0
+    result = await svc.stop("DEV_1")
+    assert result["confirmed"] is True
+    assert mqtt.published[-1][1]["motion"]["mode"] == 0
+
+
+async def test_move_requires_live_stm32_and_fresh_motion():
+    svc, _, devices = make_service()
+    devices["DEV_1"].heartbeat_data.stm32_connected = False
     with pytest.raises(MotionError) as exc:
-        await svc.stop("DEV_1")
-    assert exc.value.code == "offline"
-    assert exc.value.status_code == 503
-    assert mqtt.published == []
+        await svc.move("DEV_1", MoveRequest(distance_cm=10))
+    assert exc.value.code == "stm32_offline"
+
+    devices["DEV_1"].heartbeat_data.stm32_connected = True
+    devices["DEV_1"].last_motion_time = time.time() - 3
+    with pytest.raises(MotionError) as exc:
+        await svc.move("DEV_1", MoveRequest(distance_cm=10))
+    assert exc.value.code == "motion_stale"
 
 
 async def test_state_angular_sign_matches_heading():

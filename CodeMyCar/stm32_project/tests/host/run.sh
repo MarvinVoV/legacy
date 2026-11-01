@@ -40,6 +40,15 @@ echo "== motor emergency stop =="
   -lm -o "${TMPDIR:-/tmp}/motor_estop_test"
 "${TMPDIR:-/tmp}/motor_estop_test"
 
+echo "== runtime safety =="
+"$CC" -std=c11 -Wall -Wextra -O2 \
+  -I "$DIR/Application/System/Utils/Inc" \
+  "$DIR/tests/host/runtime_safety_test.c" \
+  "$DIR/Application/System/Utils/Src/control_lease.c" \
+  "$DIR/Application/System/Utils/Src/task_health.c" \
+  -o "${TMPDIR:-/tmp}/runtime_safety_test"
+"${TMPDIR:-/tmp}/runtime_safety_test"
+
 echo "== PID simulation =="
 "$CC" -std=c11 -Wall -Wextra -O2 \
   -I "$DIR/tests/host/stubs" \

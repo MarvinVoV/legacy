@@ -22,7 +22,10 @@ logger = logging.getLogger(__name__)
 
 _TERMINAL_STATES = {"done", "aborted", "error"}
 _TRACK_MM = 167.0  # 与 STM32 DEFAULT_CHASSIS_CFG.trackWidthMM 一致
-_ESTOP_PAYLOAD = {"seq": 0, "cmd": "motion", "motion": {"mode": 0, "params": {}}}
+
+
+def _estop_payload(seq: int) -> dict:
+    return {"seq": seq, "cmd": "motion", "motion": {"mode": 0, "params": {}}}
 
 
 def estimate_duration_s(req: MoveRequest) -> float:
@@ -71,9 +74,14 @@ class AgentMotionService:
             state.last_motion_time = time.time()
 
         pending = self._pending.get((device_id, status.seq))
+        stopped = (
+            status.mode == 0
+            and abs(status.left_mmps) <= 1
+            and abs(status.right_mmps) <= 1
+        )
         if (
             pending is not None
-            and status.state in _TERMINAL_STATES
+            and (status.state in _TERMINAL_STATES or stopped)
             and not pending.done.done()
         ):
             pending.done.set_result(status)
@@ -149,23 +157,59 @@ class AgentMotionService:
         async with lock:
             return await self._run_goal(device_id, req)
 
-    async def stop(self, device_id: str) -> None:
-        self._require_alive(device_id)
+    async def stop(self, device_id: str) -> dict:
+        if device_id not in self._devices:
+            raise MotionError("offline", f"device {device_id} is unknown", 503)
         if not self._mqtt.is_connected:
             raise MotionError("offline", "MQTT not connected", 503)
+
+        seq = self._next_seq(device_id)
+        loop = asyncio.get_running_loop()
+        stop_pending = _Pending(ack=loop.create_future(), done=loop.create_future())
+        self._pending[(device_id, seq)] = stop_pending
         try:
-            await self._mqtt.publish(cmd_topic(device_id), _ESTOP_PAYLOAD, qos=0)
+            await self._mqtt.publish(cmd_topic(device_id), _estop_payload(seq), qos=0)
         except Exception as exc:  # noqa: BLE001 - 对外统一成 502
+            self._pending.pop((device_id, seq), None)
             raise MotionError("publish_failed", str(exc), 502) from exc
 
         abort = MotionError("aborted_by_stop", "stopped by request", 409)
-        for (dev, _seq), pending in list(self._pending.items()):
-            if dev != device_id or pending.done.done():
+        for (dev, pending_seq), pending in list(self._pending.items()):
+            if dev != device_id or pending_seq == seq or pending.done.done():
                 continue
             pending.stop_requested = True
             pending.done.set_exception(abort)
             if not pending.ack.done():
                 pending.ack.set_exception(abort)
+
+        try:
+            try:
+                ack_status = await asyncio.wait_for(
+                    stop_pending.ack, self._settings.agent_ack_timeout_s
+                )
+            except asyncio.TimeoutError:
+                raise MotionError(
+                    "stop_unconfirmed", "STOP was published but no STM32 ACK arrived", 504,
+                    {"seq": seq, "accepted": False, "confirmed": False},
+                ) from None
+            if ack_status != 0:
+                raise MotionError(
+                    "stop_rejected", f"STM32 rejected STOP (status {ack_status})", 502,
+                    {"seq": seq, "ack_status": ack_status},
+                )
+            try:
+                await asyncio.wait_for(
+                    stop_pending.done, max(1.0, self._settings.agent_ack_timeout_s)
+                )
+            except asyncio.TimeoutError:
+                raise MotionError(
+                    "stop_unconfirmed", "STOP was ACKed but zero-speed status was not observed", 504,
+                    {"seq": seq, "accepted": True, "confirmed": False},
+                ) from None
+            return {"ok": True, "stopped": True, "accepted": True,
+                    "confirmed": True, "seq": seq}
+        finally:
+            self._pending.pop((device_id, seq), None)
 
     # ---------------- 内部 ----------------
 
@@ -176,10 +220,13 @@ class AgentMotionService:
             self._locks[device_id] = lock
         return lock
 
-    def _next_seq(self) -> int:
-        seq = self._seq
-        self._seq = (self._seq + 1) & 0xFF
-        return seq
+    def _next_seq(self, device_id: str) -> int:
+        for _ in range(256):
+            seq = self._seq
+            self._seq = (self._seq + 1) & 0xFF
+            if (device_id, seq) not in self._pending:
+                return seq
+        raise MotionError("busy", "all command sequence numbers are in use", 409)
 
     def _require_alive(self, device_id: str) -> DeviceState:
         state = self._devices.get(device_id)
@@ -194,19 +241,27 @@ class AgentMotionService:
 
     def _require_online(self, device_id: str) -> DeviceState:
         state = self._require_alive(device_id)
+        if state.heartbeat_data is None or state.heartbeat_data.stm32_connected is not True:
+            raise MotionError("stm32_offline", "STM32 link is not confirmed", 503)
         if not state.motion_supported:
             raise MotionError(
                 "motion_unsupported",
                 "device firmware does not report motion status",
                 503,
             )
+        if (
+            state.last_motion is None
+            or state.last_motion_time <= 0
+            or time.time() - state.last_motion_time > self._settings.agent_state_stale_s
+        ):
+            raise MotionError("motion_stale", "motion status is missing or stale", 503)
         return state
 
     async def _run_goal(self, device_id: str, req: MoveRequest) -> MoveResult:
         if not self._mqtt.is_connected:
             raise MotionError("offline", "MQTT not connected", 503)
 
-        seq = self._next_seq()
+        seq = self._next_seq(device_id)
         loop = asyncio.get_running_loop()
         pending = _Pending(
             ack=loop.create_future(),
@@ -281,7 +336,9 @@ class AgentMotionService:
 
     async def _send_stop(self, device_id: str) -> None:
         try:
-            await self._mqtt.publish(cmd_topic(device_id), _ESTOP_PAYLOAD, qos=0)
+            await self._mqtt.publish(
+                cmd_topic(device_id), _estop_payload(self._next_seq(device_id)), qos=0
+            )
         except Exception:  # noqa: BLE001 - 兜底尝试，不覆盖原始错误
             logger.warning("Failed to send emergency stop to %s", device_id)
 

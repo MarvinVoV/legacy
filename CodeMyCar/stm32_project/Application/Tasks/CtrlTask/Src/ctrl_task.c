@@ -16,6 +16,7 @@
 #include "seq_dedup.h"
 #include "uart_handle.h"
 #include "system_init.h"
+#include "safety_supervisor.h"
 
 // 累积缓冲区大小
 #define ACCUMULATE_BUF_SIZE ( 5 * PROTOCOL_MAX_DATA_LEN)
@@ -60,7 +61,7 @@ void CtrlTask_doTask(void* args)
 {
     while (1)
     {
-        if (xSemaphoreTake(uart_dma_buffer.semaphore, osWaitForever) == pdTRUE)
+        if (xSemaphoreTake(uart_dma_buffer.semaphore, pdMS_TO_TICKS(50u)) == pdTRUE)
         {
             if (uart_dma_buffer.length > 0)
             {
@@ -68,14 +69,13 @@ void CtrlTask_doTask(void* args)
                 const uint8_t  inactive_buffer = uart_dma_buffer.current ^ 1;
                 uint8_t*       data            = uart_dma_buffer.rx_buffer[inactive_buffer];
                 const uint16_t len             = uart_dma_buffer.length;
-                if (len == 0) continue;
-
                 // 无效化 Cache（H7 的 Cache 行大小为 32 字节）
                 SCB_InvalidateDCache_by_Addr(data, len);
                 // 处理数据
                 process_raw_data(data, len);
             }
         }
+        SafetySupervisor_Heartbeat(TASK_HEALTH_CTRL);
     }
 }
 

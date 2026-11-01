@@ -153,6 +153,7 @@ int bridge_json_to_control_cmd(const char* json, size_t len,
         switch (mode)
         {
             case BRIDGE_MODE_EMERGENCY_STOP:
+            case BRIDGE_MODE_CLEAR_FAULT:
                 /* 无参数 */
                 break;
 
@@ -397,11 +398,15 @@ int bridge_motion_to_json(const uint8_t* payload, uint8_t len,
     const char* state = (st.state < 5) ? state_names[st.state] : "error";
 
     const int n = snprintf(out, out_size,
-        "{\"seq\":%u,\"state\":\"%s\",\"error\":%u,"
+        "{\"seq\":%u,\"state\":\"%s\",\"error\":%u,\"mode\":%u,"
+        "\"fault\":%s,\"lease_expired\":%s,"
         "\"x_mm\":%ld,\"y_mm\":%ld,\"theta_mdeg\":%ld,\"odometer_mm\":%ld,"
         "\"goal_distance_mm\":%ld,\"goal_turn_mdeg\":%ld,\"goal_duration_ms\":%lu,"
         "\"left_mmps\":%d,\"right_mmps\":%d}",
         (unsigned)st.seq, state, (unsigned)st.error,
+        (unsigned)((st.flags & MOTION_STATUS_FLAG_MODE_MASK) >> MOTION_STATUS_FLAG_MODE_SHIFT),
+        (st.flags & MOTION_STATUS_FLAG_FAULT) ? "true" : "false",
+        (st.flags & MOTION_STATUS_FLAG_LEASE_EXPIRED) ? "true" : "false",
         (long)st.xMm, (long)st.yMm, (long)st.thetaMdeg, (long)st.odometerMm,
         (long)st.goalDistanceMm, (long)st.goalTurnMdeg, (unsigned long)st.goalDurationMs,
         (int)st.leftMmps, (int)st.rightMmps);

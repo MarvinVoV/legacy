@@ -16,7 +16,8 @@ typedef enum
     MOTION_DIFFERENTIAL   = 0x02, // 差速控制（舵机归中，linear=0 即原地旋转）
     MOTION_DRIVE          = 0x03, // 速度 + 平行转向（后轮内外速差补偿）
     MOTION_GOAL           = 0x04, // 目标型运动（距离 + 转角，闭环到点）
-    MOTION_MODE_MAX       = 0x05  // 有效模式数量
+    MOTION_CLEAR_FAULT    = 0x05, // 仅在零速时清除锁存故障，不产生运动
+    MOTION_MODE_MAX       = 0x06  // 有效模式数量
 } MotionMode;
 
 #endif /* SYSTEM_COMMON_INC_MOTION_COMMON_H_ */

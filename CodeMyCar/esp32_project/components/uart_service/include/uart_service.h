@@ -27,5 +27,8 @@ esp_err_t uart_service_register_rx_cb(uart_frame_rx_cb_t cb, void* user_ctx);
 /** 发送原始字节到 UART TX（编码后的帧数据） */
 esp_err_t uart_service_send(const uint8_t* data, size_t len);
 
+/** Safety-critical send placed at the front of the TX queue. */
+esp_err_t uart_service_send_priority(const uint8_t* data, size_t len);
+
 /** 停止并释放资源 */
 esp_err_t uart_service_stop(void);

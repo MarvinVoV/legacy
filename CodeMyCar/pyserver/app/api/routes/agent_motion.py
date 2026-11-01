@@ -33,10 +33,9 @@ async def stop(
 ):
     """立即急停（不排队，可打断进行中的 move）"""
     try:
-        await service.stop(device_id)
+        return await service.stop(device_id)
     except MotionError as exc:
         raise _http_error(exc) from None
-    return {"ok": True, "stopped": True}
 
 
 @router.get("/agent/devices/{device_id}/state")

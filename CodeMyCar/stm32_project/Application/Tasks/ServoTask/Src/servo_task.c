@@ -11,6 +11,7 @@
 #include "task.h"
 #include "log_manager.h"
 #include "servo_service.h"
+#include "safety_supervisor.h"
 
 static osThreadId_t servoTaskHandle = NULL;
 
@@ -38,6 +39,7 @@ void ServoTask_doTask(void* pvParameters)
     {
         /* 执行控制更新 */
         SteerService_update(instance);
+        SafetySupervisor_Heartbeat(TASK_HEALTH_SERVO);
 
         /* 精确延时到指定时间点（单参数调用） */
         osDelayUntil(lastWakeTime + pdMS_TO_TICKS(instance->config.updateIntervalMs));

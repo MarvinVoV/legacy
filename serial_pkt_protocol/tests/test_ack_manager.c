@@ -72,6 +72,12 @@ int main(void)
     CHECK(ok, "fill table to capacity");
     CHECK(!ackmgr_add(&m, 200, frame, 10, 0), "table full rejected");
 
+    /* 9. STOP 优先槽可抢占普通槽，且同 seq 的迟到 ACK 只清一次 */
+    CHECK(ackmgr_add_priority(&m, 200, frame, 10, 10),
+          "priority add preempts ordinary slot");
+    CHECK(ackmgr_clear(&m, 200), "priority seq cleared");
+    CHECK(!ackmgr_clear(&m, 200), "unknown/late ACK rejected");
+
     printf("\n%s (%d failures)\n", failures? "RESULT: FAIL":"RESULT: PASS", failures);
     return failures? 1:0;
 }

@@ -10,6 +10,7 @@
 #include "sonar_task.h"
 #include "buzzer.h"
 #include "buzzer_config.h"
+#include "safety_supervisor.h"
 
 
 /**
@@ -321,6 +322,13 @@ int System_Initialize()
     sysCtx.motorService  = &motorService;
     sysCtx.cmdContext    = &commandContext;
     sysCtx.steerInstance = &steerInstance;
+
+    // 7. 关键控制任务健康监督；只有全部健康时才喂硬件看门狗
+    if ((ret = SafetySupervisor_Init(&motionContext)) != ERR_SUCCESS)
+    {
+        LOG_ERROR(LOG_MODULE_SYSTEM, "Safety supervisor init failed: 0x%04X", ret);
+        return ret;
+    }
 
     isInitialized = true;
     LOG_INFO(LOG_MODULE_SYSTEM, "System initialized successfully");

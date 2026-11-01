@@ -29,6 +29,7 @@ typedef struct
     size_t frame_len;
     uint32_t send_time_ms;
     uint8_t retries;
+    bool priority;
 } ack_slot_t;
 
 typedef struct
@@ -52,8 +53,12 @@ bool ackmgr_is_free(const ack_manager_t* m, uint8_t seq);
 bool ackmgr_add(ack_manager_t* m, uint8_t seq, const uint8_t* frame,
                 size_t len, uint32_t now_ms);
 
+/** Priority add (STOP): may replace a non-priority collision/oldest slot. */
+bool ackmgr_add_priority(ack_manager_t* m, uint8_t seq, const uint8_t* frame,
+                         size_t len, uint32_t now_ms);
+
 /** 收到 ACK：清除对应 seq 的在途槽位 */
-void ackmgr_clear(ack_manager_t* m, uint8_t seq);
+bool ackmgr_clear(ack_manager_t* m, uint8_t seq);
 
 /** 扫描超时：对每个超时槽位，未达 max_retries 则调 resend 并更新 send_time，
  *  达到 max_retries 则标记丢失（active=false）。返回本次新标记丢失的条数。 */

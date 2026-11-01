@@ -47,11 +47,11 @@ int main(void){
     CHECK(n==9 && memcmp(out,exp_drive,9)==0, "drive bytes");
     if (memcmp(out,exp_drive,9)!=0) hex(out,9);
 
-    /* 5. 越界模式（>=5）必须拒绝；mode 4 现在是 goal */
+    /* 5. mode 5 是零参数的故障清除命令 */
     const char* j_mixed = "{\"seq\":8,\"cmd\":\"motion\",\"motion\":{\"mode\":5,"
         "\"params\":{\"linear_vel\":300,\"steer_angle\":45}}}";
     n = bridge_json_to_control_cmd(j_mixed, strlen(j_mixed), out, &seq, &ack);
-    CHECK(n==0, "mode 5 (MIXED) rejected");
+    CHECK(n==9 && out[2]==5, "mode 5 clear fault accepted");
 
     /* 6. invalid JSON */
     const char* j_bad = "this is not json";

@@ -41,6 +41,9 @@ class MotionStatus(BaseModel):
     seq: int = 0
     state: str = "idle"          # idle / running / done / aborted / error
     error: int = 0
+    mode: int = 0
+    fault: bool = False
+    lease_expired: bool = False
     x_mm: int = 0
     y_mm: int = 0                # 设备坐标：左正
     theta_mdeg: int = 0          # 设备坐标：CCW 正

@@ -23,7 +23,8 @@ enum
     BRIDGE_MODE_DIFFERENTIAL  = 2,
     BRIDGE_MODE_DRIVE         = 3,
     BRIDGE_MODE_GOAL          = 4,
-    BRIDGE_MODE_MAX           = 5,
+    BRIDGE_MODE_CLEAR_FAULT   = 5,
+    BRIDGE_MODE_MAX           = 6,
 };
 
 /**

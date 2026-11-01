@@ -26,6 +26,8 @@
 #define MOTION_ERR_GEOMETRY 3
 #define MOTION_ERR_BUSY     4
 #define MOTION_ERR_INTERNAL 5
+#define MOTION_ERR_STALL    6
+#define MOTION_ERR_TASK_STALE 7
 
 #pragma pack(push, 1)
 typedef struct
@@ -33,7 +35,7 @@ typedef struct
     uint8_t  seq;            /* 当前/最近一次 goal 的 seq */
     uint8_t  state;          /* @see MOTION_STATE_* */
     uint8_t  error;          /* @see MOTION_ERR_* */
-    uint8_t  flags;          /* bit0 = stale，其余保留 */
+    uint8_t  flags;          /* bit0 stale, bit1..3 mode, bit4 fault, bit5 lease expired */
     int32_t  xMm;            /* 位姿 x（前正） */
     int32_t  yMm;            /* 位姿 y（设备数学坐标：左正） */
     int32_t  thetaMdeg;      /* 航向（CCW 正，0.001°） */
@@ -45,6 +47,12 @@ typedef struct
     int16_t  rightMmps;      /* 右轮线速度 */
 } motion_status_t;
 #pragma pack(pop)
+
+#define MOTION_STATUS_FLAG_STALE         (1u << 0)
+#define MOTION_STATUS_FLAG_MODE_SHIFT    1u
+#define MOTION_STATUS_FLAG_MODE_MASK     (0x07u << MOTION_STATUS_FLAG_MODE_SHIFT)
+#define MOTION_STATUS_FLAG_FAULT         (1u << 4)
+#define MOTION_STATUS_FLAG_LEASE_EXPIRED (1u << 5)
 
 _Static_assert(sizeof(motion_status_t) == MOTION_STATUS_SIZE,
                "motion_status_t wire layout must stay 36 bytes");

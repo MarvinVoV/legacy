@@ -61,51 +61,73 @@ bool ackmgr_is_free(const ack_manager_t* m, uint8_t seq)
     return true;
 }
 
-bool ackmgr_add(ack_manager_t* m, uint8_t seq, const uint8_t* frame,
-                size_t len, uint32_t now_ms)
+static bool add_internal(ack_manager_t* m, uint8_t seq, const uint8_t* frame,
+                         size_t len, uint32_t now_ms, bool priority)
 {
     if (m == NULL || frame == NULL || len > PKT_MAX_FRAME_SIZE)
     {
         return false;
     }
-    /* 查重：同 seq 已在途则拒绝 */
+    int target = -1;
     for (int i = 0; i < ACK_MGR_MAX_PENDING; i++)
     {
         if (m->slots[i].active && m->slots[i].seq == seq)
         {
-            return false;
+            if (!priority || m->slots[i].priority) return false;
+            target = i;
+            break;
         }
     }
-    for (int i = 0; i < ACK_MGR_MAX_PENDING; i++)
+    for (int i = 0; target < 0 && i < ACK_MGR_MAX_PENDING; i++)
     {
         if (!m->slots[i].active)
         {
-            m->slots[i].active = true;
-            m->slots[i].seq = seq;
-            memcpy(m->slots[i].frame, frame, len);
-            m->slots[i].frame_len = len;
-            m->slots[i].send_time_ms = now_ms;
-            m->slots[i].retries = 0;
-            return true;
+            target = i;
         }
     }
-    return false; /* 表满 */
+    if (target < 0 && priority)
+    {
+        for (int i = 0; i < ACK_MGR_MAX_PENDING; i++)
+        {
+            if (!m->slots[i].priority &&
+                (target < 0 || (uint32_t)(now_ms - m->slots[i].send_time_ms) >
+                 (uint32_t)(now_ms - m->slots[target].send_time_ms))) target = i;
+        }
+    }
+    if (target < 0) return false;
+    m->slots[target].active = true;
+    m->slots[target].seq = seq;
+    memcpy(m->slots[target].frame, frame, len);
+    m->slots[target].frame_len = len;
+    m->slots[target].send_time_ms = now_ms;
+    m->slots[target].retries = 0;
+    m->slots[target].priority = priority;
+    return true;
 }
 
-void ackmgr_clear(ack_manager_t* m, uint8_t seq)
+bool ackmgr_add(ack_manager_t* m, uint8_t seq, const uint8_t* frame,
+                size_t len, uint32_t now_ms)
+{ return add_internal(m, seq, frame, len, now_ms, false); }
+
+bool ackmgr_add_priority(ack_manager_t* m, uint8_t seq, const uint8_t* frame,
+                         size_t len, uint32_t now_ms)
+{ return add_internal(m, seq, frame, len, now_ms, true); }
+
+bool ackmgr_clear(ack_manager_t* m, uint8_t seq)
 {
     if (m == NULL)
     {
-        return;
+        return false;
     }
     for (int i = 0; i < ACK_MGR_MAX_PENDING; i++)
     {
         if (m->slots[i].active && m->slots[i].seq == seq)
         {
             m->slots[i].active = false;
-            return;
+            return true;
         }
     }
+    return false;
 }
 
 uint32_t ackmgr_scan(ack_manager_t* m, uint32_t now_ms, uint32_t timeout_ms,
