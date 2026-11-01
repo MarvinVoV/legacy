@@ -887,6 +887,7 @@ static MotionGoalConfig goal_cfg_from(const ChassisConfig* cfg)
     g.maxAngularRadps = cfg->maxAngularVelRad;
     g.decelMmps2      = 300.0f;
     g.minTurnRadiusMm = cfg->minTurnRadiusMM;
+    g.allowPivot      = false;
     return g;
 }
 

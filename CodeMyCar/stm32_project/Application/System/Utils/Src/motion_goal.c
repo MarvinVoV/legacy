@@ -11,7 +11,8 @@
 #define TOL_DISTANCE_MM 5.0f
 #define TOL_TURN_DEG    2.0f
 #define ENDGAME_MAX_MS  1500u
-#define MIN_TIMEOUT_MS  30000u
+#define MIN_TIMEOUT_MS  5000u
+#define TIMEOUT_GRACE_MS 3000u
 #define PIVOT_GAIN      3.0f
 #define TURN_RATE_DPS   90.0f /* 仅用于时长预估 */
 
@@ -38,6 +39,10 @@ int motion_goal_start(MotionGoalState* s, const MotionGoalTarget* t,
     if (t->turnDdeg == 0 && t->distanceMm == 0)
     {
         return 1;
+    }
+    if (t->distanceMm == 0 && t->turnDdeg != 0 && !cfg->allowPivot)
+    {
+        return 3;
     }
 
     /* 曲率半径 = 弧长 / 圆心角；不足最小转弯半径则拒绝 */
@@ -101,8 +106,8 @@ MotionGoalOutput motion_goal_step(MotionGoalState* s, const MotionGoalConfig* cf
         return out;
     }
 
-    /* 全局兜底：预估时长的 2 倍 + 10s，至少 30s */
-    const uint32_t limit_ms = estimate_ms(&s->target) * 2u + 10000u;
+    /* 全局兜底：短动作也应在秒级失败，不能被固定 30s 下限拖住。 */
+    const uint32_t limit_ms = estimate_ms(&s->target) * 2u + TIMEOUT_GRACE_MS;
     if (nowMs - s->startMs > (limit_ms > MIN_TIMEOUT_MS ? limit_ms : MIN_TIMEOUT_MS))
     {
         s->error     = 5;
@@ -117,19 +122,31 @@ MotionGoalOutput motion_goal_step(MotionGoalState* s, const MotionGoalConfig* cf
     if (s->target.distanceMm != 0 && !s->inEndgame &&
         fabsf(sRem) <= TOL_DISTANCE_MM)
     {
+        if (!cfg->allowPivot)
+        {
+            s->error     = 5;
+            s->finished  = true;
+            s->finishMs  = nowMs;
+            out.error    = 5;
+            out.finished = true;
+            return out;
+        }
         s->inEndgame      = true;
         s->endgameStartMs = nowMs;
     }
 
     if (s->inEndgame && nowMs - s->endgameStartMs > ENDGAME_MAX_MS)
     {
+        s->error     = 5;
         s->finished  = true;
         s->finishMs  = nowMs;
+        out.error    = 5;
         out.finished = true;
         return out;
     }
 
-    const bool pivot = s->inEndgame || s->target.distanceMm == 0;
+    const bool pivot = cfg->allowPivot &&
+                       (s->inEndgame || s->target.distanceMm == 0);
 
     if (pivot)
     {

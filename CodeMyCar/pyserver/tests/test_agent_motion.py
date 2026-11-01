@@ -106,6 +106,20 @@ def test_validate_no_op():
     assert exc.value.status_code == 400
 
 
+def test_validate_rejects_turn_only_for_ackermann():
+    with pytest.raises(MotionError) as exc:
+        validate_move(MoveRequest(distance_cm=0, turn_deg=30), make_settings())
+    assert exc.value.code == "unsupported_maneuver"
+    assert exc.value.status_code == 400
+
+
+def test_validate_can_explicitly_enable_pivot_goal():
+    validate_move(
+        MoveRequest(distance_cm=0, turn_deg=30),
+        make_settings(agent_allow_pivot_goal=True),
+    )
+
+
 def test_validate_radius():
     with pytest.raises(MotionError) as exc:
         validate_move(MoveRequest(distance_cm=1, turn_deg=90), make_settings())

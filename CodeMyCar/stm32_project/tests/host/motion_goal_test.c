@@ -18,6 +18,7 @@ static const MotionGoalConfig CFG = {
     .maxAngularRadps = 8.2f,
     .decelMmps2      = 300.0f,
     .minTurnRadiusMm = 144.0f,
+    .allowPivot      = true,
 };
 
 static MotionGoalState start(int16_t turn, int16_t dist, uint16_t speed)
@@ -78,14 +79,14 @@ int main(void)
         assert(motion_goal_start(&bad, &t, &CFG, 0) == 3);
     }
 
-    /* 7. 距离先到、航向未到：收尾有时限，1.5s 后必定结束 */
+    /* 7. 距离先到、航向未到：收尾超时必须报错，不能伪装 DONE */
     st = start(900, 1000, 300);
     advance(&st, 1000.0f, 0.0f);
     out = motion_goal_step(&st, &CFG, 2000);
     assert(!out.finished);
     assert(out.pivot);
     out = motion_goal_step(&st, &CFG, 3600);
-    assert(out.finished);
+    assert(out.finished && out.error == 5);
 
     /* 8. 距离与航向都在容差内：立即完成 */
     st = start(300, 1000, 300);
@@ -104,13 +105,18 @@ int main(void)
     out = motion_goal_step(&st, &CFG, 31000);
     assert(out.finished && out.error == 5);
 
-    /* 11. 反馈反向（两轮都后退）时仍朝目标方向纠正 */
+    /* 11. 短动作的本地兜底不能被固定 30s 下限拖长 */
+    st = start(0, 100, 100);
+    out = motion_goal_step(&st, &CFG, 6000);
+    assert(out.finished && out.error == 5);
+
+    /* 12. 反馈反向（两轮都后退）时仍朝目标方向纠正 */
     st = start(900, 0, 300);
     motion_goal_accumulate(&st, -100.0f, -100.0f, &CFG);
     out = motion_goal_step(&st, &CFG, 100);
     assert(out.pivot && out.leftRpm > 0.0f && out.rightRpm < 0.0f);
 
-    /* 12. 最小转弯半径独立于轴距 */
+    /* 13. 最小转弯半径独立于轴距 */
     {
         MotionGoalConfig cfg2 = CFG;
         cfg2.minTurnRadiusMm = 200.0f;
@@ -120,10 +126,33 @@ int main(void)
         assert(motion_goal_start(&s2, &t2, &cfg2, 0) == 3);
     }
 
-    /* 13. 展示航向归一化到 (-180, 180] */
+    /* 14. 展示航向归一化到 (-180, 180] */
     assert(fabsf(motion_normalize_deg(270.0f) - (-90.0f)) < 0.01f);
     assert(fabsf(motion_normalize_deg(-270.0f) - 90.0f) < 0.01f);
     assert(fabsf(motion_normalize_deg(180.0f) - 180.0f) < 0.01f);
+
+    /* 15. Ackermann 配置拒绝纯原地旋转。 */
+    {
+        MotionGoalConfig ackermann = CFG;
+        ackermann.allowPivot = false;
+        MotionGoalState rejected;
+        MotionGoalTarget t = {.turnDdeg = 900, .distanceMm = 0, .speedMmps = 300};
+        memset(&rejected, 0, sizeof(rejected));
+        assert(motion_goal_start(&rejected, &t, &ackermann, 0) == 3);
+    }
+
+    /* 16. Ackermann 到达距离但航向超差时必须 ERROR，不能反向双轮收尾。 */
+    {
+        MotionGoalConfig ackermann = CFG;
+        ackermann.allowPivot = false;
+        MotionGoalState mismatch;
+        MotionGoalTarget t = {.turnDdeg = 900, .distanceMm = 1000, .speedMmps = 300};
+        memset(&mismatch, 0, sizeof(mismatch));
+        assert(motion_goal_start(&mismatch, &t, &ackermann, 0) == 0);
+        advance(&mismatch, 1000.0f, 0.0f);
+        out = motion_goal_step(&mismatch, &ackermann, 2000);
+        assert(out.finished && out.error == 5 && !out.pivot);
+    }
 
     printf("motion_goal: all tests passed\n");
     return 0;

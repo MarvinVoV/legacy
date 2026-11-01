@@ -42,6 +42,7 @@ class Settings(BaseSettings):
     agent_state_stale_s: float = 2.0
     agent_max_motion_duration_s: float = 60.0
     agent_min_turn_radius_mm: int = 84  # 与 STM32 maxSteerAngleDeg=60° 对应
+    agent_allow_pivot_goal: bool = False  # Ackermann 底盘禁止反向双轮原地旋转
 
     # 日志
     log_level: str = "INFO"

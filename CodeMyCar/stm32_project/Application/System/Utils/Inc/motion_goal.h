@@ -21,6 +21,7 @@ typedef struct
     float maxAngularRadps;
     float decelMmps2;
     float minTurnRadiusMm;
+    bool  allowPivot; /* 仅差速/台架底盘允许原地反向双轮旋转 */
 } MotionGoalConfig;
 
 typedef struct

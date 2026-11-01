@@ -81,6 +81,18 @@ def validate_move(req: MoveRequest, settings: Settings) -> None:
     if req.distance_cm == 0 and req.turn_deg == 0:
         raise MotionError("no_op", "distance_cm and turn_deg are both zero", 400)
 
+    if (
+        req.distance_cm == 0
+        and req.turn_deg != 0
+        and not settings.agent_allow_pivot_goal
+    ):
+        raise MotionError(
+            "unsupported_maneuver",
+            "turn-only goals are disabled for the Ackermann chassis",
+            400,
+            {"field": "distance_cm", "value": req.distance_cm},
+        )
+
     if req.distance_cm != 0 and req.turn_deg != 0:
         radius_mm = abs(req.distance_cm * 10) / radians(abs(req.turn_deg))
         if radius_mm < settings.agent_min_turn_radius_mm:
