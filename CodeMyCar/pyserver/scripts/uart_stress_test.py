@@ -78,7 +78,7 @@ def main():
             payload = json.dumps({
                 "seq": seq, "cmd": "motion",
                 "motion": {"mode": 1, "params": {
-                    "left_rpm": args.rpm, "right_rpm": args.rpm, "steer_percent": 0,
+                    "left_rpm": args.rpm, "right_rpm": args.rpm, "curvature_1pm": 0,
                 }},
             }, separators=(",", ":"))
             info = client.publish(topic, payload, qos=0)

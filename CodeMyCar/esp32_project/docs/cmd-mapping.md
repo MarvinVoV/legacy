@@ -1,8 +1,14 @@
-# JSON ↔ Binary 命令映射契约（v3 / 精简模式）
+# JSON ↔ Binary 命令映射契约（v4 / 曲率转向）
 
-> 日期：2026-11-01（新增 mode 5 CLEAR_FAULT、严格 schema、ACK 原子生命周期与 session）
+> 日期：2026-11-03（转向接口 `steer_percent` → `curvature_1pm`，单位 1/m）
 > 范围：pyserver（JSON）↔ ESP32 bridge（翻译）↔ STM32（二进制 struct）
-> 变更：运动模式 0–3 + **4 GOAL** + **5 CLEAR_FAULT**；删除 SPIN/MIXED、duration、rotation_point、duty_cycle、gain；wire payload 13 → **9 字节**。ACK payload 增加 1 字节状态码。
+> 变更（v4）：转向控制量改为**曲率 κ（1/m，右正）**，wire 单位 0.001 1/m；`steer_percent`
+> 从契约删除（与 `steer_angle` 同样处理：未知字段直接拒绝）。帧格式、模式枚举、ACK
+> 语义不变。详见 `stm32_project/Docs/Steering-Control-Design.md`。
+>
+> 历史（v3，2026-11-01）：新增 mode 5 CLEAR_FAULT、严格 schema、ACK 原子生命周期与
+> session；删除 SPIN/MIXED、duration、rotation_point、duty_cycle、gain；wire payload
+> 13 → **9 字节**；ACK payload 增加 1 字节状态码。
 
 ## 一、分层
 
@@ -48,9 +54,9 @@ ControlCommand  ──JSON──►  cJSON 解析 + 组包 ──v2帧──► 
 | mode | JSON 参数 | 二进制字段（i16 LE） |
 |---|---|---|
 | ESTOP | — | 全 0 |
-| DIRECT | `left_rpm`, `right_rpm`, `steer_percent` | left(2) + right(2) + steer(2) |
+| DIRECT | `left_rpm`, `right_rpm`, `curvature_1pm` | left(2) + right(2) + curvature(2) |
 | DIFFERENTIAL | `linear_vel`, `angular_vel` | linear(2) + angular(2) + 2B 保留 0 |
-| DRIVE | `linear_vel`, `steer_percent` | linear(2) + steer(2) + 2B 保留 0 |
+| DRIVE | `linear_vel`, `curvature_1pm` | linear(2) + curvature(2) + 2B 保留 0 |
 | GOAL | `turn_ddeg`, `distance_mm`, `speed_mm_s` | turn(2, 右正, 相对增量) + distance(2, 前进正) + speed(2, u16) |
 | CLEAR_FAULT | — | 全 0 |
 
@@ -68,9 +74,9 @@ ControlCommand  ──JSON──►  cJSON 解析 + 组包 ──v2帧──► 
 
 | mode | out[3..4] | out[5..6] | out[7..8] |
 |---|---|---|---|
-| DIRECT | leftRpm | rightRpm | steerPercent（0.1%） |
+| DIRECT | leftRpm | rightRpm | curvatureMilli（0.001 1/m） |
 | DIFFERENTIAL | linearVel | angularVel | 0 |
-| DRIVE | linearVel | steerPercent（0.1%） | 0 |
+| DRIVE | linearVel | curvatureMilli（0.001 1/m） | 0 |
 | GOAL | turnDdeg | distanceMm | speedMmps |
 | CLEAR_FAULT | 0 | 0 | 0 |
 
@@ -101,7 +107,7 @@ ControlCommand  ──JSON──►  cJSON 解析 + 组包 ──v2帧──► 
 |---|---|---|---|
 | `linear_vel` | 0.001 m/s | **-1000..1000** | ±1.0 m/s（≈300 RPM 上限） |
 | `angular_vel` | 0.0644 rad/s | **-127..127** | ±8.2 rad/s（保守） |
-| `steer_percent` | % | -100..100 | 归一化转向；0=居中，负=左，正=右 |
+| `curvature_1pm` | 1/m | **-3.77..3.77** | 目标曲率；0=直行，负=左，正=右（上限=弱侧 28.5°→R_min 265mm） |
 | `left_rpm` / `right_rpm` | RPM | -300..300 | 电机最大 300 RPM |
 
 > `duration` 已删除。mode 1–3 采用 **500ms 命令租约**：每条成功命令续期，超时
@@ -114,9 +120,9 @@ ControlCommand  ──JSON──►  cJSON 解析 + 组包 ──v2帧──► 
 | mode | 行为 |
 |---|---|
 | ESTOP | 左右电机急停，舵机立即回中位 |
-| DIRECT | 左右轮目标 RPM + 转向百分比；RPM 限幅 ±300，百分比经左右标定表换成舵机偏移 |
+| DIRECT | 左右轮目标 RPM + 目标曲率；RPM 限幅 ±300，曲率经实测 LUT 换成舵机偏移 |
 | DIFFERENTIAL | `left=v-ωW/2`、`right=v+ωW/2`，舵机回中；`v=0` 即原地旋转 |
-| DRIVE | 百分比先换成标称等效角（100%=25°）算 `R=L/tan(δ)` 与轮速差，再用标定表驱动舵机 |
+| DRIVE | 曲率先换成等效角 `δ=atan(Lκ)` 算 `R=L/tan(δ)` 与轮速差，再用实测 LUT 驱动舵机 |
 | GOAL | 固定曲率圆弧到点；`distance=0` 且 `turn≠0` 在 Ackermann 配置下返回 geometry（禁用 pivot） |
 | CLEAR_FAULT | 双轮停稳时清除故障锁存并回到 ESTOP；运动状态下返回参数错误 |
 

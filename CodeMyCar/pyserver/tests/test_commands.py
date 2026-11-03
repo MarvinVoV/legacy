@@ -54,22 +54,26 @@ def test_rpm_range():
         MotionParams(left_rpm=500)
 
 
-def test_steer_range():
-    MotionParams(steer_percent=100)
-    MotionParams(steer_percent=-100)
+def test_curvature_range():
+    MotionParams(curvature_1pm=3.77)
+    MotionParams(curvature_1pm=-3.77)
+    MotionParams(curvature_1pm=0.0)
     with pytest.raises(ValidationError):
-        MotionParams(steer_percent=101)
+        MotionParams(curvature_1pm=3.78)
 
 
-def test_removed_steer_angle_is_rejected():
+def test_removed_steering_fields_are_rejected():
     # 旧字段已删除；必须显式 422，不能被静默忽略后由 ESP32 丢弃整条命令。
     assert "steer_angle" not in MotionParams.model_fields
+    assert "steer_percent" not in MotionParams.model_fields
     with pytest.raises(ValidationError):
         MotionParams(steer_angle=600)
+    with pytest.raises(ValidationError):
+        MotionParams(steer_percent=50)
 
 
 def test_default_turn_radius_matches_stm32_nominal_limit():
-    assert Settings(_env_file=None).agent_min_turn_radius_mm == 309
+    assert Settings(_env_file=None).agent_min_turn_radius_mm == 265
 
 
 def test_removed_params_are_gone():

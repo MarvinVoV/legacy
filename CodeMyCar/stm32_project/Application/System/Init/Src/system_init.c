@@ -20,12 +20,12 @@
  */
 static const ChassisConfig DEFAULT_CHASSIS_CFG = {
     .wheelbaseMM = 144.0f,        // 轴距（前后轮中心距），单位：毫米(mm)
-    .trackWidthMM = 167.0f,       // 轮距（左右轮中心距），单位：毫米(mm)
-    .wheelRadiusMM = 32.5f,       // 驱动轮半径，单位：毫米(mm)
-    .minTurnRadiusMM = 308.8f,    // 标称最小转弯半径 = 轴距 / tan(25°)
+    .trackWidthMM = 163.0f,       // 轮距（2026-11-03 实测：外缘 190 - 胎宽 27）
+    .wheelRadiusMM = 32.5f,       // 驱动轮半径（实测直径 65mm），单位：毫米(mm)
+    .minTurnRadiusMM = 265.0f,    // 最小转弯半径 = 轴距 / tan(28.5°)（弱侧实测）
     .maxLinearVelocityMPS = 1.0f, // 保守上限：300 RPM ≈ 1.02 m/s
     .maxAngularVelRad = 8.2f,     // 保守上限（满轮速原地旋转约 12 rad/s）
-    .maxSteerAngleDeg = 25.0f,    // 100%对应的标称等效转向角；执行器由标定表映射
+    .maxSteerAngleDeg = 28.5f,    // 等效转角上限（弱侧实测）；执行器由标定表映射
     .steerCenterAngleDeg = 90.0f, // 归中角度
 };
 
@@ -98,7 +98,8 @@ static int init_motor_service(void)
         .maxRPM = 300,
         .wheelRadiusMM = DEFAULT_CHASSIS_CFG.wheelRadiusMM,
         .feedforwardScale = 1.4f,
-        .forwardScale = 1.15f  // 悬空实测：正转所需占空比较反转高约 12%~18%
+        .forwardScale = 1.15f,  // 悬空实测：正转所需占空比较反转高约 12%~18%
+        .speedTrimScale = 1.0f
     };
     rightMotorSpec = (MotorSpec){
         .encoderPPR = 13,
@@ -106,7 +107,11 @@ static int init_motor_service(void)
         .maxRPM = 300,
         .wheelRadiusMM = DEFAULT_CHASSIS_CFG.wheelRadiusMM,
         .feedforwardScale = 1.4f,
-        .forwardScale = 1.15f
+        .forwardScale = 1.15f,
+        // 2026-11-04 地面标定（2m 直行）：trim 越大右轮目标越快、越向左偏。
+        //   1.05 -> +138mm（左）  1.00 -> -121mm（右）  1.023 -> -8mm
+        //   1.03 -> +47mm（左）  零点约 1.024，取实测最优的 1.023。
+        .speedTrimScale = 1.023f
     };
 
     // 左轮PID参数

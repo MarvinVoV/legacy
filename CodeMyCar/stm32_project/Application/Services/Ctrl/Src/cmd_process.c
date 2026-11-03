@@ -31,8 +31,8 @@
 /// 解码线速度
 static float decode_linear_vel(int16_t value);
 
-/// 解码转向百分比
-static float decode_steer_percent(int16_t permille);
+/// 解码目标曲率 (0.001 1/m)
+static float decode_curvature(int16_t milli_1pm);
 
 /// 解码角速度
 static float decode_angular_vel(int16_t angular_vel);
@@ -131,19 +131,19 @@ static int process_motion_command(CmdProcessorContext* ctx, const MotionCmd* mot
 
         case MOTION_DRIVE:
             {
-                const float linear = decode_linear_vel(motion->params.driveCtrl.linearVel);
-                const float steer  = decode_steer_percent(motion->params.driveCtrl.steerPercent);
-                ret = MotionService_SetDriveParams(motionCtx, linear, steer, seq);
+                const float linear    = decode_linear_vel(motion->params.driveCtrl.linearVel);
+                const float curvature = decode_curvature(motion->params.driveCtrl.curvatureMilli);
+                ret = MotionService_SetDriveParams(motionCtx, linear, curvature, seq);
             }
             break;
 
         case MOTION_DIRECT_CONTROL:
             {
-                const float leftRpm  = (float)motion->params.directCtrl.leftRpm;
-                const float rightRpm = (float)motion->params.directCtrl.rightRpm;
-                const float steer    = decode_steer_percent(motion->params.directCtrl.steerPercent);
+                const float leftRpm   = (float)motion->params.directCtrl.leftRpm;
+                const float rightRpm  = (float)motion->params.directCtrl.rightRpm;
+                const float curvature = decode_curvature(motion->params.directCtrl.curvatureMilli);
                 ret = MotionService_SetDirectControlParams(motionCtx, leftRpm, rightRpm,
-                                                           steer, seq);
+                                                           curvature, seq);
             }
             break;
 
@@ -187,14 +187,14 @@ static float decode_linear_vel(const int16_t value)
 }
 
 /**
- * @brief 解码转向百分比参数
+ * @brief 解码目标曲率参数
  *
- * @param permille 原始百分比值 (0.1%步长)
- * @return float 转向百分比 (-100..100)
+ * @param milli_1pm 原始曲率值 (0.001 1/m 步长)
+ * @return float 曲率 (1/m, 右正)
  */
-static float decode_steer_percent(const int16_t permille)
+static float decode_curvature(const int16_t milli_1pm)
 {
-    return (float)permille * 0.1f;
+    return (float)milli_1pm * 0.001f;
 }
 
 /**

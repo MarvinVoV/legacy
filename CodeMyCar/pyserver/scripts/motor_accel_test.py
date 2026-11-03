@@ -76,7 +76,7 @@ def send(client: httpx.Client, base: str, seq: int, left: int, right: int) -> No
             "cmd": "motion",
             "motion": {
                 "mode": 1,
-                "params": {"left_rpm": left, "right_rpm": right, "steer_percent": 0},
+                "params": {"left_rpm": left, "right_rpm": right, "curvature_1pm": 0},
             },
         },
         timeout=10,

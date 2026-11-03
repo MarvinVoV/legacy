@@ -70,17 +70,23 @@ static bool get_required_int(const cJSON* obj, const char* key,
     return true;
 }
 
-/** Encode steering as signed 0.1% units (-1000..1000).
- *  `steer_angle` was removed from the contract; it is rejected like any
- *  other missing/invalid field so the command is never silently dropped. */
-static bool get_steer_permille(const cJSON* params, int32_t* out)
+/** Encode steering as signed 0.001 1/m units (-3770..3770).
+ *  API 字段是 `curvature_1pm`（1/m，右正）；旧的 `steer_percent` 已从契约删除，
+ *  缺失或越界都让整条命令失效，不会被静默忽略。 */
+static bool get_curvature_milli(const cJSON* params, int32_t* out)
 {
-    int32_t percent = 0;
-    if (!get_required_int(params, "steer_percent", -100, 100, &percent))
+    const cJSON* item = cJSON_GetObjectItemCaseSensitive(params, "curvature_1pm");
+    if (item == NULL || !cJSON_IsNumber(item) || out == NULL)
     {
         return false;
     }
-    *out = percent * 10;
+    const double value = item->valuedouble;
+    if (value < -3.77 || value > 3.77)
+    {
+        return false;
+    }
+    const double scaled = value * 1000.0;
+    *out = (int32_t)(scaled >= 0.0 ? (scaled + 0.5) : (scaled - 0.5));
     return true;
 }
 
@@ -206,10 +212,10 @@ int bridge_json_to_control_cmd(const char* json, size_t len,
                 valid = params == NULL || cJSON_IsObject(params);
                 break;
 
-            case BRIDGE_MODE_DIRECT: /* DirectCtrlParam: leftRpm, rightRpm, steerAngle */
+            case BRIDGE_MODE_DIRECT: /* DirectCtrlParam: leftRpm, rightRpm, curvatureMilli */
                 valid = get_required_int(params, "left_rpm", INT16_MIN, INT16_MAX, &p0) &&
                         get_required_int(params, "right_rpm", INT16_MIN, INT16_MAX, &p1) &&
-                        get_steer_permille(params, &p2);
+                        get_curvature_milli(params, &p2);
                 if (valid)
                 {
                     put_i16le(&out[3], (int16_t)p0);
@@ -228,9 +234,9 @@ int bridge_json_to_control_cmd(const char* json, size_t len,
                 }
                 break;
 
-            case BRIDGE_MODE_DRIVE: /* DriveCtrlParam: linearVel, steerAngle */
+            case BRIDGE_MODE_DRIVE: /* DriveCtrlParam: linearVel, curvatureMilli */
                 valid = get_required_int(params, "linear_vel", INT16_MIN, INT16_MAX, &p0) &&
-                        get_steer_permille(params, &p1);
+                        get_curvature_milli(params, &p1);
                 if (valid)
                 {
                     put_i16le(&out[3], (int16_t)p0);

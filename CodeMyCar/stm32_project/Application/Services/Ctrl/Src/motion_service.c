@@ -13,7 +13,7 @@
 #include "safety_service.h"
 #include "sonar_task.h"
 #include "ultrasonic_config.h"
-#include "steering_map.h"
+#include "steering_lut.h"
 
 
 //------------------------------------------------------------------------------
@@ -29,6 +29,13 @@
 
 /// mode 1-3 必须由上游持续刷新；超时后 STM32 本地硬停
 #define MOTION_COMMAND_LEASE_MS (500u)
+
+/// 双轮同步闭环：直线运动时按两轮实际转速差修正目标，抵消左右摩擦差异
+#define MOTION_SYNC_KP (0.50f)
+#define MOTION_SYNC_KI (0.10f)
+#define MOTION_SYNC_BIAS_MAX (3.0f)
+#define MOTION_SYNC_STRAIGHT_TOL_RPM (3.0f)
+#define MOTION_SYNC_DT (0.005f)
 
 /// GOAL 有有效输出但无里程/航向进展时判定堵转
 #define MOTION_GOAL_STALL_MS (1500u)
@@ -70,6 +77,8 @@ static void handle_goal(MotionContext* ctx);
 
 /// 左右轮是否已低于安全停稳阈值
 static bool drive_is_stopped(const MotionContext* ctx);
+
+static void apply_wheel_sync(MotionContext* ctx, float* left, float* right);
 
 static bool can_accept_motion_locked(const MotionContext* ctx);
 
@@ -198,10 +207,10 @@ int MotionService_SetDifferentialParams(MotionContext* ctx, float linear, float 
 }
 
 int MotionService_SetDirectControlParams(MotionContext* ctx, float left_rpm, float right_rpm,
-                                         float steer_percent, uint8_t seq)
+                                         float curvature, uint8_t seq)
 {
     // 参数验证
-    if (ctx == NULL || !isfinite(left_rpm) || !isfinite(right_rpm) || !isfinite(steer_percent))
+    if (ctx == NULL || !isfinite(left_rpm) || !isfinite(right_rpm) || !isfinite(curvature))
     {
         LOG_ERROR(LOG_MODULE_MOTION, "Invalid parameters");
         return ERR_MOTION_INVALID_PARAM;
@@ -225,8 +234,8 @@ int MotionService_SetDirectControlParams(MotionContext* ctx, float left_rpm, flo
     ctx->motionTarget.mode = MOTION_DIRECT_CONTROL;
     ctx->motionTarget.params.directCtrl.leftRpm = motion_clamp_rpm(left_rpm, MOTION_MAX_RPM);
     ctx->motionTarget.params.directCtrl.rightRpm = motion_clamp_rpm(right_rpm, MOTION_MAX_RPM);
-    ctx->motionTarget.params.directCtrl.steerPercent =
-        CLAMP(steer_percent, STEERING_PERCENT_MIN, STEERING_PERCENT_MAX);
+    ctx->motionTarget.params.directCtrl.curvature1pm =
+        CLAMP(curvature, -STEERING_KAPPA_MAX_1PM, STEERING_KAPPA_MAX_1PM);
     ctx->statusSeq = seq;
     ctx->urgentStatus = true;
     control_lease_renew(&ctx->commandLease, HAL_GetTick());
@@ -236,11 +245,11 @@ int MotionService_SetDirectControlParams(MotionContext* ctx, float left_rpm, flo
     return ERR_SUCCESS;
 }
 
-int MotionService_SetDriveParams(MotionContext* ctx, float linear_vel, float steer_percent,
+int MotionService_SetDriveParams(MotionContext* ctx, float linear_vel, float curvature,
                                  uint8_t seq)
 {
     // 参数验证
-    if (ctx == NULL || !isfinite(linear_vel) || !isfinite(steer_percent))
+    if (ctx == NULL || !isfinite(linear_vel) || !isfinite(curvature))
     {
         LOG_ERROR(LOG_MODULE_MOTION, "Invalid parameters");
         return ERR_MOTION_INVALID_PARAM;
@@ -267,8 +276,8 @@ int MotionService_SetDriveParams(MotionContext* ctx, float linear_vel, float ste
     ctx->motionTarget.mode = MOTION_DRIVE;
     ctx->motionTarget.params.driveCtrl.linearVelocity =
         CLAMP(linear_vel, -max_vel, max_vel);
-    ctx->motionTarget.params.driveCtrl.steerPercent =
-        CLAMP(steer_percent, STEERING_PERCENT_MIN, STEERING_PERCENT_MAX);
+    ctx->motionTarget.params.driveCtrl.curvature1pm =
+        CLAMP(curvature, -STEERING_KAPPA_MAX_1PM, STEERING_KAPPA_MAX_1PM);
     ctx->statusSeq = seq;
     ctx->urgentStatus = true;
     control_lease_renew(&ctx->commandLease, HAL_GetTick());
@@ -628,6 +637,9 @@ void MotionService_Run(MotionContext* ctx)
         float left  = ctx->cmdLeftRpm;
         float right = ctx->cmdRightRpm;
 
+        /* 双轮同步闭环（直线时），在限速前修正目标 */
+        apply_wheel_sync(ctx, &left, &right);
+
 #if SAFETY_GOVERNOR_ENABLED
         const SafetyChannel* front = NULL;
         const SafetyChannel* rear  = NULL;
@@ -761,11 +773,23 @@ static void abort_goal_locked(MotionContext* ctx, uint8_t newState)
     ctx->goalBlocked = false;
 }
 
+/* "前轮朝正"对应的舵机绝对角：由标定表在 kappa = 0 处查得（2026-11-03 实测
+   对应 1500us），不再有额外的中位补偿系数。 */
+static float steer_straight_angle(const MotionContext* ctx)
+{
+    float raw = 0.0f;
+    if (!steering_lut_curvature_to_raw(0.0f, mm_to_m(ctx->chassisConfig.wheelbaseMM), &raw))
+    {
+        raw = 0.0f;
+    }
+    return ctx->chassisConfig.steerCenterAngleDeg - raw;
+}
+
 static void stop_actuators(MotionContext* ctx)
 {
     MotorService_emergencyStop(ctx->motorService, MOTOR_LEFT_WHEEL);
     MotorService_emergencyStop(ctx->motorService, MOTOR_RIGHT_WHEEL);
-    SteerService_setAngleImmediate(ctx->steerServo, ctx->chassisConfig.steerCenterAngleDeg);
+    SteerService_setAngleImmediate(ctx->steerServo, steer_straight_angle(ctx));
 }
 
 /* Called with targetMutex held. */
@@ -828,15 +852,16 @@ static void handle_emergency_stop(MotionContext* ctx)
        200Hz run loop only maintains the safe command and steering position;
        repeating the full reset here would hide encoder motion and continually
        reset controller history. */
-    SteerService_setAngleImmediate(ctx->steerServo, ctx->chassisConfig.steerCenterAngleDeg);
+    SteerService_setAngleImmediate(ctx->steerServo, steer_straight_angle(ctx));
 }
 
 static void handle_direct_control(MotionContext* ctx, const MotionTarget* target)
 {
-    const float percent = CLAMP(target->params.directCtrl.steerPercent,
-                                STEERING_PERCENT_MIN, STEERING_PERCENT_MAX);
+    const float curvature = CLAMP(target->params.directCtrl.curvature1pm,
+                                  -STEERING_KAPPA_MAX_1PM, STEERING_KAPPA_MAX_1PM);
     float raw_steer = 0.0f;
-    if (!steering_map_percent_to_raw(percent, &raw_steer))
+    if (!steering_lut_curvature_to_raw(curvature,
+                                       mm_to_m(ctx->chassisConfig.wheelbaseMM), &raw_steer))
     {
         raw_steer = 0.0f;
     }
@@ -884,12 +909,13 @@ static void handle_drive(MotionContext* ctx, const MotionTarget* target)
 
     const float max_vel   = cfg->maxLinearVelocityMPS;
     const float v         = CLAMP(target->params.driveCtrl.linearVelocity, -max_vel, max_vel);
-    const float percent   = CLAMP(target->params.driveCtrl.steerPercent,
-                                  STEERING_PERCENT_MIN, STEERING_PERCENT_MAX);
+    const float curvature = CLAMP(target->params.driveCtrl.curvature1pm,
+                                  -STEERING_KAPPA_MAX_1PM, STEERING_KAPPA_MAX_1PM);
+    const float wheelbase_m = mm_to_m(cfg->wheelbaseMM);
     float equivalent_steer = 0.0f;
     float raw_steer = 0.0f;
-    if (!steering_map_percent_to_equivalent(percent, &equivalent_steer) ||
-        !steering_map_percent_to_raw(percent, &raw_steer))
+    if (!steering_lut_curvature_to_angle(curvature, wheelbase_m, &equivalent_steer) ||
+        !steering_lut_curvature_to_raw(curvature, wheelbase_m, &raw_steer))
     {
         equivalent_steer = 0.0f;
         raw_steer = 0.0f;
@@ -953,16 +979,70 @@ static void handle_goal(MotionContext* ctx)
     ctx->cmdLeftRpm  = out.leftRpm;
     ctx->cmdRightRpm = out.rightRpm;
 
-    float percent = 0.0f;
+    const float wheelbase_m = mm_to_m(ctx->chassisConfig.wheelbaseMM);
+    float curvature = 0.0f;
     float raw_steer = 0.0f;
     if (!out.pivot &&
-        (!steering_map_equivalent_to_percent(out.steerAngleDeg, &percent) ||
-         !steering_map_percent_to_raw(percent, &raw_steer)))
+        steering_lut_angle_to_curvature(out.steerAngleDeg, wheelbase_m, &curvature) &&
+        steering_lut_curvature_to_raw(curvature, wheelbase_m, &raw_steer))
+    {
+    }
+    else
     {
         raw_steer = 0.0f;
     }
     const float steer = ctx->chassisConfig.steerCenterAngleDeg - raw_steer;
     SteerService_setAngleSmoothly(ctx->steerServo, steer);
+}
+
+/* 双轮同步闭环：只在直线目标（左右指令差 <= 3 RPM）且都在运动时生效。
+   误差 = 左实际 - 右实际；>0 说明左快，则左减右加。
+   积分项用来"记住"右轮额外摩擦所需的补偿量。 */
+static void apply_wheel_sync(MotionContext* ctx, float* left, float* right)
+{
+    if (left == NULL || right == NULL)
+    {
+        return;
+    }
+    const bool straight = fabsf(*left - *right) <= MOTION_SYNC_STRAIGHT_TOL_RPM;
+    const bool moving = fabsf(*left) > 1.0f && fabsf(*right) > 1.0f &&
+                        (*left * *right) > 0.0f;
+
+    if (!straight || !moving || ctx->safetyBraked)
+    {
+        ctx->syncIntegral *= 0.90f;
+        ctx->syncBias = 0.0f;
+        return;
+    }
+
+    const float cmd = (*left + *right) * 0.5f;
+    if (fabsf(cmd - ctx->syncLastCmd) > 5.0f)
+    {
+        ctx->syncIntegral = 0.0f; /* 指令跳变（起步/换挡）时清积分，避免拖动累计 */
+    }
+    ctx->syncLastCmd = cmd;
+
+    const float err = ctx->state.drive.leftRpm - ctx->state.drive.rightRpm;
+    const float err_eff = (fabsf(err) < 0.5f) ? 0.0f : err;
+
+    /* 抗饱和：输出已顶到限幅且误差还在同方向时，不再继续积分 */
+    const float bias_now = MOTION_SYNC_KP * err_eff +
+                           MOTION_SYNC_KI * ctx->syncIntegral;
+    const bool sat_pos = bias_now >= MOTION_SYNC_BIAS_MAX - 1e-3f;
+    const bool sat_neg = bias_now <= -MOTION_SYNC_BIAS_MAX + 1e-3f;
+    if (!((err_eff > 0.0f && sat_pos) || (err_eff < 0.0f && sat_neg)))
+    {
+        ctx->syncIntegral += err_eff * MOTION_SYNC_DT;
+        const float i_limit = MOTION_SYNC_BIAS_MAX / MOTION_SYNC_KI;
+        ctx->syncIntegral = CLAMP(ctx->syncIntegral, -i_limit, i_limit);
+    }
+
+    float bias = MOTION_SYNC_KP * err_eff + MOTION_SYNC_KI * ctx->syncIntegral;
+    bias = CLAMP(bias, -MOTION_SYNC_BIAS_MAX, MOTION_SYNC_BIAS_MAX);
+    ctx->syncBias = bias;
+
+    *left -= bias;
+    *right += bias;
 }
 
 static void update_runtime_state(MotionContext* ctx)

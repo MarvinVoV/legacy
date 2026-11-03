@@ -53,6 +53,16 @@ cmake --preset Debug          # 配置（首次或 CMakeLists 变更后）
 cmake --build build/Debug     # 编译
 ```
 
+**无声呐变体**（车辆未放置 / 台架调试时用，不测距、不蜂鸣、不参与安全限速）：
+
+```bash
+cmake --preset NoSonar           # 输出到 build/NoSonar
+cmake --build build/NoSonar
+# 烧录 build/NoSonar/stm32_project.elf
+```
+
+对应 CMake 选项 `CMCAR_SONAR_ENABLED=OFF`；正常固件仍是 `ON`，两者互不影响。
+
 成功时输出类似：
 
 ```

@@ -86,6 +86,14 @@ target_compile_definitions(${PROJECT_NAME}.elf PRIVATE
         CMCAR_GIT_SHA="${CMCAR_GIT_SHA}"
         CMCAR_GIT_DIRTY=${CMCAR_GIT_DIRTY}
         CMCAR_PROTOCOL_VERSION=2)
+
+# 超声波整体开关：OFF 时不测距、不蜂鸣、不参与安全限速（台架/未放置时用）。
+# 用法：cmake --preset NoSonar
+option(CMCAR_SONAR_ENABLED "Enable ultrasonic sensing and safety governor" ON)
+if (NOT CMCAR_SONAR_ENABLED)
+    target_compile_definitions(${PROJECT_NAME}.elf PRIVATE CMCAR_SONAR_DISABLED=1)
+endif ()
+
 target_link_libraries(${PROJECT_NAME}.elf m)
 
 set(HEX_FILE ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.hex)

@@ -75,13 +75,13 @@ echo "== servo service =="
   -lm -o "${TMPDIR:-/tmp}/servo_service_test"
 "${TMPDIR:-/tmp}/servo_service_test"
 
-echo "== steering map =="
+echo "== steering LUT =="
 "$CC" -std=c11 -Wall -Wextra -O2 \
   -I "$DIR/Application/System/Utils/Inc" \
-  "$DIR/tests/host/steering_map_test.c" \
-  "$DIR/Application/System/Utils/Src/steering_map.c" \
-  -lm -o "${TMPDIR:-/tmp}/steering_map_test"
-"${TMPDIR:-/tmp}/steering_map_test"
+  "$DIR/tests/host/steering_lut_test.c" \
+  "$DIR/Application/System/Utils/Src/steering_lut.c" \
+  -lm -o "${TMPDIR:-/tmp}/steering_lut_test"
+"${TMPDIR:-/tmp}/steering_lut_test"
 
 echo "== PID simulation =="
 "$CC" -std=c11 -Wall -Wextra -O2 \

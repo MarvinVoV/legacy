@@ -56,15 +56,15 @@ typedef struct
         struct
         {
             float linearVelocity; ///< 目标线速度 (m/s)
-            float steerPercent;   ///< 目标转向百分比 (-100..100)
+            float curvature1pm;   ///< 目标曲率 (1/m, 右正)
         } driveCtrl;
 
         // 直接控制参数
         struct
         {
-            float leftRpm;    ///< 左轮目标转速 (RPM)
-            float rightRpm;   ///< 右轮目标转速 (RPM)
-            float steerPercent; ///< 目标转向百分比 (-100..100)
+            float leftRpm;      ///< 左轮目标转速 (RPM)
+            float rightRpm;     ///< 右轮目标转速 (RPM)
+            float curvature1pm; ///< 目标曲率 (1/m, 右正)
         } directCtrl;
     } params;
 } MotionTarget;
@@ -127,6 +127,9 @@ typedef struct
     bool            goalBlocked;  ///< GOAL 是否因障碍持续被挡
     uint32_t        goalBlockedMs;///< 开始被挡的时刻
     bool            safetyBraked; ///< 是否处于避障硬停止（短接制动）
+    float           syncIntegral; ///< 双轮同步环积分项
+    float           syncLastCmd;  ///< 上一周期同步环看到的平均指令（用于指令跳变时清积分）
+    float           syncBias;     ///< 双轮同步修正量（RPM，>0 表示给右轮加、左轮减）
     ControlLease    commandLease; ///< mode 1-3 本地命令租约
     uint8_t         statusSeq;    ///< 最近一次成功接受的命令 seq
     uint8_t         faultCode;    ///< MOTION_ERR_* 锁存故障码
@@ -180,14 +183,14 @@ int MotionService_SetDifferentialParams(MotionContext* ctx, float linear, float 
  * @param ctx 上下文指针
  * @param left_rpm 左轮目标转速 (RPM)
  * @param right_rpm 右轮目标转速 (RPM)
- * @param steer_percent 目标转向百分比 (-100..100)
+ * @param curvature 目标曲率 (1/m, 右正, |curvature| <= STEERING_KAPPA_MAX_1PM)
  *
  * @retval ERR_SUCCESS 设置成功
  * @retval ERR_MOTION_INVALID_PARAM 参数无效
  * @retval ERR_MOTION_MODE_MISMATCH 模式不匹配
  */
 int MotionService_SetDirectControlParams(MotionContext* ctx, float left_rpm,
-                                         float right_rpm, float steer_percent,
+                                         float right_rpm, float curvature,
                                          uint8_t seq);
 
 /**
@@ -195,14 +198,14 @@ int MotionService_SetDirectControlParams(MotionContext* ctx, float left_rpm,
  *
  * @param ctx 上下文指针
  * @param linear_vel 目标线速度 (m/s)
- * @param steer_percent 目标转向百分比 (-100..100)
+ * @param curvature 目标曲率 (1/m, 右正, |curvature| <= STEERING_KAPPA_MAX_1PM)
  *
  * @retval ERR_SUCCESS 设置成功
  * @retval ERR_MOTION_INVALID_PARAM 参数无效
  * @retval ERR_MOTION_MODE_MISMATCH 模式不匹配
  */
 int MotionService_SetDriveParams(MotionContext* ctx, float linear_vel,
-                                 float steer_percent, uint8_t seq);
+                                 float curvature, uint8_t seq);
 
 
 /**

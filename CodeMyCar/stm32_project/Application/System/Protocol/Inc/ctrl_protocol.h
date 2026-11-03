@@ -45,7 +45,7 @@ typedef struct
 {
     int16_t leftRpm;    ///< 左轮目标转速 (RPM)
     int16_t rightRpm;   ///< 右轮目标转速 (RPM)
-    int16_t steerPercent; ///< 转向百分比 (0.1%, -1000..1000)
+    int16_t curvatureMilli; ///< 目标曲率 (0.001 1/m, -3770..3770, 右正)
 } DirectCtrlParam;
 
 /**
@@ -54,7 +54,7 @@ typedef struct
 typedef struct
 {
     int16_t linearVel;  ///< 线速度 (0.001 m/s步长, -1000..1000)
-    int16_t steerPercent; ///< 转向百分比 (0.1%, -1000..1000)
+    int16_t curvatureMilli; ///< 目标曲率 (0.001 1/m, -3770..3770, 右正)
 } DriveCtrlParam;
 
 /**

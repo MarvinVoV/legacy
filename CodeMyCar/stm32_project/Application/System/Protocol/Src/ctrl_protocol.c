@@ -70,7 +70,7 @@ int validateControlCmd(const uint8_t* cmd, uint16_t len)
             const DirectCtrlParam* d = &c->motion.params.directCtrl;
             if (d->leftRpm < -300 || d->leftRpm > 300 ||
                 d->rightRpm < -300 || d->rightRpm > 300 ||
-                d->steerPercent < -1000 || d->steerPercent > 1000)
+                d->curvatureMilli < -3770 || d->curvatureMilli > 3770)
             {
                 return ERR_MOTION_INVALID_PARAM;
             }
@@ -92,7 +92,7 @@ int validateControlCmd(const uint8_t* cmd, uint16_t len)
         {
             const DriveCtrlParam* d = &c->motion.params.driveCtrl;
             if (d->linearVel < -1000 || d->linearVel > 1000 ||
-                d->steerPercent < -1000 || d->steerPercent > 1000)
+                d->curvatureMilli < -3770 || d->curvatureMilli > 3770)
             {
                 return ERR_MOTION_INVALID_PARAM;
             }
