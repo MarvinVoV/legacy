@@ -222,6 +222,19 @@ static void test_governor_rear_not_installed(void)
     CHECK_NEAR(s, 1.0f, 1e-6f);
 }
 
+/* 10. 蠕动截止：调速比例低于 SAFETY_MIN_SCALE 时直接为 0 */
+static void test_creep_cutoff(void)
+{
+    SafetyChannel ch;
+    safety_channel_init(&ch, true, 0, 12, 40);
+
+    feed(&ch, 17, 5); /* (17-12)/28 = 0.179 > 0.15 */
+    CHECK(ch.scale > 0.15f);
+
+    feed(&ch, 15, 5); /* (15-12)/28 = 0.107 < 0.15 -> 0 */
+    CHECK_NEAR(ch.scale, 0.0f, 1e-6f);
+}
+
 int main(void)
 {
     test_scale_curve();
@@ -234,6 +247,7 @@ int main(void)
     test_governor_rear();
     test_governor_rear_not_installed();
     test_hard_stop_predicate();
+    test_creep_cutoff();
 
     if (g_failures == 0)
     {

@@ -14,6 +14,16 @@
  * 功能开关（分模块测试用）
  *---------------------------------------------------------------------------*/
 
+#ifdef CMCAR_SONAR_DISABLED
+/*
+ * 编译期整体关闭（CMake 选项 CMCAR_SONAR_ENABLED=OFF，preset "NoSonar"）：
+ * 不测距、不蜂鸣、不参与安全限速。用于车辆未放置或台架调试。
+ */
+#define SAFETY_GOVERNOR_ENABLED 0
+#define ULTRASONIC_FRONT_ENABLED 0
+#define ULTRASONIC_REAR_ENABLED 0
+#else
+
 /** 安全限速总开关：
  *  1 = 按距离限速/停车
  *  0 = 运动完全不受超声波影响（超声波仍正常测量、打日志、上报） */
@@ -25,12 +35,14 @@
 /** 后向传感器是否启用（2026-10-31 已安装并测试通过） */
 #define ULTRASONIC_REAR_ENABLED 1
 
+#endif /* CMCAR_SONAR_DISABLED */
+
 /*------------------------------------------------------------------------------
  * 安全距离参数（cm）
  *---------------------------------------------------------------------------*/
 
-/** 停止距离：小于等于该值停车 */
-#define SAFETY_STOP_CM 8
+/** 停止距离：小于等于该值停车（落地实测近场读数偏差大，留余量） */
+#define SAFETY_STOP_CM 12
 
 /** 开始减速距离：大于该值全速，中间线性减速 */
 #define SAFETY_SLOW_CM 40
@@ -40,7 +52,8 @@
 #define REAR_OFFSET_CM 0
 
 /** 硬停止解除的迟滞距离（cm）：距离大于该值才解除短接刹车 */
-#define SAFETY_BRAKE_RELEASE_CM 12
+#define SAFETY_BRAKE_RELEASE_CM 16
+
 
 /** GOAL 模式持续被挡多久后中止（ms） */
 #define SAFETY_GOAL_BLOCK_ABORT_MS 5000u

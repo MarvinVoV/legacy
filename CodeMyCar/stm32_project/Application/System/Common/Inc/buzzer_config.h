@@ -27,7 +27,7 @@
 
 /** 减速区蜂鸣阈值（cm）：8 < d < 40 时响 */
 #define BUZZER_NEAR_CM 40
-#define BUZZER_STOP_CM 8
+#define BUZZER_STOP_CM 12
 
 /** 节奏分档阈值（cm）：越近越快 */
 #define BUZZER_MID_CM  25

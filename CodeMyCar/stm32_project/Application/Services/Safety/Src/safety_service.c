@@ -69,7 +69,10 @@ static float distance_to_scale(const SafetyChannel* ch, int16_t distanceCm)
     {
         return 0.0f;
     }
-    return (d - (float)ch->stopCm) / ((float)ch->slowCm - (float)ch->stopCm);
+    const float scale =
+        (d - (float)ch->stopCm) / ((float)ch->slowCm - (float)ch->stopCm);
+    /* 低于最小比例时直接输出 0：落地实测 12~20 cm 区间会以 2~3 cm/s 蠕动贴障碍 */
+    return (scale < SAFETY_MIN_SCALE) ? 0.0f : scale;
 }
 
 /*------------------------------------------------------------------------------

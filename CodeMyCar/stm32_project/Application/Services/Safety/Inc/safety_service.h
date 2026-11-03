@@ -24,6 +24,11 @@
 /** 原地转判定死区（RPM）：|左+右|/2 小于该值视为原地转 */
 #define SAFETY_PIVOT_DEADBAND_RPM 1.0f
 
+/** 蠕动截止：调速比例低于该值时直接输出 0（避免贴近障碍以 2~3 cm/s 蠕动） */
+#ifndef SAFETY_MIN_SCALE
+#define SAFETY_MIN_SCALE 0.15f
+#endif
+
 typedef struct
 {
     float    scale;      ///< 0..1，当前速度比例
