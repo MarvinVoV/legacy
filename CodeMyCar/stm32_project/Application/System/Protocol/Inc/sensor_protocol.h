@@ -14,7 +14,8 @@ typedef enum
 {
     SENSOR_IMU = 0x01,
     SENSOR_INFRARED,
-    SENSOR_ULTRASONIC
+    SENSOR_ULTRASONIC,
+    SENSOR_HEADING /* IMU 航向：yaw(0.1°) + yaw_rate(0.01°/s) + status */
 } sensor_type_t;
 
 typedef struct

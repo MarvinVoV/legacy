@@ -82,6 +82,12 @@ def create_handlers(
         state = devices[device_id]
         state.last_sensor = time.time()
         state.latest_sensor = data
+        if getattr(data, "type", None) == "heading":
+            state.latest_heading = data
+            state.last_heading = time.time()
+        elif getattr(data, "type", None) == "imu":
+            state.latest_imu = data
+            state.last_imu = time.time()
         logger.debug("Sensor from %s: type=%s", device_id, data.type)
 
     async def on_log(topic: str, payload: bytes) -> None:

@@ -9,7 +9,8 @@
 #include "sh2_SensorValue.h"
 
 #define IMU_RAD2DEG 57.29578f
-#define IMU_CALIB_SAMPLES 200u
+#define IMU_CALIB_SAMPLES 100u /* 1 s 静止样本 */
+#define IMU_CALIB_MAX_DPS 5.0f /* 超过视为运动，丢弃样本 */
 #define IMU_REPORT_INTERVAL_US 10000u /* 100 Hz */
 
 extern sh2_Hal_t sh2_hal_stm32;
@@ -66,6 +67,13 @@ static void imu_sensor_cb(void* cookie, sh2_SensorEvent_t* event)
             s->gyroCount++;
             break;
 
+        case SH2_ACCELEROMETER:
+            s->accelX = value.un.accelerometer.x;
+            s->accelY = value.un.accelerometer.y;
+            s->accelZ = value.un.accelerometer.z;
+            s->accelCount++;
+            break;
+
         default:
             break;
     }
@@ -91,6 +99,11 @@ int ImuService_Init(ImuService* s, I2C_HandleTypeDef* i2c)
     cfg.reportInterval_us = IMU_REPORT_INTERVAL_US;
     (void)sh2_setSensorConfig(SH2_GAME_ROTATION_VECTOR, &cfg);
     (void)sh2_setSensorConfig(SH2_GYROSCOPE_CALIBRATED, &cfg);
+
+    sh2_SensorConfig_t accelCfg;
+    memset(&accelCfg, 0, sizeof(accelCfg));
+    accelCfg.reportInterval_us = 20000u; /* 50 Hz，上报按 10 Hz */
+    (void)sh2_setSensorConfig(SH2_ACCELEROMETER, &accelCfg);
 
     s->inited = true;
     s->calibrating = true;
@@ -128,13 +141,27 @@ void ImuService_Update(ImuService* s)
     const float gyroZDps = s->gyroZ * IMU_RAD2DEG;
     if (s->calibrating)
     {
-        s->calibSumDps += (double)gyroZDps;
-        s->calibCount++;
+        /* 只在接近静止时采样：车在转动时把样本丢弃并重新计数 */
+        if (fabsf(gyroZDps) > IMU_CALIB_MAX_DPS)
+        {
+            s->calibCount = 0u;
+            s->calibSumDps = 0.0;
+        }
+        else
+        {
+            s->calibSumDps += (double)gyroZDps;
+            s->calibCount++;
+        }
         if (s->calibCount >= IMU_CALIB_SAMPLES)
         {
             s->biasDps = (float)(s->calibSumDps / (double)s->calibCount);
             s->calibrating = false;
         }
+    }
+    else if (fabsf(gyroZDps - s->biasDps) < 0.5f)
+    {
+        /* 长时间静止时缓慢跟踪零偏漂移 */
+        s->biasDps += 0.0005f * (gyroZDps - s->biasDps);
     }
     s->yawRateDps = gyroZDps - s->biasDps;
 

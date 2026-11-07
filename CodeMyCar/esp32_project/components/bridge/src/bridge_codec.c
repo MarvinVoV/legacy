@@ -21,6 +21,7 @@
 #define SENSOR_TYPE_IMU       1
 #define SENSOR_TYPE_INFRARED  2
 #define SENSOR_TYPE_ULTRASONIC 3
+#define SENSOR_TYPE_HEADING   4  /* yaw + yaw_rate + status */
 #define SENSOR_HEADER_SIZE    5 /* timestamp(4) + type(1) */
 
 /* log_entry_t（#pragma pack(1)）：timestamp(u32) | module(u16) | level(u8) | message[] */
@@ -368,6 +369,20 @@ int bridge_sensor_to_json(const uint8_t* payload, uint8_t len,
             }
             break;
         }
+        case SENSOR_TYPE_HEADING:
+        {
+            /* payload: yaw(i16,0.1°) + yaw_rate(i16,0.01°/s) + status(u8) */
+            if (data_len < 5) { return 0; }
+            const int16_t yaw_ddeg = (int16_t)rd_u16le(data);
+            const int16_t rate_cdps = (int16_t)rd_u16le(&data[2]);
+            n = snprintf(out, out_size,
+                         "{\"type\":\"heading\",\"timestamp\":%lu,"
+                         "\"data\":{\"yaw_mdeg\":%d,\"yaw_rate_mdps\":%d,\"status\":%u}}",
+                         (unsigned long)ts, (int)yaw_ddeg * 100, (int)rate_cdps * 10,
+                         (unsigned)data[4]);
+            break;
+        }
+
         default:
             n = snprintf(out, out_size,
                          "{\"type\":\"unknown\",\"timestamp\":%lu,\"data\":{}}",

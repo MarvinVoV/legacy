@@ -14,6 +14,8 @@
 #include "sonar_task.h"
 #include "ultrasonic_config.h"
 #include "steering_lut.h"
+#include "heading_control.h"
+#include "imu_task.h"
 
 
 //------------------------------------------------------------------------------
@@ -36,6 +38,8 @@
 #define MOTION_SYNC_BIAS_MAX (3.0f)
 #define MOTION_SYNC_STRAIGHT_TOL_RPM (3.0f)
 #define MOTION_SYNC_DT (0.005f)
+
+static HeadingControl s_headingControl;
 
 /// GOAL 有有效输出但无里程/航向进展时判定堵转
 #define MOTION_GOAL_STALL_MS (1500u)
@@ -117,6 +121,7 @@ int MotionContext_Init(MotionContext* ctx, MotorService* motor, SteerInstance* s
 
     // 初始化结构体
     memset(ctx, 0, sizeof(MotionContext));
+    HeadingControl_Init(&s_headingControl, 0.0f, 0.0f);
 
     // 设置服务实例
     ctx->motorService = motor;
@@ -773,6 +778,25 @@ static void abort_goal_locked(MotionContext* ctx, uint8_t newState)
     ctx->goalBlocked = false;
 }
 
+/* 用 IMU 航向反馈修正曲率；IMU 不可用时原样返回 */
+static float heading_correct(MotionContext* ctx, float kappa, bool straight)
+{
+    ImuService* imu = ImuTask_GetService();
+    if (imu == NULL || !imu->yawValid)
+    {
+        HeadingControl_Disable(&s_headingControl);
+        return kappa;
+    }
+
+    const float wheel_r_m = mm_to_m(ctx->chassisConfig.wheelRadiusMM);
+    const float left_mps  = ctx->state.drive.leftRpm  * 2.0f * 3.14159265f * wheel_r_m / 60.0f;
+    const float right_mps = ctx->state.drive.rightRpm * 2.0f * 3.14159265f * wheel_r_m / 60.0f;
+    const float v = 0.5f * (left_mps + right_mps);
+
+    return HeadingControl_Apply(&s_headingControl, imu->yawDeg, imu->yawRateDps,
+                                v, kappa, straight);
+}
+
 /* "前轮朝正"对应的舵机绝对角：由标定表在 kappa = 0 处查得（2026-11-03 实测
    对应 1500us），不再有额外的中位补偿系数。 */
 static float steer_straight_angle(const MotionContext* ctx)
@@ -859,8 +883,12 @@ static void handle_direct_control(MotionContext* ctx, const MotionTarget* target
 {
     const float curvature = CLAMP(target->params.directCtrl.curvature1pm,
                                   -STEERING_KAPPA_MAX_1PM, STEERING_KAPPA_MAX_1PM);
+    /* 直行（左右轮目标接近）→ 航向保持；否则交给曲率前馈 */
+    const bool straight =
+        fabsf(target->params.directCtrl.leftRpm - target->params.directCtrl.rightRpm) <= 3.0f;
+    const float curvature_eff = heading_correct(ctx, curvature, straight);
     float raw_steer = 0.0f;
-    if (!steering_lut_curvature_to_raw(curvature,
+    if (!steering_lut_curvature_to_raw(curvature_eff,
                                        mm_to_m(ctx->chassisConfig.wheelbaseMM), &raw_steer))
     {
         raw_steer = 0.0f;
@@ -912,10 +940,12 @@ static void handle_drive(MotionContext* ctx, const MotionTarget* target)
     const float curvature = CLAMP(target->params.driveCtrl.curvature1pm,
                                   -STEERING_KAPPA_MAX_1PM, STEERING_KAPPA_MAX_1PM);
     const float wheelbase_m = mm_to_m(cfg->wheelbaseMM);
+    const bool straight = fabsf(curvature) < 0.05f;
+    const float curvature_eff = heading_correct(ctx, curvature, straight);
     float equivalent_steer = 0.0f;
     float raw_steer = 0.0f;
-    if (!steering_lut_curvature_to_angle(curvature, wheelbase_m, &equivalent_steer) ||
-        !steering_lut_curvature_to_raw(curvature, wheelbase_m, &raw_steer))
+    if (!steering_lut_curvature_to_angle(curvature_eff, wheelbase_m, &equivalent_steer) ||
+        !steering_lut_curvature_to_raw(curvature_eff, wheelbase_m, &raw_steer))
     {
         equivalent_steer = 0.0f;
         raw_steer = 0.0f;

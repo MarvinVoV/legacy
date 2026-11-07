@@ -16,6 +16,11 @@ class DeviceState(BaseModel):
     last_sensor: float = 0.0
     heartbeat_data: Optional[HeartbeatData] = None
     latest_sensor: Optional[SensorData] = None
+    # IMU 航向帧单独缓存（与超声波帧交替到达，不能互相覆盖）
+    latest_heading: Optional[SensorData] = None
+    last_heading: float = 0.0
+    latest_imu: Optional[SensorData] = None
+    last_imu: float = 0.0
     log_count: int = 0
     last_ack_seq: Optional[int] = None
     last_ack_time: float = 0.0
@@ -39,3 +44,14 @@ class DeviceStatus(BaseModel):
     front_distance_cm: Optional[int] = None
     rear_distance_cm: Optional[int] = None
     sensor_age_s: Optional[float] = None  # 距上次超声波上报的秒数
+
+    # IMU 航向（SENSOR_HEADING 帧）
+    yaw_deg: Optional[float] = None
+    yaw_rate_dps: Optional[float] = None
+    imu_status: Optional[int] = None
+    imu_age_s: Optional[float] = None
+
+    # IMU 六轴原始数据（SENSOR_IMU 帧）
+    accel_mps2: Optional[list[float]] = None
+    gyro_radps: Optional[list[float]] = None
+    imu_raw_age_s: Optional[float] = None

@@ -1,5 +1,7 @@
 #include "imu_task.h"
 
+#include <math.h>
+#include <string.h>
 #include <stdio.h>
 
 #include "cmsis_os.h"
@@ -7,15 +9,72 @@
 #include "freertos_os2.h"
 #include "log_manager.h"
 #include "system_init.h"
+#include "uart_handle.h"
+#include "pkt_protocol.h"
+#include "sensor_protocol.h"
 #include "task.h"
 
 #define IMU_TASK_PERIOD_MS 10u /* 100 Hz */
 #define IMU_LOG_PERIOD_MS 100u /* 10 Hz */
 #define IMU_TIMEOUT_MS 2000u
 
+static uint8_t s_sensorSeq;
 static osThreadId_t imuTaskHandle;
 static ImuService* imuService;
 static ImuService s_imuFallback;
+
+/* 10 Hz 上报航向帧（payload 10 字节）：
+   ts(u32) + type(u8) + yaw(i16,0.1°) + yaw_rate(i16,0.01°/s) + status(u8) */
+static void send_heading_frame(const ImuService* s)
+{
+    if (!s->yawValid)
+    {
+        return;
+    }
+    uint8_t payload[10];
+    const uint32_t ts = HAL_GetTick();
+    payload[0] = (uint8_t)(ts & 0xFFu);
+    payload[1] = (uint8_t)((ts >> 8) & 0xFFu);
+    payload[2] = (uint8_t)((ts >> 16) & 0xFFu);
+    payload[3] = (uint8_t)((ts >> 24) & 0xFFu);
+    payload[4] = (uint8_t)SENSOR_HEADING;
+
+    int16_t yaw_ddeg = (int16_t)lroundf(s->yawDeg * 10.0f);
+    int16_t rate_cdps = (int16_t)lroundf(s->yawRateDps * 100.0f);
+
+    payload[5] = (uint8_t)((uint16_t)yaw_ddeg & 0xFFu);
+    payload[6] = (uint8_t)((uint16_t)yaw_ddeg >> 8);
+    payload[7] = (uint8_t)((uint16_t)rate_cdps & 0xFFu);
+    payload[8] = (uint8_t)((uint16_t)rate_cdps >> 8);
+    payload[9] = s->status;
+
+    (void)UART_Send_Frame(PROTOCOL_TYPE_SENSOR, s_sensorSeq++, 0u, payload,
+                          (uint16_t)sizeof(payload));
+}
+
+/* 10 Hz 上报 6 轴数据（payload 29 字节）：
+   ts(u32) + type(u8) + accel[3](float) + gyro[3](float) */
+static void send_imu_frame(const ImuService* s)
+{
+    if (!s->yawValid)
+    {
+        return;
+    }
+    uint8_t payload[29];
+    const uint32_t ts = HAL_GetTick();
+    payload[0] = (uint8_t)(ts & 0xFFu);
+    payload[1] = (uint8_t)((ts >> 8) & 0xFFu);
+    payload[2] = (uint8_t)((ts >> 16) & 0xFFu);
+    payload[3] = (uint8_t)((ts >> 24) & 0xFFu);
+    payload[4] = (uint8_t)SENSOR_IMU;
+
+    const float vals[6] = {s->accelX, s->accelY, s->accelZ,
+                           s->gyroX, s->gyroY, s->gyroZ};
+    memcpy(&payload[5], vals, sizeof(vals));
+
+    (void)UART_Send_Frame(PROTOCOL_TYPE_SENSOR, s_sensorSeq++, 0u, payload,
+                          (uint16_t)sizeof(payload));
+}
 
 static void ImuTask_doTask(void* pvParameters)
 {
@@ -84,6 +143,8 @@ static void ImuTask_doTask(void* pvParameters)
                          sh2_diag_last_pl[0], sh2_diag_last_pl[1],
                          sh2_diag_last_pl[2], sh2_diag_last_pl[3]);
             }
+            send_heading_frame(svc); /* 10 Hz 上报航向 */
+            send_imu_frame(svc);     /* 10 Hz 上报六轴原始数据 */
         }
 
         osDelayUntil(lastWake + pdMS_TO_TICKS(IMU_TASK_PERIOD_MS));

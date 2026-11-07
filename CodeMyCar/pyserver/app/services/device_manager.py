@@ -51,6 +51,56 @@ class DeviceManager:
             if state.last_sensor > 0:
                 sensor_age = round(time.time() - state.last_sensor, 1)
 
+        # IMU 航向
+        yaw_deg = None
+        yaw_rate_dps = None
+        imu_status = None
+        imu_age_s = None
+        heading = state.latest_heading
+        if heading is not None:
+            hdata = heading.data or {}
+            yaw_mdeg = hdata.get("yaw_mdeg")
+            rate_mdps = hdata.get("yaw_rate_mdps")
+            yaw_deg = round(yaw_mdeg / 1000.0, 3) if isinstance(yaw_mdeg, int) else None
+            yaw_rate_dps = round(rate_mdps / 1000.0, 3) if isinstance(rate_mdps, int) else None
+            st = hdata.get("status")
+            imu_status = st if isinstance(st, int) else None
+            if state.last_heading > 0:
+                imu_age_s = round(time.time() - state.last_heading, 1)
+
+        # IMU 航向
+        yaw_deg = None
+        yaw_rate_dps = None
+        imu_status = None
+        imu_age_s = None
+        heading = state.latest_heading
+        if heading is not None:
+            hdata = heading.data or {}
+            yaw_mdeg = hdata.get("yaw_mdeg")
+            rate_mdps = hdata.get("yaw_rate_mdps")
+            yaw_deg = round(yaw_mdeg / 1000.0, 3) if isinstance(yaw_mdeg, int) else None
+            yaw_rate_dps = round(rate_mdps / 1000.0, 3) if isinstance(rate_mdps, int) else None
+            st = hdata.get("status")
+            imu_status = st if isinstance(st, int) else None
+            if state.last_heading > 0:
+                imu_age_s = round(time.time() - state.last_heading, 1)
+
+        # IMU 六轴原始数据
+        accel_mps2 = None
+        gyro_radps = None
+        imu_raw_age_s = None
+        imu_data = state.latest_imu
+        if imu_data is not None:
+            raw = imu_data.data or {}
+            acc = raw.get("accel")
+            gyr = raw.get("gyro")
+            if isinstance(acc, list) and len(acc) == 3:
+                accel_mps2 = [round(v / 1000.0, 3) for v in acc if isinstance(v, (int, float))]
+            if isinstance(gyr, list) and len(gyr) == 3:
+                gyro_radps = [round(v / 1000.0, 3) for v in gyr if isinstance(v, (int, float))]
+            if state.last_imu > 0:
+                imu_raw_age_s = round(time.time() - state.last_imu, 1)
+
         return DeviceStatus(
             device_id=device_id,
             online=online,
@@ -61,6 +111,13 @@ class DeviceManager:
             front_distance_cm=front_cm,
             rear_distance_cm=rear_cm,
             sensor_age_s=sensor_age,
+            yaw_deg=yaw_deg,
+            yaw_rate_dps=yaw_rate_dps,
+            imu_status=imu_status,
+            imu_age_s=imu_age_s,
+            accel_mps2=accel_mps2,
+            gyro_radps=gyro_radps,
+            imu_raw_age_s=imu_raw_age_s,
         )
 
     def list_devices(self) -> list[DeviceStatus]:

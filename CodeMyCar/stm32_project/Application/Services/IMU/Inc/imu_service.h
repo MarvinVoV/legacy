@@ -21,6 +21,7 @@ typedef struct
     /* 最新原始数据 */
     float quatW, quatX, quatY, quatZ;
     float gyroX, gyroY, gyroZ; /* rad/s */
+    float accelX, accelY, accelZ; /* m/s^2 */
 
     /* 航向 */
     float yawDeg;      /* 连续角（不回绕） */
@@ -39,6 +40,7 @@ typedef struct
     /* 诊断 */
     uint32_t grvCount;
     uint32_t gyroCount;
+    uint32_t accelCount;
     uint32_t lastUpdateMs;
 } ImuService;
 
