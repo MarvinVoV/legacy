@@ -15,13 +15,15 @@
  *     1533us -> -2.6 deg/m
  *     1540us -> +0.1 deg/m   <- 真正走直
  *     1600us -> +16.8 deg/m
- * 因此整条脉宽曲线右移 +40us，使 kappa = 0 输出 1540us；输出夹在实测
+ * 2026-11-07 用钢尺/量角器重新目视 + 落地手推复核，中点取 1470us
+ * （静态目视受约 4° 连杆回差影响，需以落地测试为准）。整条曲线平移
+ * -30us，使 kappa = 0 输出 1470us；输出夹在实测
  * 安全范围 [950, 2250]us，避免左满顶死（原左端只有 2–3 mm 余量）。
  *
  * 机械复位（拆舵机臂重新对中，让 1500us 重新等于前轮正中）后，必须把
  * STEER_PULSE_OFFSET_US 改回 0 并重跑地面直行标定。
  */
-#define STEER_PULSE_OFFSET_US (40.0f)
+#define STEER_PULSE_OFFSET_US (-30.0f)
 #define STEER_PULSE_SAFE_MIN_US (950.0f)
 #define STEER_PULSE_SAFE_MAX_US (2250.0f)
 

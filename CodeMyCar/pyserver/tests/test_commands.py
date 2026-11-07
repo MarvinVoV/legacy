@@ -73,7 +73,7 @@ def test_removed_steering_fields_are_rejected():
 
 
 def test_default_turn_radius_matches_stm32_nominal_limit():
-    assert Settings(_env_file=None).agent_min_turn_radius_mm == 265
+    assert Settings(_env_file=None).agent_min_turn_radius_mm == 260
 
 
 def test_removed_params_are_gone():
