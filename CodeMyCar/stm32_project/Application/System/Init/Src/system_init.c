@@ -11,6 +11,7 @@
 #include "buzzer.h"
 #include "buzzer_config.h"
 #include "safety_supervisor.h"
+#include "imu_task.h"
 
 
 /**
@@ -19,10 +20,10 @@
  * @note 所有长度单位统一为毫米(mm)，角度单位为度(deg)
  */
 static const ChassisConfig DEFAULT_CHASSIS_CFG = {
-    .wheelbaseMM = 144.0f,        // 轴距（前后轮中心距），单位：毫米(mm)
-    .trackWidthMM = 163.0f,       // 轮距（2026-11-03 实测：外缘 190 - 胎宽 27）
+    .wheelbaseMM = 141.0f,        // 轴距（2026-11-07 实测：前轴心→后轴心 141mm）
+    .trackWidthMM = 167.0f,       // 轮距（实测：外缘 190 - 卡尺胎宽 23）
     .wheelRadiusMM = 32.5f,       // 驱动轮半径（实测直径 65mm），单位：毫米(mm)
-    .minTurnRadiusMM = 265.0f,    // 最小转弯半径 = 轴距 / tan(28.5°)（弱侧实测）
+    .minTurnRadiusMM = 260.0f,    // 最小转弯半径 = 141 / tan(28.5°) ≈ 259.7
     .maxLinearVelocityMPS = 1.0f, // 保守上限：300 RPM ≈ 1.02 m/s
     .maxAngularVelRad = 8.2f,     // 保守上限（满轮速原地旋转约 12 rad/s）
     .maxSteerAngleDeg = 28.5f,    // 等效转角上限（弱侧实测）；执行器由标定表映射
@@ -40,6 +41,7 @@ static SystemContext sysCtx;
 // 模块实例
 static MotorService        motorService;
 static SteerInstance       steerInstance;
+static ImuService          imuService;
 static MotionContext       motionContext;
 static CmdProcessorContext commandContext;
 
@@ -317,6 +319,9 @@ int System_Initialize()
     // 5. 超声波硬件 + 测距任务（独立于运动链，失败不阻塞系统）
     SonarHw_Init();
     SonarTask_Init();
+
+    // 5b. IMU（BNO085，I2C1）：初始化在 ImuTask 内部完成（默认任务栈太小）
+    ImuTask_Init(&imuService);
 
     // 6. 蜂鸣器（上电自检响 3 声，便于确认接线）
     Buzzer_Init();

@@ -57,6 +57,8 @@ TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim4;
 TIM_HandleTypeDef htim5;
 
+I2C_HandleTypeDef hi2c1;
+
 UART_HandleTypeDef huart4;
 UART_HandleTypeDef huart1;
 DMA_HandleTypeDef hdma_uart4_rx;
@@ -85,6 +87,7 @@ static void MX_USART1_UART_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_TIM4_Init(void);
 static void MX_TIM5_Init(void);
+static void MX_I2C1_Init(void);
 void StartDefaultTask(void *argument);
 
 /* USER CODE BEGIN PFP */
@@ -135,6 +138,7 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM4_Init();
   MX_TIM5_Init();
+  MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -497,6 +501,53 @@ static void MX_TIM5_Init(void)
 
   /* USER CODE END TIM5_Init 2 */
 
+}
+
+/**
+  * @brief I2C1 Initialization Function
+  *
+  * 用于 BNO085 九轴传感器（PB6=SCL / PB7=SDA，AF4，400 kHz）
+  */
+/* 按 PCLK1 计算 100 kHz 标准模式的 TIMINGR（RM0468 公式）
+ * 用 100 kHz 而不是 400 kHz：BNO085 模块上拉偏弱，400 kHz 下偶发通信失败 */
+static uint32_t i2c1_compute_timing_100k(uint32_t pclk_hz)
+{
+  for (uint32_t presc = 0; presc < 16u; presc++)
+  {
+    const uint32_t div = presc + 1u;
+    const uint32_t t_ns = (uint32_t)((1000000000ULL * div) / pclk_hz);
+    if (t_ns == 0u)
+    {
+      continue;
+    }
+    const uint32_t sdadel = 260u / t_ns;
+    const uint32_t scldel = 470u / t_ns;
+    const uint32_t scll = (4700u / t_ns) - 1u;
+    const uint32_t sclh = (4000u / t_ns) - 1u;
+    if (sdadel <= 15u && scldel <= 15u && scll > 0u && scll <= 255u &&
+        sclh > 0u && sclh <= 255u)
+    {
+      return (presc << 28) | (scldel << 20) | (sdadel << 16) | (sclh << 8) | scll;
+    }
+  }
+  return 0x20D71127u; /* 兜底：PCLK1 = 125 MHz */
+}
+
+static void MX_I2C1_Init(void)
+{
+  hi2c1.Instance = I2C1;
+  hi2c1.Init.Timing = i2c1_compute_timing_100k(HAL_RCC_GetPCLK1Freq());
+  hi2c1.Init.OwnAddress1 = 0;
+  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c1.Init.OwnAddress2 = 0;
+  hi2c1.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
+  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
+  {
+    Error_Handler();
+  }
 }
 
 /**

@@ -13,6 +13,7 @@
 
 // 外设句柄声明
 extern TIM_HandleTypeDef htim2; // 舵机 PWM TIM
+extern I2C_HandleTypeDef hi2c1; // BNO085 I2C
 extern TIM_HandleTypeDef htim3; // 电机 PWM TIM
 extern TIM_HandleTypeDef htim4; // 左轮电机编码器 TIM
 extern TIM_HandleTypeDef htim5; // 右轮电机编码器 TIM
