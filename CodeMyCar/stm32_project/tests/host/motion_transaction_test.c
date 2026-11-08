@@ -208,6 +208,7 @@ int main(void)
     measuredLeftRpm=measuredRightRpm=30;imuYaw=-2;now+=5;MotionService_Run(&c);
     float expectedRaw;
     assert(steering_lut_curvature_to_raw(-.6f,.141f,&expectedRaw));
+    expectedRaw-=STEERING_STRAIGHT_FORWARD_TRIM_US/STEERING_SERVO_US_PER_DEG;
     assert(fabsf(lastAngle-(90-expectedRaw))<.02f);
     assert(submittedRpm[0]<submittedRpm[1]);
     const float firstCorrection=lastAngle;
@@ -224,6 +225,7 @@ int main(void)
     assert(MotionService_StartGoal(&c,0,-2000,100,39)==0);
     measuredLeftRpm=measuredRightRpm=-30;imuYaw=-2;now+=5;MotionService_Run(&c);
     assert(steering_lut_curvature_to_raw(.6f,.141f,&expectedRaw));
+    expectedRaw-=STEERING_STRAIGHT_REVERSE_TRIM_US/STEERING_SERVO_US_PER_DEG;
     assert(fabsf(lastAngle-(90-expectedRaw))<.02f);
     assert(MotionService_EmergencyStop(&c,40)==0);
     /* STOP, zero-curvature forward and reverse share physical neutral.
@@ -233,13 +235,13 @@ int main(void)
     assert(fabsf(parked-92.7f)<.02f && inhibited); /* 1530us */
     assert(MotionService_StartGoal(&c,0,2000,100,41)==0);
     now+=5;MotionService_Run(&c);
-    assert(fabsf(lastAngle-parked)<.02f);
+    assert(fabsf(lastAngle-parked-STEERING_STRAIGHT_FORWARD_TRIM_US/STEERING_SERVO_US_PER_DEG)<.02f);
     assert(fabsf(submittedRpm[0]-submittedRpm[1])<.0001f);
     assert(MotionService_EmergencyStop(&c,42)==0);
     assert(fabsf(lastAngle-parked)<.02f && inhibited);
     assert(MotionService_StartGoal(&c,0,-2000,100,43)==0);
     now+=5;MotionService_Run(&c);
-    assert(fabsf(lastAngle-parked)<.02f);
+    assert(fabsf(lastAngle-parked-STEERING_STRAIGHT_REVERSE_TRIM_US/STEERING_SERVO_US_PER_DEG)<.02f);
     assert(fabsf(submittedRpm[0]-submittedRpm[1])<.0001f);
     assert(MotionService_EmergencyStop(&c,44)==0);
     assert(!c.goalPath.active && c.goalPath.headingOffsetDeg==0);

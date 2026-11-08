@@ -28,6 +28,18 @@
 /** 当前装配实际零转向脉宽；启动/停车/生产曲率映射共用。 */
 #define STEERING_SERVO_STRAIGHT_US (1530u)
 
+/* Experimental dynamic-neutral calibration, zero by default. These are
+ * actuator pulse offsets, never geometric curvature or wheel RPM offsets. */
+#ifndef STEERING_STRAIGHT_FORWARD_TRIM_US
+#define STEERING_STRAIGHT_FORWARD_TRIM_US 0.0f
+#endif
+#ifndef STEERING_STRAIGHT_REVERSE_TRIM_US
+#define STEERING_STRAIGHT_REVERSE_TRIM_US 0.0f
+#endif
+
+/** Apply at most +/-20us calibration to raw servo offset, retaining safe pulse bounds. */
+bool steering_lut_trim_raw(float raw_deg, float trim_us, float* trimmed_raw_deg);
+
 /** 舵机脉宽与角度的换算：500..2500us <-> 0..180°。 */
 #define STEERING_SERVO_US_PER_DEG (2000.0f / 180.0f)
 

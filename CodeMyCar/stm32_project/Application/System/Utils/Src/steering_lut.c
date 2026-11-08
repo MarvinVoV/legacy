@@ -149,6 +149,16 @@ bool steering_lut_curvature_to_raw(float kappa_1pm, float wheelbase_m, float* ra
     return true;
 }
 
+bool steering_lut_trim_raw(float raw_deg, float trim_us, float* trimmed_raw_deg)
+{
+    if (trimmed_raw_deg == NULL || !isfinite(raw_deg) || !isfinite(trim_us) ||
+        fabsf(trim_us) > 20.0f) { return false; }
+    float pulse = STEERING_SERVO_CENTER_US-raw_deg*STEERING_SERVO_US_PER_DEG+trim_us;
+    pulse = fmaxf(STEER_PULSE_SAFE_MIN_US, fminf(STEER_PULSE_SAFE_MAX_US, pulse));
+    *trimmed_raw_deg = (STEERING_SERVO_CENTER_US-pulse)/STEERING_SERVO_US_PER_DEG;
+    return true;
+}
+
 size_t steering_lut_point_count(void)
 {
     return STEER_LUT_COUNT;

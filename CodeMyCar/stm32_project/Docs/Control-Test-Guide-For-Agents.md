@@ -678,3 +678,6 @@ cc -std=c11 -O2 -g -fsanitize=address,undefined \
 
 
 IMU时序诊断回归也加入imu_service_test：微秒计时低32位回绕、延迟样本记录、负年龄及样本时间差。IMU_TIME为1Hz诊断，不是新增安全门禁；SH-2时间使用主机I2C接收时间重建，不能称为独立硬件采样延迟测量。静止实机15秒的记录见imu-time-diagnostic-15s-analysis.json，运动中尚待采集。
+
+
+动态舵机前馈候选：run.sh的motion_transaction现在编译baseline0/0、PATH ON/trim0、PATH OFF/trim6/14三种配置（仍18个测试组）。新增LUT补偿有限性/±20us/安全脉宽限幅、真实PWM trim→STOP精确回中、0曲率轮速不受前馈影响。普通构建trim默认0/0；DynamicNeutral候选6/14只验证至短测与一次2m低速往返，外部仍右偏大于约16–17mm，不作为精度通过，也未合并main。详见阶段报告。固定中位mode2脚本只归档本次实际执行：外部STOP存在超程，必须有50cm净空、500ms租约及明确--ground-ready；原始100/150序号段复用前须核对当前服务序号与去重窗口，不能无人值守照抄。

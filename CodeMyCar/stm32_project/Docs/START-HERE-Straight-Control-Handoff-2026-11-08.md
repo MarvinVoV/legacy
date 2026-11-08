@@ -1,5 +1,7 @@
 # START HERE：直行优化接手说明（2026-11-08）
 
+**最新开发进度**：分支codex/straight-path-tracking已修立即回中死区缺陷，新增IMU时序诊断及默认0/0的有界舵机前馈。车上为6/14us候选（不是源码默认），2m低速往返后前进基本直、倒车终点仍右偏大于约16–17mm，尚未验收；不要启用PATH回线或把内部位置估计当真值。当前镜像/停车与证据见下方阶段报告最新记录，未合并main、未push。
+
 ## 后续开发阶段入口（优先于下方历史现场状态）
 
 当前后续开发在`codex/straight-path-tracking`，最新代码提交`d4a6046`，尚未合并main，未push。已移除右轮隐藏2.3%闭环RPM目标偏置，新增默认关闭的局部路径反馈/影子估计，详见[Straight-Path-Tracking-And-RPM-Contract-Validation-2026-11-08.md](Straight-Path-Tracking-And-RPM-Contract-Validation-2026-11-08.md)。**车上镜像及最后停车状态以该文档最新追加记录为准**；下文main/v7及seq191属于上一阶段归档，不能直接用作当前状态。

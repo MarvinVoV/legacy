@@ -1199,11 +1199,13 @@ static void handle_goal(MotionContext* ctx)
         (uint32_t)(HAL_GetTick()-ctx->goalPathLogTick) >= 1000u))
     {
         ctx->goalPathLogTick = HAL_GetTick();
-        LOG_INFO(LOG_MODULE_MOTION, "PATH yl=%.2f gl=%.2f x=%.1f off=%.3f en=%d ed=%.2f",
+        LOG_INFO(LOG_MODULE_MOTION, "PATH yl=%.2f gl=%.2f x=%.1f off=%.3f en=%d ed=%.2f ff=%.1f",
                  ctx->goalPath.leftM*1000.0f,
                  ctx->goalGyroPath.active ? ctx->goalGyroPath.leftM*1000.0f : NAN,
                  ctx->goalPath.forwardM*1000.0f, ctx->goalPath.headingOffsetDeg,
-                 CMCAR_STRAIGHT_PATH_CONTROL, ctx->goalEncoderHeadingDeg);
+                 CMCAR_STRAIGHT_PATH_CONTROL, ctx->goalEncoderHeadingDeg,
+                 ctx->goal.target.distanceMm > 0 ? STEERING_STRAIGHT_FORWARD_TRIM_US+0.0f
+                                                 : STEERING_STRAIGHT_REVERSE_TRIM_US+0.0f);
     }
 
     if (out.finished || out.error != 0)
@@ -1259,6 +1261,19 @@ static void handle_goal(MotionContext* ctx)
     {
         MotionService_LatchFault(ctx, MOTION_ERR_INTERNAL);
         return;
+    }
+    /* Ground-derived dynamic neutral is actuator-only. The geometric curve,
+     * heading error and left/right RPM calculation above remain untouched.
+     * Curved goals and encoder fallback never use this experiment. */
+    if (ctx->goalUsesImu && ctx->goal.target.turnDdeg == 0)
+    {
+        const float trim = ctx->goal.target.distanceMm > 0
+            ? STEERING_STRAIGHT_FORWARD_TRIM_US : STEERING_STRAIGHT_REVERSE_TRIM_US;
+        if (!steering_lut_trim_raw(raw_steer, trim, &raw_steer))
+        {
+            MotionService_LatchFault(ctx, MOTION_ERR_INTERNAL);
+            return;
+        }
     }
     const float steer = ctx->chassisConfig.steerCenterAngleDeg - raw_steer;
     if (SteerService_setAngleSmoothly(ctx->steerServo, steer) != ERR_SUCCESS)

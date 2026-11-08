@@ -1,0 +1,74 @@
+[
+  {
+    "capture": "imu-time-forward-20cm-speed10",
+    "distance_m": 0.195,
+    "encoder_cw_deg": 0.67,
+    "imu_cw_deg": 0.111,
+    "encoder_minus_imu_deg": 0.559,
+    "residual_deg_per_signed_m": 2.867
+  },
+  {
+    "capture": "path-enabled-return-20cm-speed10",
+    "distance_m": 0.195,
+    "encoder_cw_deg": 0.99,
+    "imu_cw_deg": 0.248,
+    "encoder_minus_imu_deg": 0.742,
+    "residual_deg_per_signed_m": 3.805
+  },
+  {
+    "capture": "path-enabled-reverse-200cm-speed30",
+    "distance_m": -1.995,
+    "encoder_cw_deg": -1.03,
+    "imu_cw_deg": -0.145,
+    "encoder_minus_imu_deg": -0.885,
+    "residual_deg_per_signed_m": 0.444
+  },
+  {
+    "capture": "path-enabled-reverse-20cm-speed10",
+    "distance_m": -0.195,
+    "encoder_cw_deg": -0.45,
+    "imu_cw_deg": -0.36,
+    "encoder_minus_imu_deg": -0.09000000000000002,
+    "residual_deg_per_signed_m": 0.462
+  },
+  {
+    "capture": "path-off-control-return-20cm-speed10",
+    "distance_m": 0.195,
+    "encoder_cw_deg": 0.85,
+    "imu_cw_deg": 0.183,
+    "encoder_minus_imu_deg": 0.667,
+    "residual_deg_per_signed_m": 3.421
+  },
+  {
+    "capture": "path-off-control-reverse-200cm-speed30",
+    "distance_m": -1.995,
+    "encoder_cw_deg": -0.76,
+    "imu_cw_deg": -0.009,
+    "encoder_minus_imu_deg": -0.751,
+    "residual_deg_per_signed_m": 0.376
+  },
+  {
+    "capture": "path-off-control-reverse-20cm-speed10",
+    "distance_m": -0.195,
+    "encoder_cw_deg": -0.9,
+    "imu_cw_deg": -0.4,
+    "encoder_minus_imu_deg": -0.5,
+    "residual_deg_per_signed_m": 2.564
+  },
+  {
+    "capture": "path-rpm-forward-200cm-speed30",
+    "distance_m": 1.995,
+    "encoder_cw_deg": 2.47,
+    "imu_cw_deg": -0.18,
+    "encoder_minus_imu_deg": 2.6500000000000004,
+    "residual_deg_per_signed_m": 1.328
+  },
+  {
+    "capture": "path-rpm-forward-20cm-speed10",
+    "distance_m": 0.195,
+    "encoder_cw_deg": -1.17,
+    "imu_cw_deg": -0.135,
+    "encoder_minus_imu_deg": -1.035,
+    "residual_deg_per_signed_m": -5.308
+  }
+]

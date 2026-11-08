@@ -83,6 +83,14 @@ int main(void)
     }
     assert(!steering_lut_get_point(n, NULL, NULL));
 
+    assert(steering_lut_trim_raw(-2.7f,6,&out)); near(out,-3.24f,.001f);
+    assert(steering_lut_trim_raw(-2.7f,14,&out)); near(out,-3.96f,.001f);
+    assert(steering_lut_trim_raw(-67.5f,20,&out)); near(out,-67.5f,.001f);
+    assert(steering_lut_trim_raw(49.5f,-20,&out)); near(out,49.5f,.001f);
+    assert(!steering_lut_trim_raw(NAN,0,&out));
+    assert(!steering_lut_trim_raw(0,NAN,&out));
+    assert(!steering_lut_trim_raw(0,20.01f,&out));
+    assert(!steering_lut_trim_raw(0,0,NULL));
     puts("steering_lut: all tests passed");
     return 0;
 }

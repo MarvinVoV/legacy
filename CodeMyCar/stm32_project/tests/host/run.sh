@@ -126,9 +126,14 @@ echo "== imu service =="
 "${TMPDIR:-/tmp}/imu_service_test"
 
 echo "== motion transaction =="
-for PATH_CONTROL in 0 1; do
+for CONFIG in baseline path_experiment trim_experiment; do
+PATH_CONTROL=0; FORWARD_TRIM=0; REVERSE_TRIM=0
+if [[ "$CONFIG" == path_experiment ]]; then PATH_CONTROL=1; fi
+if [[ "$CONFIG" == trim_experiment ]]; then FORWARD_TRIM=6; REVERSE_TRIM=14; fi
 "$CC" -std=c11 -Wall -Wextra -O2 \
   -DCMCAR_STRAIGHT_PATH_CONTROL="$PATH_CONTROL" \
+  -DSTEERING_STRAIGHT_FORWARD_TRIM_US="$FORWARD_TRIM" \
+  -DSTEERING_STRAIGHT_REVERSE_TRIM_US="$REVERSE_TRIM" \
   -I "$DIR/tests/host/stubs" -I "$DIR/Application/Services/Ctrl/Inc" \
   -I "$DIR/Application/Services/Motor/Inc" -I "$DIR/Application/Modules/Motor/Inc" \
   -I "$DIR/Application/Services/Servo/Inc" -I "$DIR/Application/Services/IMU/Inc" \

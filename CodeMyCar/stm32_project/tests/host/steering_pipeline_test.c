@@ -52,6 +52,18 @@ int main(void) {
     assert(steering_lut_curvature_to_raw(0,.141f,&raw));
     assert(SteerService_setAngleImmediate(&inst,90-raw)==0);
     assert(pulse==STEERING_SERVO_STRAIGHT_US);
+    for(int j=0;j<2;j++) {
+        const float trim=j==0?6:14;
+        float trimmed;
+        assert(steering_lut_trim_raw(raw,trim,&trimmed));
+        for(int i=0;i<400;i++) {
+            tick+=5;assert(SteerService_setAngleSmoothly(&inst,90-trimmed)==0);
+            if(i%4==3)assert(SteerService_update(&inst)==0);
+        }
+        assert(fabsf(pulse-(STEERING_SERVO_STRAIGHT_US+trim))<=3);
+        assert(SteerService_setAngleImmediate(&inst,90-raw)==0);
+        assert(pulse==STEERING_SERVO_STRAIGHT_US);
+    }
     const float previous=inst.state.commandedAngleDeg;
     fail_write=true;
     assert(SteerService_setAngleImmediate(&inst,previous+1)!=0);

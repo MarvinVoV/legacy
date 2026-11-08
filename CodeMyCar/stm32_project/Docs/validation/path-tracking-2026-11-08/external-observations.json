@@ -36,5 +36,11 @@
       "rear": 0
     },
     "comparison": "approximately same endpoint offsets as ON 30/32mm; no proven feedback benefit or worsening; actual body-axis alignment has not been measured"
+  },
+  "dynamic-neutral-roundtrip-200cm-speed10": {
+    "source": "user",
+    "actual": "forward visually straight; return endpoint right > approximately 16–17mm from baseline",
+    "original_reply": "直行基本都是直的，没明显偏航； 倒车还是有偏航，但是好了一点，前后轮距离基线向右偏航大于 1.6cm~1.7cm",
+    "limitations": "roundtrip endpoint; no exact outward lateral measurement; different speed/protocol from prior 31mm trial; no causal improvement percentage claimed"
   }
 }

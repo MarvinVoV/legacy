@@ -1,0 +1,83 @@
+{
+  "legs": [
+    {
+      "direction": 1,
+      "before": {
+        "ok": true,
+        "online": true,
+        "stm32_connected": true,
+        "motion_supported": true,
+        "motion": {
+          "state": "idle",
+          "seq": 243,
+          "age_ms": 810,
+          "stale": false
+        },
+        "pose": {
+          "x_cm": 0.2,
+          "y_cm": 0.0,
+          "heading_deg": 1.886,
+          "odometer_cm": 0.2
+        },
+        "velocity": {
+          "linear_cm_s": 0.0,
+          "angular_deg_s": 0.0
+        }
+      },
+      "before_status": {
+        "success": true,
+        "message": "ok",
+        "data": {
+          "device_id": "DEV_1",
+          "online": true,
+          "last_heartbeat_age": 18.5,
+          "uptime_s": 9707,
+          "heap_free": 279840,
+          "stm32_connected": true,
+          "front_distance_cm": null,
+          "rear_distance_cm": null,
+          "sensor_age_s": null,
+          "yaw_deg": -0.5,
+          "yaw_rate_dps": 0.0,
+          "imu_status": 3,
+          "imu_age_s": 0.2,
+          "accel_mps2": [
+            0.156,
+            -0.613,
+            9.871
+          ],
+          "gyro_radps": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "imu_raw_age_s": 0.2
+        }
+      },
+      "start_t": 1794123677.6528409,
+      "commands": [],
+      "stop": {
+        "ok": true,
+        "stopped": true,
+        "accepted": true,
+        "confirmed": true,
+        "seq": 244
+      }
+    }
+  ],
+  "pre_stop": {
+    "ok": true,
+    "stopped": true,
+    "accepted": true,
+    "confirmed": true,
+    "seq": 243
+  },
+  "error": "AssertionError({'ok': True, 'online': True, 'stm32_connected': True, 'motion_supported': True, 'motion': {'state': 'idle', 'seq': 243, 'age_ms': 815, 'stale': False}, 'pose': {'x_cm': 0.2, 'y_cm': 0.0, 'heading_deg': 1.886, 'odometer_cm': 0.2}, 'velocity': {'linear_cm_s': 0.0, 'angular_deg_s': 0.0}})",
+  "stop": {
+    "ok": true,
+    "stopped": true,
+    "accepted": true,
+    "confirmed": true,
+    "seq": 245
+  }
+}

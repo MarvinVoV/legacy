@@ -90,9 +90,20 @@ target_compile_definitions(${PROJECT_NAME}.elf PRIVATE
 # 超声波整体开关：OFF 时不测距、不蜂鸣、不参与安全限速（台架/未放置时用）。
 # 用法：cmake --preset NoSonar
 option(CMCAR_SONAR_ENABLED "Enable ultrasonic sensing and safety governor" ON)
-option(CMCAR_STRAIGHT_PATH_CONTROL "Enable validated local straight-path outer loop (OFF = shadow estimator)" OFF)
+option(CMCAR_STRAIGHT_PATH_CONTROL "Enable experimental local straight-path outer loop (OFF = shadow estimator)" OFF)
 target_compile_definitions(${PROJECT_NAME}.elf PRIVATE
         CMCAR_STRAIGHT_PATH_CONTROL=$<BOOL:${CMCAR_STRAIGHT_PATH_CONTROL}>)
+# Dynamic-neutral identification candidates; production builds keep zero.
+set(CMCAR_STRAIGHT_FORWARD_TRIM_US "0" CACHE STRING "Experimental forward servo pulse trim, +/-20us")
+set(CMCAR_STRAIGHT_REVERSE_TRIM_US "0" CACHE STRING "Experimental reverse servo pulse trim, +/-20us")
+foreach(direction FORWARD REVERSE)
+    set(trim_value "${CMCAR_STRAIGHT_${direction}_TRIM_US}")
+    if (NOT trim_value MATCHES "^-?[0-9]+([.][0-9]+)?$" OR trim_value LESS -20 OR trim_value GREATER 20)
+        message(FATAL_ERROR "Straight servo trim must be numeric within +/-20us")
+    endif ()
+    target_compile_definitions(${PROJECT_NAME}.elf PRIVATE
+        STEERING_STRAIGHT_${direction}_TRIM_US=${trim_value})
+endforeach()
 option(CMCAR_DIFFERENTIAL_DIAGNOSTICS "Allow differential yaw on a suspended diagnostic chassis" OFF)
 target_compile_definitions(${PROJECT_NAME}.elf PRIVATE
         CMCAR_DIFFERENTIAL_DIAGNOSTICS=$<BOOL:${CMCAR_DIFFERENTIAL_DIAGNOSTICS}>)
