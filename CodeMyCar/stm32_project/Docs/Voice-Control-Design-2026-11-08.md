@@ -1,7 +1,7 @@
 # 语音控制方案（2026-11-08）
 
 > 分支：`codex/voice-baidu-asr`（从 main `82d3eed` 创建，未合并）
-> 状态：百度短语音 API 已跑通（TTS 样本 4/4）；ESP32/WS/VAD 尚未实现
+> 状态：百度短语音 API 已跑通（TTS + 真实麦克风）；PC 侧 WS/VAD/WAV/意图已实现；ESP32 推流未开始
 > 关联：`START-HERE-Straight-Control-Handoff-2026-11-08.md`（车辆与安全基线）
 
 ## 1. 目标与非目标
@@ -124,14 +124,13 @@
 
 ### 5.2 VAD 与切片
 
-推荐 `silero-vad`（PC 端）：
+第一版已实现**能量阈值 VAD**（`app/services/vad.py`，无额外依赖）：
 
-- 512 samples（32 ms）一块输入；
-- 阈值约 0.5，静音 800 ms 判结束，语音前后各留 200–300 ms；
-- 单段最长 10 秒；
-- 保留 300 ms 预录，避免切掉第一个字。
+- 20 ms 一帧，RMS 迟滞（默认 start 300 / end 200）；
+- 100–300 ms pre-roll，静音 800 ms 判结束，最短语音 150 ms，单段最长 10 s；
+- 接口是 `feed(pcm) -> segments` / `flush()`，后续可替换为 silero-vad / webrtcvad。
 
-ESP32 能量阈值 VAD 只作为“省流”的可选优化，不作为权威切分：车上电机/舵机噪声会让阈值漂移。
+silero-vad 仍推荐作为下一步升级：抗噪更好，但会引入 torch/onnx 依赖，先不阻塞主链路。
 
 ### 5.3 ASR
 
@@ -150,9 +149,22 @@ ESP32 能量阈值 VAD 只作为“省流”的可选优化，不作为权威切
 
 ### 5.5 WAV 归档
 
-- 每段语音保存为 `validation/voice/<时间>-<设备>-<session>.wav`；
+- 会话完整音频：`logs/voice/<时间>-<设备>-<session>-full.wav`；
+- 每个 VAD 语音段：`logs/voice/<时间>-<设备>-<session>-segNN.wav`；
 - 用 Python `wave` 流式写，`close()` 时自动补 RIFF/`data` 长度；
-- 若进程异常退出，启动时扫描并标记长度不一致的文件。
+- `logs/` 已被 gitignore；需要长期保留的证据再复制到 `validation/`。
+
+### 5.6 已实现的 WebSocket 端点
+
+- `ws://<host>:8000/api/v1/voice/stream`（`app/api/routes/voice.py`）；
+- 第一帧 `start` JSON，之后二进制 PCM，`end`/`abort` 结束；
+- 服务端回 `ready`、每个语音段 `final`（text/intent/accepted）、最后 `end`
+  （segments/bytes/full_wav）；
+- 同一设备同时只允许一路；握手 5 s、会话 12 s、音频字节上限按会话时长计算；
+- ASR 未配置时仍会 VAD + 归档，`final.text` 为 null；
+- 当前只回传意图，不下发运动命令；执行留到 P2；
+- 配置：`voice_enabled`、`voice_artifact_dir`、`voice_vad_*`、`voice_max_*`（`app/config.py`）；
+- 调试客户端：`scripts/voice_ws_client.py <wav>`。
 
 ## 6. WebSocket 协议
 
@@ -279,8 +291,14 @@ Content-Type: application/json
 **已实现（pyserver）**
 
 - `tests/test_baidu_asr.py`：请求契约（format/rate/channel/len/base64）、token 缓存、百度错误码、HTTP 错误、非法采样率、空 PCM；7 项通过。
+- `tests/test_vad.py`：切段、pre-roll、最短语音、最大段长、flush、任意分块；7 项通过。
+- `tests/test_voice_intent.py`：中文/阿拉伯数字、白名单、歧义拒绝；参数化 23 项。
+- `tests/test_voice_ws.py`：协议、WAV 归档、ASR 替身/错误、非法采样率、设备占用、空会话；7 项通过。
 - `scripts/baidu_asr_smoke.py`：真实接口冒烟，要求 16 kHz/16-bit/mono WAV。
-- 全量 pytest：92 项通过。
+- `scripts/voice_ws_client.py`：把 WAV 推给运行中的 pyserver，打印 ready/final/end。
+- 全量 pytest：**129 项通过**。
+- 真实链路：`voice_ws_client.py` 推送 Mac 麦克风录音，服务端返回
+  `text="前进一米。"`、`intent=forward`、`distance_mm=1000`，并写出 full/seg WAV。
 
 **待实现**
 
@@ -308,7 +326,9 @@ Content-Type: application/json
 - 已用 Mac 内置麦克风录真实语音验证：`前进一米` → `前进一米。`（444 ms）。
 - 已核对百度官方文档：JSON 上传参数、16k/8k、60 秒上限、dev_pid 取值、自定义词库、
   access_token/API Key 鉴权，以及实时 WebSocket API 的 START/FINISH/CANCEL 流程。
-- 下一步建议：先在 pyserver 实现 WS 接收 + WAV 归档 + VAD（P1 的 PC 侧），再用一个桌面测试客户端推合成 PCM 验证；之后做 ESP32 麦克风推流（P0）。
+- PC 侧 P1 已实现：`/api/v1/voice/stream`、能量 VAD、full/seg WAV 归档、意图解析、
+  百度 ASR 接入；真实麦克风录音经 WS 端到端识别成功。
+- 下一步：ESP32 单麦克风 I2S 推流（P0），再接 P2 的 AgentMotionService 执行与安全联调。
 
 ## 14. 相关文件
 
