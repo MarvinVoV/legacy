@@ -1,6 +1,6 @@
 # START HERE：直行优化接手说明（2026-11-08）
 
-**最新现场优先读本段**：车辆地面STOP126确认双轮零速。用户要求继续修复后已实现距离型直线GOAL测量阻尼候选：kpGoal0.6/Ki0.08/Kd0.08、GRV差分80ms滤波，legacy DRIVE kp0.3与弧线不变。24次host执行、三种构建、20cm和2m/10cm/s往返通过运行检查，航向峰值0.27→0.20°/0.29→0.15°；首次实际反馈前进左约2mm、倒车右前约3mm/后约4–5mm，明显改善；正不重启、不改参数复测，未完整验收。当前镜像SHA256 `4cc0546e37ba2ef8709f9a5aabbd09bf151f4ecff5f4774741fe096a39b706a0`（trim0/0、细积分OFF、PATH OFF、磁诊断ON）。候选代码在codex/straight-path-tracking，未合并main、未push。旧无前馈直线及四弧线仍未达到轨迹目标；固定轮程系数不可直接应用，反向GOAL不等于路径重放。详见阶段报告末尾和heading-damping-*证据。新运动须重核空间/线缆，当前agent seq126。
+**最新现场优先读本段**：车辆地面STOP132确认双轮零速。用户要求继续修复后已实现距离型直线GOAL测量阻尼候选：kpGoal0.6/Ki0.08/Kd0.08、GRV差分80ms滤波，legacy DRIVE kp0.3与弧线不变。24次host执行、三种构建、20cm和2m/10cm/s往返通过运行检查，航向峰值0.27→0.20°/0.29→0.15°；首次实际反馈前进左约2mm、倒车右前约3mm/后约4–5mm，明显改善；第二轮不重启同参数往返已完成，外部反馈待补，未完整验收。当前镜像SHA256 `4cc0546e37ba2ef8709f9a5aabbd09bf151f4ecff5f4774741fe096a39b706a0`（trim0/0、细积分OFF、PATH OFF、磁诊断ON）。候选代码已提交99c142c，仍在codex/straight-path-tracking，未合并main、未push。旧无前馈直线及四弧线仍未达到轨迹目标；固定轮程系数不可直接应用，反向GOAL不等于路径重放。详见阶段报告末尾和heading-damping-*证据。新运动须重核空间/线缆，当前agent seq132，128段也可能与agent计数冲突，勿照抄raw脚本。
 
 ## 后续开发阶段入口（优先于下方历史现场状态）
 
