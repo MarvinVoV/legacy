@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import time
 import wave
 from pathlib import Path
 
@@ -55,12 +56,28 @@ async def run(args: argparse.Namespace) -> int:
             await ws.send(pcm[offset : offset + chunk_bytes])
         await ws.send(json.dumps({"type": "end"}))
 
+        pending_speak = None
+        speak_index = 0
+        out_dir = Path("/tmp/cmcar_voice")
+        out_dir.mkdir(parents=True, exist_ok=True)
         try:
             async for message in ws:
                 if isinstance(message, bytes):
+                    if pending_speak is not None:
+                        speak_index += 1
+                        path = out_dir / f"ws-speak-{int(time.time())}-{speak_index}.wav"
+                        with wave.open(str(path), "wb") as wav:
+                            wav.setnchannels(int(pending_speak.get("channels", 1)))
+                            wav.setsampwidth(2)
+                            wav.setframerate(int(pending_speak.get("rate", 16000)))
+                            wav.writeframes(message)
+                        print(f"[speak audio] {path}", flush=True)
+                        pending_speak = None
                     continue
                 event = json.loads(message)
                 print(json.dumps(event, ensure_ascii=False), flush=True)
+                if event.get("type") == "speak" and event.get("bytes"):
+                    pending_speak = event
                 if event.get("type") == "end":
                     break
         except websockets.ConnectionClosed:

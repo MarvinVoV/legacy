@@ -14,7 +14,6 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-import time
 from typing import Any
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
@@ -30,6 +29,15 @@ router = APIRouter()
 
 _HANDSHAKE_TIMEOUT_S = 5.0
 _MAX_DEVICE_ID_LEN = 64
+_TTS_PHRASES = {
+    "stop": "已停止",
+    "cancel": "已取消",
+    "forward": "收到，前进",
+    "backward": "收到，后退",
+    "turn_left": "收到，左转",
+    "turn_right": "收到，右转",
+}
+_TTS_FAILED_PHRASE = "执行失败，请检查"
 
 
 async def _send_json(ws: WebSocket, payload: dict[str, Any]) -> bool:
@@ -40,7 +48,38 @@ async def _send_json(ws: WebSocket, payload: dict[str, Any]) -> bool:
         return False
 
 
-async def _handle_segment(ws: WebSocket, service: VoiceService, segment: VoiceSegment) -> bool:
+async def _speak(ws: WebSocket, service: VoiceService, phrase: str) -> None:
+    if service.tts is None:
+        return
+    try:
+        audio = await service.tts.synthesize(phrase, aue=4)
+    except Exception as exc:  # noqa: BLE001 - TTS 失败不应打断语音会话
+        logger.warning("voice tts failed: %s", exc)
+        await _send_json(ws, {"type": "speak", "text": phrase, "error": str(exc)})
+        return
+
+    frame = {
+        "type": "speak",
+        "text": phrase,
+        "format": audio.format,
+        "rate": audio.sample_rate,
+        "channels": audio.channels,
+        "bytes": len(audio.data),
+    }
+    if not await _send_json(ws, frame):
+        return
+    try:
+        await ws.send_bytes(audio.data)
+    except Exception:  # 客户端已断开
+        logger.debug("voice speak send failed", exc_info=True)
+
+
+async def _handle_segment(
+    ws: WebSocket,
+    service: VoiceService,
+    segment: VoiceSegment,
+    device_id: str,
+) -> bool:
     text: str | None = None
     error: str | None = None
 
@@ -62,6 +101,7 @@ async def _handle_segment(ws: WebSocket, service: VoiceService, segment: VoiceSe
         "text": text,
         "intent": intent.kind if intent else None,
         "accepted": intent is not None,
+        "execution_enabled": service.config.execute_commands,
     }
     if intent is not None:
         if intent.distance_mm:
@@ -78,7 +118,21 @@ async def _handle_segment(ws: WebSocket, service: VoiceService, segment: VoiceSe
         text,
         intent.kind if intent else None,
     )
-    return await _send_json(ws, frame)
+    if not await _send_json(ws, frame):
+        return False
+
+    if intent is not None and service.config.execute_commands:
+        action = await service.execute_intent(device_id, intent)
+        if not await _send_json(ws, {"type": "action", **action}):
+            return False
+        if service.config.tts_feedback and service.tts is not None:
+            phrase = _TTS_PHRASES.get(intent.kind)
+            if not action.get("executed"):
+                phrase = _TTS_FAILED_PHRASE
+            if phrase:
+                await _speak(ws, service, phrase)
+
+    return True
 
 
 def _parse_start(meta: Any) -> tuple[str | None, str | None]:
@@ -169,7 +223,6 @@ async def voice_stream(ws: WebSocket) -> None:
         },
     )
 
-    started = time.monotonic()
     max_bytes = int(service.config.max_session_s * service.config.sample_rate * 2)
     segments = 0
     aborted = False
@@ -177,12 +230,11 @@ async def voice_stream(ws: WebSocket) -> None:
 
     try:
         while True:
-            remaining = service.config.max_session_s - (time.monotonic() - started)
-            if remaining <= 0:
-                await _send_json(ws, {"type": "error", "message": "session timeout"})
-                break
+            # 这是“空闲超时”，不是总时长；执行 GOAL 期间不会触发
             try:
-                msg = await asyncio.wait_for(ws.receive(), timeout=remaining)
+                msg = await asyncio.wait_for(
+                    ws.receive(), timeout=service.config.max_session_s
+                )
             except TimeoutError:
                 await _send_json(ws, {"type": "error", "message": "session timeout"})
                 break
@@ -198,7 +250,7 @@ async def voice_stream(ws: WebSocket) -> None:
                     break
                 for segment in session.feed(data):
                     segments += 1
-                    if not await _handle_segment(ws, service, segment):
+                    if not await _handle_segment(ws, service, segment, session.device_id):
                         client_gone = True
                         break
                 if client_gone:
@@ -228,7 +280,7 @@ async def voice_stream(ws: WebSocket) -> None:
             for segment in session.finish():
                 segments += 1
                 if not client_gone:
-                    await _handle_segment(ws, service, segment)
+                    await _handle_segment(ws, service, segment, session.device_id)
         except Exception:  # 收尾失败仍要释放设备占用
             logger.exception("voice session finish failed")
         finally:

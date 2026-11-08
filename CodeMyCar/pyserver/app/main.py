@@ -93,9 +93,17 @@ async def lifespan(app: FastAPI):
             pre_roll_ms=settings.voice_vad_pre_roll_ms,
             max_segment_s=settings.voice_max_segment_s,
             max_session_s=settings.voice_max_session_s,
+            execute_commands=settings.voice_execute_commands,
+            tts_feedback=settings.voice_tts_feedback,
+            max_distance_mm=settings.voice_max_distance_mm,
+            max_turn_deg=settings.voice_max_turn_deg,
+            speed_cm_s=settings.voice_speed_cm_s,
+            min_turn_distance_cm=settings.voice_min_turn_distance_cm,
         ),
         voice_asr,
         Path(settings.voice_artifact_dir),
+        agent_motion=app.state.agent_motion,
+        tts=voice_tts,
     )
 
     # 注册消息处理器（心跳/传感器/日志/ACK/pong/motion）

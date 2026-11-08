@@ -158,24 +158,30 @@ silero-vad 仍推荐作为下一步升级：抗噪更好，但会引入 torch/on
 
 - `ws://<host>:8000/api/v1/voice/stream`（`app/api/routes/voice.py`）；
 - 第一帧 `start` JSON，之后二进制 PCM，`end`/`abort` 结束；
-- 服务端回 `ready`、每个语音段 `final`（text/intent/accepted）、最后 `end`
+- 服务端回 `ready`、每个语音段 `final`（text/intent/accepted）、可选 `action`
+  （AgentMotionService 结果）、可选 `speak` + 二进制 PCM、最后 `end`
   （segments/bytes/full_wav）；
-- 同一设备同时只允许一路；握手 5 s、会话 12 s、音频字节上限按会话时长计算；
+- 同一设备同时只允许一路；握手 5 s、空闲超时 12 s、音频字节上限按会话时长计算；
 - ASR 未配置时仍会 VAD + 归档，`final.text` 为 null；
-- 当前只回传意图，不下发运动命令；执行留到 P2；
+- `action` 只在 `voice_execute_commands=true` 且解析到意图时出现；默认关闭；
+- `speak` 只在执行有结果且 TTS 可用时出现，顺序是 `final` → `action` → `speak` + PCM → `end`；
 - 配置：`voice_enabled`、`voice_artifact_dir`、`voice_vad_*`、`voice_max_*`（`app/config.py`）；
 - 调试客户端：`scripts/voice_ws_client.py <wav>`。
 
-### 5.7 语音反馈（TTS，下一阶段）
+### 5.7 语音反馈与执行（已实现）
 
-- 触发：`final` 意图被接受/拒绝/停止时；
-- 短语示例：收到、已停止、没听清请再说一遍；
-- 路径：pyserver TTS（`aue=4`）→ 同一语音 WS 发送
+- 执行：`final` 后若 `voice_execute_commands=true`，调用 `AgentMotionService`：
+  - stop/cancel → `stop()`；
+  - forward/backward → `MoveRequest(distance_cm=±mm/10, speed_cm_s=10)`；
+  - turn_left/right → 圆弧 `MoveRequest`，弧长按最小转弯半径计算且不小于 30 cm；
+  - 结果以 `action` 帧回传；`MotionError` 不打断 WS。
+- 反馈：执行后若 `voice_tts_feedback=true` 且 TTS 可用，合成短句并通过
   `{"type":"speak","format":"pcm","rate":16000,"channels":1,"bytes":N}` + 二进制 PCM
-  → ESP32 I2S TX；`speak` 必须在 `end` 之前发送，或保持连接到播放结束；
-- 立即反馈（<100 ms）仍用本地提示音；TTS 用于语义确认；
-- TTS 不可用/超时：跳过语音反馈，不影响运动命令；
-- 当前 `app.state.voice_tts` 已创建，但还没有接入 WS 播放。
+  发给客户端；TTS 失败发送带 `error` 的 `speak` 帧，不影响 `action`/`end`。
+- 默认 `voice_execute_commands=false`；需要显式设置
+  `CMCAR_VOICE_EXECUTE_COMMANDS=1` 才允许语音驱动车辆。
+- 语音 STOP 是辅助手段；HTTP/服务端 STOP 和物理急停仍是主急停。
+- 立即反馈（<100 ms）仍建议用本地提示音；TTS 用于语义确认。
 
 ## 6. WebSocket 协议
 
@@ -297,7 +303,9 @@ Content-Type: application/json
 
 约束：
 
+- 转向必须是圆弧：弧长 = max(30 cm, 最小转弯半径 260 mm 对应的弧长)；速度 10 cm/s；
 - 第一版距离上限 1 m、角度上限 90°、速度 10 cm/s；
+- 语音执行默认关闭；设置 `CMCAR_VOICE_EXECUTE_COMMANDS=1` 后才下发运动；
 - 未识别/低置信度 → 拒绝并提示，不运动；
 - 语音命令仍受现有 agent 准入、租约、ACK、超时约束。
 
@@ -308,6 +316,8 @@ Content-Type: application/json
 3. 超声波仍未实车安装，语音控制不提供避障能力。
 4. 每次落地运动前重新确认车位、净空、USB 线余量；不沿用旧的就绪答复。
 5. 不允许“上电即持续监听并执行命令”；必须有按键或唤醒词门控。
+6. 语音执行默认关闭（`voice_execute_commands=false`）；开启后仍限速 10 cm/s、
+   距离 ≤1 m、角度 ≤90°。语音 STOP 是辅助，不是主急停。
 
 ## 10. 分阶段计划
 
@@ -315,7 +325,7 @@ Content-Type: application/json
 |---|---|---|
 | P0 | ESP32 麦克风 → WS → PC 存 WAV（无 VAD/ASR） | 16 kHz/时长/RMS 正确；连续 10 分钟不崩；UART 不受影响 |
 | P1 | PC silero-vad + 百度 ASR + WAV 归档 | 20 条真实录音识别率与延迟有记录 |
-| P2 | 意图解析 + AgentMotionService（悬空） | 方向/ACK/STOP 正确；语音 STOP 延迟有数据 |
+| P2 | 意图 → AgentMotionService + TTS 反馈（PC 侧） | 替身测试已通过；实车悬空验收待做 |
 | P3 | 门控按键 → WakeNet；落地 10 cm/s 短距离 | 重新确认场地后，语音动作、断网停车、STOP 通过 |
 | P4 | 功放提示音 / faster-whisper A/B / 流式 ASR | 按需，不阻塞主链路 |
 
@@ -326,13 +336,15 @@ Content-Type: application/json
 - `tests/test_baidu_asr.py`：请求契约（format/rate/channel/len/base64）、token 缓存、百度错误码、HTTP 错误、非法采样率、空 PCM；7 项通过。
 - `tests/test_vad.py`：切段、pre-roll、最短语音、最大段长、flush、任意分块；7 项通过。
 - `tests/test_voice_intent.py`：中文/阿拉伯数字、白名单、歧义拒绝；参数化 23 项。
-- `tests/test_voice_ws.py`：协议、WAV 归档、ASR 替身/错误、非法采样率、设备占用、空会话；7 项通过。
+- `tests/test_voice_ws.py`：协议、WAV 归档、ASR 替身/错误、非法采样率、设备占用、空会话；
+  以及执行开关、前进/停止/转向、越界拒绝、`action` 帧、TTS `speak`+PCM、TTS 失败；
+  15 项通过。
 - `tests/test_baidu_tts.py`：PCM/WAV 请求契约、Content-Type 成功判定、错误 JSON、HTTP 错误、
   空文本、超长文本、scope、token 缓存；8 项通过。
 - `scripts/baidu_asr_smoke.py`：真实接口冒烟，要求 16 kHz/16-bit/mono WAV。
 - `scripts/baidu_tts_smoke.py`：真实 TTS 冒烟，默认输出 16k PCM + 可播放 WAV。
 - `scripts/voice_ws_client.py`：把 WAV 推给运行中的 pyserver，打印 ready/final/end。
-- 全量 pytest：**139 项通过**。
+- 全量 pytest：**147 项通过**。
 - 真实链路：`voice_ws_client.py` 推送 Mac 麦克风录音，服务端返回
   `text="前进一米。"`、`intent=forward`、`distance_mm=1000`，并写出 full/seg WAV。
 - TTS 回环：合成“收到，正在前进” → 1.91 s WAV → 再送 ASR 得到同一文本。
@@ -370,8 +382,10 @@ Content-Type: application/json
   百度 ASR 接入；真实麦克风录音与官方示例音频均端到端识别成功。
 - 百度短文本 TTS 已跑通：16k PCM/WAV、Content-Type 成功判定、TTS→ASR 回环；
   音色列表见 [Voice-TTS-Voice-List-2026-11-08.md](Voice-TTS-Voice-List-2026-11-08.md)；
-  WS 播放反馈尚未接入。
-- 下一步：ESP32 单麦克风 I2S 推流（P0），再接 P2 的 AgentMotionService 执行与安全联调。
+  默认精品音库 `per=5`。
+- P2 已实现（默认关闭）：意图 → AgentMotionService、执行结果 `action` 帧、
+  TTS `speak` + PCM 反馈；替身测试通过，实车悬空/落地未验收。
+- 下一步：ESP32 单麦克风 I2S 推流（P0），再做悬空与落地联调。
 
 ## 14. 相关文件
 

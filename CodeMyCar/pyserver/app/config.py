@@ -69,6 +69,12 @@ class Settings(BaseSettings):
     voice_vad_pre_roll_ms: int = 300
     voice_max_segment_s: float = 10.0
     voice_max_session_s: float = 12.0
+    voice_execute_commands: bool = False  # 默认关闭；开启后语音意图才会下发运动
+    voice_tts_feedback: bool = True
+    voice_max_distance_mm: int = 1000
+    voice_max_turn_deg: int = 90
+    voice_speed_cm_s: int = 10
+    voice_min_turn_distance_cm: int = 30
 
     # 日志
     log_level: str = "INFO"
