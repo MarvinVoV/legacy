@@ -7,6 +7,7 @@
 #include "safety_service.h"
 
 #include <stddef.h>
+#include <string.h>
 
 /*------------------------------------------------------------------------------
  * 内部工具
@@ -87,6 +88,8 @@ void safety_channel_init(SafetyChannel* ch, const bool enabled, const int16_t of
         return;
     }
 
+    memset(ch, 0, sizeof(*ch));
+    ch->nearestCm = SAFETY_INVALID_DISTANCE;
     ch->scale      = 1.0f;
     ch->distanceCm = SAFETY_INVALID_DISTANCE;
     ch->enabled    = enabled ? 1u : 0u;
@@ -113,7 +116,7 @@ bool safety_channel_unusable(const SafetyChannel* ch, uint32_t nowMs,
     }
     if (!ch->everValid)
     {
-        return nowMs > startupGraceMs; /* 宽限期内尚无数据，之后视为不可用 */
+        return (uint32_t)(nowMs - ch->startedMs) > startupGraceMs;
     }
     return (nowMs - ch->lastValidMs) > staleTimeoutMs;
 }
@@ -220,7 +223,7 @@ bool safety_channel_clear(const SafetyChannel* ch, const uint16_t releaseCm)
     {
         return true;
     }
-    if (ch->fault)
+    if (ch->fault || ch->fastBlocked)
     {
         return false;
     }

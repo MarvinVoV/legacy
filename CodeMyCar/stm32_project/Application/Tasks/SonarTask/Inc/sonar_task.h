@@ -22,4 +22,7 @@ void SonarTask_doTask(void* arg);
  */
 void Sonar_GetSafety(const SafetyChannel** front, const SafetyChannel** rear);
 
+/** Atomic published copies; no reader observes a partially updated window. */
+void Sonar_GetSafetySnapshot(SafetyChannel* front, SafetyChannel* rear);
+
 #endif /* TASKS_SONARTASK_INC_SONAR_TASK_H_ */

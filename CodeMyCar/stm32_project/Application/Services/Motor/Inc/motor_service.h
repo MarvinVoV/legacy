@@ -117,6 +117,8 @@ int MotorService_init(MotorService* service, MotorDriver* leftDriver, MotorDrive
  * @note 自动切换到闭环控制模式
  */
 int MotorService_setTargetRPM(MotorService* service, MotorID motorId, float rpm);
+/** Immediate register-level latch, independent of task mutex availability. */
+void MotorService_SetInhibit(MotorService* service, bool inhibited);
 
 
 /**

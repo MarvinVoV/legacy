@@ -7,10 +7,11 @@
 
 
 #include <string.h>
+#include <math.h>
 #include "motor_hal.h"
 
-#include "cmd_process.h"
 #include "log_manager.h"
+#include "control_critical.h"
 
 // 内部宏定义
 #define DUTY_CLAMP_MIN (-100.0f)
@@ -172,6 +173,14 @@ void HAL_Motor_SetDuty(HAL_MotorConfig* config, const float duty)
         return;
     }
 
+    const uint32_t key = control_critical_enter();
+    if (config->inhibited)
+    {
+        __HAL_TIM_SET_COMPARE(config->pwm.tim, config->pwm.ch, 0);
+        HAL_Motor_SetDirection(config, MOTOR_BRAKE_STOP);
+        control_critical_exit(key);
+        return;
+    }
     // 方向取反（接线相反时）：电机与编码器同时取反，PID 仍为负反馈
     const float effectiveDuty = config->invertDirection ? -duty : duty;
 
@@ -214,6 +223,21 @@ void HAL_Motor_SetDuty(HAL_MotorConfig* config, const float duty)
 
     // 更新状态
     config->state.currentDuty = (int16_t)clampedDuty;;
+    control_critical_exit(key);
+}
+
+void HAL_Motor_SetInhibit(HAL_MotorConfig* config, bool inhibited)
+{
+    if (config == NULL) { return; }
+    const uint32_t key = control_critical_enter();
+    config->inhibited = inhibited;
+    if (inhibited)
+    {
+        __HAL_TIM_SET_COMPARE(config->pwm.tim, config->pwm.ch, 0);
+        HAL_Motor_SetDirection(config, MOTOR_BRAKE_STOP);
+        config->state.currentDuty = 0;
+    }
+    control_critical_exit(key);
 }
 
 int32_t HAL_Motor_ReadEncoder(HAL_MotorConfig* config)

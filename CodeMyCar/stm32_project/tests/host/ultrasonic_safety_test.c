@@ -241,6 +241,19 @@ static void test_creep_cutoff(void)
 
 int main(void)
 {
+    SafetyChannel ch = {.fastBlocked=1,.lastValidMs=123,.nearestCm=5};
+    safety_channel_init(&ch,true,0,12,40);
+    CHECK(ch.fastBlocked==0 && ch.lastValidMs==0 && ch.nearestCm==-1);
+    ch.startedMs=10000;
+    CHECK(!safety_channel_unusable(&ch,12000,3000,500));
+    CHECK(safety_channel_unusable(&ch,13001,3000,500));
+    for(int i=0;i<5;i++) safety_channel_update(&ch,100,14000+i);
+    safety_channel_update(&ch,5,14006);
+    CHECK(safety_channel_blocked(&ch));
+    CHECK(!safety_channel_clear(&ch,16));
+    CHECK(safety_channel_unusable(&ch,14507,3000,500));
+    for(int i=0;i<5;i++) safety_channel_update(&ch,100,15000+i);
+    CHECK(!safety_channel_blocked(&ch) && safety_channel_clear(&ch,16));
     test_scale_curve();
     test_median_rejects_spike();
     test_never_valid_is_disabled();

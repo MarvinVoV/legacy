@@ -16,6 +16,7 @@
 #include "steering_lut.h"
 #include "heading_control.h"
 #include "imu_task.h"
+#include "control_critical.h"
 
 
 //------------------------------------------------------------------------------
@@ -131,7 +132,10 @@ int MotionContext_Init(MotionContext* ctx, MotorService* motor, SteerInstance* s
     memcpy(&ctx->chassisConfig, config, sizeof(ChassisConfig));
 
     // 创建互斥锁
-    ctx->targetMutex = osMutexNew(NULL);
+    const osMutexAttr_t targetAttr = {
+        .attr_bits = osMutexRecursive | osMutexPrioInherit,
+    };
+    ctx->targetMutex = osMutexNew(&targetAttr);
     if (ctx->targetMutex == NULL)
     {
         LOG_ERROR(LOG_MODULE_MOTION, "Mutex creation failed");
@@ -317,6 +321,11 @@ int MotionService_EmergencyStop(MotionContext* ctx, uint8_t seq)
     }
 
 
+    /* Cut PWM before waiting for any task lock.  HAL rejects all stale writes. */
+    const uint32_t stopKey = control_critical_enter();
+    ctx->stopPending = true;
+    MotorService_SetInhibit(ctx->motorService, true);
+    control_critical_exit(stopKey);
     // 获取互斥锁
     if (osMutexAcquire(ctx->targetMutex, MUTEX_TIMEOUT_MS) != osOK)
     {
@@ -332,9 +341,9 @@ int MotionService_EmergencyStop(MotionContext* ctx, uint8_t seq)
     ctx->statusSeq = seq;
     ctx->urgentStatus = true;
     control_lease_cancel(&ctx->commandLease);
-
-    osMutexRelease(ctx->targetMutex);
+    ctx->stopPending = false;
     stop_actuators(ctx);
+    osMutexRelease(ctx->targetMutex);
     return ERR_SUCCESS;
 }
 
@@ -372,6 +381,10 @@ void MotionService_LatchFault(MotionContext* ctx, uint8_t faultCode)
     {
         return;
     }
+    const uint32_t faultKey = control_critical_enter();
+    ctx->stopPending = true;
+    MotorService_SetInhibit(ctx->motorService, true);
+    control_critical_exit(faultKey);
     if (osMutexAcquire(ctx->targetMutex, MUTEX_TIMEOUT_MS) != osOK)
     {
         stop_actuators(ctx);
@@ -381,6 +394,7 @@ void MotionService_LatchFault(MotionContext* ctx, uint8_t faultCode)
     ctx->goal.error = faultCode;
     ctx->faultCode = faultCode;
     ctx->faultLatched = true;
+    ctx->stopPending = false;
     ctx->motionTarget.mode = MOTION_EMERGENCY_STOP;
     memset(&ctx->motionTarget.params, 0, sizeof(ctx->motionTarget.params));
     ctx->cmdLeftRpm = 0.0f;
@@ -404,7 +418,7 @@ int MotionService_StartGoal(MotionContext* ctx, int16_t turnDdeg, int16_t distan
         return ERR_MOTION_MUTEX_TIMEOUT;
     }
 
-    if (ctx->faultLatched)
+    if (ctx->faultLatched || ctx->stopPending)
     {
         osMutexRelease(ctx->targetMutex);
         return ERR_MOTION_FAULT_LATCHED;
@@ -587,9 +601,13 @@ void MotionService_Run(MotionContext* ctx)
     if (osMutexAcquire(ctx->targetMutex, MUTEX_TIMEOUT_MS) == osOK)
     {
         leaseExpired = poll_command_lease(ctx, HAL_GetTick());
+        if (ctx->stopPending)
+        {
+            MotionService_LatchFault(ctx, MOTION_ERR_INTERNAL);
+        }
         // 拷贝整个结构体（确保内存布局一致）
         memcpy(&current_target, &ctx->motionTarget, sizeof(MotionTarget));
-        osMutexRelease(ctx->targetMutex);
+        /* Recursive transaction lock stays held through actuator commit. */
     }
     else
     {
@@ -606,11 +624,7 @@ void MotionService_Run(MotionContext* ctx)
     static MotionMode s_prevMode = MOTION_EMERGENCY_STOP;
     if (current_target.mode != s_prevMode)
     {
-        ImuService* imuAtStart = ImuTask_GetService();
-        if (imuAtStart != NULL && imuAtStart->yawValid)
-        {
-            HeadingControl_Reset(&s_headingControl, imuAtStart->yawDeg);
-        }
+        HeadingControl_Disable(&s_headingControl);
         s_prevMode = current_target.mode;
     }
 
@@ -659,9 +673,10 @@ void MotionService_Run(MotionContext* ctx)
         apply_wheel_sync(ctx, &left, &right);
 
 #if SAFETY_GOVERNOR_ENABLED
-        const SafetyChannel* front = NULL;
-        const SafetyChannel* rear  = NULL;
-        Sonar_GetSafety(&front, &rear);
+        SafetyChannel frontCopy, rearCopy;
+        Sonar_GetSafetySnapshot(&frontCopy, &rearCopy);
+        const SafetyChannel* front = &frontCopy;
+        const SafetyChannel* rear = &rearCopy;
 
         /* 方向必须用**限速前**的指令判断：scale=0 时两轮目标都归零，
            若放在限速之后会丢掉方向，导致倒车时去检查前向传感器。 */
@@ -698,6 +713,7 @@ void MotionService_Run(MotionContext* ctx)
             if (MotorService_brakeAll(ctx->motorService) != ERR_SUCCESS)
             {
                 LOG_ERROR(LOG_MODULE_MOTION, "SAFETY brake failed (wheel not braked)");
+                MotionService_LatchFault(ctx, MOTION_ERR_INTERNAL);
             }
             ctx->safetyBraked = true;
             left              = 0.0f;
@@ -718,7 +734,7 @@ void MotionService_Run(MotionContext* ctx)
         /* GOAL 模式下持续被挡 → 中止，避免 Agent 调用挂到硬超时 */
         if (current_target.mode == MOTION_GOAL && ctx->goal.active)
         {
-            if (scale <= 0.001f)
+            if (ctx->safetyBraked || guard_unusable || scale <= 0.001f)
             {
                 const uint32_t now = HAL_GetTick();
                 if (!ctx->goalBlocked)
@@ -750,6 +766,13 @@ void MotionService_Run(MotionContext* ctx)
         /* 处于硬停止时不要下发目标，否则会把驱动从制动模式切回闭环 */
         if (!ctx->safetyBraked)
         {
+            const uint32_t commitKey = control_critical_enter();
+            if (!ctx->stopPending && !ctx->faultLatched &&
+                ctx->motionTarget.mode != MOTION_EMERGENCY_STOP)
+            {
+                MotorService_SetInhibit(ctx->motorService, false);
+            }
+            control_critical_exit(commitKey);
             MotorService_setTargetRPM(ctx->motorService, MOTOR_LEFT_WHEEL, left);
             MotorService_setTargetRPM(ctx->motorService, MOTOR_RIGHT_WHEEL, right);
         }
@@ -764,6 +787,7 @@ void MotionService_Run(MotionContext* ctx)
         LOG_ERROR(LOG_MODULE_MOTION, "goal stalled");
         MotionService_LatchFault(ctx, MOTION_ERR_STALL);
     }
+    osMutexRelease(ctx->targetMutex);
 }
 
 
@@ -784,6 +808,7 @@ static bool drive_is_stopped(const MotionContext* ctx)
 
 static bool can_accept_motion_locked(const MotionContext* ctx)
 {
+    if (ctx->stopPending) { return false; }
     if (ctx->faultLatched)
     {
         return false;
@@ -813,8 +838,9 @@ static float heading_correct(MotionContext* ctx, float kappa, bool straight)
     const bool snapshot_ok = ImuService_GetSnapshot(imuService, &imu);
 
     /* IMU 健康检查：快照一致、数据有效、未过期（>200 ms）、非安全制动 */
-    const bool imu_stale = snapshot_ok && imu.lastUpdateMs != 0u &&
-                           (HAL_GetTick() - imu.lastUpdateMs) > 200u;
+    const bool imu_stale = snapshot_ok &&
+        ((HAL_GetTick() - imu.lastUpdateMs) > 200u ||
+         (HAL_GetTick() - imu.lastGyroMs) > 200u);
     if (!snapshot_ok || !imu.valid || imu_stale || ctx->safetyBraked)
     {
         HeadingControl_Disable(&s_headingControl);
@@ -856,6 +882,7 @@ static float steer_straight_angle(const MotionContext* ctx)
 
 static void stop_actuators(MotionContext* ctx)
 {
+    MotorService_SetInhibit(ctx->motorService, true);
     MotorService_emergencyStop(ctx->motorService, MOTOR_LEFT_WHEEL);
     MotorService_emergencyStop(ctx->motorService, MOTOR_RIGHT_WHEEL);
     SteerService_setAngleImmediate(ctx->steerServo, steer_straight_angle(ctx));
@@ -1018,11 +1045,13 @@ static MotionGoalConfig goal_cfg_from(const ChassisConfig* cfg)
     g.wheelbaseMm     = cfg->wheelbaseMM;
     g.trackWidthMm    = cfg->trackWidthMM;
     g.wheelRadiusMm   = cfg->wheelRadiusMM;
-    g.maxSteerDeg     = cfg->maxSteerAngleDeg;
+    g.maxSteerDeg     = fminf(cfg->maxSteerAngleDeg,
+        atanf(mm_to_m(cfg->wheelbaseMM) * STEERING_KAPPA_MAX_1PM) * 57.2957795f);
     g.maxRpm          = MOTION_MAX_RPM;
     g.maxAngularRadps = cfg->maxAngularVelRad;
     g.decelMmps2      = 300.0f;
-    g.minTurnRadiusMm = cfg->minTurnRadiusMM;
+    g.minTurnRadiusMm = fmaxf(cfg->minTurnRadiusMM,
+                              1000.0f / STEERING_KAPPA_MAX_1PM);
     g.allowPivot      = false;
     return g;
 }
@@ -1057,9 +1086,9 @@ static void handle_goal(MotionContext* ctx)
     float curvature = 0.0f;
     float raw_steer = 0.0f;
     if (!out.pivot &&
-        steering_lut_angle_to_curvature(out.steerAngleDeg, wheelbase_m, &curvature) &&
-        steering_lut_curvature_to_raw(curvature, wheelbase_m, &raw_steer))
+        steering_lut_angle_to_curvature(out.steerAngleDeg, wheelbase_m, &curvature))
     {
+        curvature = CLAMP(curvature, -STEERING_KAPPA_MAX_1PM, STEERING_KAPPA_MAX_1PM);
         /* GOAL 也走 IMU 航向闭环：修正曲率同时作用于舵机和双轮差速 */
         const bool straight = fabsf(curvature) < 0.05f;
         const float curvature_eff = heading_correct(ctx, curvature, straight);
@@ -1077,11 +1106,16 @@ static void handle_goal(MotionContext* ctx)
             ctx->cmdLeftRpm  = l_eff;
             ctx->cmdRightRpm = r_eff;
         }
-        (void)steering_lut_curvature_to_raw(curvature_eff, wheelbase_m, &raw_steer);
+        if (!steering_lut_curvature_to_raw(curvature_eff, wheelbase_m, &raw_steer))
+        {
+            MotionService_LatchFault(ctx, MOTION_ERR_INTERNAL);
+            return;
+        }
     }
     else
     {
-        raw_steer = 0.0f;
+        MotionService_LatchFault(ctx, MOTION_ERR_INTERNAL);
+        return;
     }
     const float steer = ctx->chassisConfig.steerCenterAngleDeg - raw_steer;
     SteerService_setAngleSmoothly(ctx->steerServo, steer);

@@ -20,11 +20,22 @@
 #include "uart_handle.h"
 #include "ultrasonic_config.h"
 #include "buzzer.h"
+#include "control_critical.h"
 
 static osThreadId_t s_taskHandle = NULL;
 
 static SafetyChannel s_frontSafety;
 static SafetyChannel s_rearSafety;
+static SafetyChannel s_publishedFront;
+static SafetyChannel s_publishedRear;
+
+static void publish_safety(void)
+{
+    const uint32_t key = control_critical_enter();
+    s_publishedFront = s_frontSafety;
+    s_publishedRear = s_rearSafety;
+    control_critical_exit(key);
+}
 
 static uint8_t s_txSeq = 0u;
 static void    send_sensor_frame(void);
@@ -36,6 +47,8 @@ void SonarTask_Init(void)
                         FRONT_OFFSET_CM, SAFETY_STOP_CM, SAFETY_SLOW_CM);
     safety_channel_init(&s_rearSafety, ULTRASONIC_REAR_ENABLED,
                         REAR_OFFSET_CM, SAFETY_STOP_CM, SAFETY_SLOW_CM);
+    s_frontSafety.startedMs = s_rearSafety.startedMs = HAL_GetTick();
+    publish_safety();
 
     const osThreadAttr_t attrs = {
         .name       = "SonarTask",
@@ -75,6 +88,7 @@ void SonarTask_doTask(void* arg)
             safety_channel_update(&s_rearSafety, distance, HAL_GetTick());
         }
 
+        publish_safety();
         /* 前后错开一拍触发 */
         if ((tick & 1u) == 0u)
         {
@@ -126,6 +140,14 @@ void Sonar_GetSafety(const SafetyChannel** front, const SafetyChannel** rear)
     {
         *rear = &s_rearSafety;
     }
+}
+
+void Sonar_GetSafetySnapshot(SafetyChannel* front, SafetyChannel* rear)
+{
+    const uint32_t key = control_critical_enter();
+    if (front != NULL) { *front = s_publishedFront; }
+    if (rear != NULL) { *rear = s_publishedRear; }
+    control_critical_exit(key);
 }
 
 /*------------------------------------------------------------------------------

@@ -21,11 +21,13 @@ typedef struct
     float yawRateDps;
     uint8_t status;
     uint32_t lastUpdateMs;
+    uint32_t lastGyroMs;
 } ImuSnapshot;
 
 typedef struct
 {
-    volatile uint32_t seq; /* seqlock：奇数表示写入中 */
+    ImuSnapshot published; /* Only short critical copies cross tasks. */
+    volatile bool yawResetRequested;
 
     bool inited;
     bool yawValid;
@@ -56,12 +58,15 @@ typedef struct
     uint32_t accelCount;
     bool biasValid; /* 零偏标定完成 */
     uint32_t lastUpdateMs;
+    uint32_t lastGyroMs;
+    uint32_t processedGrvCount;
+    bool gyroValid;
 } ImuService;
 
 /** 打开 SH-2 会话并使能报告。失败返回非 0。 */
 int ImuService_Init(ImuService* s, I2C_HandleTypeDef* i2c);
 
-/** 读取一致快照（seqlock，无需加锁）。返回 false 表示读取期间被打断。 */
+/** Copy the last completely published sample, including independent ages. */
 bool ImuService_GetSnapshot(ImuService* s, ImuSnapshot* out);
 
 /** 100 Hz 调用：service 协议栈 + 更新 yaw / yawRate / bias。 */

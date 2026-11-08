@@ -244,6 +244,7 @@ int MotorService_brakeAll(MotorService* service)
         return ERR_MOTOR_INVALID_PARAM;
     }
 
+    MotorService_SetInhibit(service, true);
     /* 两轮都短接制动；每轮独立加锁，避免和 updateState 竞争。
        任一轮制动失败都必须向上传播，不能宣布"已制动"。 */
     bool all_ok = true;
@@ -252,6 +253,7 @@ int MotorService_brakeAll(MotorService* service)
         MotorInstance* instance = &service->instances[i];
         if (!instance->isInitialized)
         {
+            all_ok = false;
             continue;
         }
         if (osMutexAcquire(instance->mutex, MUTEX_TIMEOUT_MS) != osOK)
@@ -271,6 +273,16 @@ int MotorService_brakeAll(MotorService* service)
         osMutexRelease(instance->mutex);
     }
     return all_ok ? ERR_SUCCESS : ERR_MOTOR_MUTEX_FAIL;
+}
+
+void MotorService_SetInhibit(MotorService* service, bool inhibited)
+{
+    if (service == NULL) { return; }
+    for (unsigned i = 0; i < MOTOR_MAX_NUM; ++i)
+    {
+        MotorDriver* driver = service->instances[i].driver;
+        if (driver != NULL) { HAL_Motor_SetInhibit(driver->halCfg, inhibited); }
+    }
 }
 
 void MotorService_updateState(MotorInstance* instance)

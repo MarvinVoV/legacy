@@ -62,6 +62,7 @@ typedef struct
     } gpio;
 
     bool invertDirection; ///< 电机+编码器方向取反（接线相反时使用）
+    volatile bool inhibited; /* Safety latch: no stale PWM write can override. */
 
     HAL_MotorState state; ///< 电机状态结构体
 } HAL_MotorConfig;
@@ -94,6 +95,7 @@ HAL_StatusTypeDef HAL_Motor_Init(HAL_MotorConfig* config);
  *       - 零值：滑行停止
  */
 void HAL_Motor_SetDuty(HAL_MotorConfig* config, float duty);
+void HAL_Motor_SetInhibit(HAL_MotorConfig* config, bool inhibited);
 
 /**
  * @brief 设置电机运行方向

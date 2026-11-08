@@ -86,6 +86,12 @@ int main(void)
     assert(fabsf(inst3.smoothCtrl.currentSpeedDegPerMs - sp) < 1e-9f);
     assert(fabsf(inst3.smoothCtrl.targetAngleDeg - 141.0f) < 1e-6f);
 
+    assert(SteerService_setAngleImmediate(&instance,90.0f)==0);
+    assert(SteerService_setAngleSmoothly(&instance,140.0f)==0);
+    tick_ms+=20;SteerService_update(&instance);
+    assert(SteerService_setAngleSmoothly(&instance,instance.state.commandedAngleDeg)==0);
+    assert(instance.state.motionState==STEER_MOTION_STATE_IDLE);
+    assert(instance.smoothCtrl.currentSpeedDegPerMs==0.0f);
     puts("servo_service: all tests passed");
     return 0;
 }

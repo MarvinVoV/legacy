@@ -108,3 +108,40 @@ echo "== ultrasonic safety =="
   "$DIR/Application/Services/Safety/Src/safety_service.c" \
   -lm -o "${TMPDIR:-/tmp}/ultrasonic_safety_test"
 "${TMPDIR:-/tmp}/ultrasonic_safety_test"
+
+echo "== motor inhibit =="
+"$CC" -std=c11 -Wall -Wextra -O2 \
+  -I "$DIR/tests/host/stubs" -I "$DIR/Application/Modules/Motor/Inc" \
+  -I "$DIR/Application/System/Utils/Inc" \
+  "$DIR/tests/host/motor_inhibit_test.c" "$DIR/Application/Modules/Motor/Src/motor_hal.c" \
+  -o "${TMPDIR:-/tmp}/motor_inhibit_test"
+"${TMPDIR:-/tmp}/motor_inhibit_test"
+
+echo "== imu service =="
+"$CC" -std=c11 -Wall -Wextra -O2 \
+  -I "$DIR/tests/host/stubs" -I "$DIR/Application/Services/IMU/Inc" \
+  -I "$DIR/Application/Modules/IMU/ThirdParty" -I "$DIR/Application/System/Utils/Inc" \
+  "$DIR/tests/host/imu_service_test.c" "$DIR/Application/Services/IMU/Src/imu_service.c" \
+  -lm -o "${TMPDIR:-/tmp}/imu_service_test"
+"${TMPDIR:-/tmp}/imu_service_test"
+
+echo "== motion transaction =="
+"$CC" -std=c11 -Wall -Wextra -O2 \
+  -I "$DIR/tests/host/stubs" -I "$DIR/Application/Services/Ctrl/Inc" \
+  -I "$DIR/Application/Services/Motor/Inc" -I "$DIR/Application/Modules/Motor/Inc" \
+  -I "$DIR/Application/Services/Servo/Inc" -I "$DIR/Application/Services/IMU/Inc" \
+  -I "$DIR/Application/Services/Safety/Inc" -I "$DIR/Application/System/Utils/Inc" \
+  -I "$DIR/Application/System/Common/Inc" -I "$DIR/Application/System/Protocol/Inc" \
+  -I "$DIR/Application/Tasks/MotionTask/Inc" -I "$DIR/Application/Tasks/ImuTask/Inc" \
+  -I "$DIR/Application/Tasks/SonarTask/Inc" \
+  "$DIR/tests/host/motion_transaction_test.c" \
+  "$DIR/Application/Services/Ctrl/Src/motion_service.c" \
+  "$DIR/Application/Services/Ctrl/Src/heading_control.c" \
+  "$DIR/Application/Services/Safety/Src/safety_service.c" \
+  "$DIR/Application/System/Utils/Src/motion_kinematics.c" \
+  "$DIR/Application/System/Utils/Src/motion_goal.c" \
+  "$DIR/Application/System/Utils/Src/steering_lut.c" \
+  "$DIR/Application/System/Utils/Src/control_lease.c" \
+  "$DIR/Application/System/Utils/Src/encoder_fault_monitor.c" \
+  -lm -o "${TMPDIR:-/tmp}/motion_transaction_test"
+"${TMPDIR:-/tmp}/motion_transaction_test"

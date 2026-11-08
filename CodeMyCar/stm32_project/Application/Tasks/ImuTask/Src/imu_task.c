@@ -45,12 +45,10 @@ static void send_heading_frame(const ImuService* s)
     }
 
     /* 连续角回绕到 [-180,180]，避免 int16 在约 9 圈后溢出 */
-    float yawWrapped = s->yawDeg;
-    while (yawWrapped > 180.0f)  { yawWrapped -= 360.0f; }
-    while (yawWrapped < -180.0f) { yawWrapped += 360.0f; }
+    const float yawWrapped = remainderf(s->yawDeg, 360.0f);
 
     long yaw_l = lroundf(yawWrapped * 10.0f);
-    long rate_l = lroundf(s->yawRateDps * 100.0f);
+    long rate_l = lroundf(fmaxf(-327.67f, fminf(327.67f, s->yawRateDps)) * 100.0f);
     if (yaw_l > 1800L)   { yaw_l = 1800L; }
     if (yaw_l < -1800L)  { yaw_l = -1800L; }
     if (rate_l > 32767L) { rate_l = 32767L; }
@@ -133,9 +131,10 @@ static void ImuTask_doTask(void* pvParameters)
         if (svc->inited)
         {
             const uint32_t nowHal = HAL_GetTick();
-            const bool stale = (svc->lastUpdateMs != 0u) &&
-                               (nowHal - svc->lastUpdateMs > IMU_TIMEOUT_MS);
-            const bool noFirst = (svc->lastUpdateMs == 0u) &&
+            const bool stale =
+                (svc->grvCount != 0u && nowHal - svc->lastUpdateMs > IMU_TIMEOUT_MS) ||
+                (svc->gyroCount != 0u && nowHal - svc->lastGyroMs > IMU_TIMEOUT_MS);
+            const bool noFirst = (svc->grvCount == 0u || svc->gyroCount == 0u) &&
                                  (nowHal - initDoneHal > 1500u);
             if (stale || noFirst)
             {

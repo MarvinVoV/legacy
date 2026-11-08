@@ -89,6 +89,12 @@ int SteerService_setAngleSmoothly(SteerInstance* instance, float targetAngle)
     // 死区判断（浮点容差）
     if (fabsf(delta) <= instance->config.deadZoneDeg)
     {
+        /* Accept the new destination even inside the PWM dead zone. */
+        instance->smoothCtrl.targetAngleDeg = clampedAngle;
+        instance->smoothCtrl.currentSpeedDegPerMs = 0.0f;
+        instance->smoothCtrl.state = STEER_STATE_IDLE;
+        instance->state.targetAngleDeg = clampedAngle;
+        instance->state.motionState = STEER_MOTION_STATE_IDLE;
         osMutexRelease(instance->mutex);
         return ERR_SUCCESS;
     }
