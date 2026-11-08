@@ -1,0 +1,23 @@
+{
+  "actual_reference_protocol": "Same starting marked points on front/rear axle transverse lines; operator repositioned to original marks, per preceding clarification.",
+  "operator_confirmation": "已对齐原标记，空间线缆就绪，可继续",
+  "firmware_sha256": "4cc0546e37ba2ef8709f9a5aabbd09bf151f4ecff5f4774741fe096a39b706a0",
+  "firmware_reflashed": false,
+  "parameters_changed": false,
+  "requested_legs_cm": [
+    100,
+    -100
+  ],
+  "speed_cm_s": 10,
+  "planned_valid_observation_trial_index": 2,
+  "operator_end_observation": {
+    "raw_reply": "相对于原始标注点，小车多向后倒了5mm，前后轮都向右偏移了约7mm",
+    "front_approx_right_mm": 7,
+    "rear_approx_right_mm": 7,
+    "longitudinal_approx_forward_mm": -5,
+    "valid_for_qualitative_closure": true,
+    "millimeter_metrology_calibrated": false
+  },
+  "qualification": "Operator estimates, placement/projection uncertainty uncalibrated. Closure alone does not certify single-leg straightness.",
+  "valid_observation_trial_index": 2
+}

@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "motion_service.h"
 #include "imu_service.h"
 #include "safety_service.h"
@@ -43,7 +44,7 @@ bool MotorService_getStateEx(MotorService* s,MotorID i,MotorState* o)
  o->velocity.rpm=i==MOTOR_LEFT_WHEEL?measuredLeftRpm:measuredRightRpm;
  o->velocity.mps=o->velocity.rpm*2*3.14159265f*0.0325f/60;return !measurementFail;}
 int SteerService_setAngleImmediate(SteerInstance* s,float a)
-{(void)s;assert(depth>0);lastAngle=a;return 0;}
+{(void)s;assert(depth>0);lastAngle=a;return steerFail?ERR_HW_INIT_FAIL:0;}
 int SteerService_setAngleSmoothly(SteerInstance* s,float a)
 {
     (void)s;lastAngle=a;assert(depth>0);
@@ -131,11 +132,28 @@ int main(void)
     assert(fabsf(c.goalEncoderHeadingDeg-40)<0.001f);
     assert(!c.goal.finished);
     /* Matching distance + IMU heading completes even with encoder disagreement. */
+    const float heldSteer=lastAngle;
     leftRevs+=400/circ;rightRevs+=400/circ;imuYaw=-90;
-    MotionService_Run(&c);assert(c.goal.finished && !c.goal.error && inhibited);
+    MotionService_Run(&c);
+    assert(c.goalSettling && c.goal.active && !c.goal.finished && inhibited);
     motion_status_t status;MotionService_GetStatus(&c,&status);
+    assert(status.state==MOTION_STATE_RUNNING);
+    const unsigned submitsAtBrake=driveSubmits;
+    assert(MotionService_SetDriveParams(&c,.1f,0,201)!=0 && inhibited);
+    assert(MotionService_StartGoal(&c,0,100,100,202)!=0);
+    measuredLeftRpm=measuredRightRpm=20;
+    for(int i=0;i<10;i++) {
+        leftRevs+=.3f/circ;rightRevs+=.3f/circ;imuYaw-=.025f;
+        now+=5;MotionService_Run(&c);
+        assert(c.goalSettling && !c.goal.finished && inhibited);
+        assert(lastAngle==heldSteer && driveSubmits==submitsAtBrake);
+    }
+    measuredLeftRpm=measuredRightRpm=0;
+    for(int i=0;i<40;i++){now+=5;MotionService_Run(&c);assert(inhibited && driveSubmits==submitsAtBrake);}
+    assert(c.goal.finished && !c.goal.active && !c.goal.error && !c.goalSettling);
+    MotionService_GetStatus(&c,&status);
     assert(status.state==MOTION_STATE_DONE && (status.flags&MOTION_STATUS_FLAG_GOAL_IMU));
-    assert(status.goalTurnMdeg==90000);
+    assert(abs(status.goalDistanceMm-503)<=1 && abs(status.goalTurnMdeg-90250)<=2);
     assert(MotionService_EmergencyStop(&c,14)==0);
     /* Source loss and reference changes must not fall back or report success. */
     assert(MotionService_StartGoal(&c,900,500,50,15)==0);
@@ -258,5 +276,45 @@ int main(void)
     assert(MotionService_StartGoal(&c,0,-2000,100,47)==0 && c.goalPath.direction==-1);
     assert(c.goalPath.leftM==0 && c.goalPath.maxAbsLeftM==0);
     assert(MotionService_EmergencyStop(&c,48)==0);
+    /* Normal settling remains preemptible by STOP; failed/stale stopping
+     * never reports success or releases inhibit. */
+    for(int scenario=0;scenario<4;scenario++) {
+        imuYaw=0;measuredLeftRpm=measuredRightRpm=0;now+=5;MotionService_Run(&c);
+        assert(MotionService_StartGoal(&c,0,100,100,90+scenario)==0);
+        measuredLeftRpm=measuredRightRpm=20;
+        leftRevs+=96/circ;rightRevs+=96/circ;
+        now+=5;MotionService_Run(&c);
+        assert(c.goalSettling && inhibited && !c.goal.finished);
+        const unsigned before=driveSubmits;
+        if(scenario==0) {
+            assert(MotionService_EmergencyStop(&c,101)==0);
+            assert(!c.goalSettling && c.goal.aborted && inhibited);
+        } else if(scenario==1) {
+            for(int i=0;i<210 && !c.faultLatched;i++){now+=5;MotionService_Run(&c);assert(inhibited);}
+            assert(c.faultLatched && c.faultCode==MOTION_ERR_STALL && !c.goalSettling);
+        } else if(scenario==2) {
+            imuReference++;now+=5;MotionService_Run(&c);
+            assert(c.faultLatched && c.faultCode==MOTION_ERR_IMU && !c.goalSettling);
+        } else {
+            measuredLeftRpm=measuredRightRpm=0;steerFail=true;
+            for(int i=0;i<20 && !c.faultLatched;i++){now+=5;MotionService_Run(&c);}
+            assert(c.faultLatched && c.faultCode==MOTION_ERR_INTERNAL && !c.goalSettling);
+            steerFail=false;
+        }
+        assert(driveSubmits==before);
+        measuredLeftRpm=measuredRightRpm=0;now+=5;MotionService_Run(&c);
+        if(c.faultLatched)assert(MotionService_ClearFault(&c,110+scenario)==0);
+    }
+    /* Crossing planner tolerance while rolling is not success if the final
+     * parked measurement lies outside that same tolerance. */
+    imuYaw=0;measuredLeftRpm=measuredRightRpm=0;now+=5;MotionService_Run(&c);
+    assert(MotionService_StartGoal(&c,0,100,100,120)==0);
+    leftRevs+=96/circ;rightRevs+=96/circ;now+=5;MotionService_Run(&c);
+    assert(c.goalSettling);
+    leftRevs+=10/circ;rightRevs+=10/circ;
+    for(int i=0;i<40;i++){now+=5;MotionService_Run(&c);assert(inhibited);}
+    MotionService_GetStatus(&c,&status);
+    assert(c.goal.finished && !c.goalSettling && status.state==MOTION_STATE_ERROR);
+    assert(!c.faultLatched && status.goalDistanceMm>=105);
     puts("motion_transaction: all tests passed");
 }

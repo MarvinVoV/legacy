@@ -129,6 +129,12 @@ typedef struct
     float          cmdLeftRpm;    ///< 当前模式期望左轮目标（交叉耦合基准）
     float          cmdRightRpm;   ///< 当前模式期望右轮目标
     MotionGoalState goal;         ///< 目标型运动状态
+    bool goalSettling;            /* Normal completion: brake, settle, park, DONE. */
+    bool goalZeroTracking;
+    bool goalParked;
+    uint32_t goalSettleStartMs;
+    uint32_t goalZeroStartMs;
+    uint32_t goalParkMs;
     bool goalUsesImu;            /* Source is fixed for the entire transaction. */
     float goalYawStartDeg;
     uint32_t goalImuReferenceId;

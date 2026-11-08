@@ -713,3 +713,10 @@ run.sh新增heading_transient_test（目前20组/24次执行）：真实HeadingC
 
 
 后续验收反例已归档：阻尼版首轮前进约2mm/倒车3–5mm改善未在第二轮重复（前进右6mm、返回右约1.8cm）；积分/轮速分离候选虽通过24次host执行及负面对照，实车仍右8–9mm/返回右约2cm，因此已撤回。实验仅存steer-integral-split-rejected-experiment.patch，不能把此patch当已验收修复重新应用。新不变量的激励必须超过motion_calc_drive的0.1°几何死区，过小扰动会让旧策略也通过；负面对照已证明有效激励能捕获耦合。自然固定中位实验逆向最后raw seq84未捕获ACK，不能写作全部ACK通过，但STOP136可靠确认。最后恢复阻尼版后STOP151确认。
+
+
+## 正常GOAL停车后完成门禁
+
+当前仍20组/24次host执行；motion_transaction组扩展正常收尾状态机：滚行RUNNING、保留舵机命令、驱动始终inhibit、继续累计距离/角度、停稳/回中等待后才DONE；最终越容差ERROR，未停稳超时/IMU epoch改变/回中提交失败不能成功；STOP能中断，其他新运动不能抢占收尾。旧motion_service.c在新断言下失败的负面对照已归档。规划器与完成验收共享motion_goal_within_tolerance，不改变原5mm/2°容差。
+
+实机参照已澄清后有三轮基线和三轮新版本，精度结论与DONE门禁结论分开：基线右7..8mm、新版右4..8mm，未稳定消除。compare_goal_done_packets.py PREFIX...只读对比首DONE包，旧速度为74..83mm/s、新6段为0；不能把包内速度当作包发送瞬间真速度，或由此单独反推制动距离。1RPM低速阈值与100ms回中等待不是独立机械角度/静止认证。详情及完整复用入口见[正常GOAL修复报告](Normal-GOAL-Parking-Completion-Fix-Validation-2026-11-08.md)。脚本均固定输出前缀拒绝覆盖，运行前必须确认物理就绪，本组STOP195后已停止。

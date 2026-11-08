@@ -16,6 +16,14 @@
 #define PIVOT_GAIN      3.0f
 #define TURN_RATE_DPS   90.0f /* 仅用于时长预估 */
 
+bool motion_goal_within_tolerance(const MotionGoalState* s)
+{
+    if (s == NULL || !isfinite(s->distanceTravelMm) || !isfinite(s->headingTravelDeg)) { return false; }
+    return (s->target.distanceMm == 0 ||
+            fabsf((float)s->target.distanceMm-s->distanceTravelMm) <= TOL_DISTANCE_MM) &&
+           fabsf((float)s->target.turnDdeg*.1f-s->headingTravelDeg) <= TOL_TURN_DEG;
+}
+
 static uint32_t estimate_ms(const MotionGoalTarget* t)
 {
     float ms = fabsf((float)t->distanceMm) / (float)t->speedMmps * 1000.0f;
@@ -96,9 +104,7 @@ MotionGoalOutput motion_goal_step(MotionGoalState* s, const MotionGoalConfig* cf
     const float thRem = (float)s->target.turnDdeg * 0.1f - s->headingTravelDeg;
 
     /* 纯旋转没有距离目标：平均轮程的微小漂移不应阻塞完成 */
-    const bool distance_done =
-        (s->target.distanceMm == 0) || (fabsf(sRem) <= TOL_DISTANCE_MM);
-    if (distance_done && fabsf(thRem) <= TOL_TURN_DEG)
+    if (motion_goal_within_tolerance(s))
     {
         s->finished  = true;
         s->finishMs  = nowMs;

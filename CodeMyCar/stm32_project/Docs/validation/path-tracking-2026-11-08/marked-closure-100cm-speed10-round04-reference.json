@@ -1,0 +1,21 @@
+{
+  "actual_reference_protocol": "Original front/rear axle lines with specific starting marked points, as confirmed in preceding valid trials.",
+  "operator_confirmation": "已复位，空间线缆就绪，做第三轮",
+  "valid_observation_trial_index": 3,
+  "firmware_sha256": "4cc0546e37ba2ef8709f9a5aabbd09bf151f4ecff5f4774741fe096a39b706a0",
+  "firmware_reflashed": false,
+  "parameters_changed": false,
+  "requested_legs_cm": [
+    100,
+    -100
+  ],
+  "speed_cm_s": 10,
+  "operator_end_observation": {
+    "raw_reply": "相对于原始标注点，小车多向后倒了1mm（基本对齐）；前轮向右偏了7mm左右，后轮向右偏了8mm左右",
+    "front_approx_right_mm": 7,
+    "rear_approx_right_mm": 8,
+    "longitudinal_approx_forward_mm": -1,
+    "valid_for_qualitative_closure": true,
+    "millimeter_metrology_calibrated": false
+  }
+}

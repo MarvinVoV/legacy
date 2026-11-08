@@ -52,6 +52,9 @@
 static HeadingControl s_headingControl;
 
 /// GOAL 有有效输出但无里程/航向进展时判定堵转
+#define MOTION_GOAL_SETTLE_TIMEOUT_MS (1000u)
+#define MOTION_GOAL_ZERO_HOLD_MS (50u)
+#define MOTION_GOAL_PARK_HOLD_MS (100u)
 #define MOTION_GOAL_STALL_MS (1500u)
 #define MOTION_GOAL_STALL_ARM_MS (750u)
 #define MOTION_GOAL_PROGRESS_MM (1.0f)
@@ -98,6 +101,7 @@ static bool can_accept_motion_locked(const MotionContext* ctx);
 
 static void abort_goal_locked(MotionContext* ctx, uint8_t newState);
 
+static void brake_actuators(MotionContext* ctx);
 static void stop_actuators(MotionContext* ctx);
 
 static bool poll_command_lease(MotionContext* ctx, uint32_t nowMs);
@@ -514,6 +518,9 @@ int MotionService_StartGoal(MotionContext* ctx, int16_t turnDdeg, int16_t distan
     ctx->goalPathLogTick = now-1000u;
     HeadingControl_Disable(&s_headingControl);
     ctx->goal = candidate;
+    ctx->goalSettling = false;
+    ctx->goalZeroTracking = false;
+    ctx->goalParked = false;
     ctx->motionTarget.mode = MOTION_GOAL;
     memset(&ctx->motionTarget.params, 0, sizeof(ctx->motionTarget.params));
     control_lease_cancel(&ctx->commandLease);
@@ -743,7 +750,7 @@ void MotionService_Run(MotionContext* ctx)
      * 所有模式的目标都在这里统一乘 scale 后下发，
      * 避免新增模式漏掉限速。EMERGENCY_STOP 已由上面直接停机。 */
     if (current_target.mode != MOTION_EMERGENCY_STOP &&
-        !(current_target.mode == MOTION_GOAL && !ctx->goal.active))
+        !(current_target.mode == MOTION_GOAL && (!ctx->goal.active || ctx->goalSettling)))
     {
         float left  = ctx->cmdLeftRpm;
         float right = ctx->cmdRightRpm;
@@ -890,7 +897,7 @@ static bool drive_is_stopped(const MotionContext* ctx)
 
 static bool can_accept_motion_locked(const MotionContext* ctx)
 {
-    if (ctx->stopPending) { return false; }
+    if (ctx->stopPending || ctx->goalSettling) { return false; }
     if (ctx->faultLatched)
     {
         return false;
@@ -902,6 +909,9 @@ static bool can_accept_motion_locked(const MotionContext* ctx)
 
 static void abort_goal_locked(MotionContext* ctx, uint8_t newState)
 {
+    ctx->goalSettling = false;
+    ctx->goalZeroTracking = false;
+    ctx->goalParked = false;
     if (!ctx->goal.active)
     {
         return;
@@ -992,7 +1002,7 @@ static float steer_straight_angle(const MotionContext* ctx)
     return ctx->chassisConfig.steerCenterAngleDeg - raw;
 }
 
-static void stop_actuators(MotionContext* ctx)
+static void brake_actuators(MotionContext* ctx)
 {
     straight_path_stop(&ctx->goalPath);
     straight_path_stop(&ctx->goalGyroPath);
@@ -1001,6 +1011,11 @@ static void stop_actuators(MotionContext* ctx)
     MotorService_SetInhibit(ctx->motorService, true);
     MotorService_emergencyStop(ctx->motorService, MOTOR_LEFT_WHEEL);
     MotorService_emergencyStop(ctx->motorService, MOTOR_RIGHT_WHEEL);
+}
+
+static void stop_actuators(MotionContext* ctx)
+{
+    brake_actuators(ctx);
     SteerService_setAngleImmediate(ctx->steerServo, steer_straight_angle(ctx));
 }
 
@@ -1192,6 +1207,57 @@ static void handle_goal(MotionContext* ctx)
         return;
     }
 
+    if (ctx->goalSettling)
+    {
+        const uint32_t now = HAL_GetTick();
+        ctx->cmdLeftRpm = ctx->cmdRightRpm = 0.0f;
+        if ((uint32_t)(now-ctx->goalSettleStartMs) > MOTION_GOAL_SETTLE_TIMEOUT_MS)
+        {
+            MotionService_LatchFault(ctx, MOTION_ERR_STALL);
+            return;
+        }
+        if (!drive_is_stopped(ctx))
+        {
+            ctx->goalZeroTracking = false;
+            return;
+        }
+        if (!ctx->goalZeroTracking)
+        {
+            ctx->goalZeroTracking = true;
+            ctx->goalZeroStartMs = now;
+            return;
+        }
+        if ((uint32_t)(now-ctx->goalZeroStartMs) < MOTION_GOAL_ZERO_HOLD_MS) { return; }
+        if (!ctx->goalParked)
+        {
+            if (SteerService_setAngleImmediate(ctx->steerServo, steer_straight_angle(ctx)) != ERR_SUCCESS)
+            {
+                MotionService_LatchFault(ctx, MOTION_ERR_INTERNAL);
+                return;
+            }
+            ctx->goalParked = true;
+            ctx->goalParkMs = now;
+            return;
+        }
+        if ((uint32_t)(now-ctx->goalParkMs) < MOTION_GOAL_PARK_HOLD_MS) { return; }
+        /* Runtime odometry/yaw kept accumulating during inhibited settling.
+         * Publish completion only after the parked measurement is current. */
+        ctx->goalSettling = false;
+        ctx->goal.active = false;
+        ctx->goal.finished = true;
+        ctx->goal.finishMs = now;
+        if (!motion_goal_within_tolerance(&ctx->goal))
+        {
+            ctx->goal.error = MOTION_ERR_INTERNAL;
+            LOG_WARN(LOG_MODULE_MOTION, "goal parked outside tolerance: s=%.1f yaw=%.3f",
+                     ctx->goal.distanceTravelMm, ctx->goal.headingTravelDeg);
+        }
+        ctx->urgentStatus = true;
+        ctx->lastStopReportMs = now;
+        ctx->stopReportPending = true;
+        return;
+    }
+
     const MotionGoalConfig cfg = goal_cfg_from(&ctx->chassisConfig);
     const MotionGoalOutput out = motion_goal_step(&ctx->goal, &cfg, HAL_GetTick());
 
@@ -1212,10 +1278,22 @@ static void handle_goal(MotionContext* ctx)
     {
         ctx->cmdLeftRpm  = 0.0f;
         ctx->cmdRightRpm = 0.0f;
-        SteerService_setAngleImmediate(ctx->steerServo, steer_straight_angle(ctx));
-        ctx->goal.active = false;
         ctx->urgentStatus = true;
-        stop_actuators(ctx);
+        if (out.error != 0)
+        {
+            ctx->goal.active = false;
+            stop_actuators(ctx);
+            return;
+        }
+        /* Planner tolerance is not a physical stop. Hold the current steer
+         * while braking, keep measuring, then park before publishing DONE. */
+        ctx->goal.finished = false;
+        ctx->goal.finishMs = 0u;
+        ctx->goalSettling = true;
+        ctx->goalZeroTracking = false;
+        ctx->goalParked = false;
+        ctx->goalSettleStartMs = HAL_GetTick();
+        brake_actuators(ctx);
         return;
     }
 

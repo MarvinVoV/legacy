@@ -9,6 +9,17 @@
     -100
   ],
   "speed_cm_s": 10,
-  "operator_end_observation": "pending",
-  "qualification": "Qualitative marker closure check; marker placement/projection uncertainty uncalibrated; does not independently certify single-leg straightness."
+  "operator_end_observation": {
+    "direction": "right",
+    "front_approx_mm": 7,
+    "rear_approx_mm": 7,
+    "raw_initial_unit": "7cm",
+    "corrected_unit": "7mm",
+    "user_correction": "是的，相对于出发前划线的点测的，应该是7mm，我前面讲错了",
+    "valid_for_qualitative_closure": true,
+    "millimeter_metrology_calibrated": false
+  },
+  "qualification": "Qualitative marker closure check; marker placement/projection uncertainty uncalibrated; does not independently certify single-leg straightness.",
+  "valid_observation_trial_index": 1,
+  "actual_reported_reference": "Front/rear axle transverse lines plus specific starting marked points/endpoints; compared against the same starting points, as confirmed by operator."
 }

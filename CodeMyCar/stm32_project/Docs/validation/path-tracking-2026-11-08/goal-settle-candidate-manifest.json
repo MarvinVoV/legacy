@@ -1,0 +1,28 @@
+{
+  "firmware_sha256": "4b821fb4c0620b4ff49cf3f05ee5934cb1d6efb62ede9a52a7b10c5d05d83b47",
+  "source_parent_commit": "ef5b534",
+  "compiled_git_sha": "ef5b5342326b",
+  "compiled_git_dirty": 1,
+  "explicitly_reconfigured_before_build": true,
+  "configuration": {
+    "CMCAR_IMU_MAG_DIAGNOSTICS": true,
+    "CMCAR_STRAIGHT_FORWARD_TRIM_US": 0,
+    "CMCAR_STRAIGHT_REVERSE_TRIM_US": 0,
+    "CMCAR_MOTOR_PID_FINE_INTEGRATION": false,
+    "CMCAR_STRAIGHT_PATH_CONTROL": false
+  },
+  "normal_goal_stop": {
+    "wheel_rpm_threshold": 1,
+    "zero_hold_ms": 50,
+    "park_command_wait_ms": 100,
+    "settle_timeout_ms": 1000,
+    "final_distance_tolerance_mm": 5,
+    "final_turn_tolerance_deg": 2
+  },
+  "emergency_stop": "immediate inhibit/brake/center unchanged",
+  "last_confirmed_stop": 195,
+  "completion_reporting_validated": true,
+  "lateral_accuracy_goal_achieved": false,
+  "push": false,
+  "main_merged": false
+}

@@ -1,0 +1,368 @@
+[
+  {
+    "capture": "marked-closure-100cm-speed10-round02",
+    "legs": [
+      {
+        "seq": 159,
+        "reported_result": {
+          "distance_cm": 99.5,
+          "turn_deg": -0.099,
+          "duration_ms": 10066,
+          "final_state": "done"
+        },
+        "first_done_packet": {
+          "seq": 159,
+          "state": "done",
+          "error": 0,
+          "mode": 4,
+          "fault": false,
+          "lease_expired": false,
+          "goal_heading_source": "imu",
+          "x_mm": 993,
+          "y_mm": -54,
+          "theta_mdeg": -5164,
+          "odometer_mm": 995,
+          "goal_distance_mm": 995,
+          "goal_turn_mdeg": -99,
+          "goal_duration_ms": 10066,
+          "left_mmps": 78,
+          "right_mmps": 74,
+          "session_id": 1864212810
+        }
+      },
+      {
+        "seq": 161,
+        "reported_result": {
+          "distance_cm": -99.5,
+          "turn_deg": 0.014,
+          "duration_ms": 10260,
+          "final_state": "done"
+        },
+        "first_done_packet": {
+          "seq": 161,
+          "state": "done",
+          "error": 0,
+          "mode": 4,
+          "fault": false,
+          "lease_expired": false,
+          "goal_heading_source": "imu",
+          "x_mm": 3,
+          "y_mm": 18,
+          "theta_mdeg": -3862,
+          "odometer_mm": 2,
+          "goal_distance_mm": -995,
+          "goal_turn_mdeg": 14,
+          "goal_duration_ms": 10260,
+          "left_mmps": -81,
+          "right_mmps": -79,
+          "session_id": 1864212810
+        }
+      }
+    ]
+  },
+  {
+    "capture": "marked-closure-100cm-speed10-round03",
+    "legs": [
+      {
+        "seq": 165,
+        "reported_result": {
+          "distance_cm": 99.5,
+          "turn_deg": -0.028,
+          "duration_ms": 10001,
+          "final_state": "done"
+        },
+        "first_done_packet": {
+          "seq": 165,
+          "state": "done",
+          "error": 0,
+          "mode": 4,
+          "fault": false,
+          "lease_expired": false,
+          "goal_heading_source": "imu",
+          "x_mm": 987,
+          "y_mm": -75,
+          "theta_mdeg": -5703,
+          "odometer_mm": 990,
+          "goal_distance_mm": 995,
+          "goal_turn_mdeg": -28,
+          "goal_duration_ms": 10001,
+          "left_mmps": 74,
+          "right_mmps": 76,
+          "session_id": 1864212810
+        }
+      },
+      {
+        "seq": 167,
+        "reported_result": {
+          "distance_cm": -99.5,
+          "turn_deg": 0.008,
+          "duration_ms": 10302,
+          "final_state": "done"
+        },
+        "first_done_packet": {
+          "seq": 167,
+          "state": "done",
+          "error": 0,
+          "mode": 4,
+          "fault": false,
+          "lease_expired": false,
+          "goal_heading_source": "imu",
+          "x_mm": -2,
+          "y_mm": 7,
+          "theta_mdeg": -4132,
+          "odometer_mm": -1,
+          "goal_distance_mm": -995,
+          "goal_turn_mdeg": 8,
+          "goal_duration_ms": 10302,
+          "left_mmps": -83,
+          "right_mmps": -79,
+          "session_id": 1864212810
+        }
+      }
+    ]
+  },
+  {
+    "capture": "marked-closure-100cm-speed10-round04",
+    "legs": [
+      {
+        "seq": 171,
+        "reported_result": {
+          "distance_cm": 99.5,
+          "turn_deg": -0.017,
+          "duration_ms": 10063,
+          "final_state": "done"
+        },
+        "first_done_packet": {
+          "seq": 171,
+          "state": "done",
+          "error": 0,
+          "mode": 4,
+          "fault": false,
+          "lease_expired": false,
+          "goal_heading_source": "imu",
+          "x_mm": 985,
+          "y_mm": -89,
+          "theta_mdeg": -6287,
+          "odometer_mm": 990,
+          "goal_distance_mm": 995,
+          "goal_turn_mdeg": -17,
+          "goal_duration_ms": 10063,
+          "left_mmps": 76,
+          "right_mmps": 74,
+          "session_id": 1864212810
+        }
+      },
+      {
+        "seq": 173,
+        "reported_result": {
+          "distance_cm": -99.5,
+          "turn_deg": 0.011,
+          "duration_ms": 10353,
+          "final_state": "done"
+        },
+        "first_done_packet": {
+          "seq": 173,
+          "state": "done",
+          "error": 0,
+          "mode": 4,
+          "fault": false,
+          "lease_expired": false,
+          "goal_heading_source": "imu",
+          "x_mm": -2,
+          "y_mm": 4,
+          "theta_mdeg": -4626,
+          "odometer_mm": -1,
+          "goal_distance_mm": -995,
+          "goal_turn_mdeg": 11,
+          "goal_duration_ms": 10353,
+          "left_mmps": -82,
+          "right_mmps": -80,
+          "session_id": 1864212810
+        }
+      }
+    ]
+  },
+  {
+    "capture": "marked-goal-settle-100cm-speed10-round01",
+    "legs": [
+      {
+        "seq": 179,
+        "reported_result": {
+          "distance_cm": 99.7,
+          "turn_deg": -0.071,
+          "duration_ms": 10320,
+          "final_state": "done"
+        },
+        "first_done_packet": {
+          "seq": 179,
+          "state": "done",
+          "error": 0,
+          "mode": 4,
+          "fault": false,
+          "lease_expired": false,
+          "goal_heading_source": "imu",
+          "x_mm": 997,
+          "y_mm": -28,
+          "theta_mdeg": -2559,
+          "odometer_mm": 997,
+          "goal_distance_mm": 997,
+          "goal_turn_mdeg": -71,
+          "goal_duration_ms": 10320,
+          "left_mmps": 0,
+          "right_mmps": 0,
+          "session_id": 1864212810
+        }
+      },
+      {
+        "seq": 181,
+        "reported_result": {
+          "distance_cm": -99.8,
+          "turn_deg": -0.092,
+          "duration_ms": 10427,
+          "final_state": "done"
+        },
+        "first_done_packet": {
+          "seq": 181,
+          "state": "done",
+          "error": 0,
+          "mode": 4,
+          "fault": false,
+          "lease_expired": false,
+          "goal_heading_source": "imu",
+          "x_mm": 0,
+          "y_mm": 29,
+          "theta_mdeg": -3817,
+          "odometer_mm": 0,
+          "goal_distance_mm": -998,
+          "goal_turn_mdeg": -92,
+          "goal_duration_ms": 10427,
+          "left_mmps": 0,
+          "right_mmps": 0,
+          "session_id": 1864212810
+        }
+      }
+    ]
+  },
+  {
+    "capture": "marked-goal-settle-100cm-speed10-round02",
+    "legs": [
+      {
+        "seq": 185,
+        "reported_result": {
+          "distance_cm": 99.7,
+          "turn_deg": -0.066,
+          "duration_ms": 10284,
+          "final_state": "done"
+        },
+        "first_done_packet": {
+          "seq": 185,
+          "state": "done",
+          "error": 0,
+          "mode": 4,
+          "fault": false,
+          "lease_expired": false,
+          "goal_heading_source": "imu",
+          "x_mm": 995,
+          "y_mm": -53,
+          "theta_mdeg": -5523,
+          "odometer_mm": 997,
+          "goal_distance_mm": 997,
+          "goal_turn_mdeg": -66,
+          "goal_duration_ms": 10284,
+          "left_mmps": 0,
+          "right_mmps": 0,
+          "session_id": 1864212810
+        }
+      },
+      {
+        "seq": 187,
+        "reported_result": {
+          "distance_cm": -99.8,
+          "turn_deg": 0.012,
+          "duration_ms": 10637,
+          "final_state": "done"
+        },
+        "first_done_packet": {
+          "seq": 187,
+          "state": "done",
+          "error": 0,
+          "mode": 4,
+          "fault": false,
+          "lease_expired": false,
+          "goal_heading_source": "imu",
+          "x_mm": 1,
+          "y_mm": 34,
+          "theta_mdeg": -4985,
+          "odometer_mm": 0,
+          "goal_distance_mm": -998,
+          "goal_turn_mdeg": 12,
+          "goal_duration_ms": 10637,
+          "left_mmps": 0,
+          "right_mmps": 0,
+          "session_id": 1864212810
+        }
+      }
+    ]
+  },
+  {
+    "capture": "marked-goal-settle-100cm-speed10-round03",
+    "legs": [
+      {
+        "seq": 191,
+        "reported_result": {
+          "distance_cm": 99.7,
+          "turn_deg": -0.055,
+          "duration_ms": 10387,
+          "final_state": "done"
+        },
+        "first_done_packet": {
+          "seq": 191,
+          "state": "done",
+          "error": 0,
+          "mode": 4,
+          "fault": false,
+          "lease_expired": false,
+          "goal_heading_source": "imu",
+          "x_mm": 992,
+          "y_mm": -65,
+          "theta_mdeg": -6377,
+          "odometer_mm": 996,
+          "goal_distance_mm": 997,
+          "goal_turn_mdeg": -55,
+          "goal_duration_ms": 10387,
+          "left_mmps": 0,
+          "right_mmps": 0,
+          "session_id": 1864212810
+        }
+      },
+      {
+        "seq": 193,
+        "reported_result": {
+          "distance_cm": -99.7,
+          "turn_deg": -0.007,
+          "duration_ms": 10624,
+          "final_state": "done"
+        },
+        "first_done_packet": {
+          "seq": 193,
+          "state": "done",
+          "error": 0,
+          "mode": 4,
+          "fault": false,
+          "lease_expired": false,
+          "goal_heading_source": "imu",
+          "x_mm": 0,
+          "y_mm": 26,
+          "theta_mdeg": -4715,
+          "odometer_mm": -1,
+          "goal_distance_mm": -997,
+          "goal_turn_mdeg": -7,
+          "goal_duration_ms": 10624,
+          "left_mmps": 0,
+          "right_mmps": 0,
+          "session_id": 1864212810
+        }
+      }
+    ]
+  }
+]

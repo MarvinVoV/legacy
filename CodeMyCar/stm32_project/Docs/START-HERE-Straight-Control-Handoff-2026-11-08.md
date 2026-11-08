@@ -1,6 +1,6 @@
 # START HERE：直行优化接手说明（2026-11-08）
 
-**最新现场优先读本段**：固件/参数冻结在阻尼4cc0546e37ba2ef8709f9a5aabbd09bf151f4ecff5f4774741fe096a39b706a0，trim0/0、细积分OFF、PATH OFF、磁诊断ON。测量基准审计后正做1m/10cm/s起点双胶带标记闭合。第一捕获round01运行正常STOP157，但“右移9cm”已由用户明确否定为参照理解有误，不得作为实际漂移，也不计有效外部验收。用户重新准备确认开始后round02运行完成、STOP163双轮零速，正等其车架前后两点对出发前原标记的比较结果。没有新烧录/参数变更。详细协议/原始数据见measurement-reference audit与marked-closure-*。此前相对瓷砖的数值仍须独立验证，不从单次目测/同源积分推断软件或供电根因。源码codex/straight-path-tracking、未merge main/未push。后续任何运动重新确认空间/线缆。
+**最新现场优先读本段**：本组已停测，STOP195双轮零速；当前固件SHA256 `4b821fb4c0620b4ff49cf3f05ee5934cb1d6efb62ede9a52a7b10c5d05d83b47`（编译前重新configure，ef5b5342326b/dirty1；trim0/0、细积分OFF、PATH OFF、磁诊断ON）。正常GOAL新增制动停稳/回中等待/最终测量完成门禁：24次host、三构建及3轮实机验证，首DONE均双轮0，旧版首DONE仍报告74–83mm/s，收尾计量也已修正。标点基线右偏约7、7、7–8mm，新版约4–5、5–6、8mm，横向误差未稳定消除，不准宣称全解决。先前9cm/7cm已撤销，参考/单位必须看reference.json。阅读[最新集中报告](Normal-GOAL-Parking-Completion-Fix-Validation-2026-11-08.md)，避免按旧镜像或旧现场状态继续。源码codex/straight-path-tracking，未merge main、未push；任何新运动需重新确认空间/线缆。
 
 **新增测量基准审计，后续 agent 必须先读**：[Straight-Drive-Measurement-Reference-Audit-2026-11-08.md](Straight-Drive-Measurement-Reference-Audit-2026-11-08.md)。用户提出瓷砖不直，独立基准确实未验证。历史相对瓷砖的毫米/厘米观察不能当成已证实的真实轨迹误差；也不能反过来认定是瓷砖问题。先做同一车架点对起点固定标记的闭合验证，再继续标定，避免按未验证参照反复调参。此轮只读核查数据，没有新运动或代码改动，STOP151记录不变。
 

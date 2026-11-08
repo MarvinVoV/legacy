@@ -1,0 +1,3 @@
+== motion transaction ==
+Assertion failed: (c.goalSettling && c.goal.active && !c.goal.finished && inhibited), function main, file motion_transaction_test.c, line 138.
+/private/tmp/cmcar-before-goal-settle-negative.sh: line 5: 18910 Abort trap: 6           "${TMPDIR:-/tmp}/motion_transaction_test"

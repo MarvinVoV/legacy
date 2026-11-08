@@ -80,3 +80,6 @@ MotionGoalOutput motion_goal_step(MotionGoalState* s, const MotionGoalConfig* cf
  * @brief 把角度归一化到 (-180, 180]，仅用于展示
  */
 float motion_normalize_deg(float deg);
+
+/* Shared planner/parked-result tolerance; does not imply physical standstill. */
+bool motion_goal_within_tolerance(const MotionGoalState* state);

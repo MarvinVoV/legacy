@@ -1,0 +1,20 @@
+{
+  "reference": "Same original starting marked points on front/rear axle lines; operator repositioned before each trial.",
+  "candidate_trial_index": 3,
+  "firmware_sha256": "4b821fb4c0620b4ff49cf3f05ee5934cb1d6efb62ede9a52a7b10c5d05d83b47",
+  "firmware_reflashed_before_trial": false,
+  "parameters_changed_between_candidate_trials": false,
+  "requested_legs_cm": [
+    100,
+    -100
+  ],
+  "speed_cm_s": 10,
+  "operator_end_observation": {
+    "raw_reply": "前后轮横向位置和标定点基本对齐；前后轮还是右偏，大约8mm左右",
+    "front_right_approx_mm": 8,
+    "rear_right_approx_mm": 8,
+    "longitudinal": "operator describes alignment restored; no separate numerical longitudinal measurement",
+    "valid_for_qualitative_closure": true,
+    "millimeter_metrology_calibrated": false
+  }
+}
