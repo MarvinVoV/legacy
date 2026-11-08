@@ -1,0 +1,26 @@
+{
+  "status": "awaiting_operator_observation",
+  "neutral_us": 1546,
+  "path_outer_loop_enabled": false,
+  "target_sequence_cm_deg": [
+    [
+      60,
+      -30
+    ],
+    [
+      -60,
+      30
+    ],
+    [
+      60,
+      30
+    ],
+    [
+      -60,
+      -30
+    ]
+  ],
+  "speed_cm_s": 10,
+  "world_path_replay_guaranteed": false,
+  "last_confirmed_stop_seq": 22
+}

@@ -1,5 +1,7 @@
 # START HERE：直行优化接手说明（2026-11-08）
 
+**最新弧线测试现场**：1546µs版已完成左前60cm/左转30°→倒回60cm/回转30°→右前60cm/右转30°→倒回60cm/回转30°，10cm/s，每段DONE及STOP确认。最后STOP22双轮零速，原轨迹复现仍以用户观察为准。详见[1546µs交接](Steering-Neutral-1546-Calibration-Handoff-2026-11-08.md)顶部；[下次路径外环TODO](TODO-Straight-Path-Outer-Loop-Experiment-2026-11-08.md)已记录，本轮保持OFF，不自动追加运动。
+
 **1546µs最终合并收尾**：用户已授权把代码`6e91aea`及两轮验证记录`7be85f8`/`ccbd2d4`合并main并push；最新基线中位为1546µs。本段取代下方历史“候选未合并/main仍1530”的状态说明，完成状态以git核对。两轮10cm/s、1m往返均观察返回右偏约1–2mm，未扩大精度承诺，最后STOP12；详见[中位标定交接](Steering-Neutral-1546-Calibration-Handoff-2026-11-08.md)。
 
 **第二轮重复验证**：1546µs版本不改参数、不重启完成第二轮1m往返，最终STOP12双轮零速；用户确认两轮结果一致，前进基本无明显偏移，倒车返回右偏约1–2mm。保留1546，本组结束；尚未覆盖全速度/长期精度，未合并main、未push。最新现场与reference.json以 [1546µs接手记录](Steering-Neutral-1546-Calibration-Handoff-2026-11-08.md) 顶部为准，优先于下面历史STOP6。
