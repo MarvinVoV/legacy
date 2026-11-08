@@ -350,6 +350,8 @@ Content-Type: application/json
 - `scripts/baidu_asr_smoke.py`：真实接口冒烟，要求 16 kHz/16-bit/mono WAV。
 - `scripts/baidu_tts_smoke.py`：真实 TTS 冒烟，默认输出 16k PCM + 可播放 WAV。
 - `scripts/voice_ws_client.py`：把 WAV 推给运行中的 pyserver，打印 ready/final/end。
+- `scripts/voice_loop_test.py`：录音 → 百度 ASR → 文本 → 百度 TTS → Mac 播放；
+  实测识别“是前进一米，左转后退。”并在 Mac 播放成功。
 - 全量 pytest：**147 项通过**。
 - 真实链路：`voice_ws_client.py` 推送 Mac 麦克风录音，服务端返回
   `text="前进一米。"`、`intent=forward`、`distance_mm=1000`，并写出 full/seg WAV。
@@ -405,6 +407,7 @@ Content-Type: application/json
 - `pyserver/app/config.py`（`baidu_speech_*` / `baidu_tts_*`）
 - `pyserver/scripts/baidu_asr_smoke.py`
 - `pyserver/scripts/baidu_tts_smoke.py`
+- `pyserver/scripts/voice_loop_test.py`
 - `pyserver/tests/test_baidu_asr.py`
 - `pyserver/tests/test_baidu_tts.py`
 - [百度 TTS 音色列表](Voice-TTS-Voice-List-2026-11-08.md)
