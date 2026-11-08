@@ -9,6 +9,10 @@
  */
 
 #include <math.h>
+
+#include <stdint.h>
+
+static uint32_t g_now = 1u;
 #include <stdio.h>
 #include <stdbool.h>
 
@@ -32,7 +36,7 @@ static void feed(SafetyChannel* ch, int16_t raw, int times)
 {
     for (int i = 0; i < times; i++)
     {
-        safety_channel_update(ch, raw);
+        safety_channel_update(ch, raw, g_now++);
     }
 }
 
@@ -67,10 +71,10 @@ static void test_median_rejects_spike(void)
     feed(&ch, 120, 5);
     CHECK_NEAR(ch.scale, 1.0f, 1e-6f);
 
-    safety_channel_update(&ch, 5); /* 单点噪声 */
+    safety_channel_update(&ch, 5, g_now++); /* 单点噪声 */
     CHECK_NEAR(ch.scale, 1.0f, 1e-6f);
 
-    safety_channel_update(&ch, 6); /* 两点噪声 */
+    safety_channel_update(&ch, 6, g_now++); /* 两点噪声 */
     CHECK_NEAR(ch.scale, 1.0f, 1e-6f);
 }
 
@@ -94,10 +98,10 @@ static void test_fault_after_working(void)
     feed(&ch, 120, 5);
     CHECK(ch.fault == 0);
 
-    safety_channel_update(&ch, -1);
+    safety_channel_update(&ch, -1, g_now++);
     CHECK(ch.fault == 0);
-    safety_channel_update(&ch, -1);
-    safety_channel_update(&ch, -1);
+    safety_channel_update(&ch, -1, g_now++);
+    safety_channel_update(&ch, -1, g_now++);
 
     CHECK(ch.fault == 1);
     CHECK_NEAR(ch.scale, 0.0f, 1e-6f);
@@ -196,9 +200,9 @@ static void test_hard_stop_predicate(void)
     CHECK(safety_channel_clear(&ch, 12));
 
     /* 故障（工作过之后丢数据）也刹车 */
-    safety_channel_update(&ch, -1);
-    safety_channel_update(&ch, -1);
-    safety_channel_update(&ch, -1);
+    safety_channel_update(&ch, -1, g_now++);
+    safety_channel_update(&ch, -1, g_now++);
+    safety_channel_update(&ch, -1, g_now++);
     CHECK(safety_channel_blocked(&ch));
 
     /* 未安装：永远不刹车 */

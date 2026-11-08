@@ -131,6 +131,7 @@ void ImuService_Update(ImuService* s)
     {
         return;
     }
+    s->seq++; /* 进入写入区（奇数） */
 
     /* 每次多服务几次：传感器 100 Hz 上报，单次调用可能积压 */
     for (uint8_t i = 0u; i < 8u; i++)
@@ -176,6 +177,7 @@ void ImuService_Update(ImuService* s)
     const float norm2 = qw * qw + qx * qx + qy * qy + qz * qz;
     if (!isfinite(norm2) || norm2 < 0.5f || norm2 > 1.5f)
     {
+        s->seq++; /* 退出写入区 */
         return; /* 尚无有效四元数或数值异常 */
     }
 
@@ -183,6 +185,7 @@ void ImuService_Update(ImuService* s)
                              1.0f - 2.0f * (qy * qy + qz * qz)) * IMU_RAD2DEG;
     if (!isfinite(raw))
     {
+        s->seq++;
         return;
     }
 
@@ -198,6 +201,7 @@ void ImuService_Update(ImuService* s)
         s->lastRawYawDeg = raw;
     }
     s->yawValid = true;
+    s->seq++; /* 退出写入区（偶数） */
 }
 
 void ImuService_ResetYawReference(ImuService* s)
@@ -206,4 +210,32 @@ void ImuService_ResetYawReference(ImuService* s)
     {
         s->yawDeg = 0.0f;
     }
+}
+
+bool ImuService_GetSnapshot(ImuService* s, ImuSnapshot* out)
+{
+    if (s == NULL || out == NULL)
+    {
+        return false;
+    }
+    for (uint8_t attempt = 0u; attempt < 3u; attempt++)
+    {
+        const uint32_t s0 = s->seq;
+        if ((s0 & 1u) != 0u)
+        {
+            continue; /* 正在写入 */
+        }
+        ImuSnapshot snap;
+        snap.valid = s->yawValid;
+        snap.yawDeg = s->yawDeg;
+        snap.yawRateDps = s->yawRateDps;
+        snap.status = s->status;
+        snap.lastUpdateMs = s->lastUpdateMs;
+        if (s->seq == s0)
+        {
+            *out = snap;
+            return true;
+        }
+    }
+    return false;
 }

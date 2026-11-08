@@ -69,8 +69,18 @@ void motion_calc_drive(float linear_mps, float steer_deg, float wheelbase_m,
         }
     }
 
-    *left_rpm  = motion_clamp_rpm(wheel_mps_to_rpm(v_left, wheel_radius_m), max_rpm);
-    *right_rpm = motion_clamp_rpm(wheel_mps_to_rpm(v_right, wheel_radius_m), max_rpm);
+    /* 双轮同比缩放：任一车轮超限时整体降速，保持左右比例（=曲率）不变 */
+    float l = wheel_mps_to_rpm(v_left, wheel_radius_m);
+    float r = wheel_mps_to_rpm(v_right, wheel_radius_m);
+    const float peak = fmaxf(fabsf(l), fabsf(r));
+    if (max_rpm > 0.0f && peak > max_rpm)
+    {
+        const float scale = max_rpm / peak;
+        l *= scale;
+        r *= scale;
+    }
+    *left_rpm  = l;
+    *right_rpm = r;
 }
 
 void motion_calc_differential(float linear_mps, float angular_rps, float track_m,
@@ -86,6 +96,16 @@ void motion_calc_differential(float linear_mps, float angular_rps, float track_m
     const float v_left  = linear_mps - angular_rps * half_w;
     const float v_right = linear_mps + angular_rps * half_w;
 
-    *left_rpm  = motion_clamp_rpm(wheel_mps_to_rpm(v_left, wheel_radius_m), max_rpm);
-    *right_rpm = motion_clamp_rpm(wheel_mps_to_rpm(v_right, wheel_radius_m), max_rpm);
+    /* 同上：同比缩放保持差速比例 */
+    float l = wheel_mps_to_rpm(v_left, wheel_radius_m);
+    float r = wheel_mps_to_rpm(v_right, wheel_radius_m);
+    const float peak = fmaxf(fabsf(l), fabsf(r));
+    if (max_rpm > 0.0f && peak > max_rpm)
+    {
+        const float scale = max_rpm / peak;
+        l *= scale;
+        r *= scale;
+    }
+    *left_rpm  = l;
+    *right_rpm = r;
 }

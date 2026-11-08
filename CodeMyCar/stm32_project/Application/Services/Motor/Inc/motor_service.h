@@ -181,6 +181,14 @@ void MotorService_updateState(MotorInstance* instance);
 MotorState MotorService_getState(MotorService* service, MotorID motorId);
 
 /**
+ * @brief 读取电机状态（带成功标志）。
+ *
+ * 加锁超时等失败场景返回 false，且不修改 *out —— 调用方应保留上一次有效值，
+ * 不能把读取失败当成"真的停稳/轮程归零"。
+ */
+bool MotorService_getStateEx(MotorService* service, MotorID motorId, MotorState* out);
+
+/**
  * @brief 配置PID参数
  *
  * @param[in] service 服务实例

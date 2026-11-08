@@ -674,9 +674,13 @@ void MotionService_Run(MotionContext* ctx)
          * 刹车后保持到距离 > SAFETY_BRAKE_RELEASE_CM 才解除（迟滞）。 */
         const SafetyChannel* guard = (linear >= 0.0f) ? front : rear;
 
+        /* 已启用但数据缺失/过期 → 视为被挡（fail-safe），不再放行 */
+        const bool guard_unusable = safety_channel_unusable(
+            guard, HAL_GetTick(), SAFETY_STARTUP_GRACE_MS, SAFETY_DATA_TIMEOUT_MS);
+
         if (ctx->safetyBraked)
         {
-            if (safety_channel_clear(guard, SAFETY_BRAKE_RELEASE_CM))
+            if (!guard_unusable && safety_channel_clear(guard, SAFETY_BRAKE_RELEASE_CM))
             {
                 ctx->safetyBraked = false; /* 下面重新下发目标，恢复闭环 */
                 LOG_INFO(LOG_MODULE_MOTION, "safety hard stop released");
@@ -689,7 +693,7 @@ void MotionService_Run(MotionContext* ctx)
                 ctx->cmdRightRpm  = 0.0f;
             }
         }
-        else if (safety_channel_blocked(guard))
+        else if (guard_unusable || safety_channel_blocked(guard))
         {
             if (MotorService_brakeAll(ctx->motorService) != ERR_SUCCESS)
             {
@@ -700,8 +704,15 @@ void MotionService_Run(MotionContext* ctx)
             right             = 0.0f;
             ctx->cmdLeftRpm   = 0.0f;
             ctx->cmdRightRpm  = 0.0f;
-            LOG_WARN(LOG_MODULE_MOTION, "safety hard stop: obstacle within %dcm",
-                     (int)SAFETY_STOP_CM);
+            if (guard_unusable)
+            {
+                LOG_WARN(LOG_MODULE_MOTION, "safety hard stop: sonar data missing/stale");
+            }
+            else
+            {
+                LOG_WARN(LOG_MODULE_MOTION, "safety hard stop: obstacle within %dcm",
+                         (int)SAFETY_STOP_CM);
+            }
         }
 
         /* GOAL 模式下持续被挡 → 中止，避免 Agent 调用挂到硬超时 */
@@ -797,13 +808,14 @@ static void abort_goal_locked(MotionContext* ctx, uint8_t newState)
 /* 用 IMU 航向反馈修正曲率；IMU 不可用时原样返回 */
 static float heading_correct(MotionContext* ctx, float kappa, bool straight)
 {
-    ImuService* imu = ImuTask_GetService();
+    ImuService* imuService = ImuTask_GetService();
+    ImuSnapshot imu;
+    const bool snapshot_ok = ImuService_GetSnapshot(imuService, &imu);
 
-    /* IMU 健康检查：无数据、数据过期（>200 ms）、或安全制动期间一律退出闭环 */
-    const bool imu_stale = (imu == NULL) ||
-                           (imu->lastUpdateMs != 0u &&
-                            (HAL_GetTick() - imu->lastUpdateMs) > 200u);
-    if (imu == NULL || !imu->yawValid || imu_stale || ctx->safetyBraked)
+    /* IMU 健康检查：快照一致、数据有效、未过期（>200 ms）、非安全制动 */
+    const bool imu_stale = snapshot_ok && imu.lastUpdateMs != 0u &&
+                           (HAL_GetTick() - imu.lastUpdateMs) > 200u;
+    if (!snapshot_ok || !imu.valid || imu_stale || ctx->safetyBraked)
     {
         HeadingControl_Disable(&s_headingControl);
         return kappa;
@@ -814,7 +826,7 @@ static float heading_correct(MotionContext* ctx, float kappa, bool straight)
     const float right_mps = ctx->state.drive.rightRpm * 2.0f * 3.14159265f * wheel_r_m / 60.0f;
     const float v = 0.5f * (left_mps + right_mps);
 
-    const float out = HeadingControl_Apply(&s_headingControl, imu->yawDeg, imu->yawRateDps,
+    const float out = HeadingControl_Apply(&s_headingControl, imu.yawDeg, imu.yawRateDps,
                                            v, kappa, straight);
 
     static uint32_t lastLogMs = 0u;
@@ -824,7 +836,7 @@ static float heading_correct(MotionContext* ctx, float kappa, bool straight)
         lastLogMs = nowMs;
         LOG_INFO(LOG_MODULE_MOTION,
                  "HEAD straight=%d yaw=%.2f ref=%.2f err=%.2f corr=%.3f k=%.3f v=%.3f",
-                 (int)straight, imu->yawDeg, s_headingControl.psiRefDeg,
+                 (int)straight, imu.yawDeg, s_headingControl.psiRefDeg,
                  s_headingControl.lastErrorDeg, s_headingControl.lastCorr, out, v);
     }
     return out;
@@ -959,8 +971,8 @@ static void handle_differential_control(MotionContext* ctx, const MotionTarget* 
     ctx->cmdLeftRpm  = left_rpm;
     ctx->cmdRightRpm = right_rpm;
 
-    // 舵机归中
-    SteerService_setAngleImmediate(ctx->steerServo, cfg->steerCenterAngleDeg);
+    // 舵机归中：使用标定后的"前轮朝正"角，而不是名义 90°
+    SteerService_setAngleImmediate(ctx->steerServo, steer_straight_angle(ctx));
 }
 
 static void handle_drive(MotionContext* ctx, const MotionTarget* target)
@@ -1032,7 +1044,7 @@ static void handle_goal(MotionContext* ctx)
     {
         ctx->cmdLeftRpm  = 0.0f;
         ctx->cmdRightRpm = 0.0f;
-        SteerService_setAngleImmediate(ctx->steerServo, ctx->chassisConfig.steerCenterAngleDeg);
+        SteerService_setAngleImmediate(ctx->steerServo, steer_straight_angle(ctx));
         ctx->goal.active = false;
         return;
     }
@@ -1048,6 +1060,24 @@ static void handle_goal(MotionContext* ctx)
         steering_lut_angle_to_curvature(out.steerAngleDeg, wheelbase_m, &curvature) &&
         steering_lut_curvature_to_raw(curvature, wheelbase_m, &raw_steer))
     {
+        /* GOAL 也走 IMU 航向闭环：修正曲率同时作用于舵机和双轮差速 */
+        const bool straight = fabsf(curvature) < 0.05f;
+        const float curvature_eff = heading_correct(ctx, curvature, straight);
+        if (fabsf(curvature_eff - curvature) > 1e-4f)
+        {
+            const float delta_eff = atanf(wheelbase_m * curvature_eff) * 57.29578f;
+            const float wheel_r_m = mm_to_m(ctx->chassisConfig.wheelRadiusMM);
+            const float rpm_avg = 0.5f * (out.leftRpm + out.rightRpm);
+            const float v_mps = rpm_avg * 2.0f * 3.14159265f * wheel_r_m / 60.0f;
+            float l_eff = 0.0f;
+            float r_eff = 0.0f;
+            motion_calc_drive(v_mps, delta_eff, wheelbase_m,
+                              mm_to_m(ctx->chassisConfig.trackWidthMM),
+                              wheel_r_m, MOTION_MAX_RPM, &l_eff, &r_eff);
+            ctx->cmdLeftRpm  = l_eff;
+            ctx->cmdRightRpm = r_eff;
+        }
+        (void)steering_lut_curvature_to_raw(curvature_eff, wheelbase_m, &raw_steer);
     }
     else
     {
@@ -1113,9 +1143,20 @@ static void update_runtime_state(MotionContext* ctx)
     const uint32_t current_time = HAL_GetTick();
     const float    delta_time   = (float)(current_time - ctx->state.timestamp) / 1000.0f; // 转换为秒
 
-    // 获取电机状态
-    const MotorState left_state  = MotorService_getState(ctx->motorService, MOTOR_LEFT_WHEEL);
-    const MotorState right_state = MotorService_getState(ctx->motorService, MOTOR_RIGHT_WHEEL);
+    // 获取电机状态（读取失败时保留上次有效值，不能当成"停稳/轮程归零"）
+    MotorState left_state;
+    MotorState right_state;
+    if (!MotorService_getStateEx(ctx->motorService, MOTOR_LEFT_WHEEL, &left_state) ||
+        !MotorService_getStateEx(ctx->motorService, MOTOR_RIGHT_WHEEL, &right_state))
+    {
+        static uint32_t s_failCount = 0u;
+        if ((s_failCount++ % 200u) == 0u)
+        {
+            LOG_WARN(LOG_MODULE_MOTION, "motor state read failed (n=%u), skip state update",
+                     (unsigned)s_failCount);
+        }
+        return;
+    }
 
     // 获取转向状态
     const SteerState steer_state = SteerService_getState(ctx->steerServo);

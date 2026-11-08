@@ -104,7 +104,21 @@ void safety_channel_init(SafetyChannel* ch, const bool enabled, const int16_t of
     }
 }
 
-void safety_channel_update(SafetyChannel* ch, int16_t rawDistanceCm)
+bool safety_channel_unusable(const SafetyChannel* ch, uint32_t nowMs,
+                             uint32_t startupGraceMs, uint32_t staleTimeoutMs)
+{
+    if (ch == NULL || !ch->enabled)
+    {
+        return false; /* 明确未启用的传感器不参与安全判定 */
+    }
+    if (!ch->everValid)
+    {
+        return nowMs > startupGraceMs; /* 宽限期内尚无数据，之后视为不可用 */
+    }
+    return (nowMs - ch->lastValidMs) > staleTimeoutMs;
+}
+
+void safety_channel_update(SafetyChannel* ch, int16_t rawDistanceCm, uint32_t nowMs)
 {
     if (ch == NULL || !ch->enabled)
     {
@@ -121,11 +135,26 @@ void safety_channel_update(SafetyChannel* ch, int16_t rawDistanceCm)
 
     if (rawDistanceCm > 0)
     {
-        ch->everValid = 1u;
+        ch->everValid   = 1u;
+        ch->lastValidMs = nowMs;
     }
 
     const int16_t median = channel_median(ch);
     ch->distanceCm       = median;
+
+    /* 近场快速判定：窗口内任一有效样本 <= stopCm 立即判为被挡，
+       不等待中值窗口填满（中值会延迟 0.2–0.35 s）。 */
+    int16_t nearest = SAFETY_INVALID_DISTANCE;
+    for (uint8_t i = 0u; i < ch->count; i++)
+    {
+        const int16_t v = ch->samples[i];
+        if (v > 0 && (nearest < 0 || v < nearest))
+        {
+            nearest = v;
+        }
+    }
+    ch->nearestCm   = nearest;
+    ch->fastBlocked = (nearest > 0 && nearest <= (int16_t)ch->stopCm) ? 1u : 0u;
 
     if (median > 0)
     {
@@ -175,6 +204,10 @@ bool safety_channel_blocked(const SafetyChannel* ch)
         return false;
     }
     if (ch->fault)
+    {
+        return true;
+    }
+    if (ch->fastBlocked)
     {
         return true;
     }

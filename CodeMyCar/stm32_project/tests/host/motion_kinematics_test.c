@@ -64,6 +64,17 @@ int main(void)
     motion_calc_drive(1.0f, 0.0f, WHEELBASE_M, TRACK_M, 0.0f, MAX_RPM, &l, &r);
     assert(l == 0.0f && r == 0.0f);
 
+    /* CTRL-08：高速转弯时双轮同比缩放，保持左右比例（曲率）不变 */
+    {
+        const float steer_deg = 28.5f;
+        float l_ref = 0.0f, r_ref = 0.0f;
+        motion_calc_drive(1.0f, steer_deg, WHEELBASE_M, TRACK_M, RADIUS_M, 1e6f,
+                          &l_ref, &r_ref); /* 不限幅的基准比例 */
+        motion_calc_drive(1.0f, steer_deg, WHEELBASE_M, TRACK_M, RADIUS_M, MAX_RPM, &l, &r);
+        assert(near(l, MAX_RPM, 0.01f));               /* 外侧（左轮）到达上限 */
+        assert(near(l / r, l_ref / r_ref, 0.01f));     /* 内外比例保持 */
+    }
+
     printf("motion_kinematics: all tests passed\n");
     return 0;
 }

@@ -694,3 +694,17 @@ IMU 相关的最小回归测试：
 - `heading_correct()` 在 IMU 无效、数据过期、或安全制动时统一 `Disable()` 并回退开环；
   `Disable()` 同时清除参考角，恢复后自动重新捕获，避免带旧基准恢复。
 - 最终曲率限幅放在控制器出口，保证 `steering_lut_curvature_to_raw()` 不会因越界失败。
+
+### 12.4 第二批修复（同日）
+
+| 编号 | 修复内容 | 验证 |
+|---|---|---|
+| CTRL-06 | 安全通道带 `lastValidMs`；启用但无数据（3 s 宽限后）或超 500 ms 未更新 → 判定不可用；governor 视为被挡并硬停（fail-safe） | host 用例：宽限期/过期/禁用三种情况 |
+| CTRL-07 | 近场快速通道：窗口内任一有效样本 ≤ stopCm 立即判挡，不等待中值窗口填满 | host 用例：100cm×5 后单个 5cm 立即 blocked |
+| CTRL-08 | `motion_calc_drive/differential` 任一车轮超限时**双轮同比缩放**，保持曲率比例 | host 用例：外侧 300 RPM 时内外比例与不限幅基准一致 |
+| CTRL-11 | 新增 `MotorService_getStateEx()`（返回成功标志）；读取失败时 `update_runtime_state` 跳过本周期，保留上次有效值，不把失败当成"停稳/里程归零" | 代码审查 |
+| CTRL-13 | DIFFERENTIAL 与 GOAL 结束的归中改用标定后的 `steer_straight_angle()`；`steering_lut_angle_to_pulse()` 明确为"原始标定表（不含装配偏移）" | 代码审查 |
+| IMU-P2-05 | 新增 `ImuService_GetSnapshot()`（seqlock），`heading_correct()` 只消费同一版本的 yaw/角速度/状态/时间戳 | 代码审查 |
+| IMU-P2-06 | **GOAL 接入航向闭环**：规划舵角→曲率→IMU 修正→同时更新舵机与双轮差速 | 代码审查（待落地验证） |
+
+仍未修复：CTRL-02（需要"命令代次 + 单一执行器写入者"架构改动）、CTRL-09（DIFFERENTIAL 定位需产品决定）、CTRL-12（与 CTRL-02 同源）、HW-02/03/04/05（需实车/安装数据）。

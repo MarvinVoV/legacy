@@ -344,6 +344,27 @@ void MotorService_updateState(MotorInstance* instance)
     osMutexRelease(instance->mutex);
 }
 
+bool MotorService_getStateEx(MotorService* service, MotorID motorId, MotorState* out)
+{
+    if (out == NULL || service == NULL || motorId >= MOTOR_MAX_NUM)
+    {
+        return false;
+    }
+    MotorInstance* instance = &service->instances[motorId];
+    if (!instance->isInitialized)
+    {
+        return false;
+    }
+    if (osMutexAcquire(instance->mutex, MUTEX_TIMEOUT_MS) != osOK)
+    {
+        LOG_WARN(LOG_MODULE_MOTOR, "Mutex timeout for motor %d (state read)", motorId);
+        return false;
+    }
+    memcpy(out, &instance->state, sizeof(MotorState));
+    osMutexRelease(instance->mutex);
+    return true;
+}
+
 MotorState MotorService_getState(MotorService* service, MotorID motorId)
 {
     const MotorState emptyState = {0};

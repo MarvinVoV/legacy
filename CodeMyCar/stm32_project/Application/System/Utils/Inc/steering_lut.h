@@ -28,7 +28,8 @@
 /** 舵机脉宽与角度的换算：500..2500us <-> 0..180°。 */
 #define STEERING_SERVO_US_PER_DEG (2000.0f / 180.0f)
 
-/** 等效前轮转角 -> 舵机脉宽。角度超出标定表范围返回 false。 */
+/** 等效前轮转角 -> 舵机脉宽（原始标定表，**不含**装配偏移）。
+ *  用于标定/诊断；生产路径请用 curvature_to_pulse()。角度超出表范围返回 false。 */
 bool steering_lut_angle_to_pulse(float angle_deg, float* pulse_us);
 
 /** 曲率 -> 等效前轮转角。`|kappa| > STEERING_KAPPA_MAX_1PM` 返回 false。 */

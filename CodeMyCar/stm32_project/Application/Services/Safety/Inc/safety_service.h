@@ -36,6 +36,9 @@ typedef struct
     uint8_t  enabled;    ///< 0 = 该传感器未启用（未安装），完全放行
     uint8_t  everValid;  ///< 上电后是否测到过有效值
     uint8_t  fault;      ///< 1 = 工作过之后丢数据（fail-safe）
+    uint32_t lastValidMs; ///< 最近一次有效测距的时间戳（ms）
+    int16_t  nearestCm;  ///< 窗口内最近（最小）有效距离，用于近场快速判定
+    uint8_t  fastBlocked;///< 1 = 窗口内出现过 <= stopCm 的样本（绕过中值延迟）
     int16_t  offsetCm;   ///< 安装偏移（传感器内缩于车身外沿时为正）
     uint16_t stopCm;     ///< 停止距离
     uint16_t slowCm;     ///< 开始减速距离
@@ -61,7 +64,17 @@ void safety_channel_init(SafetyChannel* ch, bool enabled, int16_t offsetCm,
  *
  * 内部做 5 点中值滤波；失败判据见设计文档第 5 节。
  */
-void safety_channel_update(SafetyChannel* ch, int16_t rawDistanceCm);
+void safety_channel_update(SafetyChannel* ch, int16_t rawDistanceCm, uint32_t nowMs);
+
+/**
+ * @brief 判断通道数据是否不可用（未就绪或过期）。
+ *
+ * - 通道未启用 → 永远 false（明确禁用，完全放行）
+ * - 启用但启动宽限期内从未测到有效值 → true
+ * - 启用且已有数据，但超过超时未更新 → true
+ */
+bool safety_channel_unusable(const SafetyChannel* ch, uint32_t nowMs,
+                             uint32_t startupGraceMs, uint32_t staleTimeoutMs);
 
 /**
  * @brief 按运动方向施加限速

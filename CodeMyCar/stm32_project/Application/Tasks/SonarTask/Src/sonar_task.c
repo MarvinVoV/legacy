@@ -68,11 +68,11 @@ void SonarTask_doTask(void* arg)
         /* 先取上一次结果（测量在 30 ms 内必然结束，50 ms 后肯定就绪） */
         if (ULTRASONIC_FRONT_ENABLED && Ultrasonic_Poll(front, now, &distance))
         {
-            safety_channel_update(&s_frontSafety, distance);
+            safety_channel_update(&s_frontSafety, distance, HAL_GetTick());
         }
         if (ULTRASONIC_REAR_ENABLED && Ultrasonic_Poll(rear, now, &distance))
         {
-            safety_channel_update(&s_rearSafety, distance);
+            safety_channel_update(&s_rearSafety, distance, HAL_GetTick());
         }
 
         /* 前后错开一拍触发 */

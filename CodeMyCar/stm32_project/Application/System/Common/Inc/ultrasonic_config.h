@@ -47,6 +47,12 @@
 /** 开始减速距离：大于该值全速，中间线性减速 */
 #define SAFETY_SLOW_CM 40
 
+/** 启动宽限期：已启用通道在该时间内允许没有数据，超过后视为不可用（fail-safe） */
+#define SAFETY_STARTUP_GRACE_MS 3000u
+
+/** 数据过期时间：已有数据的通道超过该时间未更新即视为不可用（fail-safe） */
+#define SAFETY_DATA_TIMEOUT_MS 500u
+
 /** 安装偏移：传感器端面比车身外沿内缩时填正值 */
 #define FRONT_OFFSET_CM 0
 #define REAR_OFFSET_CM 0
