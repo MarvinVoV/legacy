@@ -1,0 +1,226 @@
+{
+  "pre_stop": {
+    "ok": true,
+    "stopped": true,
+    "accepted": true,
+    "confirmed": true,
+    "seq": 203
+  },
+  "before": {
+    "state": {
+      "ok": true,
+      "online": true,
+      "stm32_connected": true,
+      "motion_supported": true,
+      "motion": {
+        "state": "idle",
+        "seq": 203,
+        "age_ms": 2,
+        "stale": false
+      },
+      "pose": {
+        "x_cm": 219.6,
+        "y_cm": 2.7,
+        "heading_deg": 3.008,
+        "odometer_cm": 219.6
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    "status": {
+      "success": true,
+      "message": "ok",
+      "data": {
+        "device_id": "DEV_1",
+        "online": true,
+        "last_heartbeat_age": 1.0,
+        "uptime_s": 7363,
+        "heap_free": 279876,
+        "stm32_connected": true,
+        "front_distance_cm": null,
+        "rear_distance_cm": null,
+        "sensor_age_s": null,
+        "yaw_deg": -0.6,
+        "yaw_rate_dps": 0.0,
+        "imu_status": 3,
+        "imu_age_s": 0.0,
+        "accel_mps2": [
+          0.156,
+          -0.613,
+          9.871
+        ],
+        "gyro_radps": [
+          -0.001,
+          -0.001,
+          0.0
+        ],
+        "imu_raw_age_s": 0.0
+      }
+    }
+  },
+  "legs": [
+    {
+      "distance_cm": 200,
+      "start_t": 1794121320.18242,
+      "before_status": {
+        "success": true,
+        "message": "ok",
+        "data": {
+          "device_id": "DEV_1",
+          "online": true,
+          "last_heartbeat_age": 5.0,
+          "uptime_s": 7363,
+          "heap_free": 279876,
+          "stm32_connected": true,
+          "front_distance_cm": null,
+          "rear_distance_cm": null,
+          "sensor_age_s": null,
+          "yaw_deg": -0.6,
+          "yaw_rate_dps": 0.0,
+          "imu_status": 3,
+          "imu_age_s": 0.1,
+          "accel_mps2": [
+            0.156,
+            -0.613,
+            9.871
+          ],
+          "gyro_radps": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "imu_raw_age_s": 0.1
+        }
+      },
+      "move": {
+        "ok": true,
+        "seq": 204,
+        "requested": {
+          "distance_cm": 200,
+          "turn_deg": 0,
+          "speed_cm_s": 30
+        },
+        "measured": {
+          "distance_cm": 199.5,
+          "turn_deg": 0.167,
+          "duration_ms": 7025,
+          "final_state": "done"
+        },
+        "errors": {
+          "distance_cm": 0.5,
+          "turn_deg": -0.17
+        },
+        "pose": {
+          "x_cm": 418.5,
+          "y_cm": 18.1,
+          "heading_deg": 5.747
+        }
+      },
+      "stop": {
+        "ok": true,
+        "stopped": true,
+        "accepted": true,
+        "confirmed": true,
+        "seq": 205
+      },
+      "end_t": 1794121327.4204311
+    },
+    {
+      "distance_cm": -200,
+      "start_t": 1794121329.424221,
+      "before_status": {
+        "success": true,
+        "message": "ok",
+        "data": {
+          "device_id": "DEV_1",
+          "online": true,
+          "last_heartbeat_age": 14.3,
+          "uptime_s": 7363,
+          "heap_free": 279876,
+          "stm32_connected": true,
+          "front_distance_cm": 400,
+          "rear_distance_cm": 400,
+          "sensor_age_s": 0.1,
+          "yaw_deg": -0.8,
+          "yaw_rate_dps": 0.0,
+          "imu_status": 3,
+          "imu_age_s": 0.1,
+          "accel_mps2": [
+            0.195,
+            -0.613,
+            9.867
+          ],
+          "gyro_radps": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "imu_raw_age_s": 0.1
+        }
+      },
+      "move": {
+        "ok": true,
+        "seq": 206,
+        "requested": {
+          "distance_cm": -200,
+          "turn_deg": 0,
+          "speed_cm_s": 30
+        },
+        "measured": {
+          "distance_cm": -199.5,
+          "turn_deg": -0.207,
+          "duration_ms": 7194,
+          "final_state": "done"
+        },
+        "errors": {
+          "distance_cm": -0.5,
+          "turn_deg": 0.21
+        },
+        "pose": {
+          "x_cm": 220.2,
+          "y_cm": -1.7,
+          "heading_deg": 6.196
+        }
+      },
+      "stop": {
+        "ok": true,
+        "stopped": true,
+        "accepted": true,
+        "confirmed": true,
+        "seq": 207
+      },
+      "end_t": 1794121336.997524
+    }
+  ],
+  "stop": {
+    "ok": true,
+    "stopped": true,
+    "accepted": true,
+    "confirmed": true,
+    "seq": 208
+  },
+  "after": {
+    "ok": true,
+    "online": true,
+    "stm32_connected": true,
+    "motion_supported": true,
+    "motion": {
+      "state": "idle",
+      "seq": 208,
+      "age_ms": 92,
+      "stale": false
+    },
+    "pose": {
+      "x_cm": 219.8,
+      "y_cm": -1.7,
+      "heading_deg": 5.882,
+      "odometer_cm": 219.5
+    },
+    "velocity": {
+      "linear_cm_s": 0.0,
+      "angular_deg_s": 0.0
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "path-rpm-forward-200cm-speed30": {
+    "actual": "left 2–3 mm",
+    "source": "user ruler/tile observation"
+  },
+  "path-rpm-roundtrip-200cm-speed30": {
+    "actual": "forward endpoint visually straight; return endpoint right 9–10 mm; deviation during reverse",
+    "longitudinal_closure": "not supplied",
+    "source": "user"
+  },
+  "path-enabled-reverse-200cm-speed30": {
+    "actual": "right nearly 30 mm, worse than feedback OFF",
+    "result": "failed; firmware rolled back to OFF",
+    "oscillation": "not answered",
+    "source": "user"
+  }
+}

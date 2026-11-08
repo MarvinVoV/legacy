@@ -1,0 +1,23 @@
+{
+  "legs": [
+    {
+      "seq": 204,
+      "reference_ccw_deg": -0.59,
+      "yl": -2.63,
+      "gl": -5.66,
+      "x": 1995.1,
+      "en": 0.0
+    },
+    {
+      "seq": 206,
+      "reference_ccw_deg": -0.76,
+      "yl": -4.18,
+      "gl": -3.4,
+      "x": -1995.0,
+      "en": 0.0
+    }
+  ],
+  "estimated_closure_forward_mm": 0.09637913691335598,
+  "estimated_closure_left_mm": -0.8907061276884436,
+  "limitations": "GOAL-active PATH only, rounded logs; excludes post-GOAL coast; same IMU is not external position truth. Gyro gl uses its own local integrated heading and must not use GRV reference rotations."
+}

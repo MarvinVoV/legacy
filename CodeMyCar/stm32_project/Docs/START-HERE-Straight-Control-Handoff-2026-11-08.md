@@ -1,6 +1,10 @@
 # START HERE：直行优化接手说明（2026-11-08）
 
-## 当前版本，先读本节
+## 后续开发阶段入口（优先于下方历史现场状态）
+
+当前后续开发在`codex/straight-path-tracking`，最新代码提交`d4a6046`，尚未合并main，未push。已移除右轮隐藏2.3%闭环RPM目标偏置，新增默认关闭的局部路径反馈/影子估计，详见[Straight-Path-Tracking-And-RPM-Contract-Validation-2026-11-08.md](Straight-Path-Tracking-And-RPM-Contract-Validation-2026-11-08.md)。**车上镜像及最后停车状态以该文档最新追加记录为准**；下文main/v7及seq191属于上一阶段归档，不能直接用作当前状态。
+
+## 上一阶段main版本记录
 
 产品代码及证据已提交为 `1c6cd37`，从 `codex/straight-bias-feedforward` 快进合并到 `main`，当前已切回main，未push；再以git log/status核实是否有后续更新。**不要按分支名字恢复方向曲率偏置：该试验已撤销。**
 
