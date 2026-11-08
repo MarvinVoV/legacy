@@ -8,7 +8,9 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import math
 import os
+import struct
 import sys
 import tempfile
 import wave
@@ -26,6 +28,18 @@ class LocalAudioPlayer:
         if self.command == "ffplay":
             return [self.command, "-nodisp", "-autoexit", "-loglevel", "quiet", path]
         return [self.command, path]
+
+    async def play_beep(self, duration_ms: int = 120, freq_hz: float = 880.0) -> None:
+        """在 pyserver 本机播放一声短提示音。"""
+        samples = int(16000 * duration_ms / 1000)
+        pcm = b"".join(
+            struct.pack(
+                "<h",
+                int(8000 * math.sin(2 * math.pi * freq_hz * i / 16000)),
+            )
+            for i in range(samples)
+        )
+        await self.play_pcm(pcm, 16000, 1)
 
     async def play_pcm(
         self,

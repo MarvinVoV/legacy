@@ -155,6 +155,9 @@ static void capture_task(void *arg)
             int rms = (int)sqrt((double)sum_sq / frames);
             ESP_LOGI(TAG, "mic rms=%d peak=%d", rms, peak);
         }
+        if (!s_busy && (int)sqrt((double)sum_sq / frames) >= CONFIG_CMCAR_VOICE_TRIGGER_RMS) {
+            s_trigger = true;
+        }
     }
 }
 

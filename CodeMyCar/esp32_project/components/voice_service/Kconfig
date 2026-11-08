@@ -22,9 +22,17 @@ menu "Voice Control"
 
     config CMCAR_VOICE_AUTO_LOOP
         bool "Auto-record loop (no serial trigger)"
-        default y
+        default n
         help
             启动后自动循环录音上传，不需要在串口输入 s。
+            适合台架/语音识别联调。
+
+    config CMCAR_VOICE_TRIGGER_RMS
+        int "Voice activity trigger RMS"
+        default 800
+        range 200 20000
+        help
+            麦克风 RMS 超过该值时自动开始一次录音上传，不需要串口命令。
 
     config CMCAR_VOICE_LOOP_DELAY_SEC
         int "Delay between auto sessions (s)"

@@ -233,6 +233,7 @@ async def voice_stream(ws: WebSocket) -> None:
             "rate": service.config.sample_rate,
         },
     )
+    service.play_beep()
 
     max_bytes = int(service.config.max_session_s * service.config.sample_rate * 2)
     segments = 0

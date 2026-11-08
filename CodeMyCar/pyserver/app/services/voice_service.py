@@ -193,6 +193,21 @@ class VoiceService:
         self._local_tasks.add(task)
         task.add_done_callback(self._local_tasks.discard)
 
+    def play_beep(self) -> None:
+        """录音开始时在 pyserver 本机响两声，提示用户说话。"""
+        if self.local_player is None or not self.config.local_playback:
+            return
+        task = asyncio.create_task(self._beep_twice())
+        self._local_tasks.add(task)
+        task.add_done_callback(self._local_tasks.discard)
+
+    async def _beep_twice(self) -> None:
+        if self.local_player is None:
+            return
+        await self.local_player.play_beep(150, 1000.0)
+        await asyncio.sleep(0.12)
+        await self.local_player.play_beep(150, 1000.0)
+
     def create_session(self, device_id: str) -> VoiceSession:
         if device_id in self._active:
             raise VoiceSessionBusy(device_id)

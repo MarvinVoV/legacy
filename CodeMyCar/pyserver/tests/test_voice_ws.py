@@ -70,9 +70,13 @@ class FakeTts:
 class FakeLocalPlayer:
     def __init__(self) -> None:
         self.played: list[tuple[bytes, int, int]] = []
+        self.beeps = 0
 
     async def play_pcm(self, pcm: bytes, sample_rate: int = 16000, channels: int = 1) -> None:
         self.played.append((pcm, sample_rate, channels))
+
+    async def play_beep(self, duration_ms: int = 150, freq_hz: float = 1000.0) -> None:
+        self.beeps += 1
 
 
 def make_service(

@@ -204,8 +204,11 @@ silero-vad 仍推荐作为下一步升级：抗噪更好，但会引入 torch/on
 - `speak` 二进制帧当前忽略（车上喇叭未解决）；TTS 反馈可在 Mac 本机播放；
 - 实测：独立采集任务后，靠近麦克风说话时 `mic rms=1876–9889`、峰值 12754，
   麦克风链路正常；此前低电平是单任务里 WS 发送阻塞 I2S DMA 导致的音频覆盖；
-- 自动会话与说话时机曾错开，ASR 只拿到 720 ms 片段（误识别“我知道”）；
-  下一步加“录音开始”提示音/门控，让用户知道何时说话。
+- 语音活动触发：RMS ≥ `CMCAR_VOICE_TRIGGER_RMS`（默认 800）自动开始一次 5 s 会话，
+  不需要串口 `s`；1 s 环形预录保留说话开头；
+- pyserver 在发送 `ready` 时在 Mac 响两声提示音；
+- 实测：用户说“前进五米”自动触发，ASR 返回 `"前进五米。"`、`intent=forward`、
+  `distance_mm=5000`；`execution_enabled=false`，未下发运动，Mac 播放识别文本。
 
 ## 6. WebSocket 协议
 
@@ -421,9 +424,11 @@ Content-Type: application/json
 - ESP32 侧已把 `voice_service` 集成进主 bridge：I2S RX + `esp_websocket_client`；
   采集任务与 WS 发送已解耦（32 KB ring buffer），靠近麦克风说话时
   `mic rms=1876–9889`、峰值 12754，麦克风链路确认正常；
-  自动循环已关闭，避免持续录音。
-- 下一步：加“录音开始”提示音/门控，让用户知道何时说话；再把 ASR 文本直接 TTS
-  回到 Mac，完成稳定闭环。
+  自动循环已关闭，改为语音活动触发（RMS ≥ 800 自动录 5 s）。
+- 端到端语音回环已跑通：用户说“前进五米”自动触发，ASR 返回
+  `"前进五米。"`、`intent=forward`、`distance_mm=5000`，Mac 播放识别文本；
+  `execution_enabled=false`，未下发运动。
+- 下一步：提高数字识别（一/五等）与命令词准确率，再接入语音执行门控。
 
 ## 14. 相关文件
 
