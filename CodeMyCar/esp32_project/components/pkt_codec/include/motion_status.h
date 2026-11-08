@@ -28,6 +28,8 @@
 #define MOTION_ERR_INTERNAL 5
 #define MOTION_ERR_STALL    6
 #define MOTION_ERR_TASK_STALE 7
+#define MOTION_ERR_ENCODER  8
+#define MOTION_ERR_IMU      9
 
 #pragma pack(push, 1)
 typedef struct
@@ -53,6 +55,7 @@ typedef struct
 #define MOTION_STATUS_FLAG_MODE_MASK     (0x07u << MOTION_STATUS_FLAG_MODE_SHIFT)
 #define MOTION_STATUS_FLAG_FAULT         (1u << 4)
 #define MOTION_STATUS_FLAG_LEASE_EXPIRED (1u << 5)
+#define MOTION_STATUS_FLAG_GOAL_IMU      (1u << 6)
 
 _Static_assert(sizeof(motion_status_t) == MOTION_STATUS_SIZE,
                "motion_status_t wire layout must stay 36 bytes");

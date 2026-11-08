@@ -17,7 +17,9 @@ typedef struct
 {
     volatile uint32_t lastBeatMs[TASK_HEALTH_COUNT];
     uint32_t requiredMask;
-    uint32_t graceUntilMs;
+    uint32_t graceStartMs;
+    uint32_t graceMs;
+    bool graceActive;
     uint32_t staleMask;
     bool faultLatched;
 } TaskHealthMonitor;

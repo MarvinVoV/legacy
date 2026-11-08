@@ -162,6 +162,13 @@ int main(void)
     assert(near_zero(driver.control.targetRPM));
     assert(near_zero(driver.control.rampedTargetRPM));
 
+    /* HAL tick rollover must not permanently stop encoder/control updates. */
+    driver.state.lastControlTick=UINT32_MAX-2u;
+    s_tick=7u;encoder.counter+=13u;
+    MotorDriver_Update(&driver);
+    assert(driver.state.lastControlTick==7u);
+    assert(driver.state.position.totalPulses==9889);
+    assert(fabsf(driver.state.velocity.rpm-50.0f)<0.001f);
     printf("motor_estop: all tests passed\n");
     return 0;
 }

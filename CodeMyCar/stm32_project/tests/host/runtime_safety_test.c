@@ -48,6 +48,13 @@ int main(void)
     task_health_clear(&health, 2000u, 100u);
     assert(!health.faultLatched);
     assert(task_health_check(&health, 2050u, 250u) == 0u);
+    /* Once grace elapsed, signed half-wrap must not reopen it. */
+    for(unsigned i=0;i<TASK_HEALTH_COUNT;i++)task_health_beat(&health,(TaskHealthId)i,2200u);
+    assert(task_health_check(&health,2200u,250u)==0u && !health.graceActive);
+    assert(task_health_check(&health,0x80001000u,250u)==required);
+    task_health_clear(&health,UINT32_MAX-50u,100u);
+    assert(task_health_check(&health,25u,250u)==0u);
+    assert(task_health_check(&health,300u,250u)==required);
 
     printf("runtime_safety: all tests passed\n");
     return 0;

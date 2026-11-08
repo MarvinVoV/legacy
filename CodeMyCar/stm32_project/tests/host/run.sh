@@ -145,3 +145,10 @@ echo "== motion transaction =="
   "$DIR/Application/System/Utils/Src/encoder_fault_monitor.c" \
   -lm -o "${TMPDIR:-/tmp}/motion_transaction_test"
 "${TMPDIR:-/tmp}/motion_transaction_test"
+
+echo "== motion task asynchronous telemetry =="
+"$CC" -std=c11 -Wall -Wextra -O2 \
+  -I "$DIR/tests/host/motion_task_stubs" -I "$DIR/Application/System/Protocol/Inc" \
+  "$DIR/tests/host/motion_task_test.c" "$DIR/Application/System/Protocol/Src/motion_status.c" \
+  -o "${TMPDIR:-/tmp}/motion_task_test"
+"${TMPDIR:-/tmp}/motion_task_test"

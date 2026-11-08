@@ -11,3 +11,10 @@ cc -std=c11 -O2 -g -fsanitize=address,undefined -ffunction-sections -fdata-secti
   test_stop_barrier.c ../../components/ack_manager/src/ack_manager.c \
   "${flags[@]}" -o "$out/test_stop_barrier"
 "$out/test_stop_barrier"
+cc -std=c11 -O2 -g -fsanitize=address,undefined \
+  -Istubs -I../../components/bridge/include -I../../components/pkt_codec/include \
+  -I../../managed_components/espressif__cjson/cJSON \
+  test_motion_json.c ../../components/bridge/src/bridge_codec.c \
+  ../../components/pkt_codec/src/motion_status.c \
+  ../../managed_components/espressif__cjson/cJSON/cJSON.c -o "$out/test_motion_json"
+"$out/test_motion_json"

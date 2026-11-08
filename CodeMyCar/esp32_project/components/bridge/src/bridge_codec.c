@@ -495,6 +495,7 @@ int bridge_motion_to_json(const uint8_t* payload, uint8_t len,
     const int n = snprintf(out, out_size,
         "{\"seq\":%u,\"state\":\"%s\",\"error\":%u,\"mode\":%u,"
         "\"fault\":%s,\"lease_expired\":%s,"
+        "\"goal_heading_source\":\"%s\","
         "\"x_mm\":%ld,\"y_mm\":%ld,\"theta_mdeg\":%ld,\"odometer_mm\":%ld,"
         "\"goal_distance_mm\":%ld,\"goal_turn_mdeg\":%ld,\"goal_duration_ms\":%lu,"
         "\"left_mmps\":%d,\"right_mmps\":%d}",
@@ -502,6 +503,7 @@ int bridge_motion_to_json(const uint8_t* payload, uint8_t len,
         (unsigned)((st.flags & MOTION_STATUS_FLAG_MODE_MASK) >> MOTION_STATUS_FLAG_MODE_SHIFT),
         (st.flags & MOTION_STATUS_FLAG_FAULT) ? "true" : "false",
         (st.flags & MOTION_STATUS_FLAG_LEASE_EXPIRED) ? "true" : "false",
+        (st.flags & MOTION_STATUS_FLAG_GOAL_IMU) ? "imu" : "encoder",
         (long)st.xMm, (long)st.yMm, (long)st.thetaMdeg, (long)st.odometerMm,
         (long)st.goalDistanceMm, (long)st.goalTurnMdeg, (unsigned long)st.goalDurationMs,
         (int)st.leftMmps, (int)st.rightMmps);

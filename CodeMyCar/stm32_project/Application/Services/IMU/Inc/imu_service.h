@@ -22,12 +22,14 @@ typedef struct
     uint8_t status;
     uint32_t lastUpdateMs;
     uint32_t lastGyroMs;
+    uint32_t referenceId; /* Changes on reopen/reset/re-zero; no cross-goal reuse. */
 } ImuSnapshot;
 
 typedef struct
 {
     ImuSnapshot published; /* Only short critical copies cross tasks. */
     volatile bool yawResetRequested;
+    uint32_t referenceId;
 
     bool inited;
     bool yawValid;

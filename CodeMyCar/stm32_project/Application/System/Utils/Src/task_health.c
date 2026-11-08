@@ -11,7 +11,9 @@ void task_health_init(TaskHealthMonitor* monitor, const uint32_t requiredMask,
     }
     memset(monitor, 0, sizeof(*monitor));
     monitor->requiredMask = requiredMask;
-    monitor->graceUntilMs = nowMs + graceMs;
+    monitor->graceStartMs = nowMs;
+    monitor->graceMs = graceMs;
+    monitor->graceActive = graceMs != 0u;
     for (unsigned i = 0u; i < TASK_HEALTH_COUNT; i++)
     {
         monitor->lastBeatMs[i] = nowMs;
@@ -31,10 +33,18 @@ void task_health_beat(TaskHealthMonitor* monitor, const TaskHealthId id,
 uint32_t task_health_check(TaskHealthMonitor* monitor, const uint32_t nowMs,
                            const uint32_t timeoutMs)
 {
-    if (monitor == NULL || monitor->faultLatched ||
-        (int32_t)(nowMs - monitor->graceUntilMs) < 0)
+    if (monitor == NULL || monitor->faultLatched)
     {
         return monitor != NULL ? monitor->staleMask : 0u;
+    }
+    if (monitor->graceActive)
+    {
+        if ((uint32_t)(nowMs - monitor->graceStartMs) < monitor->graceMs)
+        {
+            return monitor->staleMask;
+        }
+        /* Expired grace cannot become active again at the signed half-wrap. */
+        monitor->graceActive = false;
     }
 
     uint32_t stale = 0u;
@@ -64,7 +74,9 @@ void task_health_clear(TaskHealthMonitor* monitor, const uint32_t nowMs,
     }
     monitor->staleMask = 0u;
     monitor->faultLatched = false;
-    monitor->graceUntilMs = nowMs + graceMs;
+    monitor->graceStartMs = nowMs;
+    monitor->graceMs = graceMs;
+    monitor->graceActive = graceMs != 0u;
     for (unsigned i = 0u; i < TASK_HEALTH_COUNT; i++)
     {
         monitor->lastBeatMs[i] = nowMs;

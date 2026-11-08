@@ -11,6 +11,7 @@
 #define IMU_REPORT_INTERVAL_US 10000u
 #define IMU_STALE_MS 200u
 extern sh2_Hal_t sh2_hal_stm32;
+static uint32_t s_referenceId;
 
 static void publish(ImuService* s)
 {
@@ -26,6 +27,7 @@ static void publish(ImuService* s)
         .status = s->status,
         .lastUpdateMs = s->lastUpdateMs,
         .lastGyroMs = s->lastGyroMs,
+        .referenceId = s->referenceId,
     };
     const uint32_t key = control_critical_enter();
     s->published = snap;
@@ -37,6 +39,8 @@ static void imu_event_cb(void* cookie, sh2_AsyncEvent_t* event)
     ImuService* s = cookie;
     if (s != NULL && event->eventId == SH2_RESET)
     {
+        s->referenceId = ++s_referenceId;
+        s->lastRawValid = false;
         s->yawValid = false;
         s->gyroValid = false;
     }
@@ -89,6 +93,7 @@ int ImuService_Init(ImuService* s, I2C_HandleTypeDef* i2c)
     if (s == NULL) { return ERR_INVALID_PARAM; }
     const uint32_t key = control_critical_enter();
     memset(s, 0, sizeof(*s));
+    s->referenceId = ++s_referenceId;
     control_critical_exit(key);
     if (sh2_open(&sh2_hal_stm32, imu_event_cb, s) != SH2_OK)
     {
@@ -131,6 +136,7 @@ void ImuService_Update(ImuService* s)
     for (unsigned i = 0; i < 8u; ++i) { sh2_service(); }
     if (s->yawResetRequested)
     {
+        s->referenceId = ++s_referenceId;
         s->yawDeg = 0.0f;
         s->yawResetRequested = false;
     }

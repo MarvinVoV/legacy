@@ -57,6 +57,8 @@ def main():
     parser.add_argument('--suspended', action='store_true', required=True,
                         help='Explicitly confirm wheels are suspended and motor power is on')
     parser.add_argument('--device',default='DEV_1')
+    parser.add_argument('--require-imu',action='store_true',
+                        help='Require IMU heading source for the GOAL acceptance case')
     args = parser.parse_args()
     capture = Capture(args.device)
     base = f'http://127.0.0.1:8000/api/v1'
@@ -114,9 +116,14 @@ def main():
             for _ in range(5):
                 command(seq,mode,params)
                 time.sleep(.15)
+            curve=params.get('curvature_1pm',0)
             sample=capture.wait('motion',lambda x:x.get('seq')==seq and
                 direction*x.get('left_mmps',0)>10 and direction*x.get('right_mmps',0)>10,
                 start)
+            if curve:
+                sample=capture.wait('motion',lambda x:x.get('seq')==seq and
+                    direction*x.get('left_mmps',0)>10 and direction*x.get('right_mmps',0)>10 and
+                    curve*(x.get('left_mmps',0)-x.get('right_mmps',0))>5,start)
             assert not sample.get('fault'),sample
             latency=stop()
             report(name,left_mmps=sample['left_mmps'],right_mmps=sample['right_mmps'],stop_ms=latency)
@@ -130,10 +137,15 @@ def main():
         report('lease_expiry',after_ms=round((time.monotonic()-start)*1000,1))
         stop()
 
+        start=time.monotonic()
         result=request(f'/agent/devices/{args.device}/move',
             {'distance_cm':5,'turn_deg':0,'speed_cm_s':5},post=True)
         assert result.get('ok'),result
-        report('goal_5cm_encoder_only',measured=result.get('measured'))
+        terminal=capture.wait('motion',lambda x:x.get('mode')==4 and x.get('state')=='done',start)
+        source=terminal.get('goal_heading_source','encoder')
+        if args.require_imu:
+            assert source=='imu',terminal
+        report('goal_5cm',heading_source=source,measured=result.get('measured'))
         stop()
 
         aborted=[]

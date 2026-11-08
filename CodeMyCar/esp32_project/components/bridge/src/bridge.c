@@ -519,7 +519,7 @@ static void publish_uplink_frame(const pkt_frame_t* frame)
         return;
     }
 
-    char json[320];
+    char json[512];
     int n = 0;
     const char* topic = NULL;
 

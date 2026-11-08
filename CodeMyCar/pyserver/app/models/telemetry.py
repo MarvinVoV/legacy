@@ -52,6 +52,7 @@ class MotionStatus(BaseModel):
     odometer_mm: int = 0
     goal_distance_mm: int = 0
     goal_turn_mdeg: int = 0      # 右正
+    goal_heading_source: str = "encoder"  # imu or encoder; fixed for each GOAL
     goal_duration_ms: int = 0
     left_mmps: int = 0
     right_mmps: int = 0

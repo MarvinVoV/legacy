@@ -243,11 +243,7 @@ void MotorDriver_Update(MotorDriver* driver)
     const uint32_t last_tick    = driver->state.lastControlTick;
 
     // 计算时间增量（秒）
-    float delta_time_s = 0.0f;
-    if (current_tick > last_tick)
-    {
-        delta_time_s = (float)(current_tick - last_tick) * 0.001f;
-    }
+    const float delta_time_s = (float)(uint32_t)(current_tick - last_tick) * 0.001f;
 
     // 更新时间太短则跳过
     if (delta_time_s < MIN_DELTA_TIME_S)

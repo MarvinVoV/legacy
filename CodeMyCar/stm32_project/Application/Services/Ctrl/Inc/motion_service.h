@@ -128,6 +128,10 @@ typedef struct
     float          cmdLeftRpm;    ///< 当前模式期望左轮目标（交叉耦合基准）
     float          cmdRightRpm;   ///< 当前模式期望右轮目标
     MotionGoalState goal;         ///< 目标型运动状态
+    bool goalUsesImu;            /* Source is fixed for the entire transaction. */
+    float goalYawStartDeg;
+    uint32_t goalImuReferenceId;
+    float goalEncoderHeadingDeg; /* Independent diagnostic estimate, right-positive. */
     seq_dedup_t     goalSeqDedup; ///< 最近处理过的 goal seq
     bool            goalBlocked;  ///< GOAL 是否因障碍持续被挡
     uint32_t        goalBlockedMs;///< 开始被挡的时刻

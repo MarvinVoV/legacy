@@ -42,7 +42,7 @@
 #define MOTION_SYNC_KP (0.50f)
 #define MOTION_SYNC_KI (0.10f)
 #define MOTION_SYNC_BIAS_MAX (3.0f)
-#define MOTION_SYNC_STRAIGHT_TOL_RPM (3.0f)
+#define MOTION_SYNC_STRAIGHT_TOL_RPM (0.001f)
 #define MOTION_SYNC_DT (0.005f)
 
 static HeadingControl s_headingControl;
@@ -110,6 +110,14 @@ static MotionGoalConfig goal_cfg_from(const ChassisConfig* cfg);
 
 /// 更新运行时状态
 static void update_runtime_state(MotionContext* ctx);
+
+static bool get_healthy_imu(ImuSnapshot* imu)
+{
+    return ImuService_GetSnapshot(ImuTask_GetService(), imu) && imu->valid &&
+           isfinite(imu->yawDeg) && isfinite(imu->yawRateDps) &&
+           HAL_GetTick() - imu->lastUpdateMs <= 200u &&
+           HAL_GetTick() - imu->lastGyroMs <= 200u;
+}
 
 
 //------------------------------------------------------------------------------
@@ -348,6 +356,7 @@ int MotionService_EmergencyStop(MotionContext* ctx, uint8_t seq)
 
     abort_goal_locked(ctx, MOTION_STATE_ABORTED);
     ctx->motionTarget.mode = MOTION_EMERGENCY_STOP;
+    HeadingControl_Disable(&s_headingControl);
     memset(&ctx->motionTarget.params, 0, sizeof(ctx->motionTarget.params));
     ctx->cmdLeftRpm = 0.0f;
     ctx->cmdRightRpm = 0.0f;
@@ -383,8 +392,8 @@ int MotionService_ClearFault(MotionContext* ctx, uint8_t seq)
     ctx->commandLease.expired = false;
     ctx->statusSeq = seq;
     ctx->urgentStatus = true;
-    osMutexRelease(ctx->targetMutex);
     stop_actuators(ctx);
+    osMutexRelease(ctx->targetMutex);
     return ERR_SUCCESS;
 }
 
@@ -400,7 +409,8 @@ void MotionService_LatchFault(MotionContext* ctx, uint8_t faultCode)
     control_critical_exit(faultKey);
     if (osMutexAcquire(ctx->targetMutex, MUTEX_TIMEOUT_MS) != osOK)
     {
-        stop_actuators(ctx);
+        /* Hardware is already inhibited. Leave shared state/servo untouched
+         * until the transaction owner observes stopPending and latches fault. */
         return;
     }
     abort_goal_locked(ctx, MOTION_STATE_ERROR);
@@ -414,8 +424,8 @@ void MotionService_LatchFault(MotionContext* ctx, uint8_t faultCode)
     ctx->cmdRightRpm = 0.0f;
     ctx->urgentStatus = true;
     control_lease_cancel(&ctx->commandLease);
-    osMutexRelease(ctx->targetMutex);
     stop_actuators(ctx);
+    osMutexRelease(ctx->targetMutex);
 }
 
 
@@ -442,7 +452,9 @@ int MotionService_StartGoal(MotionContext* ctx, int16_t turnDdeg, int16_t distan
         return ERR_MOTION_BUSY;
     }
 
-    if (ctx->motionTarget.mode == MOTION_EMERGENCY_STOP && !drive_is_stopped(ctx))
+    if ((ctx->motionTarget.mode == MOTION_EMERGENCY_STOP ||
+         (ctx->motionTarget.mode == MOTION_GOAL && !ctx->goal.active)) &&
+        !drive_is_stopped(ctx))
     {
         osMutexRelease(ctx->targetMutex);
         return ERR_MOTION_EMERGENCY_ACTIVE;
@@ -470,6 +482,20 @@ int MotionService_StartGoal(MotionContext* ctx, int16_t turnDdeg, int16_t distan
     }
 
     candidate.seq = seq;
+    ImuSnapshot imu;
+    const bool usesImu = get_healthy_imu(&imu);
+    /* A requested physical turn may not silently fall back to wheel yaw.
+     * Straight distance-only goals remain available without an IMU. */
+    if (!usesImu && turnDdeg != 0)
+    {
+        osMutexRelease(ctx->targetMutex);
+        return ERR_MOTION_SENSOR_UNAVAILABLE;
+    }
+    ctx->goalUsesImu = usesImu;
+    ctx->goalYawStartDeg = usesImu ? imu.yawDeg : 0.0f;
+    ctx->goalImuReferenceId = usesImu ? imu.referenceId : 0u;
+    ctx->goalEncoderHeadingDeg = 0.0f;
+    HeadingControl_Disable(&s_headingControl);
     ctx->goal = candidate;
     ctx->motionTarget.mode = MOTION_GOAL;
     memset(&ctx->motionTarget.params, 0, sizeof(ctx->motionTarget.params));
@@ -500,8 +526,8 @@ void MotionService_AbortGoal(MotionContext* ctx, uint8_t newState)
     ctx->cmdRightRpm = 0.0f;
     ctx->urgentStatus = true;
 
-    osMutexRelease(ctx->targetMutex);
     stop_actuators(ctx);
+    osMutexRelease(ctx->targetMutex);
 }
 
 void MotionService_GetStatus(const MotionContext* ctx, motion_status_t* out)
@@ -561,11 +587,15 @@ void MotionService_GetStatus(const MotionContext* ctx, motion_status_t* out)
 
     out->goalDistanceMm = (int32_t)g->distanceTravelMm;
     out->goalTurnMdeg   = (int32_t)(g->headingTravelDeg * 1000.0f);
+    if (ctx->goalUsesImu && (g->active || g->finished))
+    {
+        out->flags |= MOTION_STATUS_FLAG_GOAL_IMU;
+    }
 
     if (g->active || g->finished)
     {
         const uint32_t endMs = g->finished ? g->finishMs : HAL_GetTick();
-        out->goalDurationMs  = (endMs >= g->startMs) ? (endMs - g->startMs) : 0u;
+        out->goalDurationMs  = (uint32_t)(endMs - g->startMs);
     }
 
     const float radius_m = ctx->chassisConfig.wheelRadiusMM / 1000.0f;
@@ -695,7 +725,8 @@ void MotionService_Run(MotionContext* ctx)
     /* ---- 统一出口：超声波安全限速 ----
      * 所有模式的目标都在这里统一乘 scale 后下发，
      * 避免新增模式漏掉限速。EMERGENCY_STOP 已由上面直接停机。 */
-    if (current_target.mode != MOTION_EMERGENCY_STOP)
+    if (current_target.mode != MOTION_EMERGENCY_STOP &&
+        !(current_target.mode == MOTION_GOAL && !ctx->goal.active))
     {
         float left  = ctx->cmdLeftRpm;
         float right = ctx->cmdRightRpm;
@@ -804,8 +835,12 @@ void MotionService_Run(MotionContext* ctx)
                 MotorService_SetInhibit(ctx->motorService, false);
             }
             control_critical_exit(commitKey);
-            MotorService_setTargetRPM(ctx->motorService, MOTOR_LEFT_WHEEL, left);
-            MotorService_setTargetRPM(ctx->motorService, MOTOR_RIGHT_WHEEL, right);
+            if (MotorService_setTargetRPM(ctx->motorService, MOTOR_LEFT_WHEEL, left) != ERR_SUCCESS ||
+                MotorService_setTargetRPM(ctx->motorService, MOTOR_RIGHT_WHEEL, right) != ERR_SUCCESS)
+            {
+                LOG_ERROR(LOG_MODULE_MOTION, "motor target commit failed");
+                MotionService_LatchFault(ctx, MOTION_ERR_INTERNAL);
+            }
         }
     }
 
@@ -843,7 +878,9 @@ static bool can_accept_motion_locked(const MotionContext* ctx)
     {
         return false;
     }
-    return ctx->motionTarget.mode != MOTION_EMERGENCY_STOP || drive_is_stopped(ctx);
+    return (ctx->motionTarget.mode != MOTION_EMERGENCY_STOP &&
+            !(ctx->motionTarget.mode == MOTION_GOAL && !ctx->goal.active)) ||
+           drive_is_stopped(ctx);
 }
 
 static void abort_goal_locked(MotionContext* ctx, uint8_t newState)
@@ -863,18 +900,22 @@ static void abort_goal_locked(MotionContext* ctx, uint8_t newState)
 /* 用 IMU 航向反馈修正曲率；IMU 不可用时原样返回 */
 static float heading_correct(MotionContext* ctx, float kappa, bool straight)
 {
-    ImuService* imuService = ImuTask_GetService();
     ImuSnapshot imu;
-    const bool snapshot_ok = ImuService_GetSnapshot(imuService, &imu);
-
-    /* IMU 健康检查：快照一致、数据有效、未过期（>200 ms）、非安全制动 */
-    const bool imu_stale = snapshot_ok &&
-        ((HAL_GetTick() - imu.lastUpdateMs) > 200u ||
-         (HAL_GetTick() - imu.lastGyroMs) > 200u);
-    if (!snapshot_ok || !imu.valid || imu_stale || ctx->safetyBraked)
+    static bool referenceKnown;
+    static uint32_t referenceId;
+    if (!get_healthy_imu(&imu) || ctx->safetyBraked)
     {
+        referenceKnown = false;
         HeadingControl_Disable(&s_headingControl);
         return kappa;
+    }
+    if (!referenceKnown || referenceId != imu.referenceId)
+    {
+        /* Even if reset+fresh data fit within one IMU update, the previous
+         * absolute heading reference belongs to a different coordinate epoch. */
+        HeadingControl_Disable(&s_headingControl);
+        referenceId = imu.referenceId;
+        referenceKnown = true;
     }
 
     const float wheel_r_m = mm_to_m(ctx->chassisConfig.wheelRadiusMM);
@@ -1005,8 +1046,11 @@ static void handle_direct_control(MotionContext* ctx, const MotionTarget* target
     /* 目标由 MotionService_Run 统一限速后下发 */
 
     // 舵机角度 = 中位 - 相对转向角（舵机/连杆方向相反：正=右）
-    SteerService_setAngleSmoothly(ctx->steerServo,
-                                  ctx->chassisConfig.steerCenterAngleDeg - raw_steer);
+    if (SteerService_setAngleSmoothly(ctx->steerServo,
+        ctx->chassisConfig.steerCenterAngleDeg - raw_steer) != ERR_SUCCESS)
+    {
+        MotionService_LatchFault(ctx, MOTION_ERR_INTERNAL);
+    }
 }
 
 static void handle_differential_control(MotionContext* ctx, const MotionTarget* target)
@@ -1031,7 +1075,10 @@ static void handle_differential_control(MotionContext* ctx, const MotionTarget* 
     ctx->cmdRightRpm = right_rpm;
 
     // 舵机归中：使用标定后的"前轮朝正"角，而不是名义 90°
-    SteerService_setAngleImmediate(ctx->steerServo, steer_straight_angle(ctx));
+    if (SteerService_setAngleImmediate(ctx->steerServo, steer_straight_angle(ctx)) != ERR_SUCCESS)
+    {
+        MotionService_LatchFault(ctx, MOTION_ERR_INTERNAL);
+    }
 }
 
 static void handle_drive(MotionContext* ctx, const MotionTarget* target)
@@ -1068,7 +1115,11 @@ static void handle_drive(MotionContext* ctx, const MotionTarget* target)
     ctx->cmdRightRpm = right_rpm;
 
     // 舵机 = 中位 - 转向角（正=右）
-    SteerService_setAngleSmoothly(ctx->steerServo, cfg->steerCenterAngleDeg - raw_steer);
+    if (SteerService_setAngleSmoothly(ctx->steerServo,
+        cfg->steerCenterAngleDeg - raw_steer) != ERR_SUCCESS)
+    {
+        MotionService_LatchFault(ctx, MOTION_ERR_INTERNAL);
+    }
 }
 
 static MotionGoalConfig goal_cfg_from(const ChassisConfig* cfg)
@@ -1107,6 +1158,8 @@ static void handle_goal(MotionContext* ctx)
         ctx->cmdRightRpm = 0.0f;
         SteerService_setAngleImmediate(ctx->steerServo, steer_straight_angle(ctx));
         ctx->goal.active = false;
+        ctx->urgentStatus = true;
+        stop_actuators(ctx);
         return;
     }
 
@@ -1150,10 +1203,15 @@ static void handle_goal(MotionContext* ctx)
         return;
     }
     const float steer = ctx->chassisConfig.steerCenterAngleDeg - raw_steer;
-    SteerService_setAngleSmoothly(ctx->steerServo, steer);
+    if (SteerService_setAngleSmoothly(ctx->steerServo, steer) != ERR_SUCCESS)
+    {
+        MotionService_LatchFault(ctx, MOTION_ERR_INTERNAL);
+    }
 }
 
-/* 双轮同步闭环：只在直线目标（左右指令差 <= 3 RPM）且都在运动时生效。
+/* Wheel synchronization only owns equal-wheel straight commands. A small
+   intentional difference may encode a low-speed curve or IMU correction;
+   it must not be mistaken for straight driving and canceled by another PI.
    误差 = 左实际 - 右实际；>0 说明左快，则左减右加。
    积分项用来"记住"右轮额外摩擦所需的补偿量。 */
 static void apply_wheel_sync(MotionContext* ctx, float* left, float* right)
@@ -1168,7 +1226,7 @@ static void apply_wheel_sync(MotionContext* ctx, float* left, float* right)
 
     if (!straight || !moving || ctx->safetyBraked)
     {
-        ctx->syncIntegral *= 0.90f;
+        ctx->syncIntegral = 0.0f;
         ctx->syncBias = 0.0f;
         return;
     }
@@ -1318,11 +1376,26 @@ static void update_runtime_state(MotionContext* ctx)
     /* 目标执行器的独立累加器：用同一批轮速增量推进 */
     if (ctx->goal.active)
     {
+        ImuSnapshot imu;
+        if (ctx->goalUsesImu && (!get_healthy_imu(&imu) ||
+            imu.referenceId != ctx->goalImuReferenceId))
+        {
+            LOG_ERROR(LOG_MODULE_MOTION, "goal IMU unavailable/reference changed");
+            MotionService_LatchFault(ctx, MOTION_ERR_IMU);
+            return;
+        }
         const MotionGoalConfig goal_cfg = goal_cfg_from(&ctx->chassisConfig);
+        ctx->goal.headingTravelDeg = ctx->goalEncoderHeadingDeg;
         motion_goal_accumulate(&ctx->goal,
                                delta_left_dist * 1000.0f,
                                delta_right_dist * 1000.0f,
                                &goal_cfg);
+        ctx->goalEncoderHeadingDeg = ctx->goal.headingTravelDeg;
+        if (ctx->goalUsesImu)
+        {
+            /* GRV yaw is continuous CCW-positive; API goal turn is CW-positive. */
+            ctx->goal.headingTravelDeg = -(imu.yawDeg - ctx->goalYawStartDeg);
+        }
         if (fabsf(ctx->goal.distanceTravelMm - ctx->goalLastProgressDistanceMm) >=
                 MOTION_GOAL_PROGRESS_MM ||
             fabsf(ctx->goal.headingTravelDeg - ctx->goalLastProgressHeadingDeg) >=

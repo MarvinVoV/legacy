@@ -45,6 +45,10 @@ int main(void)
     ImuService_GetSnapshot(&s,&snap);assert(!snap.valid);
     report(&s,SH2_GYROSCOPE_CALIBRATED,0);
     ImuService_GetSnapshot(&s,&snap);assert(snap.valid);
+    uint32_t reference=snap.referenceId;
+    ImuService_ResetYawReference(&s);ImuService_Update(&s);
+    ImuService_GetSnapshot(&s,&snap);assert(snap.referenceId!=reference);
+    reference=snap.referenceId;
     reading=&s;ImuService_Update(&s);reading=0;assert(reads==8);
     report(&s,SH2_GAME_ROTATION_VECTOR,NAN);
     ImuService_GetSnapshot(&s,&snap);assert(!snap.valid);
@@ -57,5 +61,7 @@ int main(void)
     report(&s,SH2_GYROSCOPE_CALIBRATED,0);
     ImuService_GetSnapshot(&s,&snap);assert(snap.valid);
     ImuService_Close(&s);ImuService_GetSnapshot(&s,&snap);assert(!snap.valid);
+    assert(ImuService_Init(&s,0)==0);
+    ImuService_GetSnapshot(&s,&snap);assert(snap.referenceId!=reference);
     puts("imu_service: all tests passed");
 }
