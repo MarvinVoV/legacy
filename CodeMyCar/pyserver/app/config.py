@@ -52,7 +52,7 @@ class Settings(BaseSettings):
     baidu_speech_timeout_s: float = 10.0
 
     # 百度短文本语音合成（TTS）
-    baidu_tts_per: int = 0  # 0=度小美（基础音库）
+    baidu_tts_per: int = 5  # 5=度小娇（精品音库，已实测）
     baidu_tts_spd: int = 5
     baidu_tts_pit: int = 5
     baidu_tts_vol: int = 5

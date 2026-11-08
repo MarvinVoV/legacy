@@ -279,6 +279,8 @@ Content-Type: application/json
 - token scope 需要 `audio_tts_post`；
 - 实测：`per=0`，“收到，正在前进” → 1.91 s / 61120 bytes PCM，281–425 ms；把合成 WAV
   再送 ASR 得到“收到，正在前进。”，文本编码与音频都正常；
+- 账号套餐为**精品音库**；实测 `per=0/5/103/106/5118/5003` 均可用。v1 默认 `per=5`
+  （度小娇-成熟女主播），男声可选 `106`/`5003`，甜美女声可选 `5118`；
 - demo 的 `tts.py` 对 `tex` 做了两次 URL 编码；用 httpx form data 单次编码即可（已实测）；
 - 音色列表与选型见 [Voice-TTS-Voice-List-2026-11-08.md](Voice-TTS-Voice-List-2026-11-08.md)。
 
