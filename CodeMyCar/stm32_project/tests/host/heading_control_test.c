@@ -97,6 +97,26 @@ int main(void)
     out = HeadingControl_Apply(&hc, 42.0f, 0.0f, 0.1f, 0.0f, true);
     near(out, 0.0f, 0.001f); /* 新参考 = 42°，误差 0 */
 
+    HeadingControl_Init(&hc,0,0);
+    HeadingControl_Apply(&hc,0,0,0.2f,0,true);
+    for(int i=0;i<10000;i++) { g_tick+=5;HeadingControl_Apply(&hc,0.6f,0,0.2f,0,true); }
+    assert(hc.integral>1);
+    g_tick+=5;
+    assert(HeadingControl_Apply(&hc,0.6f,0,-0.2f,0,true)<0);
+    g_tick+=5;
+    assert(HeadingControl_Apply(&hc,5,0,0,0,true)==0);
+    assert(hc.integral==0 && hc.rateIntegral==0);
+    HeadingControl_Init(&hc,0,0);
+    for(int i=0;i<5000;i++) {
+        g_tick+=5;
+        out=HeadingControl_Apply(&hc,0,-3.67f*0.2f/0.017453293f,0.2f,3.77f,false);
+        assert(out<=3.77001f);
+    }
+    assert(fabsf(hc.rateIntegral)<0.001f);
+    near(hc.lastCorr,0,0.001f);
+    hc.rateIntegral=2;
+    HeadingControl_Apply(&hc,0,0,0.2f,-1,false);
+    assert(hc.rateIntegral<=0);
     puts("heading_control: all tests passed");
     return 0;
 }

@@ -582,9 +582,19 @@ bool MotionService_ConsumeUrgentStatus(MotionContext* ctx)
 
 bool MotionService_ShouldReportFast(const MotionContext* ctx)
 {
-    const MotionMode mode = MotionService_GetCurrentMode(ctx);
-    return mode == MOTION_DIRECT_CONTROL || mode == MOTION_DIFFERENTIAL ||
-           mode == MOTION_DRIVE || mode == MOTION_GOAL;
+    if (ctx == NULL || osMutexAcquire(ctx->targetMutex, MUTEX_TIMEOUT_MS) != osOK)
+    {
+        return true;
+    }
+    /* The first STOP status may still contain encoder coast-down. Keep 10Hz
+     * reporting until settled, and for 1s after STOP, instead of waiting 1s
+     * for a second frame before end-to-end zero-speed confirmation. */
+    const bool fast = ctx->motionTarget.mode != MOTION_EMERGENCY_STOP ||
+        fabsf(ctx->state.drive.leftRpm) > 0.1f ||
+        fabsf(ctx->state.drive.rightRpm) > 0.1f ||
+        (ctx->stopReportPending && HAL_GetTick() - ctx->lastStopReportMs < 1000u);
+    osMutexRelease(ctx->targetMutex);
+    return fast;
 }
 
 void MotionService_Run(MotionContext* ctx)
@@ -882,6 +892,8 @@ static float steer_straight_angle(const MotionContext* ctx)
 
 static void stop_actuators(MotionContext* ctx)
 {
+    ctx->lastStopReportMs = HAL_GetTick();
+    ctx->stopReportPending = true;
     MotorService_SetInhibit(ctx->motorService, true);
     MotorService_emergencyStop(ctx->motorService, MOTOR_LEFT_WHEEL);
     MotorService_emergencyStop(ctx->motorService, MOTOR_RIGHT_WHEEL);

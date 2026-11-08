@@ -3,8 +3,7 @@
  *
  * 航向闭环：把 IMU 的 yaw / 角速度反馈注入转向曲率
  *
- *   直行：e = ψ_ref − ψ          → κ_corr = Kp·e + Ki∫e
- *   转弯：e = v·κ_ff − ψ̇        → κ_corr = Kp·e + Ki∫e
+ *   ψ̇=-v·κ；直行 e=sign(v)·(ψ-ψ_ref)，转弯 e=κ_ff-(-ψ̇/v)。
  *
  * 输出限幅、抗积分饱和、死区（吸收约 4° 机械回差）。
  */
@@ -23,6 +22,8 @@ typedef struct
     float integral;      /* 直行角度积分 (1/m) */
     float rateIntegral;  /* 转弯角速度积分 */
     uint32_t lastTickMs;
+    int8_t motionDirection;
+    int8_t curveDirection;
 
     /* 参数（直行角度环） */
     float kp;            /* (1/m)/deg */

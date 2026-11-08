@@ -57,7 +57,9 @@ def create_handlers(
             devices[device_id] = DeviceState(device_id=device_id)
         state = devices[device_id]
         if motion_service is not None:
-            motion_service.on_session(device_id, data.session_id)
+            if not motion_service.on_session(device_id, data.session_id):
+                logger.debug("Ignoring retired-session heartbeat from %s", device_id)
+                return
         elif data.session_id is not None:
             state.session_id = data.session_id
         state.online = True

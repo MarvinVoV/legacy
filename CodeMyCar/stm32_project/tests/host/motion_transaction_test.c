@@ -72,5 +72,10 @@ int main(void)
     MotionService_Run(&c);assert(!c.faultLatched && isfinite(lastAngle));
     safety_channel_update(&front,5,now);brakeFail=true;
     MotionService_Run(&c);assert(inhibited && c.faultLatched && depth==0);
+    assert(MotionService_ShouldReportFast(&c));
+    now+=1100;
+    assert(!MotionService_ShouldReportFast(&c));
+    c.state.drive.leftRpm=0.2f;
+    assert(MotionService_ShouldReportFast(&c));
     puts("motion_transaction: all tests passed");
 }

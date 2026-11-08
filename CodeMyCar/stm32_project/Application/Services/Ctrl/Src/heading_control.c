@@ -50,6 +50,8 @@ void HeadingControl_Init(HeadingControl* hc, float kp, float ki)
     hc->integral = 0.0f;
     hc->rateIntegral = 0.0f;
     hc->lastTickMs = 0u;
+    hc->motionDirection = 0;
+    hc->curveDirection = 0;
     hc->kp = (kp > 0.0f) ? kp : HC_KP_ANGLE_DEFAULT;
     hc->ki = (ki > 0.0f) ? ki : HC_KI_ANGLE_DEFAULT;
     hc->kpRate = HC_KP_RATE_DEFAULT;
@@ -89,116 +91,86 @@ void HeadingControl_Disable(HeadingControl* hc)
     hc->lastCorr = 0.0f;
 }
 
-float HeadingControl_Apply(HeadingControl* hc, float yawDeg, float yawRateDps,
-                           float vMps, float kappaFf, bool straight)
+static float clampf(float x, float lo, float hi)
 {
-    if (hc == NULL)
-    {
-        return kappaFf;
-    }
-    hc->active = true;
+    return fmaxf(lo, fminf(hi, x));
+}
 
-    /* dt（秒），首帧或时间跳变时清零积分 */
+static float pi_correction(float kp, float ki, float* integral,
+                           float error, float dt, float lo, float hi)
+{
+    const float raw = kp * error + ki * *integral;
+    /* The limits include BOTH correction headroom and final actuator limits.
+     * Permit integration out of saturation, never further into it. */
+    if (dt > 0.0f && (raw < hi || error < 0.0f) &&
+                     (raw > lo || error > 0.0f))
+    {
+        *integral += error * dt;
+    }
+    return clampf(kp * error + ki * *integral, lo, hi);
+}
+
+float HeadingControl_Apply(HeadingControl* hc, float yawDeg, float yawRateDps,
+                          float vMps, float kappaFf, bool straight)
+{
+    if (hc == NULL) { return kappaFf; }
+    if (!isfinite(kappaFf)) { HeadingControl_Disable(hc); return 0.0f; }
+    const float ff = clampf(kappaFf, -hc->maxKappa, hc->maxKappa);
+    if (!isfinite(yawDeg) || !isfinite(yawRateDps) || !isfinite(vMps) ||
+        fabsf(vMps) <= 0.03f)
+    {
+        /* No observable yaw dynamics at rest. Do not learn an integral or
+         * flip the steering correction on encoder noise around zero. */
+        HeadingControl_Disable(hc);
+        return ff;
+    }
     const uint32_t now = HAL_GetTick();
-    float dt = 0.0f;
-    if (hc->lastTickMs != 0u && now > hc->lastTickMs)
-    {
-        dt = (float)(now - hc->lastTickMs) * 0.001f;
-    }
+    float dt = hc->active ? (float)(uint32_t)(now-hc->lastTickMs)*0.001f : 0.0f;
+    if (dt > 0.2f) { dt = 0.0f; }
     hc->lastTickMs = now;
-    if (dt > 0.2f)
+    hc->active = true;
+    const int8_t direction = vMps > 0.0f ? 1 : -1;
+    if (hc->motionDirection != direction)
     {
-        dt = 0.0f; /* 长时间未调用（入弯/切模式），不积分 */
+        hc->integral = 0.0f;
+        hc->rateIntegral = 0.0f;
+        hc->motionDirection = direction;
     }
-
-    float corr = 0.0f;
-
+    const float lo = fmaxf(-hc->maxCorr, -hc->maxKappa-ff);
+    const float hi = fminf(hc->maxCorr, hc->maxKappa-ff);
+    float corr;
     if (straight)
     {
         if (!hc->straightMode)
         {
-            /* 刚进入直行：以当前航向为基准，并清掉转弯段的角速度积分 */
-            hc->straightMode = true;
             hc->psiRefDeg = yawDeg;
             hc->integral = 0.0f;
             hc->rateIntegral = 0.0f;
         }
-
-        /* 倒车时运动学方向反转：同样的舵角产生的航向变化相反 */
-        const float dir = (vMps >= 0.0f) ? 1.0f : -1.0f;
-        float err = dir * wrap180(yawDeg - hc->psiRefDeg);
-        hc->lastErrorDeg = err;
-
-        /* 死区：吸收约 4° 回差带来的抖动 */
-        if (fabsf(err) < hc->deadbandDeg)
-        {
-            err = 0.0f;
-        }
-
-        float corrRaw = hc->kp * err + hc->ki * hc->integral;
-
-        /* 抗饱和 */
-        if ((corrRaw < hc->maxCorr) && (corrRaw > -hc->maxCorr) && dt > 0.0f)
-        {
-            hc->integral += err * dt;
-        }
-        corr = hc->kp * err + hc->ki * hc->integral;
+        hc->straightMode = true;
+        hc->curveDirection = 0;
+        float error = direction * wrap180(yawDeg-hc->psiRefDeg);
+        hc->lastErrorDeg = error;
+        if (fabsf(error) < hc->deadbandDeg) { error = 0.0f; }
+        corr = pi_correction(hc->kp, hc->ki, &hc->integral, error, dt, lo, hi);
     }
     else
     {
-        if (hc->straightMode)
+        const int8_t curve = ff > 0.0f ? 1 : (ff < 0.0f ? -1 : 0);
+        if (hc->straightMode || curve != hc->curveDirection)
         {
-            /* 直行 → 转弯：不携带直行段的角度积分 */
-            hc->straightMode = false;
             hc->integral = 0.0f;
             hc->rateIntegral = 0.0f;
         }
-
-        /* 由角速度反推实际曲率：ψ̇ = -v·κ → κ = -ψ̇/v（v 可为负，倒车同样成立） */
-        float kappaMeas = kappaFf;
-        if (fabsf(vMps) > 0.03f)
-        {
-            kappaMeas = -(yawRateDps * 0.017453293f) / vMps;
-        }
-        else
-        {
-            /* 速度过低时反馈不可用：冻结角速度积分，仅保留已有修正量 */
-            hc->rateIntegral *= 0.98f;
-        }
-        float err = kappaFf - kappaMeas;
-        hc->lastErrorDeg = err;
-
-        if (fabsf(err) < hc->deadbandK)
-        {
-            err = 0.0f;
-        }
-
-        float corrRaw = hc->kpRate * err + hc->kiRate * hc->rateIntegral;
-        if ((corrRaw < hc->maxCorr) && (corrRaw > -hc->maxCorr) && dt > 0.0f)
-        {
-            hc->rateIntegral += err * dt;
-        }
-        corr = hc->kpRate * err + hc->kiRate * hc->rateIntegral;
+        hc->straightMode = false;
+        hc->curveDirection = curve;
+        float error = ff + yawRateDps * 0.017453293f / vMps;
+        hc->lastErrorDeg = error;
+        if (fabsf(error) < hc->deadbandK) { error = 0.0f; }
+        corr = pi_correction(hc->kpRate, hc->kiRate, &hc->rateIntegral,
+                             error, dt, lo, hi);
     }
-
-    if (corr > hc->maxCorr)
-    {
-        corr = hc->maxCorr;
-    }
-    if (corr < -hc->maxCorr)
-    {
-        corr = -hc->maxCorr;
-    }
-    hc->lastCorr = corr;
-
-    float out = kappaFf + corr;
-    if (out > hc->maxKappa)
-    {
-        out = hc->maxKappa;
-    }
-    if (out < -hc->maxKappa)
-    {
-        out = -hc->maxKappa;
-    }
+    const float out = clampf(ff+corr, -hc->maxKappa, hc->maxKappa);
+    hc->lastCorr = out-ff;
     return out;
 }

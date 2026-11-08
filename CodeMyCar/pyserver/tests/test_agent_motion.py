@@ -395,6 +395,7 @@ async def test_initial_session_binding_migrates_pending_command():
     )
     result = await task
     assert result.seq == seq
+    assert not svc._pending
 
 
 # ---------------- 路由层 ----------------

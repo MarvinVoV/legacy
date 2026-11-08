@@ -119,6 +119,8 @@ typedef struct
     MotionState    state;         ///< 运动系统状态
     osMutexId_t    targetMutex;   ///< 目标参数互斥锁
     volatile bool stopPending;   /* Asserted before waiting for transaction lock. */
+    uint32_t lastStopReportMs;
+    bool stopReportPending;
     float          lastLeftRevs;  ///< 左轮上次转数
     float          lastRightRevs; ///< 右轮上次转数
     float          cmdLeftRpm;    ///< 当前模式期望左轮目标（交叉耦合基准）

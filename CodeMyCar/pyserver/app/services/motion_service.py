@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import time
+from collections import deque
 from dataclasses import dataclass
 
 from app.config import Settings
@@ -53,15 +54,20 @@ class AgentMotionService:
         self._locks: dict[str, asyncio.Lock] = {}
         self._pending: dict[tuple[str, int | None, int], _Pending] = {}
         self._seq = 0
+        self._retired_sessions: dict[str, deque[int]] = {}
 
     # ---------------- MQTT 事件 ----------------
 
-    def on_session(self, device_id: str, session_id: int | None) -> None:
+    def on_session(self, device_id: str, session_id: int | None) -> bool:
         if session_id is None:
-            return
+            return True
         state = self._devices.get(device_id)
         if state is None or state.session_id == session_id:
-            return
+            return True
+
+        retired = self._retired_sessions.setdefault(device_id, deque(maxlen=64))
+        if session_id in retired:
+            return False
 
         previous = state.session_id
         state.session_id = session_id
@@ -72,7 +78,9 @@ class AgentMotionService:
                     continue
                 self._pending.pop(key)
                 self._pending[(dev, session_id, seq)] = pending
-            return
+            return True
+
+        retired.append(previous)
 
         state.motion_supported = False
         state.last_motion = None
@@ -92,6 +100,7 @@ class AgentMotionService:
                 pending.ack.set_exception(restarted)
             elif not pending.done.done():
                 pending.done.set_exception(restarted)
+        return True
 
     def on_ack(
         self, device_id: str, seq: int, status: int,
@@ -216,6 +225,18 @@ class AgentMotionService:
             return await self._run_goal(device_id, req)
 
     async def stop(self, device_id: str) -> dict:
+        # A STOP is safe to repeat. A reboot during confirmation requires a
+        # NEW command/seq in the announced session, never rebinding an old ACK.
+        for attempt in range(3):
+            try:
+                return await self._stop_once(device_id)
+            except MotionError as exc:
+                if attempt == 2 or exc.code not in {"device_restarted", "stop_unconfirmed"}:
+                    raise
+                await asyncio.sleep(0.05)
+        raise AssertionError("unreachable")
+
+    async def _stop_once(self, device_id: str) -> dict:
         if device_id not in self._devices:
             raise MotionError("offline", f"device {device_id} is unknown", 503)
         if not self._mqtt.is_connected:
@@ -227,7 +248,7 @@ class AgentMotionService:
         stop_pending = _Pending(ack=loop.create_future(), done=loop.create_future())
         self._pending[(device_id, session_id, seq)] = stop_pending
         try:
-            await self._mqtt.publish(cmd_topic(device_id), _estop_payload(seq), qos=0)
+            await self._mqtt.publish(cmd_topic(device_id), _estop_payload(seq), qos=1)
         except Exception as exc:  # noqa: BLE001 - 对外统一成 502
             self._pending.pop((device_id, session_id, seq), None)
             raise MotionError("publish_failed", str(exc), 502) from exc
@@ -236,7 +257,7 @@ class AgentMotionService:
         for (dev, pending_session, pending_seq), pending in list(self._pending.items()):
             if (
                 dev != device_id
-                or (pending_session == session_id and pending_seq == seq)
+                or pending is stop_pending
                 or pending.done.done()
             ):
                 continue
@@ -272,7 +293,10 @@ class AgentMotionService:
             return {"ok": True, "stopped": True, "accepted": True,
                     "confirmed": True, "seq": seq}
         finally:
-            self._pending.pop((device_id, session_id, seq), None)
+            # Initial None->session binding may have migrated this pending.
+            for key, pending in list(self._pending.items()):
+                if pending is stop_pending:
+                    self._pending.pop(key, None)
 
     # ---------------- 内部 ----------------
 
@@ -396,7 +420,9 @@ class AgentMotionService:
 
             return self._result(seq, req, status)
         finally:
-            self._pending.pop((device_id, session_id, seq), None)
+            for key, item in list(self._pending.items()):
+                if item is pending:
+                    self._pending.pop(key, None)
 
     async def _send_stop(self, device_id: str) -> None:
         try:

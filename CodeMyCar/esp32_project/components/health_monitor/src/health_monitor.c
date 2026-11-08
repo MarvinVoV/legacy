@@ -37,6 +37,15 @@ static const char* TAG = "health";
 
 static StackType_t s_mon_stack[MON_STACK_SIZE / sizeof(StackType_t)];
 static StaticTask_t s_mon_tcb;
+static TaskHandle_t s_mon_handle;
+static volatile uint32_t s_connection_generation;
+
+static void on_mqtt_connected(void* arg, esp_event_base_t base, int32_t id, void* data)
+{
+    (void)arg; (void)base; (void)id; (void)data;
+    ++s_connection_generation;
+    if (s_mon_handle != NULL) { xTaskNotifyGive(s_mon_handle); }
+}
 
 static void health_mon_task(void* arg)
 {
@@ -45,10 +54,13 @@ static void health_mon_task(void* arg)
     esp_task_wdt_add(NULL);
 
     uint32_t last_heartbeat = 0;
+    uint32_t announced_generation = 0;
 
     while (1)
     {
-        vTaskDelay(pdMS_TO_TICKS(CHECK_INTERVAL_MS));
+        /* Wake immediately on connect/reconnect; failed announcement retries
+         * in at most 1s rather than waiting for the periodic 30s heartbeat. */
+        ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000));
 
         /* 1. 喂狗 */
         esp_task_wdt_reset();
@@ -78,10 +90,10 @@ static void health_mon_task(void* arg)
         /* 3. 心跳 */
         const uint32_t now_ms =
             (uint32_t)(esp_timer_get_time() / 1000);
-        if (now_ms - last_heartbeat >= HEARTBEAT_INTERVAL_MS)
+        const uint32_t generation = s_connection_generation;
+        if (generation != announced_generation ||
+            now_ms - last_heartbeat >= HEARTBEAT_INTERVAL_MS)
         {
-            last_heartbeat = now_ms;
-
             if (mqtt_service_is_connected())
             {
                 char json[320];
@@ -100,8 +112,16 @@ static void health_mon_task(void* arg)
                     (unsigned)bridge_stm32_protocol_version());
 
                 /* 用超时发布：broker 卡住时不能阻塞喂狗任务，否则 TWDT 自触 panic */
-                const esp_err_t pub = mqtt_service_publish_timed(
-                    CMCAR_TOPIC_HEARTBEAT, json, (size_t)len, 0, 1000);
+                const esp_err_t pub = (len > 0 && (size_t)len < sizeof(json))
+                    ? mqtt_service_publish_timed(
+                        CMCAR_TOPIC_HEARTBEAT, json, (size_t)len, 1, 1000)
+                    : ESP_ERR_INVALID_SIZE;
+                if (pub == ESP_OK)
+                {
+                    last_heartbeat = now_ms;
+                    announced_generation = generation;
+                    ESP_LOGI(TAG, "Session announced: %lu", (unsigned long)bridge_session_id());
+                }
                 if (pub != ESP_OK)
                 {
                     ESP_LOGD(TAG, "Heartbeat publish skipped: %s",
@@ -129,18 +149,20 @@ esp_err_t health_monitor_init(void)
            此处不能重复 init，只能改配置 */
         err = esp_task_wdt_reconfigure(&wdt_cfg);
     }
-    return err;
+    if (err != ESP_OK) { return err; }
+    return esp_event_handler_register(CMCAR_EVENTS, CMCAR_MQTT_CONNECTED,
+                                     on_mqtt_connected, NULL);
 }
 
 esp_err_t health_monitor_start(void)
 {
-    TaskHandle_t handle = xTaskCreateStatic(
+    s_mon_handle = xTaskCreateStatic(
         health_mon_task, "health_mon",
         MON_STACK_SIZE / sizeof(StackType_t),
         NULL, TASK_PRIO_HEALTH, s_mon_stack, &s_mon_tcb);
 
     ESP_LOGI(TAG, "Health monitor started");
-    return (handle != NULL) ? ESP_OK : ESP_FAIL;
+    return (s_mon_handle != NULL) ? ESP_OK : ESP_FAIL;
 }
 
 size_t health_monitor_get_heap_free(void)
