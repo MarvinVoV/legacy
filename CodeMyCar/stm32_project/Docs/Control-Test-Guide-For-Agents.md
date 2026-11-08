@@ -700,3 +700,6 @@ motor_pid_tracking_test编译真实pid_controller.c并共享motor_pid_defaults.h
 最新数据ground-load-short-pair-01、ground-load-roundtrip-200cm-speed10-01为6/14us前馈；ground-no-trim-*为唯一关闭前馈的对照，保持细积分OFF/PATH OFF/磁诊断ON。analyze_ground_load_pair.py PREFIX只读jsonl或jsonl.gz与summary，输出分段0.4..3s/3..8s/8s后轮速误差、样本数量、10Hz相对航向峰值和最后PATH；不连接车辆、不代表外部位置真值。ground_load_short_pair_used.py归档固定20cm前进/倒回，脚本参数不能用来改变它的硬编码距离；实际运动前必须确认净空/线缆。首次无前馈捕获01因烧录后IMU数据未刷新而预检中止，没有运动，不传入要求两条成功leg的分析脚本。
 
 fit_wheel_geometry_consistency.py是只读探索分析：历史四段60cm弧线按累计脉冲/MCU时间配对，拟合名义轮程比例并交叉检查新直线。不输出或写入车辆标定。历史固件不同、轮距/轮程/滑移/GRV误差不可独立辨识，当前拟合在直线失配约5–9°；禁止因为弧线内残差小就自动应用系数。
+
+
+同固件弧线诊断：ground_matched_arcs_initial_used.py首段停车后即读残余速度而中止，后续ground_matched_arcs_continuation_used.py仅从该终点跑其余三段，并等待连续3个linear<0.1cm/s/angular<0.5deg/s新鲜样本再继续。两个硬编码计划不能当通用运动脚本直接运行。fit_matched_wheel_geometry_consistency.py离线拟合不写标定；replay_matched_arcs_closure.py固定两份数据回放，replay_full_capture_closure.py PREFIX [PREFIX...]可分析同一会话多份捕获，假定捕获间未挪车。后者按收到的10Hz轮程/IMU时间插值，包含已记录的停车滚行，不能当独立位置真值；弧线反向distance/turn不是实际路径回放，不能只看终点误差验收闭合精度。

@@ -1,0 +1,13 @@
+{
+  "telemetry_imu_closure_forward_mm": 0.00333715859962469,
+  "telemetry_imu_closure_left_mm": -2.9169175365031816,
+  "max_nonzero_distance_step_mm": 11,
+  "max_receive_gap_for_nonzero_distance_step_s": 0.2702009677886963,
+  "approx_ideal_constant_curvature_closure_forward_mm": 0.0003403185487513838,
+  "approx_ideal_constant_curvature_closure_left_mm": -0.5571089741730559,
+  "sum_goal_turn_ccw_deg": 0.03199999999999999,
+  "captures": [
+    "ground-load-roundtrip-200cm-speed10-01"
+  ],
+  "limitations": "Rounded telemetry and host receive-time interpolation; includes recorded coasting, capture gap assumed stationary. Wheel mean distance and IMU yaw still assumed. Ideal arcs use terminal measured values and assume constant curvature, excludes extra coasting. Neither estimate is external truth."
+}
