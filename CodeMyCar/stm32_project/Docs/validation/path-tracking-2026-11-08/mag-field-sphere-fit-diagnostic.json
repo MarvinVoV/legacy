@@ -1,0 +1,27 @@
+{
+  "input_points": 140,
+  "spatial_bins_5uT": 44,
+  "coordinate_ranges_uT": [
+    [
+      7.94,
+      66.75
+    ],
+    [
+      -30.56,
+      14.75
+    ],
+    [
+      -69.31,
+      2.81
+    ]
+  ],
+  "sphere_center_uT": [
+    52.35940068690108,
+    -37.23351781521129,
+    -5.734295993670253
+  ],
+  "sphere_radius_uT": 63.52293797328228,
+  "spatial_bin_residual_rmse_uT": 2.0472388489650686,
+  "spatial_bin_residual_absmax_uT": 4.669646604241564,
+  "limits": "Exploratory sphere fit of sensor CALIBRATED field, not raw uncalibrated data. Uneven pose coverage, changing internal calibration, soft iron and spatial field gradients are not distinguished. Never applied to control or written to sensor."
+}

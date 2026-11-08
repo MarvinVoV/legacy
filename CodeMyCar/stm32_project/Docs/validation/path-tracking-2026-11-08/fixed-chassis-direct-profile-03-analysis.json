@@ -1,0 +1,222 @@
+[
+  {
+    "speed_mm_s": 100,
+    "yaw_range_deg": [
+      -0.01,
+      0.01
+    ],
+    "yaw_linear_drift_dps": -8.576810978872382e-05,
+    "gyro_yaw_rate_mean_dps": -0.0018333333333333333,
+    "wheels": {
+      "L": {
+        "all_after_1s": {
+          "samples": 38,
+          "mean_target": 30.0,
+          "mean_actual": 30.339473684210528,
+          "mean_error": 0.33947368421052654,
+          "rms_error": 1.0248234764556956
+        },
+        "late_after_15s": {
+          "samples": 10,
+          "mean_target": 30.0,
+          "mean_actual": 29.97,
+          "mean_error": -0.030000000000000426,
+          "rms_error": 0.1643167672515496
+        },
+        "pulse_average_after_5s": {
+          "duration_s": 14.5,
+          "rpm": 29.877984084880637,
+          "mean_target": 30.0,
+          "error": -0.12201591511936272
+        }
+      },
+      "R": {
+        "all_after_1s": {
+          "samples": 38,
+          "mean_target": 31.0,
+          "mean_actual": 30.986842105263158,
+          "mean_error": -0.013157894736841732,
+          "rms_error": 0.4177004718820969
+        },
+        "late_after_15s": {
+          "samples": 10,
+          "mean_target": 31.0,
+          "mean_actual": 30.79,
+          "mean_error": -0.20999999999999944,
+          "rms_error": 0.3885871845545088
+        },
+        "pulse_average_after_5s": {
+          "duration_s": 14.5,
+          "rpm": 31.01856763925729,
+          "mean_target": 31.0,
+          "error": 0.018567639257291546
+        }
+      }
+    }
+  },
+  {
+    "speed_mm_s": 300,
+    "yaw_range_deg": [
+      -0.01,
+      0.01
+    ],
+    "yaw_linear_drift_dps": -0.00014787684648157024,
+    "gyro_yaw_rate_mean_dps": -0.004888888888888889,
+    "wheels": {
+      "L": {
+        "all_after_1s": {
+          "samples": 38,
+          "mean_target": 90.0,
+          "mean_actual": 90.29736842105262,
+          "mean_error": 0.2973684210526315,
+          "rms_error": 0.8471313823412328
+        },
+        "late_after_15s": {
+          "samples": 10,
+          "mean_target": 90.0,
+          "mean_actual": 90.02,
+          "mean_error": 0.019999999999998862,
+          "rms_error": 0.2569046515733029
+        },
+        "pulse_average_after_5s": {
+          "duration_s": 14.5,
+          "rpm": 89.946949602122,
+          "mean_target": 90.0,
+          "error": -0.05305039787799615
+        }
+      },
+      "R": {
+        "all_after_1s": {
+          "samples": 38,
+          "mean_target": 91.0,
+          "mean_actual": 92.51052631578948,
+          "mean_error": 1.5105263157894726,
+          "rms_error": 2.0769410705473352
+        },
+        "late_after_15s": {
+          "samples": 10,
+          "mean_target": 91.0,
+          "mean_actual": 91.85,
+          "mean_error": 0.8499999999999985,
+          "rms_error": 0.8882567196480969
+        },
+        "pulse_average_after_5s": {
+          "duration_s": 14.5,
+          "rpm": 91.89124668435014,
+          "mean_target": 91.0,
+          "error": 0.8912466843501363
+        }
+      }
+    }
+  },
+  {
+    "speed_mm_s": -100,
+    "yaw_range_deg": [
+      -0.0,
+      0.01
+    ],
+    "yaw_linear_drift_dps": -0.0003239576987717268,
+    "gyro_yaw_rate_mean_dps": 0.0,
+    "wheels": {
+      "L": {
+        "all_after_1s": {
+          "samples": 38,
+          "mean_target": -30.0,
+          "mean_actual": -29.44736842105263,
+          "mean_error": 0.5526315789473683,
+          "rms_error": 1.037456403649659
+        },
+        "late_after_15s": {
+          "samples": 10,
+          "mean_target": -30.0,
+          "mean_actual": -29.81,
+          "mean_error": 0.19000000000000022,
+          "rms_error": 0.35071355833500406
+        },
+        "pulse_average_after_5s": {
+          "duration_s": 14.5,
+          "rpm": -29.774535809018566,
+          "mean_target": -30.0,
+          "error": 0.2254641909814339
+        }
+      },
+      "R": {
+        "all_after_1s": {
+          "samples": 38,
+          "mean_target": -29.0,
+          "mean_actual": -29.307894736842105,
+          "mean_error": -0.30789473684210544,
+          "rms_error": 0.5900490612964674
+        },
+        "late_after_15s": {
+          "samples": 10,
+          "mean_target": -29.0,
+          "mean_actual": -29.07,
+          "mean_error": -0.07000000000000028,
+          "rms_error": 0.19748417658131476
+        },
+        "pulse_average_after_5s": {
+          "duration_s": 14.5,
+          "rpm": -29.190981432360743,
+          "mean_target": -29.0,
+          "error": -0.1909814323607435
+        }
+      }
+    }
+  },
+  {
+    "speed_mm_s": -300,
+    "yaw_range_deg": [
+      -0.02,
+      0.02
+    ],
+    "yaw_linear_drift_dps": 0.00033224661543572996,
+    "gyro_yaw_rate_mean_dps": -0.013259668508287293,
+    "wheels": {
+      "L": {
+        "all_after_1s": {
+          "samples": 38,
+          "mean_target": -90.0,
+          "mean_actual": -89.70263157894738,
+          "mean_error": 0.2973684210526315,
+          "rms_error": 0.5183475769465081
+        },
+        "late_after_15s": {
+          "samples": 10,
+          "mean_target": -90.0,
+          "mean_actual": -89.94,
+          "mean_error": 0.05999999999999943,
+          "rms_error": 0.4335896677735756
+        },
+        "pulse_average_after_5s": {
+          "duration_s": 14.5,
+          "rpm": -89.7055702917772,
+          "mean_target": -90.0,
+          "error": 0.29442970822279335
+        }
+      },
+      "R": {
+        "all_after_1s": {
+          "samples": 38,
+          "mean_target": -89.0,
+          "mean_actual": -88.4921052631579,
+          "mean_error": 0.5078947368421071,
+          "rms_error": 1.2118928213857514
+        },
+        "late_after_15s": {
+          "samples": 10,
+          "mean_target": -89.0,
+          "mean_actual": -88.76,
+          "mean_error": 0.23999999999999916,
+          "rms_error": 0.47958315233127463
+        },
+        "pulse_average_after_5s": {
+          "duration_s": 14.5,
+          "rpm": -88.93103448275863,
+          "mean_target": -89.0,
+          "error": 0.06896551724136657
+        }
+      }
+    }
+  }
+]

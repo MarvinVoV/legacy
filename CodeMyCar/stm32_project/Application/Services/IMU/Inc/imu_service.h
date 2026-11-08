@@ -13,6 +13,10 @@
 
 #include "stm32h7xx_hal.h"
 
+#ifndef CMCAR_IMU_MAG_DIAGNOSTICS
+#define CMCAR_IMU_MAG_DIAGNOSTICS 0
+#endif
+
 /* 跨任务只读快照：保证 yaw / yawRate / status / 时间戳来自同一版本 */
 typedef struct
 {
@@ -63,6 +67,7 @@ typedef struct
     uint32_t lastGyroMs;
     uint32_t processedGrvCount;
     bool gyroValid;
+    bool yawRateValid; /* Euler yaw derivative observable at current attitude. */
 
     /* Task-private timing diagnostics, microseconds modulo 2^32. No control
      * decisions use these until host/SH-2 clock alignment is characterized. */
@@ -72,6 +77,15 @@ typedef struct
     int32_t gyroRxAgeUs;
     int32_t grvMaxRxAgeUs;
     int32_t gyroMaxRxAgeUs;
+
+    /* Optional, task-private magnetic cross-check. Never used by steering. */
+    bool magDiagnosticsEnabled;
+    bool diagRvValid, diagMagValid, diagCalReadOk;
+    uint8_t diagRvStatus, diagMagStatus, diagCalMask;
+    int diagRvConfigRc, diagMagConfigRc;
+    float diagRvYawDeg, diagRvAccuracyDeg;
+    float diagMagX, diagMagY, diagMagZ;
+    uint32_t diagRvMs, diagMagMs, diagRvCount, diagMagCount;
 } ImuService;
 
 /** 打开 SH-2 会话并使能报告。失败返回非 0。 */

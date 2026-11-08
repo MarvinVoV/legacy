@@ -1,4 +1,5 @@
 #include "imu_service.h"
+#include "imu_yaw_rate.h"
 #include <math.h>
 #include <string.h>
 #include "control_critical.h"
@@ -17,7 +18,7 @@ static void publish(ImuService* s)
 {
     const uint32_t now = HAL_GetTick();
     ImuSnapshot snap = {
-        .valid = s->inited && s->yawValid && s->gyroValid &&
+        .valid = s->inited && s->yawValid && s->gyroValid && s->yawRateValid &&
                  s->grvCount != 0u && s->gyroCount != 0u &&
                  now - s->lastUpdateMs <= IMU_STALE_MS &&
                  now - s->lastGyroMs <= IMU_STALE_MS &&
@@ -43,6 +44,12 @@ static void imu_event_cb(void* cookie, sh2_AsyncEvent_t* event)
         s->lastRawValid = false;
         s->yawValid = false;
         s->gyroValid = false;
+        s->diagRvValid = false;
+        s->diagMagValid = false;
+        s->yawRateValid = false;
+        /* Reset is known now: readers must not use the old healthy snapshot
+         * while the rest of a slow SH-2/I2C batch is being consumed. */
+        publish(s);
     }
 }
 
@@ -78,11 +85,41 @@ static void imu_sensor_cb(void* cookie, sh2_SensorEvent_t* event)
                 s->lastGyroMs = HAL_GetTick();
                 /* This SH-2 report is already calibrated. Do not absorb real
                  * slow vehicle rotation into an application-side bias. */
-                s->yawRateDps = s->gyroZ * IMU_RAD2DEG;
+                /* Convert to Euler yaw rate after consuming this batch,
+                 * using the latest valid GRV attitude. */
                 s->biasValid = true;
             }
             else { s->yawRateDps = 0.0f; }
             break;
+#if CMCAR_IMU_MAG_DIAGNOSTICS
+        case SH2_ROTATION_VECTOR:
+        {
+            const sh2_RotationVectorWAcc_t* q = &value.un.rotationVector;
+            const float norm = q->real*q->real+q->i*q->i+q->j*q->j+q->k*q->k;
+            s->diagRvCount++;
+            s->diagRvStatus = value.status;
+            s->diagRvValid = isfinite(norm) && norm >= 0.5f && norm <= 1.5f &&
+                             isfinite(q->accuracy) && q->accuracy >= 0.0f;
+            if (s->diagRvValid)
+            {
+                const float inv = 1.0f/sqrtf(norm);
+                const float w=q->real*inv,x=q->i*inv,y=q->j*inv,z=q->k*inv;
+                s->diagRvYawDeg = atan2f(2*(w*z+x*y),1-2*(y*y+z*z))*IMU_RAD2DEG;
+                s->diagRvAccuracyDeg = q->accuracy*IMU_RAD2DEG;
+                s->diagRvMs = HAL_GetTick();
+            }
+            break;
+        }
+        case SH2_MAGNETIC_FIELD_CALIBRATED:
+            s->diagMagCount++;
+            s->diagMagStatus = value.status;
+            s->diagMagX = value.un.magneticField.x;
+            s->diagMagY = value.un.magneticField.y;
+            s->diagMagZ = value.un.magneticField.z;
+            s->diagMagValid = isfinite(s->diagMagX) && isfinite(s->diagMagY) && isfinite(s->diagMagZ);
+            if (s->diagMagValid) { s->diagMagMs = HAL_GetTick(); }
+            break;
+#endif
         case SH2_ACCELEROMETER:
             s->accelX = value.un.accelerometer.x;
             s->accelY = value.un.accelerometer.y;
@@ -118,6 +155,18 @@ int ImuService_Init(ImuService* s, I2C_HandleTypeDef* i2c)
         ImuService_Close(s);
         return ERR_HW_INIT_FAIL;
     }
+#if CMCAR_IMU_MAG_DIAGNOSTICS
+    /* Diagnostic reports are nonessential: failure must not replace or
+     * invalidate the already configured GRV/gyro control source. */
+    sh2_SensorConfig_t diagCfg = {0};
+    diagCfg.reportInterval_us = 40000u; /* RV diagnostic at 25Hz. */
+    s->diagRvConfigRc = sh2_setSensorConfig(SH2_ROTATION_VECTOR, &diagCfg);
+    /* CEVA calibration procedure requires the magnetic report at 50Hz. */
+    diagCfg.reportInterval_us = 20000u;
+    s->diagMagConfigRc = sh2_setSensorConfig(SH2_MAGNETIC_FIELD_CALIBRATED, &diagCfg);
+    s->magDiagnosticsEnabled = s->diagRvConfigRc == SH2_OK && s->diagMagConfigRc == SH2_OK;
+    s->diagCalReadOk = sh2_getCalConfig(&s->diagCalMask) == SH2_OK;
+#endif
     s->inited = true;
     publish(s);
     return ERR_SUCCESS;
@@ -129,7 +178,10 @@ void ImuService_Close(ImuService* s)
     s->inited = false;
     s->yawValid = false;
     s->gyroValid = false;
+    s->yawRateValid = false;
     s->lastRawValid = false;
+    s->diagRvValid = false;
+    s->diagMagValid = false;
     publish(s);
     sh2_close();
 }
@@ -169,6 +221,10 @@ void ImuService_Update(ImuService* s)
             }
         }
     }
+    float rate = 0.0f;
+    s->yawRateValid = s->yawValid && s->gyroValid &&
+        imu_euler_yaw_rate(s->quatW,s->quatX,s->quatY,s->quatZ,s->gyroY,s->gyroZ,&rate);
+    s->yawRateDps = s->yawRateValid ? rate*IMU_RAD2DEG : 0.0f;
     publish(s);
 }
 

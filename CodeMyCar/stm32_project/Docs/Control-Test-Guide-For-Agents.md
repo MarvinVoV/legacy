@@ -681,3 +681,15 @@ IMU时序诊断回归也加入imu_service_test：微秒计时低32位回绕、�
 
 
 动态舵机前馈候选：run.sh的motion_transaction现在编译baseline0/0、PATH ON/trim0、PATH OFF/trim6/14三种配置（仍18个测试组）。新增LUT补偿有限性/±20us/安全脉宽限幅、真实PWM trim→STOP精确回中、0曲率轮速不受前馈影响。普通构建trim默认0/0；DynamicNeutral候选6/14只验证至短测与一次2m低速往返，外部仍右偏大于约16–17mm，不作为精度通过，也未合并main。详见阶段报告。固定中位mode2脚本只归档本次实际执行：外部STOP存在超程，必须有50cm净空、500ms租约及明确--ground-ready；原始100/150序号段复用前须核对当前服务序号与去重窗口，不能无人值守照抄。
+
+
+## 新增：IMU姿态/复位与电机小误差独立回归
+
+run.sh当前19个独立组，IMU诊断与细积分各双配置、运动事务三配置，总23次执行。imu_service_test新增Euler yaw-rate变换、极点失效恢复、RESET后立即读取快照、磁报告独立性及可选配置失败测试。imu_yaw_rate.h是纯数学函数，可独立引用；没有传感器到车架完整外参保证。
+
+motor_pid_tracking_test编译真实pid_controller.c并共享motor_pid_defaults.h：独立一阶负载模型，±30RPM、正负负载阶跃、5ms采样、PWM量化，检查尾段平均偏差/RMS和零目标保持。旧参数0.005积分门槛的失败证据与新参数0.0001的全套结果位于validation/path-tracking-2026-11-08/motor-pid-*。该测试不同于原来仅打印的pid_sim_test，断言的是负载抑制行为，不是控制器内部变量。
+
+固定车架悬空A/B脚本在同目录scripts/fixed_chassis_profile_*_used.py，需显式--suspended-ready，原样归档的固定输出名会拒绝覆盖；复用须改新前缀、核对原始seq与agent序号去重窗口，并确认支架稳定且两驱动轮均离地。每档8秒、500ms租约、独立10秒超时、每档及finally可靠STOP。悬空编码器pose不是真实车体运动，不运行地面GOAL脚本替代此测试。分析脚本只读对应jsonl.gz及summary，2Hz轮速日志与量化会影响均值，样本数量必须一起报告。实验前馈6/14us与磁诊断ON不是普通构建默认配置。
+
+
+最终悬空A/B没有证明细积分稳定改善硬件，CMCAR_MOTOR_PID_FINE_INTEGRATION因此默认OFF（原0.005）；ON仅为0.0001实验候选。run.sh现19组共23次执行，motor_pid_tracking_test分别编译OFF/ON：前者断言已知模型残差仍存在并明确打印reproduced，后者验证实验负载抑制，不混作生产精度通过。新旧20秒直接轮速隔离数据见fixed-chassis-direct-profile-02/03；接口只接受整数RPM，所以用相差1RPM绕过同步PI，不能照用最初0.01RPM失败脚本。当前agent序号已到60多，后续原始seq改128..255，未来仍需按实时计数核对。

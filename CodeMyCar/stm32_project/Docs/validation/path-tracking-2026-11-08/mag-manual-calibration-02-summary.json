@@ -1,0 +1,44 @@
+{
+  "pre_stop": {
+    "ok": true,
+    "stopped": true,
+    "accepted": true,
+    "confirmed": true,
+    "seq": 19
+  },
+  "start_t": 1794125887.897242,
+  "user_done_t": 1794125990.162049,
+  "reason": "user_done_plus_10s",
+  "stop": {
+    "ok": true,
+    "stopped": true,
+    "accepted": true,
+    "confirmed": true,
+    "seq": 20
+  },
+  "end_t": 1794126000.5242949,
+  "last": {
+    "motion": {
+      "seq": 20,
+      "state": "idle",
+      "error": 0,
+      "mode": 0,
+      "fault": false,
+      "lease_expired": false,
+      "goal_heading_source": "encoder",
+      "x_mm": 0,
+      "y_mm": 0,
+      "theta_mdeg": -89,
+      "odometer_mm": 0,
+      "goal_distance_mm": 0,
+      "goal_turn_mdeg": 0,
+      "goal_duration_ms": 0,
+      "left_mmps": 0,
+      "right_mmps": 0,
+      "session_id": 1864212810
+    },
+    "timing": "IMU_TIME grv_rx=4700 gyro_rx=2300 pair=-400 max=39500/33600 us ",
+    "mag": "IMU_MAG en=1 rv=92.15 diff=93.62 acc=139.91 st=0 age=43 cal=5 cfg=0/0 ",
+    "field": "IMU_FIELD x=21.00 y=9.88 z=-39.50 norm=45.81 st=1 age=28 "
+  }
+}

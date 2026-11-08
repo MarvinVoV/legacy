@@ -1,0 +1,1 @@
+Assertion failed: (!snap.valid && snap.referenceId!=previousReference), function main, file imu_service_test.c, line 59.

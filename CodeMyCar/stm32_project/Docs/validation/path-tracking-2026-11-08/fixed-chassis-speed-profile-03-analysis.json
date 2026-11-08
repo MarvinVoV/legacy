@@ -1,0 +1,174 @@
+[
+  {
+    "speed_mm_s": 100,
+    "yaw_range_deg": [
+      -0.01,
+      0.01
+    ],
+    "yaw_linear_drift_dps": 0.0006036261599762693,
+    "gyro_yaw_rate_mean_dps": 0.006567164179104477,
+    "wheels": {
+      "L": {
+        "all_after_1s": {
+          "samples": 14,
+          "mean_target": 28.792857142857144,
+          "mean_actual": 30.05,
+          "mean_error": 1.257142857142857,
+          "rms_error": 1.5269016246728437
+        },
+        "late_after_5s": {
+          "samples": 6,
+          "mean_target": 28.616666666666667,
+          "mean_actual": 29.816666666666666,
+          "mean_error": 1.2,
+          "rms_error": 1.3999999999999997
+        }
+      },
+      "R": {
+        "all_after_1s": {
+          "samples": 14,
+          "mean_target": 29.978571428571428,
+          "mean_actual": 29.514285714285712,
+          "mean_error": -0.4642857142857143,
+          "rms_error": 0.8672617004934889
+        },
+        "late_after_5s": {
+          "samples": 6,
+          "mean_target": 30.116666666666667,
+          "mean_actual": 29.166666666666668,
+          "mean_error": -0.9500000000000005,
+          "rms_error": 1.1409060726749893
+        }
+      }
+    }
+  },
+  {
+    "speed_mm_s": 300,
+    "yaw_range_deg": [
+      -0.01,
+      -0.0
+    ],
+    "yaw_linear_drift_dps": 0.0007253735061776701,
+    "gyro_yaw_rate_mean_dps": -0.0016666666666666668,
+    "wheels": {
+      "L": {
+        "all_after_1s": {
+          "samples": 14,
+          "mean_target": 87.63571428571429,
+          "mean_actual": 89.62142857142857,
+          "mean_error": 1.9857142857142855,
+          "rms_error": 2.606859084360772
+        },
+        "late_after_5s": {
+          "samples": 6,
+          "mean_target": 87.78333333333333,
+          "mean_actual": 88.58333333333334,
+          "mean_error": 0.7999999999999995,
+          "rms_error": 0.8812869377601517
+        }
+      },
+      "R": {
+        "all_after_1s": {
+          "samples": 14,
+          "mean_target": 88.67142857142856,
+          "mean_actual": 89.39999999999999,
+          "mean_error": 0.7285714285714288,
+          "rms_error": 1.2094863136295262
+        },
+        "late_after_5s": {
+          "samples": 6,
+          "mean_target": 88.53333333333333,
+          "mean_actual": 88.64999999999999,
+          "mean_error": 0.11666666666666714,
+          "rms_error": 0.5147815070493498
+        }
+      }
+    }
+  },
+  {
+    "speed_mm_s": -100,
+    "yaw_range_deg": [
+      -0.01,
+      -0.0
+    ],
+    "yaw_linear_drift_dps": 0.0010297020563430385,
+    "gyro_yaw_rate_mean_dps": -0.004925373134328359,
+    "wheels": {
+      "L": {
+        "all_after_1s": {
+          "samples": 14,
+          "mean_target": -28.807142857142857,
+          "mean_actual": -29.32857142857143,
+          "mean_error": -0.5214285714285712,
+          "rms_error": 0.7136425675964921
+        },
+        "late_after_5s": {
+          "samples": 6,
+          "mean_target": -28.816666666666666,
+          "mean_actual": -29.416666666666664,
+          "mean_error": -0.5999999999999996,
+          "rms_error": 0.8698658900466587
+        }
+      },
+      "R": {
+        "all_after_1s": {
+          "samples": 14,
+          "mean_target": -29.914285714285715,
+          "mean_actual": -28.92142857142857,
+          "mean_error": 0.9928571428571425,
+          "rms_error": 1.3030184737205928
+        },
+        "late_after_5s": {
+          "samples": 6,
+          "mean_target": -29.883333333333333,
+          "mean_actual": -29.266666666666666,
+          "mean_error": 0.6166666666666659,
+          "rms_error": 0.8495096624916432
+        }
+      }
+    }
+  },
+  {
+    "speed_mm_s": -300,
+    "yaw_range_deg": [
+      -0.03,
+      0.01
+    ],
+    "yaw_linear_drift_dps": -0.002169194837697173,
+    "gyro_yaw_rate_mean_dps": 0.004776119402985075,
+    "wheels": {
+      "L": {
+        "all_after_1s": {
+          "samples": 14,
+          "mean_target": -87.99285714285715,
+          "mean_actual": -86.85714285714286,
+          "mean_error": 1.1357142857142892,
+          "rms_error": 1.2646286863288059
+        },
+        "late_after_5s": {
+          "samples": 6,
+          "mean_target": -88.05,
+          "mean_actual": -87.21666666666667,
+          "mean_error": 0.833333333333338,
+          "rms_error": 1.045625809423878
+        }
+      },
+      "R": {
+        "all_after_1s": {
+          "samples": 14,
+          "mean_target": -88.37142857142857,
+          "mean_actual": -86.75,
+          "mean_error": 1.6214285714285697,
+          "rms_error": 2.044330138281413
+        },
+        "late_after_5s": {
+          "samples": 6,
+          "mean_target": -88.35,
+          "mean_actual": -87.2,
+          "mean_error": 1.1499999999999986,
+          "rms_error": 1.290348790056392
+        }
+      }
+    }
+  }
+]

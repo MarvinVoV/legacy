@@ -1,0 +1,22 @@
+{
+  "branch": "codex/straight-path-tracking",
+  "physical_setup": "fixed supported chassis, BOTH drive wheels suspended",
+  "firmware_sha256": "564e662da837115af84b038b4b24dcbeee007fdcf5efb6232f4fcf0017753c0d",
+  "CMCAR_IMU_MAG_DIAGNOSTICS": true,
+  "CMCAR_STRAIGHT_PATH_CONTROL": false,
+  "CMCAR_STRAIGHT_FORWARD_TRIM_US": 6,
+  "CMCAR_STRAIGHT_REVERSE_TRIM_US": 14,
+  "CMCAR_SONAR_ENABLED": true,
+  "sonar_physical_installation": false,
+  "motor_pid": {
+    "kp": 0.5,
+    "ki": 0.6,
+    "kd": 0.03,
+    "integral_threshold": 0.0001,
+    "dead_zone": 0.002
+  },
+  "mechanical_neutral_us": 1530,
+  "ground_lateral_accuracy_accepted": false,
+  "push": false,
+  "main_merged": false
+}

@@ -1,0 +1,100 @@
+[0/1] Re-running CMake...
+-- Minimal optimization, debug info included
+-- Configuring done (0.1s)
+-- Generating done (0.0s)
+-- Build files have been written to: /Users/sunyameng/github/legacy/CodeMyCar/stm32_project/build/MagDiagnostics
+[1/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/Modules/IMU/ThirdParty/sh2_util.c.obj
+[2/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/Modules/IMU/ThirdParty/shtp.c.obj
+[3/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/Modules/IMU/ThirdParty/sh2_SensorValue.c.obj
+[4/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/Modules/IMU/ThirdParty/sh2.c.obj
+[5/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/Modules/IMU/Src/sh2_hal_stm32.c.obj
+[6/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/Modules/Buzzer/Src/buzzer.c.obj
+[7/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/Modules/Log/Src/log_manager.c.obj
+[8/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/Modules/Motor/Src/motor_driver.c.obj
+[9/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/Modules/Servo/Src/servo_driver.c.obj
+[10/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/Modules/Motor/Src/motor_hal.c.obj
+[11/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/Services/Ctrl/Src/queue_manager.c.obj
+[12/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/Modules/Servo/Src/servo_hal.c.obj
+[13/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/Modules/UART/Src/uart_handle.c.obj
+[14/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/Modules/Ultrasonic/Src/ultrasonic.c.obj
+[15/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/Services/Safety/Src/safety_service.c.obj
+[16/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/Services/Ctrl/Src/cmd_process.c.obj
+[17/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/Services/Ctrl/Src/heading_control.c.obj
+[18/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/Services/Motor/Src/pid_controller.c.obj
+[19/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/Services/IMU/Src/imu_service.c.obj
+[20/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/System/Protocol/Src/motion_status.c.obj
+[21/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/System/Init/Src/system_init.c.obj
+[22/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/System/Init/Src/sonar_hw.c.obj
+[23/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/Services/Servo/Src/servo_service.c.obj
+[24/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/System/Protocol/Src/pkt_protocol_buf.c.obj
+[25/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/System/Protocol/Src/sensor_protocol.c.obj
+[26/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/System/Protocol/Src/pkt_protocol.c.obj
+[27/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/System/Utils/Src/control_lease.c.obj
+[28/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/System/Utils/Src/encoder_fault_monitor.c.obj
+[29/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/Services/Motor/Src/motor_service.c.obj
+[30/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/System/Protocol/Src/ctrl_protocol.c.obj
+[31/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/System/Utils/Src/motion_kinematics.c.obj
+[32/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/System/Utils/Src/motion_goal.c.obj
+[33/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/Services/Ctrl/Src/motion_service.c.obj
+[34/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/System/Utils/Src/seq_dedup.c.obj
+[35/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/System/Utils/Src/straight_path.c.obj
+[36/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/System/Utils/Src/task_health.c.obj
+[37/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/System/Utils/Src/task_timing.c.obj
+[38/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/System/Utils/Src/steering_lut.c.obj
+[39/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/System/Utils/Src/error_code.c.obj
+[40/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/System/Utils/Src/safety_supervisor.c.obj
+[41/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/Tasks/ServoTask/Src/servo_task.c.obj
+[42/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/Tasks/MotionTask/Src/motion_task.c.obj
+[43/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/Tasks/CtrlTask/Src/ctrl_task.c.obj
+[44/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/Tasks/ImuTask/Src/imu_task.c.obj
+[45/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/Tasks/LogTask/Src/log_task.c.obj
+[46/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/Tasks/MotorTask/Src/motor_task.c.obj
+[47/89] Building C object CMakeFiles/stm32_project.elf.dir/Core/Src/syscalls.c.obj
+[48/89] Building C object CMakeFiles/stm32_project.elf.dir/Core/Src/sysmem.c.obj
+[49/89] Building ASM object CMakeFiles/stm32_project.elf.dir/Core/Startup/startup_stm32h723zgtx.s.obj
+[50/89] Building C object CMakeFiles/stm32_project.elf.dir/Core/Src/freertos.c.obj
+[51/89] Building C object CMakeFiles/stm32_project.elf.dir/Core/Src/stm32h7xx_hal_msp.c.obj
+[52/89] Building C object CMakeFiles/stm32_project.elf.dir/Core/Src/stm32h7xx_it.c.obj
+[53/89] Building C object CMakeFiles/stm32_project.elf.dir/Core/Src/stm32h7xx_hal_timebase_tim.c.obj
+[54/89] Building C object CMakeFiles/stm32_project.elf.dir/Application/Tasks/SonarTask/Src/sonar_task.c.obj
+[55/89] Building C object CMakeFiles/stm32_project.elf.dir/Core/Src/system_stm32h7xx.c.obj
+[56/89] Building C object CMakeFiles/stm32_project.elf.dir/Core/Src/main.c.obj
+[57/89] Building C object CMakeFiles/stm32_project.elf.dir/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal.c.obj
+[58/89] Building C object CMakeFiles/stm32_project.elf.dir/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_cortex.c.obj
+[59/89] Building C object CMakeFiles/stm32_project.elf.dir/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dma_ex.c.obj
+[60/89] Building C object CMakeFiles/stm32_project.elf.dir/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_exti.c.obj
+[61/89] Building C object CMakeFiles/stm32_project.elf.dir/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_flash.c.obj
+[62/89] Building C object CMakeFiles/stm32_project.elf.dir/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_flash_ex.c.obj
+[63/89] Building C object CMakeFiles/stm32_project.elf.dir/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_hsem.c.obj
+[64/89] Building C object CMakeFiles/stm32_project.elf.dir/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_gpio.c.obj
+[65/89] Building C object CMakeFiles/stm32_project.elf.dir/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_dma.c.obj
+[66/89] Building C object CMakeFiles/stm32_project.elf.dir/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_pwr.c.obj
+[67/89] Building C object CMakeFiles/stm32_project.elf.dir/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_i2c_ex.c.obj
+[68/89] Building C object CMakeFiles/stm32_project.elf.dir/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_mdma.c.obj
+[69/89] Building C object CMakeFiles/stm32_project.elf.dir/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rcc.c.obj
+[70/89] Building C object CMakeFiles/stm32_project.elf.dir/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_pwr_ex.c.obj
+[71/89] Building C object CMakeFiles/stm32_project.elf.dir/Middlewares/Third_Party/FreeRTOS/Source/croutine.c.obj
+[72/89] Building C object CMakeFiles/stm32_project.elf.dir/Middlewares/Third_Party/FreeRTOS/Source/event_groups.c.obj
+[73/89] Building C object CMakeFiles/stm32_project.elf.dir/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_uart_ex.c.obj
+[74/89] Building C object CMakeFiles/stm32_project.elf.dir/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_rcc_ex.c.obj
+[75/89] Building C object CMakeFiles/stm32_project.elf.dir/Middlewares/Third_Party/FreeRTOS/Source/list.c.obj
+[76/89] Building C object CMakeFiles/stm32_project.elf.dir/Middlewares/Third_Party/FreeRTOS/Source/portable/Common/mpu_wrappers_v2.c.obj
+[77/89] Building C object CMakeFiles/stm32_project.elf.dir/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F/port.c.obj
+[78/89] Building C object CMakeFiles/stm32_project.elf.dir/Middlewares/Third_Party/FreeRTOS/Source/portable/MemMang/heap_4.c.obj
+[79/89] Building C object CMakeFiles/stm32_project.elf.dir/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_tim_ex.c.obj
+[80/89] Building C object CMakeFiles/stm32_project.elf.dir/Middlewares/Third_Party/FreeRTOS/Source/stream_buffer.c.obj
+[81/89] Building C object CMakeFiles/stm32_project.elf.dir/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_i2c.c.obj
+[82/89] Building C object CMakeFiles/stm32_project.elf.dir/Middlewares/Third_Party/FreeRTOS/Source/queue.c.obj
+[83/89] Building C object CMakeFiles/stm32_project.elf.dir/Middlewares/Third_Party/FreeRTOS/Source/timers.c.obj
+[84/89] Building C object CMakeFiles/stm32_project.elf.dir/Middlewares/Third_Party/FreeRTOS/Source/tasks.c.obj
+[85/89] Building C object CMakeFiles/stm32_project.elf.dir/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os2.c.obj
+[86/89] Building C object CMakeFiles/stm32_project.elf.dir/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_uart.c.obj
+[87/89] Building C object CMakeFiles/stm32_project.elf.dir/Drivers/STM32H7xx_HAL_Driver/Src/stm32h7xx_hal_tim.c.obj
+[88/89] Linking C executable stm32_project.elf; Building /Users/sunyameng/github/legacy/CodeMyCar/stm32_project/build/MagDiagnostics/stm32_project.hex / Building /Users/sunyameng/github/legacy/CodeMyCar/stm32_project/build/MagDiagnostics/stm32_project.bin
+Memory region         Used Size  Region Size  %age Used
+         DTCMRAM:       56280 B       128 KB     42.94%
+          RAM_D1:        1472 B       320 KB      0.45%
+          RAM_D2:           0 B        32 KB      0.00%
+          RAM_D3:           0 B        16 KB      0.00%
+         ITCMRAM:           0 B        64 KB      0.00%
+           FLASH:      110044 B         1 MB     10.49%

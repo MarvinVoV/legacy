@@ -1,3 +1,4 @@
+#include "motor_pid_defaults.h"
 /*
  * system_init.c
  *
@@ -118,14 +119,7 @@ static int init_motor_service(void)
 
     // 左轮PID参数
     leftPidControllerInstance = (PID_Controller){
-        .params = {
-            .kp = 0.50f,                  // 提高比例增益（增强启动能力）
-            .ki = 0.60f,                   // 提高积分增益（加速误差消除）
-            .kd = 0.03f,                  // 降低微分增益（减少噪声影响）
-            .output_max = 1.0f,           // 输出限幅（100%占空比）
-            .integral_threshold = 0.005f, // 误差阈值
-            .dead_zone = 0.002f
-        },
+        .params = MOTOR_PID_DEFAULT_PARAMS,
         .state = {
             .first_run = true,
             .prev_error = 0.0f,
@@ -138,14 +132,7 @@ static int init_motor_service(void)
 
     // 右轮PID参数
     rightPidControllerInstance = (PID_Controller){
-        .params = {
-            .kp = 0.50f,                  // 提高比例增益（增强启动能力）
-            .ki = 0.60f,                   // 提高积分增益（加速误差消除）
-            .kd = 0.03f,                  // 降低微分增益（减少噪声影响）
-            .output_max = 1.0f,           // 输出限幅（100%占空比）
-            .integral_threshold = 0.005f, // 误差阈值
-            .dead_zone = 0.002f
-        },
+        .params = MOTOR_PID_DEFAULT_PARAMS,
         .state = {
             .first_run = true,
             .prev_error = 0.0f,

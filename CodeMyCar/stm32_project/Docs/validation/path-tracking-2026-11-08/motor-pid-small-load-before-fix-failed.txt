@@ -1,0 +1,2 @@
+target=-30.0 RPM load=-0.27 RPM tail mean=-0.2700 RPM rms=0.2700 RPM
+Assertion failed: (fabs(mean / 1000) < .00025), function run, file motor_pid_tracking_test.c, line 31.

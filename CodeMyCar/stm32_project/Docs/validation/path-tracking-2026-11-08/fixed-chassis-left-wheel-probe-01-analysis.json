@@ -1,0 +1,28 @@
+{
+  "summary_error": null,
+  "imu_yaw_range_deg": [
+    -26.59,
+    -26.59
+  ],
+  "mean_yaw_rate_dps": 0.0022448979591836735,
+  "motor_logs": [
+    "MOT_L tgt=30.0 act=0.0 duty=0.01 pulses=23 ",
+    "MOT_L tgt=30.0 act=31.5 duty=0.13 pulses=342 ",
+    "MOT_L tgt=30.0 act=32.0 duty=0.12 pulses=755 ",
+    "MOT_L tgt=30.0 act=32.0 duty=0.12 pulses=1171 ",
+    "MOT_L tgt=30.0 act=32.0 duty=0.12 pulses=1585 ",
+    "MOT_L tgt=30.0 act=31.7 duty=0.12 pulses=1997 ",
+    "MOT_L tgt=30.0 act=30.9 duty=0.12 pulses=2404 ",
+    "MOT_L tgt=30.0 act=30.9 duty=0.12 pulses=2811 ",
+    "MOT_L tgt=30.0 act=31.3 duty=0.12 pulses=3216 ",
+    "MOT_L tgt=30.0 act=31.5 duty=0.11 pulses=3619 "
+  ],
+  "stop": {
+    "ok": true,
+    "stopped": true,
+    "accepted": true,
+    "confirmed": true,
+    "seq": 31
+  },
+  "limits": "fixed chassis reported by user; yaw range is IMU output, not independently measured frame motion; encoder pose during suspended single-wheel rotation is not physical vehicle motion"
+}

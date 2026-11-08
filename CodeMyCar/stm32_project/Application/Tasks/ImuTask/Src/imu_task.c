@@ -181,6 +181,24 @@ static void ImuTask_doTask(void* pvParameters)
                          (long)svc->grvRxAgeUs, (long)svc->gyroRxAgeUs,
                          (long)(int32_t)(svc->grvSampleUs-svc->gyroSampleUs),
                          (long)svc->grvMaxRxAgeUs, (long)svc->gyroMaxRxAgeUs);
+#if CMCAR_IMU_MAG_DIAGNOSTICS
+                const uint32_t halNow = HAL_GetTick();
+                const float rv = svc->diagRvValid ? svc->diagRvYawDeg : NAN;
+                const float field = svc->diagMagValid
+                    ? sqrtf(svc->diagMagX*svc->diagMagX+svc->diagMagY*svc->diagMagY+svc->diagMagZ*svc->diagMagZ)
+                    : NAN;
+                LOG_INFO(LOG_MODULE_SENSOR,
+                         "IMU_MAG en=%d rv=%.2f diff=%.2f acc=%.2f st=%u age=%lu cal=%d cfg=%d/%d",
+                         (int)svc->magDiagnosticsEnabled, rv, remainderf(rv-svc->yawDeg,360.0f),
+                         svc->diagRvAccuracyDeg, (unsigned)svc->diagRvStatus,
+                         (unsigned long)(halNow-svc->diagRvMs),
+                         svc->diagCalReadOk ? (int)svc->diagCalMask : -1,
+                         svc->diagRvConfigRc, svc->diagMagConfigRc);
+                LOG_INFO(LOG_MODULE_SENSOR,
+                         "IMU_FIELD x=%.2f y=%.2f z=%.2f norm=%.2f st=%u age=%lu",
+                         svc->diagMagX, svc->diagMagY, svc->diagMagZ, field,
+                         (unsigned)svc->diagMagStatus, (unsigned long)(halNow-svc->diagMagMs));
+#endif
             }
             send_heading_frame(svc); /* 10 Hz 上报航向 */
             send_imu_frame(svc);     /* 10 Hz 上报六轴原始数据 */

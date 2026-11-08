@@ -1,0 +1,166 @@
+[
+  {
+    "capture": "path-rpm-forward-200cm-speed30",
+    "seq": 201,
+    "distance_cm": 199.5,
+    "window_received_s": [
+      1794121006.379421,
+      1794121011.382418
+    ],
+    "wheels": {
+      "L": {
+        "samples": 10,
+        "mean_target_rpm": 87.65,
+        "mean_actual_rpm": 89.24,
+        "mean_actual_minus_target_rpm": 1.5899999999999992,
+        "rms_tracking_error_rpm": 1.6967616214424468,
+        "minmax_error_rpm": [
+          0.5999999999999943,
+          2.700000000000003
+        ],
+        "mean_duty": 0.28600000000000003,
+        "pulse_count_average_rpm": 89.29914529914531,
+        "sampled_target_trapezoid_average_rpm": 87.68333333333334,
+        "pulse_average_minus_sampled_target_rpm": 1.6158119658119716
+      },
+      "R": {
+        "samples": 10,
+        "mean_target_rpm": 88.64999999999999,
+        "mean_actual_rpm": 88.87,
+        "mean_actual_minus_target_rpm": 0.2200000000000017,
+        "rms_tracking_error_rpm": 0.5099019513592804,
+        "minmax_error_rpm": [
+          -0.7000000000000028,
+          0.9000000000000057
+        ],
+        "mean_duty": 0.28,
+        "pulse_count_average_rpm": 88.86324786324786,
+        "sampled_target_trapezoid_average_rpm": 88.61666666666666,
+        "pulse_average_minus_sampled_target_rpm": 0.2465811965812037
+      }
+    }
+  },
+  {
+    "capture": "path-off-control-reverse-200cm-speed30",
+    "seq": 228,
+    "distance_cm": -199.5,
+    "window_received_s": [
+      1794122099.784673,
+      1794122104.915736
+    ],
+    "wheels": {
+      "L": {
+        "samples": 11,
+        "mean_target_rpm": -87.35454545454546,
+        "mean_actual_rpm": -86.77272727272727,
+        "mean_actual_minus_target_rpm": 0.5818181818181837,
+        "rms_tracking_error_rpm": 1.1939240115914214,
+        "minmax_error_rpm": [
+          -0.5999999999999943,
+          2.6000000000000085
+        ],
+        "mean_duty": -0.28454545454545455,
+        "pulse_count_average_rpm": -86.92307692307692,
+        "sampled_target_trapezoid_average_rpm": -87.37,
+        "pulse_average_minus_sampled_target_rpm": 0.44692307692308475
+      },
+      "R": {
+        "samples": 11,
+        "mean_target_rpm": -88.93636363636364,
+        "mean_actual_rpm": -86.82727272727273,
+        "mean_actual_minus_target_rpm": 2.1090909090909054,
+        "rms_tracking_error_rpm": 2.2914862187910003,
+        "minmax_error_rpm": [
+          0.19999999999998863,
+          3.5999999999999943
+        ],
+        "mean_duty": -0.2745454545454546,
+        "pulse_count_average_rpm": -86.87692307692308,
+        "sampled_target_trapezoid_average_rpm": -88.91999999999999,
+        "pulse_average_minus_sampled_target_rpm": 2.04307692307691
+      }
+    }
+  },
+  {
+    "capture": "dynamic-neutral-roundtrip-200cm-speed10",
+    "seq": 8,
+    "distance_cm": 199.5,
+    "window_received_s": [
+      1794124353.043853,
+      1794124370.959517
+    ],
+    "wheels": {
+      "L": {
+        "samples": 36,
+        "mean_target_rpm": 29.27777777777778,
+        "mean_actual_rpm": 29.81388888888889,
+        "mean_actual_minus_target_rpm": 0.5361111111111112,
+        "rms_tracking_error_rpm": 0.9145429945545969,
+        "minmax_error_rpm": [
+          -1.1000000000000014,
+          2.3000000000000007
+        ],
+        "mean_duty": 0.12055555555555555,
+        "pulse_count_average_rpm": 29.760439560439565,
+        "sampled_target_trapezoid_average_rpm": 29.27857142857143,
+        "pulse_average_minus_sampled_target_rpm": 0.4818681318681364
+      },
+      "R": {
+        "samples": 36,
+        "mean_target_rpm": 29.48888888888889,
+        "mean_actual_rpm": 29.555555555555557,
+        "mean_actual_minus_target_rpm": 0.06666666666666693,
+        "rms_tracking_error_rpm": 0.5088112507491251,
+        "minmax_error_rpm": [
+          -0.8000000000000007,
+          1.1999999999999993
+        ],
+        "mean_duty": 0.10777777777777778,
+        "pulse_count_average_rpm": 29.597802197802196,
+        "sampled_target_trapezoid_average_rpm": 29.487142857142857,
+        "pulse_average_minus_sampled_target_rpm": 0.11065934065933902
+      }
+    }
+  },
+  {
+    "capture": "dynamic-neutral-roundtrip-200cm-speed10",
+    "seq": 10,
+    "distance_cm": -199.5,
+    "window_received_s": [
+      1794124375.214572,
+      1794124393.4100108
+    ],
+    "wheels": {
+      "L": {
+        "samples": 37,
+        "mean_target_rpm": -29.2972972972973,
+        "mean_actual_rpm": -29.191891891891892,
+        "mean_actual_minus_target_rpm": 0.10540540540540469,
+        "rms_tracking_error_rpm": 1.012222601305955,
+        "minmax_error_rpm": [
+          -1.5,
+          3.3000000000000007
+        ],
+        "mean_duty": -0.12864864864864864,
+        "pulse_count_average_rpm": -29.264957264957268,
+        "sampled_target_trapezoid_average_rpm": -29.29861111111111,
+        "pulse_average_minus_sampled_target_rpm": 0.03365384615384315
+      },
+      "R": {
+        "samples": 37,
+        "mean_target_rpm": -29.483783783783785,
+        "mean_actual_rpm": -29.048648648648648,
+        "mean_actual_minus_target_rpm": 0.4351351351351351,
+        "rms_tracking_error_rpm": 0.9499644374567047,
+        "minmax_error_rpm": [
+          -0.6999999999999993,
+          3.6000000000000014
+        ],
+        "mean_duty": -0.1,
+        "pulse_count_average_rpm": -29.085470085470085,
+        "sampled_target_trapezoid_average_rpm": -29.48194444444444,
+        "pulse_average_minus_sampled_target_rpm": 0.39647435897435557
+      }
+    }
+  }
+]

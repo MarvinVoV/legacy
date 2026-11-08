@@ -1,0 +1,100 @@
+{
+  "reason": "user_done_plus_10s",
+  "mag_samples": 140,
+  "rv_status_counts": {
+    "0": 140
+  },
+  "field_status_counts": {
+    "1": 136,
+    "0": 4
+  },
+  "reported_accuracy_range_deg": [
+    94.25,
+    107.05
+  ],
+  "field_norm_range_uT": [
+    13.56,
+    99.95
+  ],
+  "gravity_face_samples_from_10hz_raw": {
+    "Z+": 1178,
+    "Y-": 36,
+    "Y+": 28,
+    "X+": 45,
+    "X-": 26
+  },
+  "post_user_done_mag": [
+    {
+      "en": "1",
+      "rv": "92.47",
+      "diff": "93.63",
+      "acc": "106.72",
+      "st": "0",
+      "age": "14",
+      "cal": "5",
+      "cfg": "0/0",
+      "t": 1794125512.905478
+    },
+    {
+      "en": "1",
+      "rv": "92.47",
+      "diff": "93.63",
+      "acc": "106.80",
+      "st": "0",
+      "age": "32",
+      "cal": "5",
+      "cfg": "0/0",
+      "t": 1794125513.896371
+    },
+    {
+      "en": "1",
+      "rv": "92.47",
+      "diff": "93.64",
+      "acc": "106.88",
+      "st": "0",
+      "age": "16",
+      "cal": "5",
+      "cfg": "0/0",
+      "t": 1794125515.094898
+    },
+    {
+      "en": "1",
+      "rv": "92.47",
+      "diff": "93.63",
+      "acc": "106.97",
+      "st": "0",
+      "age": "35",
+      "cal": "5",
+      "cfg": "0/0",
+      "t": 1794125516.016104
+    },
+    {
+      "en": "1",
+      "rv": "92.46",
+      "diff": "93.63",
+      "acc": "107.05",
+      "st": "0",
+      "age": "34",
+      "cal": "5",
+      "cfg": "0/0",
+      "t": 1794125517.08829
+    }
+  ],
+  "last_field": {
+    "x": "22.81",
+    "y": "6.44",
+    "z": "-42.44",
+    "norm": "48.61",
+    "st": "1",
+    "age": "14",
+    "t": 1794125517.169763
+  },
+  "stop": {
+    "ok": true,
+    "stopped": true,
+    "accepted": true,
+    "confirmed": true,
+    "seq": 18
+  },
+  "limits": "sensor-reported accuracy/status, not independently measured error; face buckets only indicate orientation coverage, not official calibration success"
+}

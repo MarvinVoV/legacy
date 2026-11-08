@@ -1,0 +1,104 @@
+{
+  "phases": [
+    {
+      "speed_mm_s": 100,
+      "before": {
+        "ok": true,
+        "online": true,
+        "stm32_connected": true,
+        "motion_supported": true,
+        "motion": {
+          "state": "idle",
+          "seq": 53,
+          "age_ms": 638,
+          "stale": false
+        },
+        "pose": {
+          "x_cm": 12.4,
+          "y_cm": 5.4,
+          "heading_deg": 6.77,
+          "odometer_cm": 15.2
+        },
+        "velocity": {
+          "linear_cm_s": 0.0,
+          "angular_deg_s": 0.0
+        }
+      },
+      "before_status": {
+        "success": true,
+        "message": "ok",
+        "data": {
+          "device_id": "DEV_1",
+          "online": true,
+          "last_heartbeat_age": 7.8,
+          "uptime_s": 15295,
+          "heap_free": 279876,
+          "stm32_connected": true,
+          "front_distance_cm": null,
+          "rear_distance_cm": null,
+          "sensor_age_s": null,
+          "yaw_deg": 0.0,
+          "yaw_rate_dps": 0.0,
+          "imu_status": 3,
+          "imu_age_s": 0.3,
+          "accel_mps2": [
+            -0.21,
+            -0.019,
+            9.832
+          ],
+          "gyro_radps": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "imu_raw_age_s": 0.1
+        }
+      },
+      "start_t": 1794129254.9769,
+      "stop": {
+        "ok": true,
+        "stopped": true,
+        "accepted": true,
+        "confirmed": true,
+        "seq": 54
+      }
+    }
+  ],
+  "pre_stop": {
+    "ok": true,
+    "stopped": true,
+    "accepted": true,
+    "confirmed": true,
+    "seq": 53
+  },
+  "error": "<HTTPError 422: 'Unprocessable Entity'>",
+  "stop": {
+    "ok": true,
+    "stopped": true,
+    "accepted": true,
+    "confirmed": true,
+    "seq": 55
+  },
+  "after": {
+    "ok": true,
+    "online": true,
+    "stm32_connected": true,
+    "motion_supported": true,
+    "motion": {
+      "state": "idle",
+      "seq": 55,
+      "age_ms": 33,
+      "stale": false
+    },
+    "pose": {
+      "x_cm": 12.4,
+      "y_cm": 5.4,
+      "heading_deg": 6.77,
+      "odometer_cm": 15.2
+    },
+    "velocity": {
+      "linear_cm_s": 0.0,
+      "angular_deg_s": 0.0
+    }
+  }
+}

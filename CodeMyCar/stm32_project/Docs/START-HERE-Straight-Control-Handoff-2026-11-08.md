@@ -1,10 +1,10 @@
 # START HERE：直行优化接手说明（2026-11-08）
 
-**最新开发进度**：分支codex/straight-path-tracking已修立即回中死区缺陷，新增IMU时序诊断及默认0/0的有界舵机前馈。车上为6/14us候选（不是源码默认），2m低速往返后前进基本直、倒车终点仍右偏大于约16–17mm，尚未验收；不要启用PATH回线或把内部位置估计当真值。当前镜像/停车与证据见下方阶段报告最新记录，未合并main、未push。
+**最新现场优先读本段**：codex/straight-path-tracking，车架已支稳、两驱动轮悬空。逻辑LEFT已由用户确认是实际左后轮。已修IMU Euler yaw-rate坐标一致性及RESET即时失效，正反向短弧通过；磁参考多姿态标定后仍不可信，未接入控制。速度环积分盲区模型已复现，但多轮悬空硬件A/B无稳定整体改善，细积分改为默认OFF实验（生产仍0.005）。车上最终SHA256 `a5b38bb6656c740a441e34e09688a424ef72bc4d961ff46572c7642be3861cce`：细积分OFF、PATH OFF、磁诊断ON、trim6/14us；普通构建磁诊断OFF、trim0/0。STOP71确认、PWM1530/0/0、IMU status3、双板在线。实际倒车右偏大于约16–17mm尚未解决；19组host共23次执行及四种构建通过。未合并main、未push。不要按下方历史“地面就绪”执行落地脚本。最新完整证据见阶段报告末尾。
 
 ## 后续开发阶段入口（优先于下方历史现场状态）
 
-当前后续开发在`codex/straight-path-tracking`，最新代码提交`d4a6046`，尚未合并main，未push。已移除右轮隐藏2.3%闭环RPM目标偏置，新增默认关闭的局部路径反馈/影子估计，详见[Straight-Path-Tracking-And-RPM-Contract-Validation-2026-11-08.md](Straight-Path-Tracking-And-RPM-Contract-Validation-2026-11-08.md)。**车上镜像及最后停车状态以该文档最新追加记录为准**；下文main/v7及seq191属于上一阶段归档，不能直接用作当前状态。
+当前后续开发在`codex/straight-path-tracking`，阶段基线提交`d4a6046`（后续提交与当前工作区以git log/status为准），尚未合并main，未push。已移除右轮隐藏2.3%闭环RPM目标偏置，新增默认关闭的局部路径反馈/影子估计，详见[Straight-Path-Tracking-And-RPM-Contract-Validation-2026-11-08.md](Straight-Path-Tracking-And-RPM-Contract-Validation-2026-11-08.md)。**车上镜像及最后停车状态以该文档最新追加记录为准**；下文main/v7及seq191属于上一阶段归档，不能直接用作当前状态。
 
 ## 上一阶段main版本记录
 

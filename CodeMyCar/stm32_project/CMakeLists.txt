@@ -104,6 +104,9 @@ foreach(direction FORWARD REVERSE)
     target_compile_definitions(${PROJECT_NAME}.elf PRIVATE
         STEERING_STRAIGHT_${direction}_TRIM_US=${trim_value})
 endforeach()
+option(CMCAR_IMU_MAG_DIAGNOSTICS "Log magnetic RV/field cross-check, never a control source" OFF)
+target_compile_definitions(${PROJECT_NAME}.elf PRIVATE
+        CMCAR_IMU_MAG_DIAGNOSTICS=$<BOOL:${CMCAR_IMU_MAG_DIAGNOSTICS}>)
 option(CMCAR_DIFFERENTIAL_DIAGNOSTICS "Allow differential yaw on a suspended diagnostic chassis" OFF)
 target_compile_definitions(${PROJECT_NAME}.elf PRIVATE
         CMCAR_DIFFERENTIAL_DIAGNOSTICS=$<BOOL:${CMCAR_DIFFERENTIAL_DIAGNOSTICS}>)
@@ -121,3 +124,8 @@ add_custom_command(TARGET ${PROJECT_NAME}.elf POST_BUILD
         COMMAND ${CMAKE_OBJCOPY} -Obinary $<TARGET_FILE:${PROJECT_NAME}.elf> ${BIN_FILE}
         COMMENT "Building ${HEX_FILE}
 Building ${BIN_FILE}")
+
+# Bench A/B has not established a repeatable improvement; keep opt-in only.
+option(CMCAR_MOTOR_PID_FINE_INTEGRATION "Experimental small-error motor PID integration" OFF)
+target_compile_definitions(${PROJECT_NAME}.elf PRIVATE
+        CMCAR_MOTOR_PID_FINE_INTEGRATION=$<BOOL:${CMCAR_MOTOR_PID_FINE_INTEGRATION}>)

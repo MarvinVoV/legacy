@@ -1,0 +1,9 @@
+[1/2] Building C object CMakeFiles/stm32_project.elf.dir/Application/System/Init/Src/system_init.c.obj
+[2/2] Linking C executable stm32_project.elf; Building /Users/sunyameng/github/legacy/CodeMyCar/stm32_project/build/MagDiagnostics/stm32_project.hex / Building /Users/sunyameng/github/legacy/CodeMyCar/stm32_project/build/MagDiagnostics/stm32_project.bin
+Memory region         Used Size  Region Size  %age Used
+         DTCMRAM:       56280 B       128 KB     42.94%
+          RAM_D1:        1472 B       320 KB      0.45%
+          RAM_D2:           0 B        32 KB      0.00%
+          RAM_D3:           0 B        16 KB      0.00%
+         ITCMRAM:           0 B        64 KB      0.00%
+           FLASH:      110044 B         1 MB     10.49%

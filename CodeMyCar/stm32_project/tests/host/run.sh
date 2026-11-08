@@ -118,12 +118,14 @@ echo "== motor inhibit =="
 "${TMPDIR:-/tmp}/motor_inhibit_test"
 
 echo "== imu service =="
-"$CC" -std=c11 -Wall -Wextra -O2 \
+for MAG_DIAGNOSTICS in 0 1; do
+"$CC" -DCMCAR_IMU_MAG_DIAGNOSTICS="$MAG_DIAGNOSTICS" -std=c11 -Wall -Wextra -O2 \
   -I "$DIR/tests/host/stubs" -I "$DIR/Application/Services/IMU/Inc" \
   -I "$DIR/Application/Modules/IMU/ThirdParty" -I "$DIR/Application/System/Utils/Inc" \
   "$DIR/tests/host/imu_service_test.c" "$DIR/Application/Services/IMU/Src/imu_service.c" \
   -lm -o "${TMPDIR:-/tmp}/imu_service_test"
 "${TMPDIR:-/tmp}/imu_service_test"
+done
 
 echo "== motion transaction =="
 for CONFIG in baseline path_experiment trim_experiment; do
@@ -183,3 +185,13 @@ echo "== steering full PWM pipeline =="
   "$DIR/Application/System/Utils/Src/steering_lut.c" \
   -lm -o "${TMPDIR:-/tmp}/steering_pipeline_test"
 "${TMPDIR:-/tmp}/steering_pipeline_test"
+
+echo "== motor PID small-load tracking =="
+for FINE_INTEGRATION in 0 1; do
+"$CC" -DCMCAR_MOTOR_PID_FINE_INTEGRATION="$FINE_INTEGRATION" -std=c11 -Wall -Wextra -O2 \
+  -I "$DIR/tests/host/stubs" -I "$DIR/Application/Services/Motor/Inc" \
+  "$DIR/tests/host/motor_pid_tracking_test.c" \
+  "$DIR/Application/Services/Motor/Src/pid_controller.c" \
+  -lm -o "${TMPDIR:-/tmp}/motor_pid_tracking_test"
+"${TMPDIR:-/tmp}/motor_pid_tracking_test"
+done
