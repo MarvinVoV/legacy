@@ -328,3 +328,6 @@ cython_debug/
 
 *.log
 logs/
+
+# 本地语音密钥（百度等；禁止提交）
+voice.local.env

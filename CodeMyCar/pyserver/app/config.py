@@ -8,7 +8,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="CMCAR_",
-        env_file=".env",
+        env_file=(".env", "voice.local.env"),
         env_file_encoding="utf-8",
     )
 

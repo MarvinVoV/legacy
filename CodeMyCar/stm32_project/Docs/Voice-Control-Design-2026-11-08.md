@@ -223,8 +223,9 @@ Content-Type: application/json
 
 ### 7.4 密钥管理
 
-- 只放 `pyserver/.env`（已被 `.gitignore`）或环境变量：
+- 只放 `pyserver/voice.local.env`（已被 `.gitignore`）或环境变量：
   `CMCAR_BAIDU_SPEECH_API_KEY`、`CMCAR_BAIDU_SPEECH_SECRET_KEY`、`CMCAR_BAIDU_SPEECH_APP_ID`；
+- `app/config.py` 依次加载 `.env` 和 `voice.local.env`，后者用于本地语音密钥；
 - 不写入代码、文档、日志、测试夹具；
 - 百度控制台如泄露密钥，应及时重置。
 
