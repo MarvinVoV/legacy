@@ -1,5 +1,7 @@
 # START HERE：直行优化接手说明（2026-11-08）
 
+**最终收尾入口（优先于下方全部历史状态）**：用户已授权将当前阶段基线合并 main、停留 main，暂不 push。请先读 [Main 控制基线交接](HANDOFF-Main-Control-Baseline-2026-11-08.md)，再核对 git 实际状态。代码基线 `266bf63`，最新三轮右偏约 4–5、5–6、8mm，横向精度仍未通过；功能性停车修复已验证。最后已确认 STOP195，本组结束。下文“未合并/禁止合并”是此前授权前的历史现场状态，不代表本次最终收尾决定；不覆盖原有测试限制。
+
 **最新现场优先读本段**：本组已停测，STOP195双轮零速；当前固件SHA256 `4b821fb4c0620b4ff49cf3f05ee5934cb1d6efb62ede9a52a7b10c5d05d83b47`（编译前重新configure，ef5b5342326b/dirty1；trim0/0、细积分OFF、PATH OFF、磁诊断ON）。正常GOAL新增制动停稳/回中等待/最终测量完成门禁：24次host、三构建及3轮实机验证，首DONE均双轮0，旧版首DONE仍报告74–83mm/s，收尾计量也已修正。标点基线右偏约7、7、7–8mm，新版约4–5、5–6、8mm，横向误差未稳定消除，不准宣称全解决。先前9cm/7cm已撤销，参考/单位必须看reference.json。阅读[最新集中报告](Normal-GOAL-Parking-Completion-Fix-Validation-2026-11-08.md)，避免按旧镜像或旧现场状态继续。源码codex/straight-path-tracking，未merge main、未push；任何新运动需重新确认空间/线缆。
 
 **新增测量基准审计，后续 agent 必须先读**：[Straight-Drive-Measurement-Reference-Audit-2026-11-08.md](Straight-Drive-Measurement-Reference-Audit-2026-11-08.md)。用户提出瓷砖不直，独立基准确实未验证。历史相对瓷砖的毫米/厘米观察不能当成已证实的真实轨迹误差；也不能反过来认定是瓷砖问题。先做同一车架点对起点固定标记的闭合验证，再继续标定，避免按未验证参照反复调参。此轮只读核查数据，没有新运动或代码改动，STOP151记录不变。
