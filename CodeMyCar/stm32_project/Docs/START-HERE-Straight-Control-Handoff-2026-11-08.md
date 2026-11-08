@@ -1,5 +1,7 @@
 # START HERE：直行优化接手说明（2026-11-08）
 
+**1546µs最终合并收尾**：用户已授权把代码`6e91aea`及两轮验证记录`7be85f8`/`ccbd2d4`合并main并push；最新基线中位为1546µs。本段取代下方历史“候选未合并/main仍1530”的状态说明，完成状态以git核对。两轮10cm/s、1m往返均观察返回右偏约1–2mm，未扩大精度承诺，最后STOP12；详见[中位标定交接](Steering-Neutral-1546-Calibration-Handoff-2026-11-08.md)。
+
 **第二轮重复验证**：1546µs版本不改参数、不重启完成第二轮1m往返，最终STOP12双轮零速；用户确认两轮结果一致，前进基本无明显偏移，倒车返回右偏约1–2mm。保留1546，本组结束；尚未覆盖全速度/长期精度，未合并main、未push。最新现场与reference.json以 [1546µs接手记录](Steering-Neutral-1546-Calibration-Handoff-2026-11-08.md) 顶部为准，优先于下面历史STOP6。
 
 **最新1546µs中位候选**：开发分支 `codex/steering-neutral-1546`，代码提交`6e91aea`，24次host执行及三构建通过；已烧录并完成10cm/s、1m前进倒回首轮，用户观察右偏仅约1–2mm，尚未做重复性/全速度验收。最终STOP6双轮零速，停车PWM1546、双电机PWM0/0。pyserver按用户要求重启后STOP确认恢复，通信异常根因未确定。请先读 [1546µs 标定接手记录](Steering-Neutral-1546-Calibration-Handoff-2026-11-08.md)。main已push基线仍1530，新候选未合并/未push；不自动追加运动。
