@@ -2,6 +2,7 @@
 
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
@@ -10,7 +11,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api.routes import agent_motion, commands, devices
+from app.api.routes import agent_motion, commands, devices, voice
 from app.config import get_settings
 from app.logging_setup import setup_file_logging
 from app.mqtt.client import MQTTClient
@@ -23,9 +24,11 @@ from app.mqtt.topics import (
     SUB_PONG,
     SUB_SENSOR,
 )
+from app.services.baidu_asr import BaiduAsrClient
 from app.services.device_manager import DeviceManager
 from app.services.motion_service import AgentMotionService
 from app.services.ping_service import PingRegistry
+from app.services.voice_service import VoiceConfig, VoiceService
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +60,30 @@ async def lifespan(app: FastAPI):
         mqtt_client, device_manager.devices, settings
     )
 
+    # 语音：有百度密钥才创建 ASR 客户端；没有密钥时仍可做 VAD/WAV 归档
+    voice_asr = None
+    if settings.baidu_speech_api_key and settings.baidu_speech_secret_key:
+        voice_asr = BaiduAsrClient(
+            settings.baidu_speech_api_key,
+            settings.baidu_speech_secret_key,
+            dev_pid=settings.baidu_speech_dev_pid,
+            timeout_s=settings.baidu_speech_timeout_s,
+        )
+    app.state.voice_asr = voice_asr
+    app.state.voice_service = VoiceService(
+        VoiceConfig(
+            vad_start_rms=settings.voice_vad_start_rms,
+            vad_end_rms=settings.voice_vad_end_rms,
+            min_speech_ms=settings.voice_vad_min_speech_ms,
+            end_silence_ms=settings.voice_vad_end_silence_ms,
+            pre_roll_ms=settings.voice_vad_pre_roll_ms,
+            max_segment_s=settings.voice_max_segment_s,
+            max_session_s=settings.voice_max_session_s,
+        ),
+        voice_asr,
+        Path(settings.voice_artifact_dir),
+    )
+
     # 注册消息处理器（心跳/传感器/日志/ACK/pong/motion）
     handlers = create_handlers(
         device_manager.devices, app.state.ping_registry, app.state.agent_motion
@@ -80,6 +107,8 @@ async def lifespan(app: FastAPI):
 
     # 关闭
     await mqtt_client.disconnect()
+    if app.state.voice_asr is not None:
+        await app.state.voice_asr.aclose()
     logger.info("Server shutdown complete")
 
 
@@ -136,6 +165,7 @@ async def api_key_middleware(request: Request, call_next):
 app.include_router(commands.router, prefix=settings.api_prefix)
 app.include_router(devices.router, prefix=settings.api_prefix)
 app.include_router(agent_motion.router, prefix=settings.api_prefix)
+app.include_router(voice.router, prefix=settings.api_prefix)
 
 
 @app.get("/")

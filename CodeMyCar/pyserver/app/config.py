@@ -51,6 +51,17 @@ class Settings(BaseSettings):
     baidu_speech_dev_pid: int = 1537  # 普通话（纯中文）
     baidu_speech_timeout_s: float = 10.0
 
+    # 语音 WebSocket（P1：接收 PCM、VAD 切分、WAV 归档；暂不执行运动）
+    voice_enabled: bool = True
+    voice_artifact_dir: str = "logs/voice"
+    voice_vad_start_rms: int = 300
+    voice_vad_end_rms: int = 200
+    voice_vad_min_speech_ms: int = 150
+    voice_vad_end_silence_ms: int = 800
+    voice_vad_pre_roll_ms: int = 300
+    voice_max_segment_s: float = 10.0
+    voice_max_session_s: float = 12.0
+
     # 日志
     log_level: str = "INFO"
     log_dir: str = "logs"

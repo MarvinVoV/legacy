@@ -1,0 +1,165 @@
+"""语音会话：接收 PCM、VAD 切分、写 WAV、调用 ASR 的前置数据。
+
+本模块不执行运动命令；意图解析结果只回给客户端，真正下发仍走
+AgentMotionService（后续阶段接入）。
+"""
+
+from __future__ import annotations
+
+import logging
+import re
+import time
+import uuid
+import wave
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Protocol
+
+from app.services.vad import EnergyVad, VadConfig
+
+logger = logging.getLogger(__name__)
+
+
+class AsrProtocol(Protocol):
+    async def recognize(self, pcm: bytes) -> str: ...
+
+
+class VoiceSessionBusy(RuntimeError):
+    """同一设备已有一路语音会话。"""
+
+
+@dataclass(frozen=True)
+class VoiceConfig:
+    sample_rate: int = 16000
+    frame_ms: int = 20
+    vad_start_rms: int = 300
+    vad_end_rms: int = 200
+    min_speech_ms: int = 150
+    end_silence_ms: int = 800
+    pre_roll_ms: int = 300
+    max_segment_s: float = 10.0
+    max_session_s: float = 12.0
+
+    @property
+    def max_segment_ms(self) -> int:
+        return int(self.max_segment_s * 1000)
+
+
+@dataclass(frozen=True)
+class VoiceSegment:
+    index: int
+    pcm: bytes
+    path: Path
+    duration_ms: int
+
+
+def _safe_name(value: str) -> str:
+    cleaned = re.sub(r"[^A-Za-z0-9_-]", "_", value)
+    return (cleaned or "device")[:32]
+
+
+class VoiceSession:
+    def __init__(self, service: VoiceService, device_id: str) -> None:
+        self.service = service
+        self.device_id = device_id
+        self.id = uuid.uuid4().hex[:12]
+        self.artifact_dir = service.artifact_dir
+        self.artifact_dir.mkdir(parents=True, exist_ok=True)
+
+        stem = f"{time.strftime('%Y%m%d-%H%M%S')}-{_safe_name(device_id)}-{self.id}"
+        self.stem = stem
+        self.full_path = self.artifact_dir / f"{stem}-full.wav"
+
+        self._wav = wave.open(str(self.full_path), "wb")  # noqa: SIM115 - 需跨帧持续写入
+        self._wav.setnchannels(1)
+        self._wav.setsampwidth(2)
+        self._wav.setframerate(service.config.sample_rate)
+
+        cfg = service.config
+        self._vad = EnergyVad(
+            VadConfig(
+                sample_rate=cfg.sample_rate,
+                frame_ms=cfg.frame_ms,
+                start_rms=cfg.vad_start_rms,
+                end_rms=cfg.vad_end_rms,
+                min_speech_ms=cfg.min_speech_ms,
+                end_silence_ms=cfg.end_silence_ms,
+                pre_roll_ms=cfg.pre_roll_ms,
+                max_segment_ms=cfg.max_segment_ms,
+            )
+        )
+        self._index = 0
+        self._closed = False
+        self.bytes_received = 0
+
+    @property
+    def segments(self) -> int:
+        return self._index
+
+    def feed(self, pcm: bytes) -> list[VoiceSegment]:
+        if self._closed:
+            return []
+        self.bytes_received += len(pcm)
+        self._wav.writeframes(pcm)
+        return [self._save(segment) for segment in self._vad.feed(pcm)]
+
+    def finish(self) -> list[VoiceSegment]:
+        if self._closed:
+            return []
+        return [self._save(segment) for segment in self._vad.flush()]
+
+    def _save(self, pcm: bytes) -> VoiceSegment:
+        self._index += 1
+        path = self.artifact_dir / f"{self.stem}-seg{self._index:02d}.wav"
+        with wave.open(str(path), "wb") as wav:
+            wav.setnchannels(1)
+            wav.setsampwidth(2)
+            wav.setframerate(self.service.config.sample_rate)
+            wav.writeframes(pcm)
+        duration_ms = int(len(pcm) / 2 / self.service.config.sample_rate * 1000)
+        logger.info(
+            "voice segment device=%s session=%s index=%d duration_ms=%d",
+            self.device_id,
+            self.id,
+            self._index,
+            duration_ms,
+        )
+        return VoiceSegment(self._index, pcm, path, duration_ms)
+
+    def close(self) -> None:
+        if not self._closed:
+            self._closed = True
+            self._wav.close()
+            logger.info(
+                "voice session closed device=%s session=%s bytes=%d segments=%d",
+                self.device_id,
+                self.id,
+                self.bytes_received,
+                self._index,
+            )
+
+
+class VoiceService:
+    def __init__(
+        self,
+        config: VoiceConfig,
+        asr: AsrProtocol | None,
+        artifact_dir: str | Path,
+    ) -> None:
+        self.config = config
+        self.asr = asr
+        self.artifact_dir = Path(artifact_dir)
+        self._active: set[str] = set()
+
+    def create_session(self, device_id: str) -> VoiceSession:
+        if device_id in self._active:
+            raise VoiceSessionBusy(device_id)
+        self._active.add(device_id)
+        try:
+            return VoiceSession(self, device_id)
+        except Exception:
+            self._active.discard(device_id)
+            raise
+
+    def release(self, session: VoiceSession) -> None:
+        self._active.discard(session.device_id)
