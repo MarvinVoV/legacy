@@ -1,0 +1,18 @@
+{
+  "status": "operator_reported_after_return",
+  "reference": "same original front/rear starting marks reset before round; unchanged firmware/settings; no reboot",
+  "firmware_sha256": "57896d34fde1ac573e00a48171365e96d835760ac645525fe4b3bb44805e1f7d",
+  "neutral_us": 1546,
+  "physical_lateral_accuracy_accepted": false,
+  "last_confirmed_stop_seq": 12,
+  "operator_raw": "和第一次结果一致； 直行到终点，基本都没偏航；倒车到终点的时候，向右偏了 1-2mm",
+  "lateral_direction": "right",
+  "lateral_range_mm": [
+    1,
+    2
+  ],
+  "front_rear_individually_quantified": false,
+  "longitudinal_mm": null,
+  "repeat_observation_matches_round01": true,
+  "absolute_mm_accuracy_certified": false
+}
