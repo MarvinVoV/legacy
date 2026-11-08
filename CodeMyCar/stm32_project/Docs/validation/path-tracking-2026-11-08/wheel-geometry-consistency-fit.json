@@ -1,0 +1,123 @@
+{
+  "fit_factors_left_right": {
+    "all_arcs": [
+      1.0495258890630017,
+      1.0436815872529486
+    ],
+    "forward_arcs": [
+      1.052873110997232,
+      1.046852480140586
+    ],
+    "reverse_arcs": [
+      1.0464334902578347,
+      1.040762694119688
+    ]
+  },
+  "rows": [
+    {
+      "capture": "left-60cm-30deg",
+      "duration_s": 5.499000000000024,
+      "left_nominal_mm": 511.21828254927874,
+      "right_nominal_mm": 587.3102746130886,
+      "grv_yaw_delta_deg": 26.27345454545417,
+      "nominal_encoder_ccw_deg": 26.10628742514527,
+      "residuals_deg": {
+        "all_arcs": -0.051853340588084364,
+        "forward_arcs": 4.643609834936734e-13,
+        "reverse_arcs": -0.09762310363545137
+      }
+    },
+    {
+      "capture": "right-60cm-30deg",
+      "duration_s": 5.499000000000251,
+      "left_nominal_mm": 590.2704402909471,
+      "right_nominal_mm": 511.0690568982656,
+      "grv_yaw_delta_deg": -29.66547826087006,
+      "nominal_encoder_ccw_deg": -27.173083832324437,
+      "residuals_deg": {
+        "all_arcs": 0.12187221512933101,
+        "forward_arcs": -5.025276396712356e-13,
+        "reverse_arcs": 0.23632504408316413
+      }
+    },
+    {
+      "capture": "reverse-left-60cm-30deg",
+      "duration_s": 5.998999999999796,
+      "left_nominal_mm": -605.0788608624006,
+      "right_nominal_mm": -523.2361834461869,
+      "grv_yaw_delta_deg": 30.40110091743091,
+      "nominal_encoder_ccw_deg": 28.07928143712394,
+      "residuals_deg": {
+        "all_arcs": 0.1179794356287341,
+        "forward_arcs": 0.24362096344135867,
+        "reverse_arcs": 2.5444437451708134e-14
+      }
+    },
+    {
+      "capture": "reverse-right-60cm-30deg",
+      "duration_s": 5.999000000000251,
+      "left_nominal_mm": -529.5513082787056,
+      "right_nominal_mm": -609.9768656087871,
+      "grv_yaw_delta_deg": -27.68756521739286,
+      "nominal_encoder_ccw_deg": -27.59308383234197,
+      "residuals_deg": {
+        "all_arcs": -0.049018238168478216,
+        "forward_arcs": -0.10447696760347992,
+        "reverse_arcs": -1.2722218725854067e-14
+      }
+    },
+    {
+      "capture": "ground-load-roundtrip-200cm-speed10-01:200",
+      "duration_s": 19.50400000000002,
+      "left_nominal_mm": 1948.9702548597497,
+      "right_nominal_mm": 1935.6137736930116,
+      "grv_yaw_delta_deg": -0.074347826086953,
+      "nominal_encoder_ccw_deg": -4.582455089820751,
+      "residuals_deg": {
+        "all_arcs": -8.616181267402474,
+        "forward_arcs": -8.74861755853641,
+        "reverse_arcs": -8.4867876577484
+      }
+    },
+    {
+      "capture": "ground-load-roundtrip-200cm-speed10-01:-200",
+      "duration_s": 19.999000000000024,
+      "left_nominal_mm": -1977.43229890311,
+      "right_nominal_mm": -1969.6686380579254,
+      "grv_yaw_delta_deg": -0.05832000000000548,
+      "nominal_encoder_ccw_deg": 2.6636227544913114,
+      "residuals_deg": {
+        "all_arcs": 6.803268723255708,
+        "forward_arcs": 6.931342455724964,
+        "reverse_arcs": 6.67778169724301
+      }
+    },
+    {
+      "capture": "ground-no-trim-roundtrip-200cm-speed10-01:200",
+      "duration_s": 19.998999999999995,
+      "left_nominal_mm": 1994.575184615584,
+      "right_nominal_mm": 1989.3492737845402,
+      "grv_yaw_delta_deg": 0.018999999999999406,
+      "nominal_encoder_ccw_deg": -1.7929499085659708,
+      "residuals_deg": {
+        "all_arcs": -5.889616924019309,
+        "forward_arcs": -6.015966930192855,
+        "reverse_arcs": -5.765650820713214
+      }
+    },
+    {
+      "capture": "ground-no-trim-roundtrip-200cm-speed10-01:-200",
+      "duration_s": 19.998999999999995,
+      "left_nominal_mm": -1960.7792398452036,
+      "right_nominal_mm": -1986.5950156766905,
+      "grv_yaw_delta_deg": -0.043853211009174164,
+      "nominal_encoder_ccw_deg": -8.857095808383436,
+      "residuals_deg": {
+        "all_arcs": -5.268551162641336,
+        "forward_arcs": -5.1780158459798695,
+        "reverse_arcs": -5.359419122369526
+      }
+    }
+  ],
+  "limitations": "Exploratory consistency fit, not true radius calibration. Historic arc firmware differs; rounded logs interpolated by MCU time. Fixed track=167mm and GRV yaw assumed. Slip, effective track and yaw error not identifiable independently. Do not apply these constants."
+}

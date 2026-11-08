@@ -693,3 +693,10 @@ motor_pid_tracking_test编译真实pid_controller.c并共享motor_pid_defaults.h
 
 
 最终悬空A/B没有证明细积分稳定改善硬件，CMCAR_MOTOR_PID_FINE_INTEGRATION因此默认OFF（原0.005）；ON仅为0.0001实验候选。run.sh现19组共23次执行，motor_pid_tracking_test分别编译OFF/ON：前者断言已知模型残差仍存在并明确打印reproduced，后者验证实验负载抑制，不混作生产精度通过。新旧20秒直接轮速隔离数据见fixed-chassis-direct-profile-02/03；接口只接受整数RPM，所以用相差1RPM绕过同步PI，不能照用最初0.01RPM失败脚本。当前agent序号已到60多，后续原始seq改128..255，未来仍需按实时计数核对。
+
+
+## 落地载荷与前馈A/B归档
+
+最新数据ground-load-short-pair-01、ground-load-roundtrip-200cm-speed10-01为6/14us前馈；ground-no-trim-*为唯一关闭前馈的对照，保持细积分OFF/PATH OFF/磁诊断ON。analyze_ground_load_pair.py PREFIX只读jsonl或jsonl.gz与summary，输出分段0.4..3s/3..8s/8s后轮速误差、样本数量、10Hz相对航向峰值和最后PATH；不连接车辆、不代表外部位置真值。ground_load_short_pair_used.py归档固定20cm前进/倒回，脚本参数不能用来改变它的硬编码距离；实际运动前必须确认净空/线缆。首次无前馈捕获01因烧录后IMU数据未刷新而预检中止，没有运动，不传入要求两条成功leg的分析脚本。
+
+fit_wheel_geometry_consistency.py是只读探索分析：历史四段60cm弧线按累计脉冲/MCU时间配对，拟合名义轮程比例并交叉检查新直线。不输出或写入车辆标定。历史固件不同、轮距/轮程/滑移/GRV误差不可独立辨识，当前拟合在直线失配约5–9°；禁止因为弧线内残差小就自动应用系数。

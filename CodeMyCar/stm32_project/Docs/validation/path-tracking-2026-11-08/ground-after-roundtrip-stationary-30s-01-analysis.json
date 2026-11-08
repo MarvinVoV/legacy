@@ -1,0 +1,12 @@
+{
+  "samples": 289,
+  "duration_s": 30.220000000000027,
+  "yaw_change_deg": 0.0,
+  "yaw_range_deg": [
+    27.59,
+    27.59
+  ],
+  "mean_rate_dps": 0.0,
+  "rate_rms_dps": 0.0,
+  "integrated_rate_deg": 0.0
+}
