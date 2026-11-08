@@ -55,20 +55,20 @@ int main(void)
     assert(!steering_lut_angle_to_curvature(30.0f, L_M, &kappa));
 
     /* ---- 曲率 → 脉宽（端到端） ----
-       当前装配中位1530us与启动安全脉冲共用，
+       当前装配中位1546us与启动安全脉冲共用，
        输出仍夹在 [950, 2250]us 安全范围内。 */
     assert(steering_lut_curvature_to_pulse(0.0f, L_M, &out)); near(out, STEERING_SERVO_STRAIGHT_US, 0.5f);
     assert(steering_lut_curvature_to_pulse(STEERING_KAPPA_MAX_1PM, L_M, &out));
-    near(out, 1123.58f, 0.5f);
+    near(out, 1139.58f, 0.5f);
     assert(steering_lut_curvature_to_pulse(-STEERING_KAPPA_MAX_1PM, L_M, &out));
     near(out, 2250.0f, 0.5f);
 
     /* ---- 曲率 → 舵机原始偏移（正 = 右，raw = (1500 - pulse) × 0.09） ---- */
-    assert(steering_lut_curvature_to_raw(0.0f, L_M, &out)); near(out, -2.70f, 0.05f);
+    assert(steering_lut_curvature_to_raw(0.0f, L_M, &out)); near(out, -4.14f, 0.05f);
     assert(steering_lut_curvature_to_raw(-STEERING_KAPPA_MAX_1PM, L_M, &out));
     near(out, -67.5f, 0.05f);
     assert(steering_lut_curvature_to_raw(STEERING_KAPPA_MAX_1PM, L_M, &out));
-    near(out, 33.88f, 0.1f);
+    near(out, 32.44f, 0.1f);
 
     /* ---- 表结构：角度严格递增、脉宽严格递减 ---- */
     const size_t n = steering_lut_point_count();

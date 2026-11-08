@@ -26,7 +26,7 @@
 #define STEERING_SERVO_CENTER_US (1500.0f)
 
 /** 当前装配实际零转向脉宽；启动/停车/生产曲率映射共用。 */
-#define STEERING_SERVO_STRAIGHT_US (1530u)
+#define STEERING_SERVO_STRAIGHT_US (1546u)
 
 /* Experimental dynamic-neutral calibration, zero by default. These are
  * actuator pulse offsets, never geometric curvature or wheel RPM offsets. */

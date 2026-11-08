@@ -1,0 +1,4 @@
+-- Minimal optimization, debug info included
+-- Configuring done (0.1s)
+-- Generating done (0.0s)
+-- Build files have been written to: /Users/sunyameng/github/legacy/CodeMyCar/stm32_project/build/cli

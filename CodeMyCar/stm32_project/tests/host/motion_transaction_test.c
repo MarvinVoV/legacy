@@ -250,7 +250,7 @@ int main(void)
      * A servo mounting offset must not create unequal wheel targets. */
     measuredLeftRpm=measuredRightRpm=0;imuYaw=0;now+=5;MotionService_Run(&c);
     const float parked=lastAngle;
-    assert(fabsf(parked-92.7f)<.02f && inhibited); /* 1530us */
+    assert(fabsf(parked-94.14f)<.02f && inhibited); /* Calibrated neutral: 1546us. */
     assert(MotionService_StartGoal(&c,0,2000,100,41)==0);
     now+=5;MotionService_Run(&c);
     assert(fabsf(lastAngle-parked-STEERING_STRAIGHT_FORWARD_TRIM_US/STEERING_SERVO_US_PER_DEG)<.02f);
