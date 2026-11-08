@@ -163,6 +163,8 @@ STM32 build/Debug/stm32_project.elf
 182e5f80d5d9d9b24522e853d8fbe455b12f9dc9a834a05386eef2ed16d3bd68
 ```
 
+固件 build Git 字符串在配置时生成，可能显示提交前的基线及 dirty 标记；提交后未为刷新字符串而重刷另一镜像。识别本次实际已验收/已刷入镜像时使用上述产物 SHA256，源代码对应下方提交。
+
 新增复验：
 
 ```bash
@@ -182,3 +184,12 @@ goal_heading_source_smoke 要求车体保持在支撑上不转动；若 IMU 实�
 本批已关闭 RR-12 的“规划与终态使用不同航向源”逻辑缺陷，并移除 MotionTask 状态发送等待；未宣称完成全位姿融合、所有路径无阻塞或实际转角闭环。
 
 不能据此声明全部历史审查项已关闭。
+
+## 最终合并与现场状态
+
+- 批次 A：`1b6c6b3`，STOP 屏障、轮速测量与数据新鲜度、差速诊断门控。
+- 批次 B：`83efe32`，GOAL IMU 事务、异步上报、执行提交失败闭环、同步环与时间回绕。
+- 两批均已通过验收并以 fast-forward 合并 `main`；当前工作区已切换到 `main`。未 push remote。
+- frontend 既有未提交改动完整保留，本轮没有修改、暂存或合并这些改动。
+- 两块板保留最终验收镜像；Sonar ON、差速诊断 OFF；最终 STOP accepted/confirmed/stopped，TIM3 两路 PWM 比较值均为零。
+- 本文及 STM32 README 是后续 agent 的交付入口；历史审查报告中的未修复状态需结合本文读取。
