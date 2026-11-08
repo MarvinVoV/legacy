@@ -6,7 +6,7 @@
 - end/abort 文本帧结束会话；
 - 服务端返回 ready / final / end / error。
 
-当前阶段只回传识别文本与意图，不下发运动命令。
+路由只负责传输与会话边界；识别/反馈交给pipeline。运动执行默认关闭。
 """
 
 from __future__ import annotations
@@ -19,9 +19,8 @@ from typing import Any
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from app.config import get_settings
-from app.services.baidu_asr import BaiduAsrError
-from app.services.voice_intent import parse_intent
-from app.services.voice_service import VoiceSegment, VoiceService, VoiceSessionBusy
+from app.services.voice_pipeline import VoiceSessionRunner, _send_json
+from app.services.voice_service import VoiceService, VoiceSessionBusy
 
 logger = logging.getLogger(__name__)
 
@@ -29,121 +28,6 @@ router = APIRouter()
 
 _HANDSHAKE_TIMEOUT_S = 5.0
 _MAX_DEVICE_ID_LEN = 64
-_TTS_PHRASES = {
-    "stop": "已停止",
-    "cancel": "已取消",
-    "forward": "收到，前进",
-    "backward": "收到，后退",
-    "turn_left": "收到，左转",
-    "turn_right": "收到，右转",
-}
-_TTS_FAILED_PHRASE = "执行失败，请检查"
-
-
-async def _send_json(ws: WebSocket, payload: dict[str, Any]) -> bool:
-    try:
-        await ws.send_json(payload)
-        return True
-    except Exception:  # noqa: BLE001 - 客户端断开时 send 的异常类型由底层库决定
-        return False
-
-
-async def _speak(ws: WebSocket, service: VoiceService, phrase: str) -> None:
-    if service.tts is None:
-        return
-    try:
-        audio = await service.tts.synthesize(phrase, aue=4)
-    except Exception as exc:  # noqa: BLE001 - TTS 失败不应打断语音会话
-        logger.warning("voice tts failed: %s", exc)
-        await _send_json(ws, {"type": "speak", "text": phrase, "error": str(exc)})
-        return
-
-    # 车的功放/喇叭不可用时，直接在 pyserver 所在机器（Mac）播放
-    service.play_local(audio)
-
-    frame = {
-        "type": "speak",
-        "text": phrase,
-        "format": audio.format,
-        "rate": audio.sample_rate,
-        "channels": audio.channels,
-        "bytes": len(audio.data),
-    }
-    if not await _send_json(ws, frame):
-        return
-    try:
-        await ws.send_bytes(audio.data)
-    except Exception:  # 客户端已断开
-        logger.debug("voice speak send failed", exc_info=True)
-
-
-async def _handle_segment(
-    ws: WebSocket,
-    service: VoiceService,
-    segment: VoiceSegment,
-    device_id: str,
-) -> bool:
-    text: str | None = None
-    error: str | None = None
-
-    if service.asr is not None:
-        try:
-            text = await service.asr.recognize(segment.pcm)
-        except BaiduAsrError as exc:
-            error = str(exc)
-        except Exception as exc:  # 防御：ASR 后端异常不应打断 WAV 归档
-            logger.exception("voice asr failed")
-            error = f"asr failed: {exc}"
-
-    intent = parse_intent(text) if text else None
-    frame: dict[str, Any] = {
-        "type": "final",
-        "index": segment.index,
-        "duration_ms": segment.duration_ms,
-        "wav": str(segment.path),
-        "text": text,
-        "intent": intent.kind if intent else None,
-        "accepted": intent is not None,
-        "execution_enabled": service.config.execute_commands,
-    }
-    if intent is not None:
-        if intent.distance_mm:
-            frame["distance_mm"] = intent.distance_mm
-        if intent.angle_deg:
-            frame["angle_deg"] = intent.angle_deg
-    if error:
-        frame["error"] = error
-
-    logger.info(
-        "voice result session=%s index=%d text=%r intent=%s",
-        segment.path.name,
-        segment.index,
-        text,
-        intent.kind if intent else None,
-    )
-    if not await _send_json(ws, frame):
-        return False
-
-    # 调试模式：直接把识别文本 TTS 后在 pyserver 本机播放，不下发运动
-    if service.config.speak_recognized and text and service.tts is not None:
-        try:
-            audio = await service.tts.synthesize(text, aue=4)
-            service.play_local(audio)
-        except Exception as exc:  # noqa: BLE001 - 调试播放失败不影响主流程
-            logger.warning("recognized tts failed: %s", exc)
-
-    if intent is not None and service.config.execute_commands:
-        action = await service.execute_intent(device_id, intent)
-        if not await _send_json(ws, {"type": "action", **action}):
-            return False
-        if service.config.tts_feedback and service.tts is not None:
-            phrase = _TTS_PHRASES.get(intent.kind)
-            if not action.get("executed"):
-                phrase = _TTS_FAILED_PHRASE
-            if phrase:
-                await _speak(ws, service, phrase)
-
-    return True
 
 
 def _parse_start(meta: Any) -> tuple[str | None, str | None]:
@@ -212,7 +96,10 @@ async def voice_stream(ws: WebSocket) -> None:
         return
 
     try:
-        session = service.create_session(device_id)
+        continuous = meta.get("continuous", False)
+        if not isinstance(continuous, bool):
+            raise TypeError("continuous must be boolean")
+        session = service.create_session(device_id, continuous=continuous)
     except VoiceSessionBusy:
         await _send_json(ws, {"type": "error", "message": "device busy"})
         await ws.close(code=1013)
@@ -233,22 +120,42 @@ async def voice_stream(ws: WebSocket) -> None:
             "rate": service.config.sample_rate,
         },
     )
-    service.play_beep()
+
+    # No audible ready beep: it would be recorded by the live microphone.
+    class Sink:
+        def __init__(self):
+            self.lock = asyncio.Lock()
+
+        async def send_json(self, payload):
+            async with self.lock:
+                await ws.send_json(payload)
+
+        async def send_bytes(self, data):
+            async with self.lock:
+                await ws.send_bytes(data)
+
+        async def send_audio(self, header, data):
+            async with self.lock:
+                await ws.send_json(header)
+                await ws.send_bytes(data)
+
+    sink = Sink()
+    runner = VoiceSessionRunner(service, session, sink)
 
     max_bytes = int(service.config.max_session_s * service.config.sample_rate * 2)
     segments = 0
     aborted = False
     client_gone = False
+    normal_end = False
 
     try:
         while True:
             # 这是“空闲超时”，不是总时长；执行 GOAL 期间不会触发
             try:
-                msg = await asyncio.wait_for(
-                    ws.receive(), timeout=service.config.max_session_s
-                )
+                msg = await asyncio.wait_for(ws.receive(), timeout=service.config.max_session_s)
             except TimeoutError:
-                await _send_json(ws, {"type": "error", "message": "session timeout"})
+                runner.cancelled = True
+                await _send_json(sink, {"type": "error", "message": "session timeout"})
                 break
 
             if msg.get("type") == "websocket.disconnect":
@@ -257,16 +164,13 @@ async def voice_stream(ws: WebSocket) -> None:
 
             data = msg.get("bytes")
             if data:
-                if session.bytes_received + len(data) > max_bytes:
-                    await _send_json(ws, {"type": "error", "message": "audio too long"})
+                if len(data) > (32768 if continuous else max_bytes) or (
+                    not continuous and session.bytes_received + len(data) > max_bytes
+                ):
+                    runner.cancelled = True
+                    await _send_json(sink, {"type": "error", "message": "audio too long"})
                     break
-                for segment in session.feed(data):
-                    segments += 1
-                    if not await _handle_segment(ws, service, segment, session.device_id):
-                        client_gone = True
-                        break
-                if client_gone:
-                    break
+                runner.feed(data)
                 continue
 
             text = msg.get("text")
@@ -275,40 +179,53 @@ async def voice_stream(ws: WebSocket) -> None:
             try:
                 event = json.loads(text)
             except json.JSONDecodeError:
-                await _send_json(ws, {"type": "error", "message": "invalid json frame"})
+                await _send_json(sink, {"type": "error", "message": "invalid json frame"})
                 continue
             event_type = event.get("type") if isinstance(event, dict) else None
             if event_type == "end":
+                normal_end = True
+                break
+            if event_type == "gap":
+                runner.cancelled = True
+                # Lost transport samples invalidate the current phrase. No flush/ASR.
+                await _send_json(
+                    sink, {"type": "error", "message": "audio discontinuity; reconnect"}
+                )
                 break
             if event_type == "abort":
                 aborted = True
                 break
-            await _send_json(ws, {"type": "error", "message": f"unknown frame: {event_type}"})
+            await _send_json(sink, {"type": "error", "message": f"unknown frame: {event_type}"})
 
     except WebSocketDisconnect:
         client_gone = True
+    except Exception:
+        runner.cancelled = True
+        logger.exception("voice session failed")
+        await _send_json(sink, {"type": "error", "message": "voice pipeline failed"})
     finally:
         try:
-            for segment in session.finish():
-                segments += 1
-                if not client_gone:
-                    await _handle_segment(ws, service, segment, session.device_id)
-        except Exception:  # 收尾失败仍要释放设备占用
+            if normal_end and not aborted and not client_gone:
+                await asyncio.wait_for(runner.finish(), timeout=30)
+        except Exception:
             logger.exception("voice session finish failed")
+            normal_end = False
         finally:
+            await runner.close(abort=not normal_end)
+            segments = runner.segments
             try:
                 session.close()
             finally:
                 service.release(session)
         if not client_gone:
             await _send_json(
-                ws,
+                sink,
                 {
                     "type": "end",
                     "session": session.id,
                     "segments": segments,
                     "bytes": session.bytes_received,
-                    "full_wav": str(session.full_path),
+                    "full_wav": None if continuous else str(session.full_path),
                     "aborted": aborted,
                 },
             )

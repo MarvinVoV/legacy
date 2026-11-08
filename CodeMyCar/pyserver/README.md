@@ -1,5 +1,7 @@
 # CodeMyCar Server
 
+语音链路新版使用常驻ESP32 PCM上行、服务器WebRTC VAD自动分句、百度ASR/TTS及Mac播放；部署、配置和测试边界请先看[语音优化与验收](../stm32_project/Docs/Voice-Pipeline-Hardening-Validation-2026-11-09.md)。语音运动执行仍默认关闭。
+
 CodeMyCar 的 Python 服务端：基于 FastAPI 的 HTTP API + MQTT 客户端。负责把上层（Web/App）的 JSON 命令通过 MQTT 下发给设备（ESP32），并接收/聚合设备上报的传感器、心跳、日志数据。
 
 - **协议分层**：pyserver 只处理 JSON；JSON↔二进制的转换由 ESP32 桥接组件完成；STM32 只收发二进制 v2 帧。详见 [`docs/pyserver-v2-design.md`](docs/pyserver-v2-design.md)。

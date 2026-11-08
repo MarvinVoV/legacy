@@ -7,6 +7,13 @@ menu "Voice Control"
             启用 I2S 麦克风采集和 WebSocket 推流。
             运行时在串口输入 s + 回车，录一段音频并上传 pyserver。
 
+    config CMCAR_VOICE_CONTINUOUS
+        bool "Continuous PCM upload; server VAD owns utterance boundaries"
+        default y
+        help
+            Keep the connection open while WiFi is available. No RMS trigger or
+            fixed five-second windows. Original triggered mode remains available.
+
     config CMCAR_VOICE_WS_URL
         string "pyserver WebSocket URL"
         default "ws://192.168.31.120:8000/api/v1/voice/stream"

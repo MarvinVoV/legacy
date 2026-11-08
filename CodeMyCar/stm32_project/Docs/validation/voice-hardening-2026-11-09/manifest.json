@@ -1,0 +1,16 @@
+{
+  "source_base": "a3e5525",
+  "branch": "codex/voice-pipeline-hardening",
+  "date": "2026-11-09",
+  "pyserver_tests_passed": 169,
+  "esp32_c6_build_passed": true,
+  "esp32_binary_sha256": "82ebdf65bce096d5efe3756f797cb6ca88e724825c88cf453664a74d7ba79d21",
+  "flash_size": "8MB (existing project configuration)",
+  "continuous_audio": true,
+  "vad_backend": "webrtc",
+  "voice_execute_commands_default": false,
+  "flashed": false,
+  "hardware_voice_accuracy_validated": false,
+  "real_baidu_requests_during_tests": false,
+  "source_modified_after_build": "only Python/docs; ESP32 hash corresponds to final C source"
+}

@@ -92,6 +92,8 @@ async def lifespan(app: FastAPI):
     app.state.voice_local_player = local_player
     app.state.voice_service = VoiceService(
         VoiceConfig(
+            vad_backend=settings.voice_vad_backend,
+            start_trigger_ms=settings.voice_vad_start_trigger_ms,
             vad_start_rms=settings.voice_vad_start_rms,
             vad_end_rms=settings.voice_vad_end_rms,
             min_speech_ms=settings.voice_vad_min_speech_ms,
@@ -138,6 +140,7 @@ async def lifespan(app: FastAPI):
 
     # 关闭
     await mqtt_client.disconnect()
+    await app.state.voice_service.aclose()
     if app.state.voice_asr is not None:
         await app.state.voice_asr.aclose()
     if app.state.voice_tts is not None:

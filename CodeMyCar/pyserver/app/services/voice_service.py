@@ -1,7 +1,6 @@
-"""语音会话：接收 PCM、VAD 切分、写 WAV、调用 ASR 的前置数据。
+"""Voice session ownership, bounded audio state, and injected provider ports.
 
-本模块不执行运动命令；意图解析结果只回给客户端，真正下发仍走
-AgentMotionService（后续阶段接入）。
+Application orchestration lives in voice_pipeline; vehicle actions use AgentMotionService.
 """
 
 from __future__ import annotations
@@ -13,14 +12,13 @@ import re
 import time
 import uuid
 import wave
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Protocol
 
 from app.models.agent_motion import MotionError, MoveRequest
-from app.services.baidu_tts import TtsAudio
-from app.services.local_audio import LocalAudioPlayer
-from app.services.vad import EnergyVad, VadConfig
+from app.models.audio import TtsAudio
+from app.services.vad import SpeechSegmenter, VadConfig
 from app.services.voice_intent import VoiceIntent
 
 logger = logging.getLogger(__name__)
@@ -34,6 +32,12 @@ class TtsProtocol(Protocol):
     async def synthesize(self, text: str, *, aue: int | None = None) -> TtsAudio: ...
 
 
+class AudioSinkProtocol(Protocol):
+    async def play_pcm(self, pcm: bytes, sample_rate: int, channels: int) -> None: ...
+    async def play_beep(self, duration_ms: int, freq_hz: float) -> None: ...
+    async def aclose(self) -> None: ...
+
+
 class AgentMotionProtocol(Protocol):
     async def move(self, device_id: str, req: MoveRequest) -> Any: ...
     async def stop(self, device_id: str) -> dict: ...
@@ -45,6 +49,10 @@ class VoiceSessionBusy(RuntimeError):
 
 @dataclass(frozen=True)
 class VoiceConfig:
+    max_result_age_s: float = 15.0
+    archive_continuous_segments: bool = False
+    vad_backend: str = "webrtc"
+    start_trigger_ms: int = 60
     sample_rate: int = 16000
     frame_ms: int = 20
     vad_start_rms: int = 300
@@ -75,6 +83,7 @@ class VoiceSegment:
     pcm: bytes
     path: Path
     duration_ms: int
+    captured_at: float = field(default_factory=time.monotonic)
 
 
 def _safe_name(value: str) -> str:
@@ -83,7 +92,7 @@ def _safe_name(value: str) -> str:
 
 
 class VoiceSession:
-    def __init__(self, service: VoiceService, device_id: str) -> None:
+    def __init__(self, service: VoiceService, device_id: str, continuous: bool = False) -> None:
         self.service = service
         self.device_id = device_id
         self.id = uuid.uuid4().hex[:12]
@@ -94,14 +103,19 @@ class VoiceSession:
         self.stem = stem
         self.full_path = self.artifact_dir / f"{stem}-full.wav"
 
-        self._wav = wave.open(str(self.full_path), "wb")  # noqa: SIM115 - 需跨帧持续写入
-        self._wav.setnchannels(1)
-        self._wav.setsampwidth(2)
-        self._wav.setframerate(service.config.sample_rate)
+        self.continuous = continuous
+        self._wav = None
+        if not continuous:
+            self._wav = wave.open(str(self.full_path), "wb")  # noqa: SIM115 - 需跨帧持续写入
+            self._wav.setnchannels(1)
+            self._wav.setsampwidth(2)
+            self._wav.setframerate(service.config.sample_rate)
 
         cfg = service.config
-        self._vad = EnergyVad(
+        self._vad = SpeechSegmenter(
             VadConfig(
+                backend=cfg.vad_backend,
+                start_trigger_ms=cfg.start_trigger_ms,
                 sample_rate=cfg.sample_rate,
                 frame_ms=cfg.frame_ms,
                 start_rms=cfg.vad_start_rms,
@@ -120,11 +134,18 @@ class VoiceSession:
     def segments(self) -> int:
         return self._index
 
-    def feed(self, pcm: bytes) -> list[VoiceSegment]:
+    def discard(self) -> None:
+        self._vad.discard()
+
+    def feed(self, pcm: bytes, detect: bool = True) -> list[VoiceSegment]:
         if self._closed:
             return []
         self.bytes_received += len(pcm)
-        self._wav.writeframes(pcm)
+        if self._wav is not None:
+            self._wav.writeframes(pcm)
+        if not detect:
+            self._vad.discard()
+            return []
         return [self._save(segment) for segment in self._vad.feed(pcm)]
 
     def finish(self) -> list[VoiceSegment]:
@@ -135,11 +156,12 @@ class VoiceSession:
     def _save(self, pcm: bytes) -> VoiceSegment:
         self._index += 1
         path = self.artifact_dir / f"{self.stem}-seg{self._index:02d}.wav"
-        with wave.open(str(path), "wb") as wav:
-            wav.setnchannels(1)
-            wav.setsampwidth(2)
-            wav.setframerate(self.service.config.sample_rate)
-            wav.writeframes(pcm)
+        if not self.continuous or self.service.config.archive_continuous_segments:
+            with wave.open(str(path), "wb") as wav:
+                wav.setnchannels(1)
+                wav.setsampwidth(2)
+                wav.setframerate(self.service.config.sample_rate)
+                wav.writeframes(pcm)
         duration_ms = int(len(pcm) / 2 / self.service.config.sample_rate * 1000)
         logger.info(
             "voice segment device=%s session=%s index=%d duration_ms=%d",
@@ -153,7 +175,8 @@ class VoiceSession:
     def close(self) -> None:
         if not self._closed:
             self._closed = True
-            self._wav.close()
+            if self._wav is not None:
+                self._wav.close()
             logger.info(
                 "voice session closed device=%s session=%s bytes=%d segments=%d",
                 self.device_id,
@@ -172,7 +195,7 @@ class VoiceService:
         *,
         agent_motion: AgentMotionProtocol | None = None,
         tts: TtsProtocol | None = None,
-        local_player: LocalAudioPlayer | None = None,
+        local_player: AudioSinkProtocol | None = None,
     ) -> None:
         self.config = config
         self.asr = asr
@@ -182,16 +205,43 @@ class VoiceService:
         self.artifact_dir = Path(artifact_dir)
         self._active: set[str] = set()
         self._local_tasks: set[asyncio.Task] = set()
+        self._playback_pending = 0
+
+    @property
+    def is_playing(self) -> bool:
+        return self._playback_pending > 0
+
+    async def aclose(self) -> None:
+        for task in list(self._local_tasks):
+            task.cancel()
+        await asyncio.gather(*self._local_tasks, return_exceptions=True)
+        self._playback_pending = 0
+        if self.local_player and hasattr(self.local_player, "aclose"):
+            await self.local_player.aclose()
+
+    async def _play(self, audio):
+        try:
+            await self.local_player.play_pcm(audio.data, audio.sample_rate, audio.channels)
+            await asyncio.sleep(0.3)  # half-duplex acoustic tail, configurable later
+        finally:
+            self._playback_pending -= 1
+
+    def _play_done(self, task):
+        self._local_tasks.discard(task)
+        if not task.cancelled() and task.exception():
+            logger.error("voice playback failed: %s", task.exception())
 
     def play_local(self, audio: TtsAudio) -> None:
         """在 pyserver 所在机器上播放 TTS；不阻塞 WS。"""
         if self.local_player is None or not self.config.local_playback:
             return
-        task = asyncio.create_task(
-            self.local_player.play_pcm(audio.data, audio.sample_rate, audio.channels)
-        )
+        if self._playback_pending >= 4:
+            logger.warning("voice playback queue full; discarding stale feedback")
+            return
+        self._playback_pending += 1
+        task = asyncio.create_task(self._play(audio))
         self._local_tasks.add(task)
-        task.add_done_callback(self._local_tasks.discard)
+        task.add_done_callback(self._play_done)
 
     def play_beep(self) -> None:
         """录音开始时在 pyserver 本机响两声，提示用户说话。"""
@@ -199,7 +249,7 @@ class VoiceService:
             return
         task = asyncio.create_task(self._beep_twice())
         self._local_tasks.add(task)
-        task.add_done_callback(self._local_tasks.discard)
+        task.add_done_callback(self._play_done)
 
     async def _beep_twice(self) -> None:
         if self.local_player is None:
@@ -208,12 +258,12 @@ class VoiceService:
         await asyncio.sleep(0.12)
         await self.local_player.play_beep(150, 1000.0)
 
-    def create_session(self, device_id: str) -> VoiceSession:
+    def create_session(self, device_id: str, continuous: bool = False) -> VoiceSession:
         if device_id in self._active:
             raise VoiceSessionBusy(device_id)
         self._active.add(device_id)
         try:
-            return VoiceSession(self, device_id)
+            return VoiceSession(self, device_id, continuous)
         except Exception:
             self._active.discard(device_id)
             raise
@@ -229,7 +279,11 @@ class VoiceService:
         try:
             if intent.kind in ("stop", "cancel"):
                 result = await self.agent_motion.stop(device_id)
-                return {"executed": True, "action": intent.kind, "result": result}
+                return {
+                    "executed": all(result.get(k) for k in ("accepted", "confirmed", "stopped")),
+                    "action": intent.kind,
+                    "result": result,
+                }
 
             if intent.kind in ("forward", "backward"):
                 if intent.distance_mm <= 0 or intent.distance_mm > self.config.max_distance_mm:
@@ -256,9 +310,7 @@ class VoiceService:
                 # 转向必须是圆弧；距离按最小转弯半径计算，且不小于配置下限
                 arc_cm = max(
                     self.config.min_turn_distance_cm,
-                    math.ceil(
-                        self.config.min_turn_radius_mm * math.radians(intent.angle_deg) / 10
-                    ),
+                    math.ceil(self.config.min_turn_radius_mm * math.radians(intent.angle_deg) / 10),
                 )
                 turn_deg = -intent.angle_deg if intent.kind == "turn_left" else intent.angle_deg
                 request = MoveRequest(

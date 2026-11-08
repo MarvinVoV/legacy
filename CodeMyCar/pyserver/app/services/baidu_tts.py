@@ -15,9 +15,10 @@ import json
 import time
 import wave
 from collections.abc import Callable
-from dataclasses import dataclass
 
 import httpx
+
+from app.models.audio import TtsAudio  # re-export for existing clients
 
 TOKEN_URL = "https://aip.baidubce.com/oauth/2.0/token"
 TTS_URL = "https://tsn.baidu.com/text2audio"
@@ -29,26 +30,6 @@ _MAX_TEXT_GBK_BYTES = 1024
 
 class BaiduTtsError(RuntimeError):
     """鉴权、网络、文本超长或百度错误码导致的合成失败。"""
-
-
-@dataclass(frozen=True)
-class TtsAudio:
-    format: str  # pcm / wav / mp3
-    sample_rate: int
-    channels: int
-    data: bytes
-
-    @property
-    def duration_ms(self) -> int:
-        if self.format == "wav":
-            try:
-                with wave.open(io.BytesIO(self.data), "rb") as wav:
-                    return int(wav.getnframes() / wav.getframerate() * 1000)
-            except (wave.Error, EOFError, ZeroDivisionError):
-                return 0
-        if self.format != "pcm" or self.sample_rate <= 0:
-            return 0
-        return int(len(self.data) / 2 / self.sample_rate * 1000)
 
 
 def _content_type_param(content_type: str, name: str, default: int) -> int:

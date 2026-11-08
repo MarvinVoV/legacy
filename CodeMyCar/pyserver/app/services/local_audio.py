@@ -23,6 +23,7 @@ class LocalAudioPlayer:
         self.enabled = enabled
         self.command = command or ("afplay" if sys.platform == "darwin" else "ffplay")
         self._lock = asyncio.Lock()
+        self._processes = set()
 
     def _args(self, path: str) -> list[str]:
         if self.command == "ffplay":
@@ -49,9 +50,6 @@ class LocalAudioPlayer:
     ) -> None:
         if not self.enabled or not pcm:
             return
-        if self._lock.locked():
-            # 不打断当前提示音；TTS 反馈是短句，丢弃重叠请求可接受
-            return
         async with self._lock:
             fd, path = tempfile.mkstemp(suffix=".wav")
             os.close(fd)
@@ -66,7 +64,18 @@ class LocalAudioPlayer:
                     stdout=asyncio.subprocess.DEVNULL,
                     stderr=asyncio.subprocess.DEVNULL,
                 )
-                await proc.wait()
+                self._processes.add(proc)
+                try:
+                    await proc.wait()
+                finally:
+                    if proc.returncode is None:
+                        proc.terminate()
+                        try:
+                            await asyncio.wait_for(proc.wait(), 1)
+                        except TimeoutError:
+                            proc.kill()
+                            await proc.wait()
+                    self._processes.discard(proc)
             except FileNotFoundError:
                 logger.warning("local audio player %s not found; disabled", self.command)
                 self.enabled = False
@@ -75,3 +84,13 @@ class LocalAudioPlayer:
                     os.unlink(path)
                 except OSError:
                     pass
+
+    async def aclose(self):
+        for proc in list(self._processes):
+            if proc.returncode is None:
+                proc.terminate()
+                try:
+                    await asyncio.wait_for(proc.wait(), 1)
+                except TimeoutError:
+                    proc.kill()
+                    await proc.wait()

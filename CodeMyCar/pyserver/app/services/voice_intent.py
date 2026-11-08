@@ -27,19 +27,19 @@ _CN_DIGITS = {
 def _cn_to_int(text: str) -> int | None:
     if not text:
         return None
+    digit = "一二两三四五六七八九"
     if "百" in text:
-        left, _, right = text.partition("百")
-        hundreds = _CN_DIGITS.get(left, 1) if left else 1
-        rest = _cn_to_int(right) if right else 0
-        return hundreds * 100 + (rest or 0)
+        m = re.fullmatch(f"([{digit}])百(零[{digit}]|[{digit}]?十[{digit}]?)?", text)
+        if not m:
+            return None
+        rest = _cn_to_int(m[2].removeprefix("零")) if m[2] else 0
+        return _CN_DIGITS[m[1]] * 100 + rest if rest is not None else None
     if "十" in text:
-        left, _, right = text.partition("十")
-        tens = _CN_DIGITS.get(left, 1) if left else 1
-        ones = _CN_DIGITS.get(right, 0) if right else 0
-        return tens * 10 + ones
-    if len(text) == 1:
-        return _CN_DIGITS.get(text)
-    return None
+        m = re.fullmatch(f"([{digit}])?十([{digit}])?", text)
+        if not m:
+            return None
+        return (_CN_DIGITS[m[1]] if m[1] else 1) * 10 + (_CN_DIGITS[m[2]] if m[2] else 0)
+    return _CN_DIGITS.get(text) if len(text) == 1 else None
 
 
 def normalize_numbers(text: str) -> str:
@@ -63,48 +63,38 @@ class VoiceIntent:
 
 
 def parse_intent(raw_text: str) -> VoiceIntent | None:
-    """解析白名单命令；无法确定时返回 None。"""
+    """Accept exactly one command; never extract executable substrings."""
     if not raw_text:
         return None
     text = normalize_numbers(_clean(raw_text))
-    if not text:
-        return None
-
-    if any(word in text for word in ("取消", "算了", "不走了")):
+    if re.fullmatch(r"(?:取消|算了|不走了)", text):
         return VoiceIntent("cancel", text=text)
-    if any(word in text for word in ("停止", "停车", "停下", "停")):
+    if re.fullmatch(r"(?:停止|停车|停下|停)", text):
         return VoiceIntent("stop", text=text)
+    turn = re.fullmatch(r"(?:向)?(左|右)转\s*(\d+)\s*度", text)
+    if turn:
+        angle = int(turn[2])
+        return (
+            VoiceIntent(
+                "turn_left" if turn[1] == "左" else "turn_right", angle_deg=angle, text=text
+            )
+            if angle > 0
+            else None
+        )
+    move = re.fullmatch(
+        r"(前进|向前走?|往前走?|后退|向后走?|倒退|倒回)\s*(\d+(?:\.\d+)?)\s*(厘米|米|cm|m)",
+        text,
+        re.IGNORECASE,
+    )
+    if move:
+        from decimal import Decimal
 
-    left = any(word in text for word in ("左转", "向左转"))
-    right = any(word in text for word in ("右转", "向右转"))
-    if left and right:
-        return None
-    if left or right:
-        match = re.search(r"(\d+(?:\.\d+)?)\s*度", text)
-        if not match:
-            return None
-        angle = int(float(match.group(1)))
-        if angle <= 0:
-            return None
-        return VoiceIntent("turn_left" if left else "turn_right", angle_deg=angle, text=text)
-
-    forward = any(word in text for word in ("前进", "向前", "往前"))
-    backward = any(word in text for word in ("后退", "向后", "倒退", "倒回"))
-    if forward and backward:
-        return None
-    if forward or backward:
-        match = re.search(r"(\d+(?:\.\d+)?)\s*(米|厘米|cm|m)", text, re.IGNORECASE)
-        if not match:
-            return None
-        value = float(match.group(1))
-        unit = match.group(2).lower()
-        distance_mm = int(value * (1000 if unit in ("米", "m") else 10))
-        if distance_mm <= 0:
+        value = Decimal(move[2]) * (1000 if move[3].lower() in ("米", "m") else 10)
+        if value <= 0 or value != value.to_integral_value():
             return None
         return VoiceIntent(
-            "forward" if forward else "backward",
-            distance_mm=distance_mm,
+            "forward" if move[1] in ("前进", "向前", "向前走", "往前", "往前走") else "backward",
+            distance_mm=int(value),
             text=text,
         )
-
     return None

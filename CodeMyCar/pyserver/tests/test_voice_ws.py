@@ -92,6 +92,7 @@ def make_service(
 ) -> VoiceService:
     return VoiceService(
         VoiceConfig(
+            vad_backend="energy",
             min_speech_ms=100,
             end_silence_ms=200,
             pre_roll_ms=100,

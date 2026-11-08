@@ -1,5 +1,7 @@
 # 语音控制当前状态与交接（2026-11-09）
 
+**后续代码优化入口**：用户授权直接优化后，新增开发分支`codex/voice-pipeline-hardening`。常驻PCM、人声VAD、取消/意图安全、异步流水线和播放门控已经实现并完成主机验证；未刷机、未做真实拾音验收，不能沿用本文件旧版“RMS触发5秒”说明部署新版本。请先读[新版优化与验收](Voice-Pipeline-Hardening-Validation-2026-11-09.md)，下文保留旧实现交接原文。
+
 > 设计文档：[Voice-Control-Design-2026-11-08.md](Voice-Control-Design-2026-11-08.md)
 > 音色列表：[Voice-TTS-Voice-List-2026-11-08.md](Voice-TTS-Voice-List-2026-11-08.md)
 > 分支：`codex/voice-baidu-asr`（PC 语音）、`codex/voice-esp32-ws`（主 bridge + ESP32 voice）

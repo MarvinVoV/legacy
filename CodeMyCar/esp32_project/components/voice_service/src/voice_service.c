@@ -3,7 +3,7 @@
  * @brief I2S 麦克风采集 + WebSocket 推流到 pyserver。
  *
  * 设计：
- * - 串口输入 's' + Enter 触发一次录音（默认 5 秒）；
+ * - 默认常驻上传，服务端人声VAD自动分句；串口输入 's' + Enter 触发一次录音（默认 5 秒）；
  * - I2S RX 16 kHz / 32-bit slot / stereo，取左声道转 16-bit mono；
  * - 通过 esp_websocket_client 发 start -> PCM 二进制帧 -> end；
  * - 服务端返回的 final/action/speak 文本打印到串口；
@@ -24,7 +24,9 @@
 #include "esp_websocket_client.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
-#include "freertos/ringbuf.h"
+#include "freertos/queue.h"
+#include "cJSON.h"
+#include "task_priorities.h"
 #include "freertos/task.h"
 #include "sdkconfig.h"
 #include "wifi_service.h"
@@ -35,12 +37,24 @@
 #define VOICE_SAMPLE_RATE 16000
 #define VOICE_CHUNK_FRAMES 320
 #define VOICE_WS_CONNECTED_BIT BIT0
+#define VOICE_WS_READY_BIT BIT1
+#define VOICE_WS_END_BIT BIT2
+#define VOICE_WS_FAILED_BIT BIT3
 #define VOICE_TASK_STACK 6144
 #define VOICE_CONSOLE_STACK 4096
 
 static const char *TAG = "voice";
 static i2s_chan_handle_t s_rx;
-static RingbufHandle_t s_ring;
+typedef struct {
+    uint32_t sequence;
+    uint16_t frames;
+    int16_t pcm[VOICE_CHUNK_FRAMES];
+} voice_frame_t;
+static QueueHandle_t s_ring;
+static int32_t *s_raw_buffer;
+static int16_t *s_pcm_buffer;
+static char s_control[2048];
+static int s_control_used;
 static EventGroupHandle_t s_ws_events;
 static volatile bool s_trigger;
 static volatile bool s_busy;
@@ -59,17 +73,37 @@ static void ws_event_handler(void *arg, esp_event_base_t base, int32_t event_id,
     } else if (event_id == WEBSOCKET_EVENT_DISCONNECTED) {
         ESP_LOGW(TAG, "websocket disconnected");
         if (s_ws_events != NULL) {
-            xEventGroupClearBits(s_ws_events, VOICE_WS_CONNECTED_BIT);
+            xEventGroupClearBits(s_ws_events, VOICE_WS_CONNECTED_BIT | VOICE_WS_READY_BIT);
+            xEventGroupSetBits(s_ws_events, VOICE_WS_FAILED_BIT);
         }
     } else if (event_id == WEBSOCKET_EVENT_DATA) {
         esp_websocket_event_data_t *data = (esp_websocket_event_data_t *)event_data;
         if (data->op_code == 0x01 && data->data_len > 0) {
-            ESP_LOGI(TAG, "WS <- %.*s", data->data_len, data->data_ptr);
+            if (data->payload_offset == 0) s_control_used = 0;
+            if (data->payload_offset == s_control_used &&
+                data->payload_len < sizeof(s_control) &&
+                s_control_used + data->data_len < sizeof(s_control)) {
+                memcpy(s_control + s_control_used, data->data_ptr, data->data_len);
+                s_control_used += data->data_len;
+                if (s_control_used == data->payload_len) {
+                    s_control[s_control_used] = 0;
+                    cJSON *msg = cJSON_Parse(s_control);
+                    cJSON *type = cJSON_GetObjectItemCaseSensitive(msg, "type");
+                    if (cJSON_IsString(type) && s_ws_events) {
+                        if (!strcmp(type->valuestring, "ready")) xEventGroupSetBits(s_ws_events, VOICE_WS_READY_BIT);
+                        if (!strcmp(type->valuestring, "end")) xEventGroupSetBits(s_ws_events, VOICE_WS_END_BIT);
+                        if (!strcmp(type->valuestring, "error")) xEventGroupSetBits(s_ws_events, VOICE_WS_FAILED_BIT);
+                    }
+                    ESP_LOGI(TAG, "WS <- %s", s_control);
+                    cJSON_Delete(msg);
+                }
+            }
         } else if (data->op_code == 0x02) {
             ESP_LOGI(TAG, "WS <- binary %d bytes (speaker ignored)", data->data_len);
         }
     } else if (event_id == WEBSOCKET_EVENT_ERROR) {
         ESP_LOGE(TAG, "websocket error");
+        if (s_ws_events) xEventGroupSetBits(s_ws_events, VOICE_WS_FAILED_BIT);
     }
 }
 
@@ -111,17 +145,13 @@ static esp_err_t i2s_rx_init(void)
 static void capture_task(void *arg)
 {
     (void)arg;
-    int32_t *raw = malloc(sizeof(int32_t) * VOICE_CHUNK_FRAMES * 2);
-    int16_t *pcm = malloc(sizeof(int16_t) * VOICE_CHUNK_FRAMES);
-    if (raw == NULL || pcm == NULL) {
-        ESP_LOGE(TAG, "capture buffer alloc failed");
-        free(raw);
-        free(pcm);
-        vTaskDelete(NULL);
-        return;
-    }
+    int32_t *raw = s_raw_buffer;
+    int16_t *pcm = s_pcm_buffer;
 
     int chunk_count = 0;
+    uint32_t sequence = 0;
+    uint32_t dropped = 0;
+    voice_frame_t frame = {0};
     while (true) {
         size_t bytes_read = 0;
         esp_err_t err = i2s_channel_read(
@@ -148,14 +178,22 @@ static void capture_task(void *arg)
                 peak = a;
             }
         }
-        xRingbufferSend(s_ring, pcm, frames * sizeof(int16_t), 0);
+        frame.sequence = sequence++;
+        frame.frames = frames;
+        memcpy(frame.pcm, pcm, frames * sizeof(int16_t));
+        if (xQueueSend(s_ring, &frame, 0) != pdTRUE) {
+            voice_frame_t old;
+            xQueueReceive(s_ring, &old, 0); /* idle buffer retains newest frames */
+            dropped++;
+            xQueueSend(s_ring, &frame, 0);
+        }
 
         chunk_count++;
         if ((chunk_count % 25) == 0) {
             int rms = (int)sqrt((double)sum_sq / frames);
-            ESP_LOGI(TAG, "mic rms=%d peak=%d", rms, peak);
+            ESP_LOGI(TAG, "mic rms=%d peak=%d replaced_frames=%lu", rms, peak, (unsigned long)dropped);
         }
-        if (!s_busy && (int)sqrt((double)sum_sq / frames) >= CONFIG_CMCAR_VOICE_TRIGGER_RMS) {
+        if (!CONFIG_CMCAR_VOICE_CONTINUOUS && !s_busy && (int)sqrt((double)sum_sq / frames) >= CONFIG_CMCAR_VOICE_TRIGGER_RMS) {
             s_trigger = true;
         }
     }
@@ -181,6 +219,7 @@ static void run_session(void)
     esp_websocket_client_config_t ws_cfg = {
         .uri = CONFIG_CMCAR_VOICE_WS_URL,
         .reconnect_timeout_ms = 2000,
+        .disable_auto_reconnect = true,
         .network_timeout_ms = 5000,
         .buffer_size = 2048,
         .task_stack = 4096,
@@ -214,33 +253,53 @@ static void run_session(void)
     char start[192];
     int n = snprintf(
         start, sizeof(start),
-        "{\"type\":\"start\",\"device\":\"%s\",\"rate\":16000,\"ch\":1,\"bits\":16}",
-        CONFIG_CMCAR_DEVICE_ID);
-    if (esp_websocket_client_send_text(ws, start, n, pdMS_TO_TICKS(1000)) < 0) {
+        "{\"type\":\"start\",\"device\":\"%s\",\"rate\":16000,\"ch\":1,\"bits\":16,\"continuous\":%s}",
+        CONFIG_CMCAR_DEVICE_ID, CONFIG_CMCAR_VOICE_CONTINUOUS ? "true" : "false");
+    if (esp_websocket_client_send_text(ws, start, n, pdMS_TO_TICKS(1000)) != n) {
         ESP_LOGE(TAG, "send start failed");
         goto cleanup;
     }
 
-    int chunks = (CONFIG_CMCAR_VOICE_RECORD_SECONDS * 1000) / 20;
-    for (int c = 0; c < chunks; c++) {
-        size_t item_size = 0;
-        void *item = xRingbufferReceive(s_ring, &item_size, pdMS_TO_TICKS(1000));
-        if (item == NULL) {
-            ESP_LOGW(TAG, "voice ring empty");
-            continue;
+    bits = xEventGroupWaitBits(s_ws_events, VOICE_WS_READY_BIT | VOICE_WS_FAILED_BIT,
+                              pdFALSE, pdFALSE, pdMS_TO_TICKS(5000));
+    if (!(bits & VOICE_WS_READY_BIT) || (bits & VOICE_WS_FAILED_BIT)) goto cleanup;
+    if (CONFIG_CMCAR_VOICE_CONTINUOUS) xQueueReset(s_ring); /* no replay across reconnect */
+    voice_frame_t frame;
+    uint32_t expected = 0;
+    bool have_sequence = false;
+    size_t samples = 0;
+    const size_t target_samples = CONFIG_CMCAR_VOICE_RECORD_SECONDS * VOICE_SAMPLE_RATE;
+    const TickType_t started = xTaskGetTickCount();
+    while (CONFIG_CMCAR_VOICE_CONTINUOUS || samples < target_samples) {
+        bits = xEventGroupGetBits(s_ws_events);
+        if (!(bits & VOICE_WS_CONNECTED_BIT) || (bits & VOICE_WS_FAILED_BIT)) goto cleanup;
+        if (xQueueReceive(s_ring, &frame, pdMS_TO_TICKS(500)) != pdTRUE) {
+            ESP_LOGE(TAG, "capture stalled"); goto cleanup;
         }
-        int sent = esp_websocket_client_send_bin(
-            ws, (const char *)item, item_size, pdMS_TO_TICKS(1000));
-        vRingbufferReturnItem(s_ring, item);
-        if (sent < 0) {
-            ESP_LOGE(TAG, "send pcm failed");
-            break;
+        if (have_sequence && frame.sequence != expected) {
+            ESP_LOGE(TAG, "audio gap: expected=%lu got=%lu; abort session",
+                     (unsigned long)expected, (unsigned long)frame.sequence);
+            const char *abort = "{\"type\":\"abort\"}";
+            esp_websocket_client_send_text(ws, abort, strlen(abort), pdMS_TO_TICKS(500));
+            goto cleanup;
         }
+        expected = frame.sequence + 1;
+        have_sequence = true;
+        size_t count = frame.frames;
+        if (!CONFIG_CMCAR_VOICE_CONTINUOUS && count > target_samples - samples)
+            count = target_samples - samples;
+        int bytes = count * sizeof(int16_t);
+        if (esp_websocket_client_send_bin(ws, (const char *)frame.pcm, bytes,
+                                         pdMS_TO_TICKS(500)) != bytes) goto cleanup;
+        samples += count;
+        if (!CONFIG_CMCAR_VOICE_CONTINUOUS &&
+            xTaskGetTickCount() - started > pdMS_TO_TICKS((CONFIG_CMCAR_VOICE_RECORD_SECONDS + 3) * 1000))
+            goto cleanup;
     }
-
     const char *end = "{\"type\":\"end\"}";
-    esp_websocket_client_send_text(ws, end, (int)strlen(end), pdMS_TO_TICKS(1000));
-    vTaskDelay(pdMS_TO_TICKS(2000));
+    if (esp_websocket_client_send_text(ws, end, strlen(end), pdMS_TO_TICKS(1000)) != strlen(end)) goto cleanup;
+    xEventGroupWaitBits(s_ws_events, VOICE_WS_END_BIT | VOICE_WS_FAILED_BIT,
+                       pdFALSE, pdFALSE, pdMS_TO_TICKS(30000));
 
 cleanup:
     esp_websocket_client_stop(ws);
@@ -256,7 +315,16 @@ static void voice_task(void *arg)
         vTaskDelay(pdMS_TO_TICKS(500));
     }
 
-#if CONFIG_CMCAR_VOICE_AUTO_LOOP
+#if CONFIG_CMCAR_VOICE_CONTINUOUS
+    while (true) {
+        if (wifi_service_is_connected()) {
+            s_busy = true;
+            run_session();
+            s_busy = false;
+        }
+        vTaskDelay(pdMS_TO_TICKS(2000));
+    }
+#elif CONFIG_CMCAR_VOICE_AUTO_LOOP
     ESP_LOGI(TAG, "auto loop enabled; first session in 3 s");
     vTaskDelay(pdMS_TO_TICKS(3000));
     while (true) {
@@ -326,15 +394,36 @@ esp_err_t voice_service_start(void)
         return ESP_OK; /* 不阻塞 bridge */
     }
 
-    s_ring = xRingbufferCreate(32768, RINGBUF_TYPE_BYTEBUF);
+    s_raw_buffer = malloc(sizeof(int32_t) * VOICE_CHUNK_FRAMES * 2);
+    s_pcm_buffer = malloc(sizeof(int16_t) * VOICE_CHUNK_FRAMES);
+    if (!s_raw_buffer || !s_pcm_buffer) goto task_failure;
+    s_ring = xQueueCreate(32, sizeof(voice_frame_t));
     if (s_ring == NULL) {
-        ESP_LOGE(TAG, "ring buffer alloc failed; voice disabled");
-        return ESP_OK;
+        ESP_LOGE(TAG, "audio queue alloc failed; voice disabled");
+        goto task_failure;
     }
 
-    xTaskCreate(capture_task, "voice_capture", 4096, NULL, 8, NULL);
-    xTaskCreate(voice_task, "voice_task", VOICE_TASK_STACK, NULL, 4, NULL);
-    xTaskCreate(console_task, "voice_console", VOICE_CONSOLE_STACK, NULL, 2, NULL);
+    TaskHandle_t capture = NULL, sender = NULL;
+    if (xTaskCreate(capture_task, "voice_capture", 4096, NULL,
+                    TASK_PRIO_VOICE_CAPTURE, &capture) != pdPASS) goto task_failure;
+    if (xTaskCreate(voice_task, "voice_task", VOICE_TASK_STACK, NULL, 4, &sender) != pdPASS) {
+        vTaskDelete(capture);
+        goto task_failure;
+    }
+    if (xTaskCreate(console_task, "voice_console", VOICE_CONSOLE_STACK, NULL, 2, NULL) != pdPASS)
+        ESP_LOGW(TAG, "serial trigger unavailable; network voice still enabled");
     ESP_LOGI(TAG, "voice service started");
+    return ESP_OK;
+task_failure:
+    ESP_LOGE(TAG, "voice task allocation failed; control bridge remains available");
+    if (s_ring) vQueueDelete(s_ring);
+    s_ring = NULL;
+    free(s_raw_buffer);
+    free(s_pcm_buffer);
+    s_raw_buffer = NULL;
+    s_pcm_buffer = NULL;
+    i2s_channel_disable(s_rx);
+    i2s_del_channel(s_rx);
+    s_rx = NULL;
     return ESP_OK;
 }

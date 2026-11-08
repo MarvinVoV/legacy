@@ -62,6 +62,8 @@ class Settings(BaseSettings):
     # 语音 WebSocket（P1：接收 PCM、VAD 切分、WAV 归档；暂不执行运动）
     voice_enabled: bool = True
     voice_artifact_dir: str = "logs/voice"
+    voice_vad_backend: str = "webrtc"  # energy仅用于诊断对照
+    voice_vad_start_trigger_ms: int = 60
     voice_vad_start_rms: int = 300
     voice_vad_end_rms: int = 200
     voice_vad_min_speech_ms: int = 150
