@@ -226,5 +226,21 @@ int main(void)
     assert(steering_lut_curvature_to_raw(.6f,.141f,&expectedRaw));
     assert(fabsf(lastAngle-(90-expectedRaw))<.02f);
     assert(MotionService_EmergencyStop(&c,40)==0);
+    /* STOP, zero-curvature forward and reverse share physical neutral.
+     * A servo mounting offset must not create unequal wheel targets. */
+    measuredLeftRpm=measuredRightRpm=0;imuYaw=0;now+=5;MotionService_Run(&c);
+    const float parked=lastAngle;
+    assert(fabsf(parked-92.7f)<.02f && inhibited); /* 1530us */
+    assert(MotionService_StartGoal(&c,0,2000,100,41)==0);
+    now+=5;MotionService_Run(&c);
+    assert(fabsf(lastAngle-parked)<.02f);
+    assert(fabsf(submittedRpm[0]-submittedRpm[1])<.0001f);
+    assert(MotionService_EmergencyStop(&c,42)==0);
+    assert(fabsf(lastAngle-parked)<.02f && inhibited);
+    assert(MotionService_StartGoal(&c,0,-2000,100,43)==0);
+    now+=5;MotionService_Run(&c);
+    assert(fabsf(lastAngle-parked)<.02f);
+    assert(fabsf(submittedRpm[0]-submittedRpm[1])<.0001f);
+    assert(MotionService_EmergencyStop(&c,44)==0);
     puts("motion_transaction: all tests passed");
 }

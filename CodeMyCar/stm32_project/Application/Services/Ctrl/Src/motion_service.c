@@ -948,8 +948,8 @@ static float heading_correct(MotionContext* ctx, float kappa, bool straight)
     return out;
 }
 
-/* "前轮朝正"对应的舵机绝对角：由标定表在 kappa = 0 处查得（2026-11-03 实测
-   对应 1500us），不再有额外的中位补偿系数。 */
+/* Physical neutral is owned by the production LUT, shared with startup.
+ * A mechanical zero offset must never become a fictitious wheel curvature. */
 static float steer_straight_angle(const MotionContext* ctx)
 {
     float raw = 0.0f;

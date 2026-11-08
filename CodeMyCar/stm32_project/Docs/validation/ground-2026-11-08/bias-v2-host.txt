@@ -1,0 +1,56 @@
+== motion kinematics ==
+motion_kinematics: all tests passed
+== motion goal ==
+motion_goal: all tests passed
+== seq dedup ==
+seq_dedup: all tests passed
+== motor emergency stop ==
+/Users/sunyameng/github/legacy/CodeMyCar/stm32_project/Application/Modules/Motor/Src/motor_driver.c:506:21: warning: unused function 'radps_to_rpm' [-Wunused-function]
+  506 | static inline float radps_to_rpm(const float radps)
+      |                     ^~~~~~~~~~~~
+/Users/sunyameng/github/legacy/CodeMyCar/stm32_project/Application/Modules/Motor/Src/motor_driver.c:548:21: warning: unused function 'pulses_to_rad' [-Wunused-function]
+  548 | static inline float pulses_to_rad(const int32_t pulses, const uint16_t encoder_ppr, const uint16_t gear_ratio)
+      |                     ^~~~~~~~~~~~~
+2 warnings generated.
+motor_estop: all tests passed
+== runtime safety ==
+runtime_safety: all tests passed
+== task timing ==
+task_timing: all tests passed
+== encoder fault monitor ==
+encoder_fault_monitor: all tests passed
+== servo service ==
+heading servo target=91.380 submitted=91.188 error=0.192 raw deg
+heading servo target=84.030 submitted=84.204 error=0.174 raw deg
+heading servo target=84.530 submitted=84.420 error=0.110 raw deg
+servo_service: all tests passed
+== steering LUT ==
+steering_lut: all tests passed
+== heading control ==
+biased straight sign=-1 peak=1.442deg final=0.050deg lateral=0.0113m
+biased straight sign=1 peak=1.442deg final=-0.050deg lateral=0.0113m
+trimmed straight v=-0.1 peak=0.296deg final=0.050deg lateral=0.0023m
+trimmed straight v=0.1 peak=0.296deg final=-0.050deg lateral=0.0023m
+trimmed straight v=-0.3 peak=0.658deg final=0.050deg lateral=0.0033m
+trimmed straight v=0.3 peak=0.658deg final=-0.050deg lateral=0.0033m
+heading_control: all tests passed
+== PID simulation ==
+PID sim (plant: gain=1, tau=0.15s, friction/feedforward copied)
+dt=0.005s sp=100RPM: rise=2.180s settle=none/-1.000s overshoot=-6.1% final_err=6.13RPM out=0.31 v=0.313
+dt=0.030s sp=100RPM: rise=2.160s settle=none/-1.000s overshoot=-6.0% final_err=6.03RPM out=0.31 v=0.313
+dt=0.005s sp=300RPM: rise=2.495s settle=none/-1.000s overshoot=-7.4% final_err=22.23RPM out=0.93 v=0.926
+dt=0.030s sp=300RPM: rise=2.520s settle=none/-1.000s overshoot=-7.5% final_err=22.60RPM out=0.93 v=0.925
+== ultrasonic safety ==
+ultrasonic_safety_test: ALL PASS
+== motor inhibit ==
+/Users/sunyameng/github/legacy/CodeMyCar/stm32_project/Application/Modules/Motor/Src/motor_hal.c:263:15: warning: comparison of integers of different signs: 'int32_t' (aka 'int') and 'const uint32_t' (aka 'const unsigned int') [-Wsign-compare]
+  263 |     if (delta > halfMax)
+      |         ~~~~~ ^ ~~~~~~~
+1 warning generated.
+motor_inhibit: all tests passed
+== imu service ==
+imu_service: all tests passed
+== motion transaction ==
+motion_transaction: all tests passed
+== motion task asynchronous telemetry ==
+motion_task: stalled TX coalesces states; control never calls UART; reporter failure counted

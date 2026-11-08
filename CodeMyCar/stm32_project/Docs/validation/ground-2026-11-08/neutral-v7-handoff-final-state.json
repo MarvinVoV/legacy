@@ -1,0 +1,34 @@
+{
+  "image_sha256": "5174cba5b4f711d6b7e37954a859917a463697ac18fcb8c53382835a233716ce",
+  "source_capture": "neutral-v7-forward-200cm-speed30-summary.json",
+  "last_observed_stop": {
+    "ok": true,
+    "stopped": true,
+    "accepted": true,
+    "confirmed": true,
+    "seq": 191
+  },
+  "last_observed_state": {
+    "ok": true,
+    "online": true,
+    "stm32_connected": true,
+    "motion_supported": true,
+    "motion": {
+      "state": "idle",
+      "seq": 191,
+      "age_ms": 200,
+      "stale": false
+    },
+    "pose": {
+      "x_cm": 399.5,
+      "y_cm": 18.3,
+      "heading_deg": 1.662,
+      "odometer_cm": 400.0
+    },
+    "velocity": {
+      "linear_cm_s": 0.0,
+      "angular_deg_s": 0.0
+    }
+  },
+  "note": "Archived last observation, not a live query. No further motion was issued after this capture."
+}

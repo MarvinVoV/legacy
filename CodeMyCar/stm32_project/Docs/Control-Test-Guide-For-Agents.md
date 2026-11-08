@@ -663,3 +663,8 @@ cc -std=c11 -O2 -g -fsanitize=address,undefined \
 详见 [直行GOAL修复与对比](Straight-Goal-Heading-Hold-Fix-Validation-2026-11-08.md) 和 [本轮落地矩阵](Ground-Control-Validation-2026-11-08.md)。host总组数仍为16；heading_control组新增固定命令参考在起步/重入后保留、0.5/m偏置/150ms执行滞后下前后向2m轨迹仿真；motion_transaction组新增同偏角在不同剩余距离产生一致修正、持续纠偏、倒车反号。运行及独立编译命令沿用本指南第9节。
 
 复用测试时必须区分终点GOAL误差和全程路径指标。记录运动中heading/轮程，统计全程最大相对航向；需要横向偏移估计时以编码器平均轮程ds，按相对IMU航向dyaw投影：forward+=ds*cos(dyaw)、right-=ds*sin(dyaw)。现有pose未融合IMU，不能混用为同一算法。接收时间插值对齐存在延迟，估计不是外部真值。落地动作必须重新确认净空与线缆，不运行带--suspended的悬空矩阵。
+
+
+## 2026-11-08机械中位统一与直行优化交接
+
+最新状态先看 [START HERE](START-HERE-Straight-Control-Handoff-2026-11-08.md)。当前1530µs零位统一到生产LUT、STOP、启动安全脉冲，不再使用方向曲率偏置。16组入口不变：steering_lut组校验1530与安全夹限；motion_transaction组新增停车/零曲率前进/倒车共用中位且轮速目标相等；heading_control组验证固定参考0.05°死区与正反向残余偏置模型。历史v1–v6外部测量与车载估计相冲突的记录必须保留，不把其结果冒充v7已验收。

@@ -1,0 +1,12 @@
+[1/5] Building C object CMakeFiles/stm32_project.elf.dir/Application/System/Utils/Src/steering_lut.c.obj
+[2/5] Building C object CMakeFiles/stm32_project.elf.dir/Application/Services/Ctrl/Src/heading_control.c.obj
+[3/5] Building C object CMakeFiles/stm32_project.elf.dir/Application/System/Init/Src/system_init.c.obj
+[4/5] Building C object CMakeFiles/stm32_project.elf.dir/Application/Services/Ctrl/Src/motion_service.c.obj
+[5/5] Linking C executable stm32_project.elf; Building /Users/sunyameng/github/legacy/CodeMyCar/stm32_project/build/NoSonar/stm32_project.hex / Building /Users/sunyameng/github/legacy/CodeMyCar/stm32_project/build/NoSonar/stm32_project.bin
+Memory region         Used Size  Region Size  %age Used
+         DTCMRAM:       56048 B       128 KB     42.76%
+          RAM_D1:        1472 B       320 KB      0.45%
+          RAM_D2:           0 B        32 KB      0.00%
+          RAM_D3:           0 B        16 KB      0.00%
+         ITCMRAM:           0 B        64 KB      0.00%
+           FLASH:      104300 B         1 MB      9.95%

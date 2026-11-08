@@ -15,15 +15,18 @@
  *     1533us -> -2.6 deg/m
  *     1540us -> +0.1 deg/m   <- 真正走直
  *     1600us -> +16.8 deg/m
- * 2026-11-07 用钢尺/量角器重新目视 + 落地手推复核，中点取 1470us
- * （静态目视受约 4° 连杆回差影响，需以落地测试为准）。整条曲线平移
- * -30us，使 kappa = 0 输出 1470us；输出夹在实测
+ * 2026-11-07 曾取 1470us；2026-11-08 用户发现停车时前轮右偏，
+ * 零轮速实机检查确认 1530us 两轮基本回正，现以该值为统一中位。
+ * 原始表只做共同装配平移；输出夹在实测
  * 安全范围 [950, 2250]us，避免左满顶死（原左端只有 2–3 mm 余量）。
  *
  * 机械复位（拆舵机臂重新对中，让 1500us 重新等于前轮正中）后，必须把
- * STEER_PULSE_OFFSET_US 改回 0 并重跑地面直行标定。
+ * STEERING_SERVO_STRAIGHT_US 改为 1500 并重跑地面直行标定。
  */
-#define STEER_PULSE_OFFSET_US (-30.0f)
+/* 2026-11-08: zero-RPM on-car check confirmed 1530us is physically straight.
+ * Use the same calibration for zero curvature, STOP and hardware safe pulse;
+ * do not disguise mechanical neutral as a nonzero wheel-path curvature. */
+#define STEER_PULSE_OFFSET_US ((float)STEERING_SERVO_STRAIGHT_US - STEERING_SERVO_CENTER_US)
 #define STEER_PULSE_SAFE_MIN_US (950.0f)
 #define STEER_PULSE_SAFE_MAX_US (2250.0f)
 

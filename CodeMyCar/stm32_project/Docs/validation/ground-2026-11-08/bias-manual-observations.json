@@ -1,0 +1,61 @@
+{
+  "v1_aligned_forward_200cm_speed30": {
+    "external": "基本看不出偏移",
+    "scope": "aligned trial only"
+  },
+  "v1_reverse_200cm_speed30": {
+    "external": "右偏超过1cm",
+    "accepted": false
+  },
+  "v2_reverse_200cm_speed30": {
+    "external": "仍右偏约1cm或更多",
+    "accepted": false
+  },
+  "v3_reverse_200cm_speed30": {
+    "external": "尺量最终确认右偏约4–5mm",
+    "accepted": false,
+    "note": "Earlier spoken 3cm/3mm withdrawn by final ruler range; user wanted further reduction"
+  },
+  "v4_reverse_200cm_speed30": {
+    "external": "过补偿，左偏近1cm",
+    "accepted": false
+  },
+  "v5_reverse_200cm_speed30": {
+    "external": "右偏5–6mm",
+    "accepted": false
+  },
+  "v5_reverse_repeat_200cm_speed30": {
+    "external": "右偏4–5mm，同参数不重启重复",
+    "accepted": false
+  },
+  "v6_reverse_200cm_speed30": {
+    "external": "好很多，基本看不出偏航",
+    "accepted": true,
+    "note": "Qualitative; no millimeter bound claimed"
+  },
+  "v6_forward_unprepared_200cm_speed30": {
+    "external": "用户未摆好，要求重测",
+    "accepted": false,
+    "valid_precision_trial": false
+  },
+  "v6_forward_aligned_200cm_speed30": {
+    "external": "右偏约5cm，并观察停车前轮向右偏",
+    "accepted": false
+  },
+  "neutral_v7_static": {
+    "external": "1530us两轮回正；用户确认新版停车前轮回正",
+    "hardware_pwm": {
+      "TIM2_CCR1": 1530,
+      "TIM3_CCR1": 0,
+      "TIM3_CCR2": 0
+    }
+  },
+  "neutral_v7_forward_200cm_speed10": {
+    "external": "左偏约4–5mm",
+    "accepted_zero_deviation": false
+  },
+  "neutral_v7_forward_200cm_speed30": {
+    "external": "左偏约5–6mm",
+    "accepted_zero_deviation": false
+  }
+}

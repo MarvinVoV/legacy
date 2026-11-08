@@ -12,6 +12,7 @@
 #include "buzzer_config.h"
 #include "safety_supervisor.h"
 #include "imu_task.h"
+#include "steering_lut.h"
 
 
 /**
@@ -205,7 +206,8 @@ static int init_steer_servo_service(void)
         .pwmTim = &htim2,
         .channel = TIM_CHANNEL_1,
         .maxPulse = SERVO_MAX_PULSE,
-        .minPulse = SERVO_MIN_PULSE
+        .minPulse = SERVO_MIN_PULSE,
+        .safetyPulse = STEERING_SERVO_STRAIGHT_US
     };
 
     static SteerConfig steerConfig = (SteerConfig){

@@ -11,6 +11,7 @@
 #define HC_KP_RATE_DEFAULT (0.400f)  /* (1/m)/(1/m) */
 #define HC_KI_RATE_DEFAULT (0.080f)
 #define HC_DEADBAND_DEG_DEFAULT (0.2f)
+#define HC_GOAL_DEADBAND_DEG (0.05f)
 #define HC_DEADBAND_K_DEFAULT (0.05f)
 #define HC_MAX_CORR_DEFAULT (0.30f) /* 1/m，约 ±5° 转向 */
 #define HC_MAX_STRAIGHT_CORR_DEFAULT (1.0f) /* 1/m; final actuator clamp still applies */
@@ -156,7 +157,8 @@ static float heading_apply(HeadingControl* hc, float yawDeg, float yawRateDps,
         hc->curveDirection = 0;
         float error = direction * wrap180(yawDeg-hc->psiRefDeg);
         hc->lastErrorDeg = error;
-        if (fabsf(error) < hc->deadbandDeg) { error = 0.0f; }
+        const float deadband = referenceDeg ? HC_GOAL_DEADBAND_DEG : hc->deadbandDeg;
+        if (fabsf(error) < deadband) { error = 0.0f; }
         corr = pi_correction(hc->kp, hc->ki, &hc->integral, error, dt, lo, hi);
     }
     else

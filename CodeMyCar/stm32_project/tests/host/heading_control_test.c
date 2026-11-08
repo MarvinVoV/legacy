@@ -117,6 +117,14 @@ int main(void)
     HeadingControl_Apply(&hc,0,0,0.2f,-1,false);
     assert(hc.rateIntegral<=0);
 
+    HeadingControl_Init(&hc,0,0);
+    HeadingControl_HoldHeading(&hc,0,0,.1f,0);
+    g_tick+=5;
+    assert(HeadingControl_HoldHeading(&hc,-.1f,0,.1f,0)<-.029f);
+    HeadingControl_Disable(&hc);
+    near(HeadingControl_Apply(&hc,0,0,.1f,0,true),0,.001f);
+    near(HeadingControl_Apply(&hc,-.1f,0,.1f,0,true),0,.001f);
+
     /* A GOAL reference belongs to command acceptance, not to the first
      * measurable wheel speed or a restart after a zero-speed sample. */
     HeadingControl_Init(&hc,0,0);
@@ -150,6 +158,22 @@ int main(void)
         printf("biased straight sign=%d peak=%.3fdeg final=%.3fdeg lateral=%.4fm\n",
                sign,(double)peak,(double)yaw,(double)lateral);
         assert(peak<2 && fabsf(yaw)<.3f && fabsf(lateral)<.04f);
+    }
+    /* With a calibrated mechanical neutral, only a small residual needs PI;
+     * no fictitious wheel-path curvature is used as a servo zero offset. */
+    for(int sign=-1;sign<=1;sign+=2) {
+        HeadingControl_Init(&hc,0,0);
+        float yaw=0,kActual=0,y=0,peak=0;
+        const float v=sign*.3f,dt=.005f;
+        for(int i=0;i<1333;i++) {
+            g_tick+=5;
+            const float k=HeadingControl_HoldHeading(&hc,yaw,-v*(kActual+.03f)*57.29578f,v,0);
+            kActual+=(k-kActual)*dt/.15f;
+            yaw+=-v*(kActual+.03f)*57.29578f*dt;
+            y-=v*sinf(yaw*.017453293f)*dt;
+            peak=fmaxf(peak,fabsf(yaw));
+        }
+        assert(peak<.5f && fabsf(y)<.01f);
     }
     puts("heading_control: all tests passed");
     return 0;

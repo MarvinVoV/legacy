@@ -1,0 +1,20 @@
+{
+  "source": "ST-LINK HotPlug read observations recorded in this session, not raw stdout",
+  "old_stop": {
+    "TIM2_CCR1_address": "0x40000034",
+    "hex": "0x5BE",
+    "ticks": 1470
+  },
+  "direct_zero_rpm_1530": {
+    "TIM2_CCR1": 1530,
+    "TIM3_CCR1": 0,
+    "TIM3_CCR2": 0,
+    "user": "两轮基本回正"
+  },
+  "v7_stop_after_flash": {
+    "TIM2_CCR1": 1530,
+    "TIM3_CCR1": 0,
+    "TIM3_CCR2": 0,
+    "user": "前轮回正"
+  }
+}

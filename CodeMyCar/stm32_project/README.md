@@ -4,6 +4,8 @@ STM32H723ZGTx 控制固件：通过 UART 与 ESP32 桥接，解析二进制控�
 
 ## 文档
 
+- [**直行优化最新接手入口（先读）**](Docs/START-HERE-Straight-Control-Handoff-2026-11-08.md)：当前1530µs统一中位镜像、已测/未测边界、失败试验、停车状态与复用步骤。
+
 - [IMU真实转动与微调死区验收](Docs/IMU-Manual-Rotation-And-Steering-Deadzone-Validation-2026-11-08.md) — 人工车体扰动、前进/倒车方向、GOAL动态来源、2°→0.2°死区修复和PWM证据
 - [控制系统测试指南](Docs/Control-Test-Guide-For-Agents.md) — 16组STM32、2组ESP32、服务端pytest与4个实机集成脚本；独立运行和夹具复用
 - [后续控制修复与分阶段验收（2026-11-08）](Docs/Remaining-Control-Fixes-And-Validation-2026-11-08.md) — 当前交付入口：STOP、IMU/GOAL、异步上报、故障注入、实机证据及剩余优先级
