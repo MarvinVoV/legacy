@@ -1,7 +1,8 @@
 # 语音控制方案（2026-11-08）
 
-> 分支：`codex/voice-baidu-asr`（从 main `82d3eed` 创建，未合并）
-> 状态：百度短语音 API + 短文本 TTS 已跑通；PC 侧 WS/VAD/WAV/意图已实现；ESP32 推流未开始
+> **当前状态与运行交接：[Voice-Control-Handoff-2026-11-09.md](Voice-Control-Handoff-2026-11-09.md)**
+> 分支：`codex/voice-baidu-asr`（PC 语音）、`codex/voice-esp32-ws`（ESP32 主 bridge + voice），未合并、未 push
+> 状态：端到端语音回环已跑通（ESP32 麦克风 → WS → ASR → TTS → Mac）；车上功放/喇叭未解决；语音执行默认关闭
 > 关联：`START-HERE-Straight-Control-Handoff-2026-11-08.md`（车辆与安全基线）
 
 ## 1. 目标与非目标
@@ -65,6 +66,10 @@
 - I2S 数据格式以实测为准：若读到的样本幅度异常/全零，检查左右 slot 与位移。
 
 ### 3.2 第二阶段：加功放提示音
+
+> **实测备注（2026-11-09）**：当前组合模块的功放/喇叭仍未出声。已试过 TX-only、16-bit slot、
+> 32-bit slot、3.3V/5V 供电、PH1.25 直连引脚；软件侧已排除 I2S 格式/任务问题。
+> 反馈暂时走 Mac；硬件排查见 [Voice-Control-Handoff-2026-11-09.md](Voice-Control-Handoff-2026-11-09.md)。
 
 - 把模块的 `LRCLK` 与 `WS` 并接、`BCLK` 与 `SCK` 并接，共用一组 BCLK/WS；C6 的 I2S 支持全双工（TX/RX 共享时钟）。
 - `DIN` 接 ESP32 的 TX 脚（示例 GPIO20）。
@@ -350,7 +355,7 @@ Content-Type: application/json
 
 | 阶段 | 内容 | 通过标准 |
 |---|---|---|
-| P0 | ESP32 麦克风 → WS → pyserver（主 bridge 集成） | 已实现并烧录；5 s/160000 bytes 上传成功，待真实语音验收 |
+| P0 | ESP32 麦克风 → WS → pyserver（主 bridge 集成） | 已实现；语音触发/ASR/TTS 已跑通（“前进五米”）；功放未解决；执行未启用 |
 | P1 | PC silero-vad + 百度 ASR + WAV 归档 | 20 条真实录音识别率与延迟有记录 |
 | P2 | 意图 → AgentMotionService + TTS 反馈（PC 侧） | 替身测试已通过；实车悬空验收待做 |
 | P3 | 门控按键 → WakeNet；落地 10 cm/s 短距离 | 重新确认场地后，语音动作、断网停车、STOP 通过 |
@@ -432,14 +437,20 @@ Content-Type: application/json
 
 ## 14. 相关文件
 
+- [语音控制当前状态与交接（2026-11-09）](Voice-Control-Handoff-2026-11-09.md)
 - `esp32_project/components/voice_service/`（I2S RX + WS 上传）
+- `esp32_project/tests/audio_i2s_smoke/`（I2S 麦克风/功放冒烟固件）
 - `pyserver/app/services/baidu_asr.py`
 - `pyserver/app/services/baidu_tts.py`
 - `pyserver/app/services/local_audio.py`
-- `pyserver/app/config.py`（`baidu_speech_*` / `baidu_tts_*`）
+- `pyserver/app/services/vad.py` / `voice_intent.py` / `voice_service.py`
+- `pyserver/app/api/routes/voice.py`
+- `pyserver/app/config.py`（`baidu_speech_*` / `baidu_tts_*` / `voice_*`）
 - `pyserver/scripts/baidu_asr_smoke.py`
 - `pyserver/scripts/baidu_tts_smoke.py`
 - `pyserver/scripts/voice_loop_test.py`
+- `pyserver/scripts/voice_ws_client.py`
 - `pyserver/tests/test_baidu_asr.py`
 - `pyserver/tests/test_baidu_tts.py`
+- `pyserver/tests/test_vad.py` / `test_voice_intent.py` / `test_voice_ws.py`
 - [百度 TTS 音色列表](Voice-TTS-Voice-List-2026-11-08.md)

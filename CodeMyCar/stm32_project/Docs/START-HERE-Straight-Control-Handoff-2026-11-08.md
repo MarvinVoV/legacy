@@ -42,3 +42,8 @@
 - [正常GOAL停车完成修复](Normal-GOAL-Parking-Completion-Fix-Validation-2026-11-08.md)、[测量基准审计](Straight-Drive-Measurement-Reference-Audit-2026-11-08.md)、[完整试验历史](Straight-Path-Tracking-And-RPM-Contract-Validation-2026-11-08.md)。
 - 原始数据、用户`*-reference.json`、构建/回归/烧录日志、脚本：`validation/path-tracking-2026-11-08/`。当前证据前缀`neutral1546-*`；脚本有真实动作和固定输出前缀，复用先审查、取得本轮就绪答复并换唯一前缀。
 - [历史交接原文归档](ARCHIVE-Straight-Control-Handoff-Stage-Notes-2026-11-08.md)：仅供追溯，不能用作当前运行状态。
+
+## 语音控制（2026-11-09）
+
+- [语音控制当前状态与交接](Voice-Control-Handoff-2026-11-09.md)：端到端语音回环已跑通（ESP32 麦克风 → WS → ASR → TTS → Mac）；车上功放/喇叭未解决；语音执行默认关闭。
+- [语音控制设计](Voice-Control-Design-2026-11-08.md)、[百度 TTS 音色列表](Voice-TTS-Voice-List-2026-11-08.md)。
