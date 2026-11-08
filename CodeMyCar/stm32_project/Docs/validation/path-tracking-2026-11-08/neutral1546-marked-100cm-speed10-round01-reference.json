@@ -1,0 +1,17 @@
+{
+  "status": "operator_reported_after_return",
+  "reference": "same original front/rear starting marks; compare only after return",
+  "firmware_sha256": "57896d34fde1ac573e00a48171365e96d835760ac645525fe4b3bb44805e1f7d",
+  "neutral_us": 1546,
+  "physical_lateral_accuracy_accepted": false,
+  "operator_raw": "标定的横向位移基本对齐； 现在向右偏移只有 1-2mm 了，好了很多",
+  "lateral_direction": "right",
+  "lateral_range_mm": [
+    1,
+    2
+  ],
+  "front_rear_individually_quantified": false,
+  "longitudinal_mm": null,
+  "repeatability_validated": false,
+  "last_confirmed_stop_seq": 6
+}

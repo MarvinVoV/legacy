@@ -1,0 +1,41 @@
+[36m[01m      -------------------------------------------------------------------
+[39;49m[0m[36m[01m                        STM32CubeProgrammer v2.23.0                  
+[39;49m[0m[36m[01m      -------------------------------------------------------------------
+
+[39;49m[0m[90mST-LINK SN  : 001800495300000A4E594B4D
+[39;49m[0m[90mST-LINK FW  : V2J48M35
+[39;49m[0m[90mBoard       : --
+[39;49m[0m[90mVoltage     : 3.28V
+[39;49m[0m[90mSWD freq    : 4000 KHz
+[39;49m[0m[90mConnect mode: Hot Plug
+[39;49m[0m[90mReset mode  : Software reset
+[39;49m[0m[90mDevice ID   : 0x483
+[39;49m[0m[90mRevision ID : Rev Z
+[39;49m[0m[39;49m[0m[39;49mDevice name : STM32H72x/STM32H73x
+[39;49m[0m[39;49mNVM size    : 1 MBytes
+[39;49m[0m[39;49mDevice type : MCU
+[39;49m[0m[39;49mDevice CPU  : Cortex-M7
+[39;49m[0m[39;49mBL Version  : 0x93
+[39;49m[0m[39;49m
+[39;49m[0m[39;49m[0m[39;49m[0m[39;49m
+Reading 32-bit memory content
+[39;49m[0m[39;49m  Size          : 4 Bytes
+[39;49m[0m[39;49m  Address:      : 0x40000034
+[39;49m[0m[39;49m0x40000034 : 0000060A
+[39;49m[0m[39;49m
+
+[39;49m[0m[39;49m
+Reading 32-bit memory content
+[39;49m[0m[39;49m  Size          : 4 Bytes
+[39;49m[0m[39;49m  Address:      : 0x40000434
+[39;49m[0m[39;49m0x40000434 : 00000000
+[39;49m[0m[39;49m
+
+[39;49m[0m[39;49m
+Reading 32-bit memory content
+[39;49m[0m[39;49m  Size          : 4 Bytes
+[39;49m[0m[39;49m  Address:      : 0x40000438
+[39;49m[0m[39;49m0x40000438 : 00000000
+[39;49m[0m[39;49m
+
+[39;49m[0m[39;49m[0m
