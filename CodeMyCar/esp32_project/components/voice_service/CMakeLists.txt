@@ -8,3 +8,5 @@ idf_component_register(
         wifi_service
         common
 )
+
+target_link_libraries(${COMPONENT_LIB} m)

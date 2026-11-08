@@ -20,4 +20,16 @@ menu "Voice Control"
         help
             每次触发上传的录音长度。
 
+    config CMCAR_VOICE_AUTO_LOOP
+        bool "Auto-record loop (no serial trigger)"
+        default y
+        help
+            启动后自动循环录音上传，不需要在串口输入 s。
+
+    config CMCAR_VOICE_LOOP_DELAY_SEC
+        int "Delay between auto sessions (s)"
+        default 8
+        range 2 60
+        depends on CMCAR_VOICE_AUTO_LOOP
+
 endmenu

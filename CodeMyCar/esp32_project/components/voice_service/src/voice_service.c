@@ -12,6 +12,7 @@
 
 #include "voice_service.h"
 
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -184,8 +185,20 @@ static void run_session(void)
         if (frames <= 0) {
             continue;
         }
+        int64_t sum_sq = 0;
+        int peak = 0;
         for (int i = 0; i < frames; i++) {
-            pcm[i] = (int16_t)(raw[2 * i] >> 16);
+            int32_t v = raw[2 * i] >> 16;
+            pcm[i] = (int16_t)v;
+            sum_sq += (int64_t)v * v;
+            int a = v < 0 ? -v : v;
+            if (a > peak) {
+                peak = a;
+            }
+        }
+        if ((c % 25) == 0) {
+            int rms = (int)sqrt((double)sum_sq / frames);
+            ESP_LOGI(TAG, "mic rms=%d peak=%d", rms, peak);
         }
         int sent = esp_websocket_client_send_bin(
             ws, (const char *)pcm, frames * sizeof(int16_t), pdMS_TO_TICKS(1000));
@@ -211,6 +224,20 @@ cleanup:
 static void voice_task(void *arg)
 {
     (void)arg;
+    while (!wifi_service_is_connected()) {
+        vTaskDelay(pdMS_TO_TICKS(500));
+    }
+
+#if CONFIG_CMCAR_VOICE_AUTO_LOOP
+    ESP_LOGI(TAG, "auto loop enabled; first session in 3 s");
+    vTaskDelay(pdMS_TO_TICKS(3000));
+    while (true) {
+        ESP_LOGI(TAG, "auto session start");
+        run_session();
+        ESP_LOGI(TAG, "auto session done; next in %d s", CONFIG_CMCAR_VOICE_LOOP_DELAY_SEC);
+        vTaskDelay(pdMS_TO_TICKS(CONFIG_CMCAR_VOICE_LOOP_DELAY_SEC * 1000));
+    }
+#else
     while (true) {
         if (!s_trigger) {
             vTaskDelay(pdMS_TO_TICKS(100));
@@ -230,6 +257,7 @@ static void voice_task(void *arg)
         }
         s_busy = false;
     }
+#endif
 }
 
 static void console_task(void *arg)
