@@ -137,6 +137,9 @@ ESP32 能量阈值 VAD 只作为“省流”的可选优化，不作为权威切
 
 - 第一版：百度短语音（已实现，见 §7）；
 - 可选：`faster-whisper`（本地、离线、无配额），作为可切换后端；
+- 可选：百度实时语音识别 WebSocket `wss://vop.baidu.com/realtime_asr?sn=...`。START 帧用
+  `appid` + `appkey`（API Key，不是 access_token），随后推二进制 PCM 帧，返回中间/最终结果，
+  支持长音频；适合作为 P4 的低延迟升级，第一版仍用短语音接口；
 - 建议抽象成 `recognize(pcm) -> text` 接口，便于 A/B。
 
 ### 5.4 意图解析
@@ -202,10 +205,14 @@ Content-Type: application/json
 }
 ```
 
+- 文档请求地址为 `http://vop.baidu.com/server_api`；实测 `https://` 也可用；
+- 音频只支持 16 kHz 或 8 kHz（8 kHz 仅普通话模型），16-bit 单声道；推荐 PCM；
 - `format:"pcm"` 表示裸 PCM，不能混入 WAV 头；
-- `len` 是原始 PCM 字节数（base64 之前）；
-- `dev_pid=1537` 为普通话（纯中文）；其他语言/远场按百度文档选择；
+- `len` 是原始 PCM 字节数（base64 之前），不是 base64 后的长度；
+- `dev_pid=1537`：普通话纯中文、近场模型、带标点、支持自定义词库；另有 1737 英语、1637 粤语、1837 四川话；不填默认 1537；
+- 自定义词库只对 1537 生效，可在百度控制台加入固定命令短语（如“前进一米”），提高短句识别；
 - 单次最长 60 秒，本项目按 3–10 秒一段调用；
+- 鉴权可用 access_token 或 API Key Bearer，二选一；本项目用 access_token；
 - `err_no != 0` 视为失败，记录 `err_no/err_msg`，不要重试到死。
 
 ### 7.3 实测结果（2026-11-08）
@@ -218,8 +225,9 @@ Content-Type: application/json
 | 停止 | `停止。` | 427 ms |
 | 左转三十度 | `左转30度。` | 527 ms |
 | 后退一米 | `后退一米。` | 527 ms |
+| Mac 麦克风（真人） | `前进一米。` | 444 ms |
 
-同进程复用 token 时，单次请求约 220–400 ms。以上是 TTS 样本，不是实车麦克风；真实噪声/口音下的识别率仍需测试。
+同进程复用 token 时，单次请求约 220–400 ms。前四条是 TTS 样本，最后一条是 Mac 内置麦克风的真实录音；实车麦克风/噪声下的识别率仍需测试。
 
 ### 7.4 密钥管理
 
@@ -295,6 +303,9 @@ Content-Type: application/json
 
 - 已建分支 `codex/voice-baidu-asr`，未改 main、未 push。
 - 已实现 `app/services/baidu_asr.py`、配置项、7 项单测、冒烟脚本；真实接口 4/4 识别成功。
+- 已用 Mac 内置麦克风录真实语音验证：`前进一米` → `前进一米。`（444 ms）。
+- 已核对百度官方文档：JSON 上传参数、16k/8k、60 秒上限、dev_pid 取值、自定义词库、
+  access_token/API Key 鉴权，以及实时 WebSocket API 的 START/FINISH/CANCEL 流程。
 - 下一步建议：先在 pyserver 实现 WS 接收 + WAV 归档 + VAD（P1 的 PC 侧），再用一个桌面测试客户端推合成 PCM 验证；之后做 ESP32 麦克风推流（P0）。
 
 ## 14. 相关文件
