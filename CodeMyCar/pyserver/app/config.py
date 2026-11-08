@@ -51,6 +51,14 @@ class Settings(BaseSettings):
     baidu_speech_dev_pid: int = 1537  # 普通话（纯中文）
     baidu_speech_timeout_s: float = 10.0
 
+    # 百度短文本语音合成（TTS）
+    baidu_tts_per: int = 0  # 0=度小美（基础音库）
+    baidu_tts_spd: int = 5
+    baidu_tts_pit: int = 5
+    baidu_tts_vol: int = 5
+    baidu_tts_aue: int = 4  # 4=16k PCM，直接给 I2S 功放
+    baidu_tts_timeout_s: float = 10.0
+
     # 语音 WebSocket（P1：接收 PCM、VAD 切分、WAV 归档；暂不执行运动）
     voice_enabled: bool = True
     voice_artifact_dir: str = "logs/voice"

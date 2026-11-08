@@ -1,7 +1,7 @@
 # 语音控制方案（2026-11-08）
 
 > 分支：`codex/voice-baidu-asr`（从 main `82d3eed` 创建，未合并）
-> 状态：百度短语音 API 已跑通（TTS + 真实麦克风）；PC 侧 WS/VAD/WAV/意图已实现；ESP32 推流未开始
+> 状态：百度短语音 API + 短文本 TTS 已跑通；PC 侧 WS/VAD/WAV/意图已实现；ESP32 推流未开始
 > 关联：`START-HERE-Straight-Control-Handoff-2026-11-08.md`（车辆与安全基线）
 
 ## 1. 目标与非目标
@@ -166,6 +166,17 @@ silero-vad 仍推荐作为下一步升级：抗噪更好，但会引入 torch/on
 - 配置：`voice_enabled`、`voice_artifact_dir`、`voice_vad_*`、`voice_max_*`（`app/config.py`）；
 - 调试客户端：`scripts/voice_ws_client.py <wav>`。
 
+### 5.7 语音反馈（TTS，下一阶段）
+
+- 触发：`final` 意图被接受/拒绝/停止时；
+- 短语示例：收到、已停止、没听清请再说一遍；
+- 路径：pyserver TTS（`aue=4`）→ 同一语音 WS 发送
+  `{"type":"speak","format":"pcm","rate":16000,"channels":1,"bytes":N}` + 二进制 PCM
+  → ESP32 I2S TX；`speak` 必须在 `end` 之前发送，或保持连接到播放结束；
+- 立即反馈（<100 ms）仍用本地提示音；TTS 用于语义确认；
+- TTS 不可用/超时：跳过语音反馈，不影响运动命令；
+- 当前 `app.state.voice_tts` 已创建，但还没有接入 WS 播放。
+
 ## 6. WebSocket 协议
 
 ```text
@@ -256,6 +267,21 @@ Content-Type: application/json
 - 不写入代码、文档、日志、测试夹具；
 - 百度控制台如泄露密钥，应及时重置。
 
+### 7.5 短文本语音合成（TTS）
+
+- 请求地址：`https://tsn.baidu.com/text2audio`（POST form 推荐；GET 也可）；
+- 必填：`tex`（文本）、`tok`（access_token）、`cuid`、`ctp=1`、`lan=zh`；
+- 选填：`spd`(0–15)、`pit`(0–15)、`vol`(基础音库 0–9，精品 0–15)、`per`、`aue`、`audio_ctrl`；
+- `aue`：3=mp3，4=pcm（16k/24k），5=pcm 8k，6=wav；本项目用 `aue=4` 并传
+  `audio_ctrl={"sampling_rate":16000}`，得到 16k/16-bit/mono 裸 PCM，可直接给 I2S 功放；
+- 成功判定：响应 `Content-Type` 以 `audio/` 开头；否则是 JSON 错误（`err_no/err_msg/sn`）；
+- 文本限制：≤1024 GBK 字节，建议 ≤120（约 60 汉字）；超出按次计费；
+- token scope 需要 `audio_tts_post`；
+- 实测：`per=0`，“收到，正在前进” → 1.91 s / 61120 bytes PCM，281–425 ms；把合成 WAV
+  再送 ASR 得到“收到，正在前进。”，文本编码与音频都正常；
+- demo 的 `tts.py` 对 `tex` 做了两次 URL 编码；用 httpx form data 单次编码即可（已实测）；
+- 音色列表与选型见 [Voice-TTS-Voice-List-2026-11-08.md](Voice-TTS-Voice-List-2026-11-08.md)。
+
 ## 8. 命令集与映射（第一版）
 
 | 意图 | 示例文本 | 动作 |
@@ -299,11 +325,15 @@ Content-Type: application/json
 - `tests/test_vad.py`：切段、pre-roll、最短语音、最大段长、flush、任意分块；7 项通过。
 - `tests/test_voice_intent.py`：中文/阿拉伯数字、白名单、歧义拒绝；参数化 23 项。
 - `tests/test_voice_ws.py`：协议、WAV 归档、ASR 替身/错误、非法采样率、设备占用、空会话；7 项通过。
+- `tests/test_baidu_tts.py`：PCM/WAV 请求契约、Content-Type 成功判定、错误 JSON、HTTP 错误、
+  空文本、超长文本、scope、token 缓存；8 项通过。
 - `scripts/baidu_asr_smoke.py`：真实接口冒烟，要求 16 kHz/16-bit/mono WAV。
+- `scripts/baidu_tts_smoke.py`：真实 TTS 冒烟，默认输出 16k PCM + 可播放 WAV。
 - `scripts/voice_ws_client.py`：把 WAV 推给运行中的 pyserver，打印 ready/final/end。
-- 全量 pytest：**129 项通过**。
+- 全量 pytest：**139 项通过**。
 - 真实链路：`voice_ws_client.py` 推送 Mac 麦克风录音，服务端返回
   `text="前进一米。"`、`intent=forward`、`distance_mm=1000`，并写出 full/seg WAV。
+- TTS 回环：合成“收到，正在前进” → 1.91 s WAV → 再送 ASR 得到同一文本。
 
 **待实现**
 
@@ -336,11 +366,18 @@ Content-Type: application/json
   据此把取 token 改为 form body（不把 secret 放 URL）并增加 scope 校验。
 - PC 侧 P1 已实现：`/api/v1/voice/stream`、能量 VAD、full/seg WAV 归档、意图解析、
   百度 ASR 接入；真实麦克风录音与官方示例音频均端到端识别成功。
+- 百度短文本 TTS 已跑通：16k PCM/WAV、Content-Type 成功判定、TTS→ASR 回环；
+  音色列表见 [Voice-TTS-Voice-List-2026-11-08.md](Voice-TTS-Voice-List-2026-11-08.md)；
+  WS 播放反馈尚未接入。
 - 下一步：ESP32 单麦克风 I2S 推流（P0），再接 P2 的 AgentMotionService 执行与安全联调。
 
 ## 14. 相关文件
 
 - `pyserver/app/services/baidu_asr.py`
-- `pyserver/app/config.py`（`baidu_speech_*`）
+- `pyserver/app/services/baidu_tts.py`
+- `pyserver/app/config.py`（`baidu_speech_*` / `baidu_tts_*`）
 - `pyserver/scripts/baidu_asr_smoke.py`
+- `pyserver/scripts/baidu_tts_smoke.py`
 - `pyserver/tests/test_baidu_asr.py`
+- `pyserver/tests/test_baidu_tts.py`
+- [百度 TTS 音色列表](Voice-TTS-Voice-List-2026-11-08.md)
