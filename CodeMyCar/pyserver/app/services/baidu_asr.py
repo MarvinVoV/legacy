@@ -23,6 +23,7 @@ ASR_URL = "https://vop.baidu.com/server_api"
 
 SUPPORTED_RATE = 16000
 DEFAULT_DEV_PID = 1537  # 普通话（纯中文识别）
+_REQUIRED_SCOPE = "audio_voice_assistant_get"
 _TOKEN_REFRESH_MARGIN_S = 300.0
 
 
@@ -70,9 +71,11 @@ class BaiduAsrClient:
             if self._token and self._clock() < self._token_expires_at - _TOKEN_REFRESH_MARGIN_S:
                 return self._token
             try:
+                # 官方 demo 把 client_secret 放在 POST form body 里；不要放 query，
+                # 否则密钥可能进入代理/访问日志。
                 resp = await self._client.post(
                     TOKEN_URL,
-                    params={
+                    data={
                         "grant_type": "client_credentials",
                         "client_id": self._api_key,
                         "client_secret": self._secret_key,
@@ -87,6 +90,11 @@ class BaiduAsrClient:
             if not token:
                 raise BaiduAsrError(
                     f"获取 token 失败: {data.get('error')} {data.get('error_description')}"
+                )
+            scope = data.get("scope")
+            if isinstance(scope, str) and _REQUIRED_SCOPE not in scope.split():
+                raise BaiduAsrError(
+                    f"应用缺少语音识别权限 {_REQUIRED_SCOPE}，当前 scope: {scope}"
                 )
             self._token = str(token)
             self._token_expires_at = self._clock() + float(data.get("expires_in", 0))

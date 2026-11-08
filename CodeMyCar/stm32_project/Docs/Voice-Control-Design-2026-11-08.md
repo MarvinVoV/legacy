@@ -197,6 +197,10 @@ POST https://aip.baidubce.com/oauth/2.0/token
 
 返回 `access_token` 和 `expires_in`（约 30 天）。客户端缓存 token，提前 5 分钟刷新。
 
+官方 Python demo 把 `client_id` / `client_secret` 放在 POST form body（不是 URL query）；
+本项目同样如此，避免密钥进入代理/访问日志。token 响应含 `scope`，客户端校验
+`audio_voice_assistant_get`，缺少时抛出明确错误。
+
 ### 7.2 识别
 
 ```http
@@ -240,6 +244,7 @@ Content-Type: application/json
 | 左转三十度 | `左转30度。` | 527 ms |
 | 后退一米 | `后退一米。` | 527 ms |
 | Mac 麦克风（真人） | `前进一米。` | 444 ms |
+| 官方示例 `16k.wav`（4.06 s） | `北京科技馆。` | 679 ms |
 
 同进程复用 token 时，单次请求约 220–400 ms。前四条是 TTS 样本，最后一条是 Mac 内置麦克风的真实录音；实车麦克风/噪声下的识别率仍需测试。
 
@@ -326,8 +331,11 @@ Content-Type: application/json
 - 已用 Mac 内置麦克风录真实语音验证：`前进一米` → `前进一米。`（444 ms）。
 - 已核对百度官方文档：JSON 上传参数、16k/8k、60 秒上限、dev_pid 取值、自定义词库、
   access_token/API Key 鉴权，以及实时 WebSocket API 的 START/FINISH/CANCEL 流程。
+- 已核对百度 speech-demo 的 Python 示例（`asr_json.py` / `asr_raw.py`）：
+  JSON 参数、`len` 语义、`dev_pid=1537`、`scope` 与极速版/自训练参数均确认；
+  据此把取 token 改为 form body（不把 secret 放 URL）并增加 scope 校验。
 - PC 侧 P1 已实现：`/api/v1/voice/stream`、能量 VAD、full/seg WAV 归档、意图解析、
-  百度 ASR 接入；真实麦克风录音经 WS 端到端识别成功。
+  百度 ASR 接入；真实麦克风录音与官方示例音频均端到端识别成功。
 - 下一步：ESP32 单麦克风 I2S 推流（P0），再接 P2 的 AgentMotionService 执行与安全联调。
 
 ## 14. 相关文件

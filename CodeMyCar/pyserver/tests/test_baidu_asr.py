@@ -16,7 +16,13 @@ from app.services.baidu_asr import BaiduAsrClient, BaiduAsrError
 def _make_client(calls, *, token_payload=None, asr_payload=None, asr_status=200):
     """返回 (客户端, 注入的 httpx.AsyncClient)，测试结束需关闭后者。"""
     token_payload = (
-        {"access_token": "tok", "expires_in": 3600} if token_payload is None else token_payload
+        {
+            "access_token": "tok",
+            "expires_in": 3600,
+            "scope": "public audio_voice_assistant_get",
+        }
+        if token_payload is None
+        else token_payload
     )
     asr_payload = (
         {"err_no": 0, "err_msg": "success.", "result": ["前进一米。"]}
@@ -27,6 +33,8 @@ def _make_client(calls, *, token_payload=None, asr_payload=None, asr_status=200)
     def handler(request: httpx.Request) -> httpx.Response:
         if request.url.host == "aip.baidubce.com":
             calls["token"] += 1
+            calls["token_query"] = request.url.query.decode()
+            calls["token_body"] = request.content.decode()
             return httpx.Response(200, json=token_payload)
         calls["asr"].append(json.loads(request.content))
         return httpx.Response(asr_status, json=asr_payload)
@@ -69,6 +77,34 @@ async def test_token_is_cached(calls):
 
     assert calls["token"] == 1
     assert len(calls["asr"]) == 2
+
+
+async def test_token_secret_is_in_form_body_not_url(calls):
+    client, http = _make_client(calls)
+    try:
+        await client.recognize(b"\x00\x00")
+    finally:
+        await http.aclose()
+
+    assert calls["token_query"] == ""
+    assert "client_id=key" in calls["token_body"]
+    assert "client_secret=secret" in calls["token_body"]
+
+
+async def test_missing_scope_raises(calls):
+    client, http = _make_client(
+        calls,
+        token_payload={
+            "access_token": "tok",
+            "expires_in": 3600,
+            "scope": "public",
+        },
+    )
+    try:
+        with pytest.raises(BaiduAsrError, match="audio_voice_assistant_get"):
+            await client.recognize(b"\x00\x00")
+    finally:
+        await http.aclose()
 
 
 async def test_baidu_error_code_raises(calls):
