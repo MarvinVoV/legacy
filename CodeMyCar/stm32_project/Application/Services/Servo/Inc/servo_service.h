@@ -16,6 +16,10 @@
 // 默认移动速度 200ms/度
 #define SERVO_DEFAULT_SPEED_MS (200)
 
+/* Raw servo degrees, not road-wheel degrees. At 500..2500us / 180deg,
+ * 0.2deg is about 2.2us. Preserve small heading corrections refreshed at 200Hz. */
+#define STEER_CONTROL_DEADZONE_DEG (0.2f)
+
 /*--------------------- 配置参数 ---------------------*/
 typedef struct
 {

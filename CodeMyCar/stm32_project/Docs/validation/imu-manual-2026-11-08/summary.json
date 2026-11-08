@@ -1,0 +1,444 @@
+{
+  "date": "2026-11-08",
+  "branch": "codex/imu-body-frame-validation",
+  "base_commit": "ef6b418",
+  "stm32_elf_sha256": "5a5f7fc69fcc49d2ccab724ebfb24f38402badf6c29723b03c27851bc20aa1dd",
+  "raw_timebase": "host monotonic + STM32 sensor timestamp ms",
+  "heading_units": "yaw_mdeg/1000 deg; yaw_rate_mdps/1000 deg/s",
+  "yaw_convention": "CCW-positive; confirmed by clock-face actions",
+  "phases": [
+    {
+      "source": "before",
+      "phase": "baseline",
+      "heading_samples": 105,
+      "duration_s": 10.854,
+      "first_yaw_deg": 0.0,
+      "last_yaw_deg": 0.0,
+      "yaw_delta_deg": 0.0,
+      "rate_integral_deg": 0.0,
+      "sensor_gaps_over_500ms": 0
+    },
+    {
+      "source": "before",
+      "phase": "manual_left_hold",
+      "heading_samples": 748,
+      "duration_s": 78.407,
+      "first_yaw_deg": 0.0,
+      "last_yaw_deg": -43.0,
+      "yaw_delta_deg": -43.0,
+      "rate_integral_deg": -42.275885,
+      "sensor_gaps_over_500ms": 0,
+      "direction_labels_ambiguous": true
+    },
+    {
+      "source": "before",
+      "phase": "return_from_left",
+      "heading_samples": 478,
+      "duration_s": 50.113,
+      "first_yaw_deg": -43.0,
+      "last_yaw_deg": 10.5,
+      "yaw_delta_deg": 53.5,
+      "rate_integral_deg": 53.640635,
+      "sensor_gaps_over_500ms": 0,
+      "direction_labels_ambiguous": true
+    },
+    {
+      "source": "before",
+      "phase": "manual_right_hold",
+      "heading_samples": 1089,
+      "duration_s": 114.496,
+      "first_yaw_deg": 10.5,
+      "last_yaw_deg": -47.4,
+      "yaw_delta_deg": -57.9,
+      "rate_integral_deg": -57.927885,
+      "sensor_gaps_over_500ms": 0,
+      "direction_labels_ambiguous": true
+    },
+    {
+      "source": "before",
+      "phase": "clockwise_12_to_1",
+      "heading_samples": 529,
+      "duration_s": 55.311,
+      "first_yaw_deg": -47.4,
+      "last_yaw_deg": -75.0,
+      "yaw_delta_deg": -27.6,
+      "rate_integral_deg": -27.093635,
+      "sensor_gaps_over_500ms": 0
+    },
+    {
+      "source": "before",
+      "phase": "counterclockwise_back_to_12",
+      "heading_samples": 792,
+      "duration_s": 83.033,
+      "first_yaw_deg": -75.0,
+      "last_yaw_deg": -50.4,
+      "yaw_delta_deg": 24.6,
+      "rate_integral_deg": 24.28755,
+      "sensor_gaps_over_500ms": 0
+    },
+    {
+      "source": "before",
+      "phase": "forward_heading_baseline",
+      "heading_samples": 78,
+      "duration_s": 8.096,
+      "first_yaw_deg": -60.2,
+      "last_yaw_deg": -61.8,
+      "yaw_delta_deg": -1.6,
+      "rate_integral_deg": -1.29803,
+      "sensor_gaps_over_500ms": 0,
+      "head_log_examples": [
+        "HEAD straight=1 yaw=-61.51 ref=-60.22 err=-1.30 corr=-0.033 k=-0.033 v=0.080 ",
+        "HEAD straight=1 yaw=-61.65 ref=-60.22 err=-1.43 corr=-0.038 k=-0.038 v=0.081 ",
+        "HEAD straight=1 yaw=-61.73 ref=-60.22 err=-1.51 corr=-0.043 k=-0.043 v=0.081 "
+      ]
+    },
+    {
+      "source": "before",
+      "phase": "forward_clockwise_hold",
+      "heading_samples": 474,
+      "duration_s": 49.998,
+      "first_yaw_deg": -61.8,
+      "last_yaw_deg": -71.9,
+      "yaw_delta_deg": -10.1,
+      "rate_integral_deg": -11.06676,
+      "sensor_gaps_over_500ms": 0,
+      "head_log_examples": [
+        "HEAD straight=1 yaw=-71.79 ref=-60.22 err=-11.57 corr=-0.300 k=-0.300 v=0.080 ",
+        "HEAD straight=1 yaw=-71.88 ref=-60.22 err=-11.66 corr=-0.300 k=-0.300 v=0.080 ",
+        "HEAD straight=1 yaw=-71.91 ref=-60.22 err=-11.69 corr=-0.300 k=-0.300 v=0.078 "
+      ]
+    },
+    {
+      "source": "before",
+      "phase": "reverse_heading_baseline",
+      "heading_samples": 88,
+      "duration_s": 9.241,
+      "first_yaw_deg": -70.3,
+      "last_yaw_deg": -70.2,
+      "yaw_delta_deg": 0.1,
+      "rate_integral_deg": 0.125835,
+      "sensor_gaps_over_500ms": 0,
+      "head_log_examples": [
+        "HEAD straight=1 yaw=-70.16 ref=-70.25 err=-0.09 corr=0.000 k=0.000 v=-0.081 ",
+        "HEAD straight=1 yaw=-70.18 ref=-70.25 err=-0.07 corr=0.000 k=0.000 v=-0.081 ",
+        "HEAD straight=1 yaw=-70.17 ref=-70.25 err=-0.08 corr=0.000 k=0.000 v=-0.081 "
+      ]
+    },
+    {
+      "source": "before",
+      "phase": "reverse_clockwise_hold",
+      "heading_samples": 392,
+      "duration_s": 41.327,
+      "first_yaw_deg": -70.2,
+      "last_yaw_deg": -81.7,
+      "yaw_delta_deg": -11.5,
+      "rate_integral_deg": -11.254895,
+      "sensor_gaps_over_500ms": 0,
+      "head_log_examples": [
+        "HEAD straight=1 yaw=-81.75 ref=-70.25 err=11.50 corr=0.300 k=0.300 v=-0.079 ",
+        "HEAD straight=1 yaw=-81.67 ref=-70.25 err=11.42 corr=0.300 k=0.300 v=-0.080 ",
+        "HEAD straight=1 yaw=-81.71 ref=-70.25 err=11.46 corr=0.300 k=0.300 v=-0.079 "
+      ]
+    },
+    {
+      "source": "after",
+      "phase": "postfix_boot_still",
+      "heading_samples": 490,
+      "duration_s": 51.342,
+      "first_yaw_deg": 0.0,
+      "last_yaw_deg": 6.9,
+      "yaw_delta_deg": 6.9,
+      "rate_integral_deg": 4.02178,
+      "sensor_gaps_over_500ms": 0
+    },
+    {
+      "source": "after",
+      "phase": "postfix_forward_heading_baseline",
+      "heading_samples": 65,
+      "duration_s": 6.812,
+      "first_yaw_deg": 6.9,
+      "last_yaw_deg": 6.9,
+      "yaw_delta_deg": 0.0,
+      "rate_integral_deg": -0.04681,
+      "sensor_gaps_over_500ms": 0,
+      "head_log_examples": [
+        "HEAD straight=1 yaw=6.87 ref=6.88 err=-0.01 corr=0.000 k=0.000 v=0.082 ",
+        "HEAD straight=1 yaw=6.90 ref=6.88 err=0.01 corr=0.000 k=0.000 v=0.083 ",
+        "HEAD straight=1 yaw=6.89 ref=6.88 err=0.01 corr=0.000 k=0.000 v=0.082 "
+      ]
+    },
+    {
+      "source": "after",
+      "phase": "postfix_forward_clockwise_hold",
+      "heading_samples": 398,
+      "duration_s": 41.905,
+      "first_yaw_deg": 6.9,
+      "last_yaw_deg": -7.2,
+      "yaw_delta_deg": -14.1,
+      "rate_integral_deg": -14.867885,
+      "sensor_gaps_over_500ms": 0,
+      "head_log_examples": [
+        "HEAD straight=1 yaw=-7.26 ref=6.88 err=-14.14 corr=-0.300 k=-0.300 v=0.081 ",
+        "HEAD straight=1 yaw=-7.25 ref=6.88 err=-14.13 corr=-0.300 k=-0.300 v=0.080 ",
+        "HEAD straight=1 yaw=-7.21 ref=6.88 err=-14.09 corr=-0.300 k=-0.300 v=0.080 "
+      ]
+    },
+    {
+      "source": "after",
+      "phase": "postfix_forward_counterclockwise_hold",
+      "heading_samples": 522,
+      "duration_s": 55.035,
+      "first_yaw_deg": -7.2,
+      "last_yaw_deg": 22.7,
+      "yaw_delta_deg": 29.9,
+      "rate_integral_deg": 29.87321,
+      "sensor_gaps_over_500ms": 0,
+      "head_log_examples": [
+        "HEAD straight=1 yaw=22.52 ref=6.88 err=15.64 corr=0.300 k=0.300 v=0.082 ",
+        "HEAD straight=1 yaw=22.62 ref=6.88 err=15.74 corr=0.300 k=0.300 v=0.082 ",
+        "HEAD straight=1 yaw=22.66 ref=6.88 err=15.78 corr=0.300 k=0.300 v=0.082 "
+      ]
+    },
+    {
+      "source": "after",
+      "phase": "postfix_forward_stopped",
+      "heading_samples": 1133,
+      "duration_s": 119.108,
+      "first_yaw_deg": 22.6,
+      "last_yaw_deg": 21.7,
+      "yaw_delta_deg": -0.9,
+      "rate_integral_deg": -2.243205,
+      "sensor_gaps_over_500ms": 0
+    },
+    {
+      "source": "after",
+      "phase": "postfix_manual_goal",
+      "heading_samples": 346,
+      "duration_s": 36.337,
+      "first_yaw_deg": 21.7,
+      "last_yaw_deg": 2.5,
+      "yaw_delta_deg": -19.2,
+      "rate_integral_deg": -19.702385,
+      "sensor_gaps_over_500ms": 0,
+      "head_log_examples": [
+        "HEAD straight=1 yaw=2.45 ref=7.99 err=-5.55 corr=-0.237 k=-0.229 v=0.042 ",
+        "HEAD straight=1 yaw=2.45 ref=7.99 err=-5.54 corr=-0.248 k=-0.239 v=0.040 ",
+        "HEAD straight=1 yaw=2.47 ref=7.99 err=-5.53 corr=-0.259 k=-0.250 v=0.041 "
+      ]
+    },
+    {
+      "source": "after",
+      "phase": "postfix_manual_goal_stopped",
+      "heading_samples": 952,
+      "duration_s": 100.036,
+      "first_yaw_deg": 2.5,
+      "last_yaw_deg": 8.4,
+      "yaw_delta_deg": 5.9,
+      "rate_integral_deg": 5.844635,
+      "sensor_gaps_over_500ms": 0,
+      "head_log_examples": [
+        "HEAD straight=1 yaw=5.23 ref=0.00 err=-0.01 corr=0.000 k=0.000 v=0.000 ",
+        "HEAD straight=1 yaw=5.45 ref=0.00 err=-0.03 corr=0.000 k=0.000 v=0.000 ",
+        "HEAD straight=1 yaw=5.94 ref=0.00 err=-0.30 corr=0.000 k=0.000 v=0.000 "
+      ]
+    },
+    {
+      "source": "after",
+      "phase": "repeat_forward_heading_baseline",
+      "heading_samples": 10,
+      "duration_s": 0.878,
+      "first_yaw_deg": 8.5,
+      "last_yaw_deg": 8.6,
+      "yaw_delta_deg": 0.1,
+      "rate_integral_deg": 0.164185,
+      "sensor_gaps_over_500ms": 0,
+      "head_log_examples": [
+        "HEAD straight=1 yaw=8.45 ref=0.00 err=0.18 corr=0.000 k=0.000 v=0.000 "
+      ]
+    },
+    {
+      "source": "after",
+      "phase": "repeat_forward_clockwise_hold",
+      "heading_samples": 503,
+      "duration_s": 53.113,
+      "first_yaw_deg": 8.6,
+      "last_yaw_deg": -9.0,
+      "yaw_delta_deg": -17.6,
+      "rate_integral_deg": -17.4834,
+      "sensor_gaps_over_500ms": 0,
+      "head_log_examples": [
+        "HEAD straight=1 yaw=-9.30 ref=8.46 err=-17.76 corr=-0.300 k=-0.300 v=0.082 ",
+        "HEAD straight=1 yaw=-9.30 ref=8.46 err=-17.76 corr=-0.300 k=-0.300 v=0.081 ",
+        "HEAD straight=1 yaw=-9.26 ref=8.46 err=-17.73 corr=-0.300 k=-0.300 v=0.082 "
+      ]
+    },
+    {
+      "source": "after",
+      "phase": "repeat_forward_stopped",
+      "heading_samples": 603,
+      "duration_s": 63.402,
+      "first_yaw_deg": -9.0,
+      "last_yaw_deg": -2.4,
+      "yaw_delta_deg": 6.6,
+      "rate_integral_deg": 7.318335,
+      "sensor_gaps_over_500ms": 0
+    },
+    {
+      "source": "after",
+      "phase": "visual_center_before",
+      "heading_samples": 78,
+      "duration_s": 7.988,
+      "first_yaw_deg": -2.4,
+      "last_yaw_deg": -2.4,
+      "yaw_delta_deg": 0.0,
+      "rate_integral_deg": 0.07224,
+      "sensor_gaps_over_500ms": 0,
+      "head_log_examples": [
+        "HEAD straight=1 yaw=-2.35 ref=0.00 err=-17.64 corr=0.000 k=0.000 v=0.000 ",
+        "HEAD straight=1 yaw=-2.37 ref=0.00 err=-17.64 corr=0.000 k=0.000 v=0.000 ",
+        "HEAD straight=1 yaw=-2.36 ref=0.00 err=-17.64 corr=0.000 k=0.000 v=0.000 "
+      ]
+    },
+    {
+      "source": "after",
+      "phase": "visual_left_12deg",
+      "heading_samples": 75,
+      "duration_s": 7.781,
+      "first_yaw_deg": -2.4,
+      "last_yaw_deg": -2.4,
+      "yaw_delta_deg": 0.0,
+      "rate_integral_deg": 0.014535,
+      "sensor_gaps_over_500ms": 0,
+      "head_log_examples": [
+        "HEAD straight=0 yaw=-2.38 ref=0.00 err=-17.64 corr=0.000 k=-1.500 v=0.000 ",
+        "HEAD straight=0 yaw=-2.38 ref=0.00 err=-17.64 corr=0.000 k=-1.500 v=0.000 ",
+        "HEAD straight=0 yaw=-2.38 ref=0.00 err=-17.64 corr=0.000 k=-1.500 v=0.000 "
+      ]
+    },
+    {
+      "source": "after",
+      "phase": "visual_center_middle",
+      "heading_samples": 77,
+      "duration_s": 7.903,
+      "first_yaw_deg": -2.4,
+      "last_yaw_deg": -2.4,
+      "yaw_delta_deg": 0.0,
+      "rate_integral_deg": 0.0683,
+      "sensor_gaps_over_500ms": 0,
+      "head_log_examples": [
+        "HEAD straight=1 yaw=-2.43 ref=0.00 err=-17.64 corr=0.000 k=0.000 v=0.000 ",
+        "HEAD straight=1 yaw=-2.40 ref=0.00 err=-17.64 corr=0.000 k=0.000 v=0.000 ",
+        "HEAD straight=1 yaw=-2.42 ref=0.00 err=-17.64 corr=0.000 k=0.000 v=0.000 "
+      ]
+    },
+    {
+      "source": "after",
+      "phase": "visual_right_12deg",
+      "heading_samples": 76,
+      "duration_s": 7.959,
+      "first_yaw_deg": -2.4,
+      "last_yaw_deg": -2.4,
+      "yaw_delta_deg": 0.0,
+      "rate_integral_deg": -0.103595,
+      "sensor_gaps_over_500ms": 0,
+      "head_log_examples": [
+        "HEAD straight=0 yaw=-2.47 ref=0.00 err=-17.64 corr=0.000 k=1.500 v=0.000 ",
+        "HEAD straight=0 yaw=-2.46 ref=0.00 err=-17.64 corr=0.000 k=1.500 v=0.000 ",
+        "HEAD straight=0 yaw=-2.44 ref=0.00 err=-17.64 corr=0.000 k=1.500 v=0.000 "
+      ]
+    },
+    {
+      "source": "after",
+      "phase": "visual_center_after",
+      "heading_samples": 78,
+      "duration_s": 8.049,
+      "first_yaw_deg": -2.4,
+      "last_yaw_deg": -2.5,
+      "yaw_delta_deg": -0.1,
+      "rate_integral_deg": -0.0803,
+      "sensor_gaps_over_500ms": 0,
+      "head_log_examples": [
+        "HEAD straight=1 yaw=-2.48 ref=0.00 err=-17.64 corr=0.000 k=0.000 v=0.000 ",
+        "HEAD straight=1 yaw=-2.47 ref=0.00 err=-17.64 corr=0.000 k=0.000 v=0.000 ",
+        "HEAD straight=1 yaw=-2.48 ref=0.00 err=-17.64 corr=0.000 k=0.000 v=0.000 "
+      ]
+    },
+    {
+      "source": "after",
+      "phase": "visual_sweep_stopped",
+      "heading_samples": 385,
+      "duration_s": 40.326,
+      "first_yaw_deg": -2.5,
+      "last_yaw_deg": -1.5,
+      "yaw_delta_deg": 1.0,
+      "rate_integral_deg": 0.86438,
+      "sensor_gaps_over_500ms": 0
+    }
+  ],
+  "artifacts": [
+    {
+      "file": "before-heading-motion.jsonl.gz",
+      "records": 7020,
+      "bytes": 138363,
+      "sha256": "c493f75d96605602c1d48da65bb32b3c541d84af2f19c7c357f4d88c928a29e9"
+    },
+    {
+      "file": "after-heading-motion.jsonl.gz",
+      "records": 10308,
+      "bytes": 216924,
+      "sha256": "a609277e2e0298076d2ee258067d2a3ef070b8cef5f863fe897490109703ff2e"
+    }
+  ],
+  "pwm_readback_us": {
+    "before_forward_kappa_minus_0_3": 1493,
+    "after_forward_kappa_minus_0_3": 1513,
+    "before_reverse_kappa_plus_0_3": 1456,
+    "after_forward_kappa_plus_0_3": 1436
+  },
+  "final_hardware": {
+    "servo_ccr1": 1469,
+    "motor_ccr1_ccr2": [
+      0,
+      0
+    ],
+    "motion_tx_failures": 0,
+    "motion_max_gap_ms": 7,
+    "heap_min_free_bytes": 9208,
+    "heap_free_bytes": 9752
+  },
+  "operator_feedback": {
+    "small_correction_visual": "too small to judge",
+    "zero_speed_plus_minus_12deg_sweep": "smooth, no abnormality observed"
+  },
+  "manual_goal": {
+    "baseline_yaw_deg": 21.7,
+    "last_heading_deg": 2.5,
+    "relative_body_clockwise_deg": 19.2,
+    "last_goal_motion": {
+      "seq": 241,
+      "state": "running",
+      "error": 0,
+      "mode": 4,
+      "fault": false,
+      "lease_expired": false,
+      "goal_heading_source": "imu",
+      "x_mm": 1704,
+      "y_mm": 6745,
+      "theta_mdeg": 101925,
+      "odometer_mm": 9867,
+      "goal_distance_mm": 1437,
+      "goal_turn_mdeg": 19201,
+      "goal_duration_ms": 36110,
+      "left_mmps": 36,
+      "right_mmps": 42,
+      "session_id": 1639294997
+    },
+    "end": "intentionally interrupted by confirmed STOP before distance target"
+  },
+  "zero_speed_visual_sweep": {
+    "motion_samples": 697,
+    "max_abs_left_mmps": 0,
+    "max_abs_right_mmps": 0,
+    "fault_samples": 0
+  }
+}

@@ -211,7 +211,7 @@ static int init_steer_servo_service(void)
     static SteerConfig steerConfig = (SteerConfig){
         .minAngleDeg = SERVO_ANGLE_MIN,
         .maxAngleDeg = SERVO_ANGLE_MAX,
-        .deadZoneDeg = 2,
+        .deadZoneDeg = STEER_CONTROL_DEADZONE_DEG,
         .updateIntervalMs = 20,
         .maxSpeedDegPerSec = 90.0f,      // 最大速度：90°/秒（0.09°/ms）
         .accelerationDegPerSec2 = 180.0f // 加速度：180°/秒²（0.00018°/ms²）

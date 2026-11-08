@@ -92,6 +92,25 @@ int main(void)
     assert(SteerService_setAngleSmoothly(&instance,instance.state.commandedAngleDeg)==0);
     assert(instance.state.motionState==STEER_MOTION_STATE_IDLE);
     assert(instance.smoothCtrl.currentSpeedDegPerMs==0.0f);
+    /* Production timing: MotionTask refreshes at 5ms, ServoTask at 20ms.
+     * A large command dead zone can cancel the final part of every small
+     * heading correction before ServoTask can snap to its destination. */
+    SteerConfig headingCfg=cfg;
+    headingCfg.deadZoneDeg=STEER_CONTROL_DEADZONE_DEG;
+    SteerInstance headingServo={0};
+    assert(SteerService_init(&headingServo,&headingCfg,&driver)==0);
+    assert(SteerService_setAngleImmediate(&headingServo,87.3f)==0);
+    const float targets[]={91.38f,84.03f,84.53f};
+    for(unsigned j=0;j<sizeof(targets)/sizeof(targets[0]);++j) {
+        for(int i=0;i<400;i++) {
+            tick_ms+=5;
+            assert(SteerService_setAngleSmoothly(&headingServo,targets[j])==0);
+            if((i%4)==3) assert(SteerService_update(&headingServo)==0);
+        }
+        printf("heading servo target=%.3f submitted=%.3f error=%.3f raw deg\n",
+               targets[j],last_hw_angle,fabsf(last_hw_angle-targets[j]));
+        assert(fabsf(last_hw_angle-targets[j])<=0.3f);
+    }
     puts("servo_service: all tests passed");
     return 0;
 }
