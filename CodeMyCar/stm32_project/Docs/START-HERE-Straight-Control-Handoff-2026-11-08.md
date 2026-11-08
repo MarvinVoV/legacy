@@ -1,116 +1,44 @@
-# START HERE：直行优化接手说明（2026-11-08）
+# START HERE：当日收工与后续开发交接（2026-11-08）
 
-**最新弧线测试现场**：1546µs版已完成左前60cm/左转30°→倒回60cm/回转30°→右前60cm/右转30°→倒回60cm/回转30°，10cm/s，每段DONE及STOP确认。最后STOP22双轮零速，原轨迹复现仍以用户观察为准。详见[1546µs交接](Steering-Neutral-1546-Calibration-Handoff-2026-11-08.md)顶部；[下次路径外环TODO](TODO-Straight-Path-Outer-Loop-Experiment-2026-11-08.md)已记录，本轮保持OFF，不自动追加运动。
+本文件是当前统一入口。历史报告保存当时事实，遇到不同中位、分支、固件或STOP序号时，以本文件及后续git/设备实查为准。用户今天结束测试，不再自动执行运动。
 
-**1546µs最终合并收尾**：用户已授权把代码`6e91aea`及两轮验证记录`7be85f8`/`ccbd2d4`合并main并push；最新基线中位为1546µs。本段取代下方历史“候选未合并/main仍1530”的状态说明，完成状态以git核对。两轮10cm/s、1m往返均观察返回右偏约1–2mm，未扩大精度承诺，最后STOP12；详见[中位标定交接](Steering-Neutral-1546-Calibration-Handoff-2026-11-08.md)。
+## 仓库与固件
 
-**第二轮重复验证**：1546µs版本不改参数、不重启完成第二轮1m往返，最终STOP12双轮零速；用户确认两轮结果一致，前进基本无明显偏移，倒车返回右偏约1–2mm。保留1546，本组结束；尚未覆盖全速度/长期精度，未合并main、未push。最新现场与reference.json以 [1546µs接手记录](Steering-Neutral-1546-Calibration-Handoff-2026-11-08.md) 顶部为准，优先于下面历史STOP6。
+- 当前分支main。1546µs统一中位代码`6e91aea`、两轮直线记录`7be85f8`/`ccbd2d4`已合并，`e4f0eb3`已推送。弧线证据`dbd39e8`/`3d83cfa`及本收工文档一并按用户授权提交、推送main；接手用git status/log核对最终同步状态。
+- 车上STM32中位为 **1546µs**，启动、STOP、正常GOAL收尾和零曲率共享。不要恢复1530/1470或把机械中位转换成虚假的左右轮曲率差。
+- ELF：`stm32_project/build/MagNoTrim/stm32_project.elf`；SHA256：`57896d34fde1ac573e00a48171365e96d835760ac645525fe4b3bb44805e1f7d`。已烧录读回，停车PWM1546、双电机PWM0/0已验证。
+- 实测配置：trim0/0、PATH外环OFF、电机细积分OFF、磁诊断ON、Sonar软件ON但实物未装。磁力计仅诊断，控制使用GRV航向。普通构建默认配置未必相同，先核对CMakeCache。
+- 版本标识在CMake configure时刷新；后续文档提交不改变车上镜像，不能只凭嵌入git标识判断是否烧错。
 
-**最新1546µs中位候选**：开发分支 `codex/steering-neutral-1546`，代码提交`6e91aea`，24次host执行及三构建通过；已烧录并完成10cm/s、1m前进倒回首轮，用户观察右偏仅约1–2mm，尚未做重复性/全速度验收。最终STOP6双轮零速，停车PWM1546、双电机PWM0/0。pyserver按用户要求重启后STOP确认恢复，通信异常根因未确定。请先读 [1546µs 标定接手记录](Steering-Neutral-1546-Calibration-Handoff-2026-11-08.md)。main已push基线仍1530，新候选未合并/未push；不自动追加运动。
+## 已完成验证与边界
 
-**最终收尾入口（优先于下方全部历史状态）**：用户已授权将当前阶段基线合并 main、停留 main，暂不 push。请先读 [Main 控制基线交接](HANDOFF-Main-Control-Baseline-2026-11-08.md)，再核对 git 实际状态。代码基线 `266bf63`，最新三轮右偏约 4–5、5–6、8mm，横向精度仍未通过；功能性停车修复已验证。最后已确认 STOP195，本组结束。下文“未合并/禁止合并”是此前授权前的历史现场状态，不代表本次最终收尾决定；不覆盖原有测试限制。
+- 主机20个独立测试组、多配置共24次执行通过；cli/NoSonar/MagNoTrim三构建通过。最新收尾只修改文档，没有额外改产品代码、刷机或驱车。
+- 10cm/s、前进1m再倒回1m，两轮不改参数、不重启：用户两轮均观察返回右偏约1–2mm，前进基本无明显偏移；每段GOAL正常完成、STOP确认。
+- 10cm/s、四段60cm弧线：左前/左转30°→倒回/回转30°→右前/右转30°→倒回/回转30°。四段均DONE、首DONE双轮零速；轮程59.7–59.8cm，航向变化距目标约0.2°以内。用户观察左弧倒回右偏约2mm，右弧倒回相对观察停车线左偏约2mm，不将两次近似读数相加或抵消。
+- 正常GOAL先制动停稳、回中等待，再确认完成，持续计入收尾轮程；超时、IMU参考失效、回中提交失败不能误报成功，STOP能立即打断。保留此修复。
+- 以上是本工况测试记录，不是毫米级绝对精度认证。长距离/高速/长期重复性、全模式及完整断网重启故障实机回归仍未覆盖。超声波避障未实车验收。
 
-**最新现场优先读本段**：本组已停测，STOP195双轮零速；当前固件SHA256 `4b821fb4c0620b4ff49cf3f05ee5934cb1d6efb62ede9a52a7b10c5d05d83b47`（编译前重新configure，ef5b5342326b/dirty1；trim0/0、细积分OFF、PATH OFF、磁诊断ON）。正常GOAL新增制动停稳/回中等待/最终测量完成门禁：24次host、三构建及3轮实机验证，首DONE均双轮0，旧版首DONE仍报告74–83mm/s，收尾计量也已修正。标点基线右偏约7、7、7–8mm，新版约4–5、5–6、8mm，横向误差未稳定消除，不准宣称全解决。先前9cm/7cm已撤销，参考/单位必须看reference.json。阅读[最新集中报告](Normal-GOAL-Parking-Completion-Fix-Validation-2026-11-08.md)，避免按旧镜像或旧现场状态继续。源码codex/straight-path-tracking，未merge main、未push；任何新运动需重新确认空间/线缆。
+## 最后现场与恢复
 
-**新增测量基准审计，后续 agent 必须先读**：[Straight-Drive-Measurement-Reference-Audit-2026-11-08.md](Straight-Drive-Measurement-Reference-Audit-2026-11-08.md)。用户提出瓷砖不直，独立基准确实未验证。历史相对瓷砖的毫米/厘米观察不能当成已证实的真实轨迹误差；也不能反过来认定是瓷砖问题。先做同一车架点对起点固定标记的闭合验证，再继续标定，避免按未验证参照反复调参。此轮只读核查数据，没有新运动或代码改动，STOP151记录不变。
+最后可靠 **STOP22**，双轮零速，两板在线；所有测试和临时舵机保持脚本已结束。此为最后验证记录，不是下次实时状态保证。pyserver单实例8000、Mosquitto1883保留运行，没有主动关闭；接手先检查，禁止重复启动。Broker配置必须使用`pyserver/mosquitto.dev.conf`，设备DEV_1。
 
-## 后续开发阶段入口（优先于下方历史现场状态）
+用户电脑USB连STM32，ESP32由STM32供电，车在地面、主电机电源上电；用户曾拖线测试。供电来自成品电机驱动板5V，经STM32供ESP32，舵机亦接该5V总线；没有电压测量证据，不把共享供电当已确定根因。
 
-当前后续开发在`codex/straight-path-tracking`，阶段基线提交`d4a6046`（后续提交与当前工作区以git log/status为准），尚未合并main，未push。已移除右轮隐藏2.3%闭环RPM目标偏置，新增默认关闭的局部路径反馈/影子估计，详见[Straight-Path-Tracking-And-RPM-Contract-Validation-2026-11-08.md](Straight-Path-Tracking-And-RPM-Contract-Validation-2026-11-08.md)。**车上镜像及最后停车状态以该文档最新追加记录为准**；下文main/v7及seq191属于上一阶段归档，不能直接用作当前状态。
+电脑断电恢复时ESP32最初报告STM32断连；烧录后上行恢复，STOP仍超时。按用户要求重启pyserver后STOP恢复，根因未确定，未修改服务端代码。再次出现时先保留状态、会话和ACK证据，不凭心跳就认为下行正常。
 
-## 上一阶段main版本记录
+任何新运动须重新确认当前车位、起点、净空、停车及USB线余量，先可靠STOP并确认双轮零速、链路及IMU新鲜。旧的物理就绪答复不能沿用。不要自动运行归档脚本，也不要凭本入口直接再次刷机。
 
-产品代码及证据已提交为 `1c6cd37`，从 `codex/straight-bias-feedforward` 快进合并到 `main`，当前已切回main，未push；再以git log/status核实是否有后续更新。**不要按分支名字恢复方向曲率偏置：该试验已撤销。**
+## 下次优先事项
 
-车上最新镜像是v7“统一机械中位”，Debug/Sonar ON，ELF SHA256：`5174cba5b4f711d6b7e37954a859917a463697ac18fcb8c53382835a233716ce`。v7已做2m/10cm/s前进，用户尺量左偏约4–5mm；30cm/s对比已完成，用户尺量左偏约5–6mm，见末尾追加。尚未达到实际完全无偏要求，不能把v1–v6好结果混作v7通过。
+1. [路径外环实验TODO](TODO-Straight-Path-Outer-Loop-Experiment-2026-11-08.md)：先OFF状态核对影子横移估计，再决定小增益、有界外环的OFF/ON对照；本次没有启用，不能承诺开关一开就改善。
+2. 保留1546中位，分离单程直线度、往返回位和弧线复现三个指标；相对GOAL重新锁航向，反向GOAL不是世界坐标轨迹回放。IMU/编码器积分不是独立位置真值，尚无可靠绝对横移观测。
+3. 新代码另建codex/分支，测试通过再合并。不要恢复已失败的方向曲率常量、积分分离、细积分实验，或仅凭一轮尺量盲调PID。剩余1–2mm不能直接认定为机械根因。
+4. 补长距离、速度和故障回归前先约定测试范围，避免无止境让用户尺量；测量保留原话、参照和不确定性。
 
-用户最重要目标：实际轨迹直，不接受2m肉眼明显偏航；不是只要GOAL终点角度小。继续时不要盲目提高PID或扩大终点容差。
+## 资料与复用入口
 
-## 接线、服务、停车
-
-ESP32由STM32供电，电脑USB接STM32，ESP32不直接接电脑；电机有电，小车在地面，用户抱电脑拖USB线。超声波未安装，不依赖避障。API本机8000，broker1883（必须用pyserver/mosquitto.dev.conf），设备DEV_1。服务本轮保持运行；前端未用于实车测试。先查询再启动，避免重复端口。
-
-本轮所有限时脚本结束均finally发可靠STOP。最后静态确认：TIM2 CCR1=1530，TIM3 CCR1/CCR2=0/0。新运动前必须重新核实车位、净空/停车余量和USB松弛；历史就绪答复不表示当前仍有空间。不要运行要求--suspended的悬空矩阵。
-
-## 最新代码实际上改了什么
-
-1. `steering_lut.h`新增唯一物理中位STEERING_SERVO_STRAIGHT_US=1530；原始Arduino表保留，生产LUT装配平移改为1530-1500=+30us，安全输出仍950..2250us。
-2. `system_init.c`启动舵机安全脉冲用同一个1530。MotionService停车、STOP、租约停车、GOAL完成均查生产LUT零曲率，统一回1530。
-3. 仍保留main已有的固定起始航向直线GOAL控制（99572ef）；本轮只将固定参考GOAL角度死区收紧至0.05°，普通DRIVE死区仍0.2°。PI默认0.3/0.08，直行修正±1/m，曲率总限幅±3.77/m不变。
-4. **已撤掉试验中的HeadingControl_SetStraightBias/straightBiasKappa、前进-0.35和倒车-0.48等曲率常量。** 不把机械中位偏移当作真实曲率给左右轮分配差速。零偏角、零曲率、相同轮速的GOAL不凭空产生轮速差。
-
-为何改变策略：v1–v6只在GOAL运动中补偿，停车仍1470us；用户看到静止前轮右倾。读寄存器确认1470；零RPM仅调舵机到1530时，用户确认两轮基本回正，读回1530和两路电机PWM0。不能继续围绕旧机械零位调大偏置。
-
-## 已验证与仍需验证
-
-- 16组host全部通过，含新增：1530中位LUT端到端、安全限幅、STOP/零曲率前后GOAL中位一致且轮速目标相等、固定参考0.1°误差要修正，正反向残余偏置模型。
-- Debug/Sonar ON（build/cli）及NoSonar构建通过，ST-LINK下载读回校验通过。
-- v7静止1530us，两路电机PWM0，用户确认新版前轮回正。
-- v7倒车20cm/10cm/s：GOAL seq178 done，-19.5cm、-0.129°、2263ms；STOP seq179确认380ms，双轮0。
-- 一次前进20cm被ACK status5拒绝，设备日志err0x6203（ERR_MOTION_EMERGENCY_ACTIVE，尚未稳定停车），未启动；未放宽门禁。当时IMU有转动，不能直接定为软件缺陷。
-- 用户确认静止后，已完成静止4秒再前进20cm，结果与最终停车见下方追加记录。
-- **待做：v7长倒车、剩余横偏优化、左右弧线及租约/STOP回归。** 全局LUT中位平移影响各模式/转弯，不能只测GOAL就宣布所有控制模式通过。
-
-## 继续工作的顺序
-
-1. 先确认main/git状态与上述镜像，不为刷新版本字符串无必要重刷。先GET设备/运动状态、POST可靠STOP，须accepted/confirmed/stopped且双轮零速。
-2. 让用户按车身前后两点对齐同一地砖参考，标记同一个测量固定点；先10cm/s、2m，确认后再30cm/s。每轮检查空间，不在用户还在摆车/量测时自动启动下一轮。
-3. 记录每轮实际左/右偏毫米数，别诱导只答“基本直”；“基本看不出”不能写成精确毫米上界。起点对齐误差和无磁IMU漂移会影响毫米级估计。
-4. 对比GRV航向、gyro积分、轮程与外部尺量。10Hz角速度积分可能混叠，不是独立真值；现有pose只用编码器，尚未融合IMU，之前和实际方向/位移明显不一致。不要直接拿它做横向路径外环。
-5. 若v7偏航仍大，先核实机械中位/回差、左右轮程标定、控制输入与实际PWM；不恢复旧大曲率偏置来掩盖零位问题。前进/倒车的预载若确需补偿，应与几何曲率及轮速分配分开设计并回归。
-
-## 可复用命令与证据
-
-工作目录：`/Users/sunyameng/github/legacy/CodeMyCar`。
-
-```bash
-bash stm32_project/tests/host/run.sh
-cmake --build stm32_project/build/cli -j 8
-cmake --build stm32_project/build/NoSonar -j 8
-```
-
-归档的现场采集原型在 `Docs/validation/ground-2026-11-08/scripts/ground_goal_capture.py`，必须从项目根运行，用pyserver/.venv。新包装增加--ground-ready、范围及拒绝覆盖检查；只做语法/--help验证，**不要声称新包装又额外驱车验收**。底层流程来自本轮实机脚本。
-
-```bash
-# 仅在用户已确认摆好、净空与线缆时运行，真实车辆会移动；使用新前缀！
-pyserver/.venv/bin/python stm32_project/Docs/validation/ground-2026-11-08/scripts/ground_goal_capture.py --ground-ready NEXT_AGENT_UNIQUE_20CM 20 0 10 5
-# 五个参数依次为证据新前缀、距离cm、航向变化deg（右正）、速度cm/s、外部STOP秒数。
-# 离线分析只适用于正常done记录；支持原始jsonl或gzip，估计不是尺量真值。
-pyserver/.venv/bin/python stm32_project/Docs/validation/ground-2026-11-08/scripts/ground_path_estimate.py NEXT_AGENT_UNIQUE_20CM
-```
-
-完整测试入口/独立编译见 [测试指南](Control-Test-Guide-For-Agents.md)。失败/候选记录见 [方向偏置试验与测量更正](Straight-Goal-Bias-Feedforward-Fix-Validation-2026-11-08.md)。证据在 [validation/ground-2026-11-08](validation/ground-2026-11-08)，保留所有原始采集和外部口述更正，不择取好结果。`bias-v1`到`bias-v6`均是已撤销试验；`neutral-v7`才是当前代码。
-
-不要将临时/tmp文件作为唯一交接内容，也不要复用已有前缀覆盖证据。未push；用户未要求关闭pyserver/Mosquitto。
-
-## 最新追加记录（优先于前述“正在完成”）
-
-v7前进20cm重测：用户确认静止后先采4秒，再seq184 done，19.5cm、+0.516°、2058ms；STOP seq185确认343.7ms，双轮零速。拒绝的seq181保留为安全门禁观测，不当作一次运动完成。
-
-用户确认新版静止前轮已回正，并要求额度允许继续测试。当前先做v7对齐后前进2m/10cm/s，结果另追加。资料归档脚本已做AST/--help检查，离线分析包装已实际跑过neutral-v7-reverse-20cm；采集包装仅说明底层实机原型，未额外驱车验收该新包装。
-
-## v7已完成长直线与当前性能边界
-
-用户重新对齐、静止4秒后，seq187以前进200cm/10cm/s/0°完成：199.5cm、-0.202°、19793ms；STOP seq188确认224.2ms，双轮零速。187个heading样本，全程峰值0.5°，车载横偏估计右0.27cm；**用户实际尺量左偏约4–5mm**（最终纠正了“大于”的表述），因此不能以车载估计的方向/数值冒充真实厘米/毫米精度。
-
-当前只确认统一中位修复、离线回归、静态和短测及低速长前进已执行；直行剩余横偏尚待继续优化。用户随后又确认对齐并要求同固件30cm/s对比，结果继续追加。所有合并均按用户明确的阶段收尾要求，不意味着剩余性能目标已完成。暂不push。
-
-## 本阶段最终观测与交付边界
-
-同一v7固件，用户重新摆好对齐并确认后，静止4秒再前进2m/30cm/s：seq190 done，199.5cm、+0.092°、6939ms；STOP seq191确认95.0ms，双轮零速。66个运动heading样本，峰值0.4°；算法估计终点右偏0.39cm，但**用户实际尺量左偏约5–6mm**，以外部观测为准，不能用估计方向反驳实际测量。
-
-最终前进实测：10cm/s左偏约4–5mm，30cm/s左偏约5–6mm。停车前轮用户确认回正。统一机械中位的问题已修正，剩余毫米偏移尚未消除；这不是整个直行精度目标已完成。本阶段用户明确要求代码提交并合并main，不push；后续agent须先git status/log核实最新提交。最后归档停车为seq191，完整状态见neutral-v7-handoff-final-state.json。服务保持运行，未再发运动命令。
-
-接手首要工作：在当前1530us统一零位基础上完成v7低速/30cm/s倒车2m验证，再以一致外部对齐和测量复核前进同向残差；先检查零位/机械回差与轮程标定、IMU估计和外部测量的误差，不盲目恢复已撤掉的大曲率偏置。v1–v6的外部“基本无偏”不能抵销当前版本的4–6mm实测。
-
-
-最新只读核对：历史四段弧线可拟合近似固定轮程系数，但用于本次直线航向残差约5–9°，不要直接写入标定。计划在当前0/0固件上做60cm左右弧线各一次沿弧倒回的同配置对照，已向用户询问空间，未执行；以最新用户答复为准。车辆仍STOP101，下一步不先盲调PID/前馈。完整复算脚本/结果在当前阶段validation目录。
-
-
-同固件弧线计划现已完成：第一份initial首段后因停车瞬时残余速度中止；continuation从首段终点续跑其余三段，不重复前进。后者等待连续3次零速样本，不把残余滤波/滚行当已经静止。整体外部右移近2cm，未验收。脚本和matched-arcs-closure-estimate.json、wheel-geometry-matched-firmware-fit.json在当前validation目录，不能直接套用拟合系数。最新STOP113优先于上文历史STOP101。
-
-
-当前读回1530us/双电机PWM0，用户观察前轮基本平行车身。下一步计划固定1530us、mode2/angular0约20cm往返自然响应对照，等待用户新确认50cm与线缆，未执行。不要擅改机械中位或切换gyro控制：GRV/gyro整段估计都未稳定解释外部横移。最后STOP仍132。
-
-
-供电链实物已澄清：总电源→成品电机驱动板5V总线→舵机及STM32→ESP32。不要再把模块“5V VCC输出”等同裸TB6612逻辑VCC输入；先确认具体模块资料。用户暂无电压测量/独立换源条件。当前没有更多自动运动脚本在跑，服务保留、STOP151已确认；实际直行问题未解决，禁止把本阶段候选合并main或宣称完成。
+- [1546µs标定与实车结果](Steering-Neutral-1546-Calibration-Handoff-2026-11-08.md)：两轮直线、左右弧线、镜像及证据前缀。
+- [控制测试指南](Control-Test-Guide-For-Agents.md)：独立主机测试、夹具限制和集成流程。主机命令：`bash stm32_project/tests/host/run.sh`。
+- [正常GOAL停车完成修复](Normal-GOAL-Parking-Completion-Fix-Validation-2026-11-08.md)、[测量基准审计](Straight-Drive-Measurement-Reference-Audit-2026-11-08.md)、[完整试验历史](Straight-Path-Tracking-And-RPM-Contract-Validation-2026-11-08.md)。
+- 原始数据、用户`*-reference.json`、构建/回归/烧录日志、脚本：`validation/path-tracking-2026-11-08/`。当前证据前缀`neutral1546-*`；脚本有真实动作和固定输出前缀，复用先审查、取得本轮就绪答复并换唯一前缀。
+- [历史交接原文归档](ARCHIVE-Straight-Control-Handoff-Stage-Notes-2026-11-08.md)：仅供追溯，不能用作当前运行状态。
