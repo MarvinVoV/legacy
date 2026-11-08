@@ -27,6 +27,7 @@ from app.mqtt.topics import (
 from app.services.baidu_asr import BaiduAsrClient
 from app.services.baidu_tts import BaiduTtsClient
 from app.services.device_manager import DeviceManager
+from app.services.local_audio import LocalAudioPlayer
 from app.services.motion_service import AgentMotionService
 from app.services.ping_service import PingRegistry
 from app.services.voice_service import VoiceConfig, VoiceService
@@ -84,6 +85,11 @@ async def lifespan(app: FastAPI):
             timeout_s=settings.baidu_tts_timeout_s,
         )
     app.state.voice_tts = voice_tts
+    local_player = LocalAudioPlayer(
+        command=settings.voice_local_player_command or None,
+        enabled=settings.voice_local_playback,
+    )
+    app.state.voice_local_player = local_player
     app.state.voice_service = VoiceService(
         VoiceConfig(
             vad_start_rms=settings.voice_vad_start_rms,
@@ -95,6 +101,7 @@ async def lifespan(app: FastAPI):
             max_session_s=settings.voice_max_session_s,
             execute_commands=settings.voice_execute_commands,
             tts_feedback=settings.voice_tts_feedback,
+            local_playback=settings.voice_local_playback,
             max_distance_mm=settings.voice_max_distance_mm,
             max_turn_deg=settings.voice_max_turn_deg,
             speed_cm_s=settings.voice_speed_cm_s,
@@ -104,6 +111,7 @@ async def lifespan(app: FastAPI):
         Path(settings.voice_artifact_dir),
         agent_motion=app.state.agent_motion,
         tts=voice_tts,
+        local_player=local_player,
     )
 
     # 注册消息处理器（心跳/传感器/日志/ACK/pong/motion）

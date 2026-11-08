@@ -71,6 +71,8 @@ class Settings(BaseSettings):
     voice_max_session_s: float = 12.0
     voice_execute_commands: bool = False  # 默认关闭；开启后语音意图才会下发运动
     voice_tts_feedback: bool = True
+    voice_local_playback: bool = True  # 在 pyserver 所在机器上播放 TTS
+    voice_local_player_command: str = ""  # 空 = macOS afplay / 其他 ffplay
     voice_max_distance_mm: int = 1000
     voice_max_turn_deg: int = 90
     voice_speed_cm_s: int = 10

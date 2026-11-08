@@ -165,7 +165,8 @@ silero-vad 仍推荐作为下一步升级：抗噪更好，但会引入 torch/on
 - ASR 未配置时仍会 VAD + 归档，`final.text` 为 null；
 - `action` 只在 `voice_execute_commands=true` 且解析到意图时出现；默认关闭；
 - `speak` 只在执行有结果且 TTS 可用时出现，顺序是 `final` → `action` → `speak` + PCM → `end`；
-- 配置：`voice_enabled`、`voice_artifact_dir`、`voice_vad_*`、`voice_max_*`（`app/config.py`）；
+- 配置：`voice_enabled`、`voice_artifact_dir`、`voice_vad_*`、`voice_max_*`、
+  `voice_local_playback`（`app/config.py`）；
 - 调试客户端：`scripts/voice_ws_client.py <wav>`。
 
 ### 5.7 语音反馈与执行（已实现）
@@ -178,6 +179,11 @@ silero-vad 仍推荐作为下一步升级：抗噪更好，但会引入 torch/on
 - 反馈：执行后若 `voice_tts_feedback=true` 且 TTS 可用，合成短句并通过
   `{"type":"speak","format":"pcm","rate":16000,"channels":1,"bytes":N}` + 二进制 PCM
   发给客户端；TTS 失败发送带 `error` 的 `speak` 帧，不影响 `action`/`end`。
+- 本机播放：`voice_local_playback=true` 时，`LocalAudioPlayer` 在 pyserver 所在机器
+  用 `afplay`（macOS）或 `ffplay` 播放同一段 TTS，后台任务，不阻塞 WS。
+  车的功放/喇叭不可用时仍能听到反馈；`speak` 帧仍发给客户端，客户端可忽略。
+- 关闭本机播放：`CMCAR_VOICE_LOCAL_PLAYBACK=0`；自定义播放器命令：
+  `CMCAR_VOICE_LOCAL_PLAYER_COMMAND`。
 - 默认 `voice_execute_commands=false`；需要显式设置
   `CMCAR_VOICE_EXECUTE_COMMANDS=1` 才允许语音驱动车辆。
 - 语音 STOP 是辅助手段；HTTP/服务端 STOP 和物理急停仍是主急停。
@@ -348,6 +354,8 @@ Content-Type: application/json
 - 真实链路：`voice_ws_client.py` 推送 Mac 麦克风录音，服务端返回
   `text="前进一米。"`、`intent=forward`、`distance_mm=1000`，并写出 full/seg WAV。
 - TTS 回环：合成“收到，正在前进” → 1.91 s WAV → 再送 ASR 得到同一文本。
+- 本机播放：`LocalAudioPlayer` 合成“收到，正在前进”（1.99 s）后用 `afplay` 在 Mac 播放成功；
+  单元测试用 `FakeLocalPlayer` 断言 TTS 音频被交给本机播放器。
 
 **待实现**
 
@@ -385,12 +393,15 @@ Content-Type: application/json
   默认精品音库 `per=5`。
 - P2 已实现（默认关闭）：意图 → AgentMotionService、执行结果 `action` 帧、
   TTS `speak` + PCM 反馈；替身测试通过，实车悬空/落地未验收。
+- TTS 反馈可在 pyserver 本机播放（macOS `afplay`），用于车上功放/喇叭不可用的台架测试；
+  已实测“收到，正在前进”在 Mac 播放成功。
 - 下一步：ESP32 单麦克风 I2S 推流（P0），再做悬空与落地联调。
 
 ## 14. 相关文件
 
 - `pyserver/app/services/baidu_asr.py`
 - `pyserver/app/services/baidu_tts.py`
+- `pyserver/app/services/local_audio.py`
 - `pyserver/app/config.py`（`baidu_speech_*` / `baidu_tts_*`）
 - `pyserver/scripts/baidu_asr_smoke.py`
 - `pyserver/scripts/baidu_tts_smoke.py`

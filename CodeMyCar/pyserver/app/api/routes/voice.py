@@ -58,6 +58,9 @@ async def _speak(ws: WebSocket, service: VoiceService, phrase: str) -> None:
         await _send_json(ws, {"type": "speak", "text": phrase, "error": str(exc)})
         return
 
+    # 车的功放/喇叭不可用时，直接在 pyserver 所在机器（Mac）播放
+    service.play_local(audio)
+
     frame = {
         "type": "speak",
         "text": phrase,

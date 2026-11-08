@@ -3,6 +3,7 @@
 import json
 import math
 import struct
+import time
 import wave
 from pathlib import Path
 from types import SimpleNamespace
@@ -66,6 +67,14 @@ class FakeTts:
         return self.audio
 
 
+class FakeLocalPlayer:
+    def __init__(self) -> None:
+        self.played: list[tuple[bytes, int, int]] = []
+
+    async def play_pcm(self, pcm: bytes, sample_rate: int = 16000, channels: int = 1) -> None:
+        self.played.append((pcm, sample_rate, channels))
+
+
 def make_service(
     tmp_path: Path,
     asr,
@@ -73,6 +82,7 @@ def make_service(
     execute_commands: bool = False,
     agent_motion=None,
     tts=None,
+    local_player=None,
     tts_feedback: bool = True,
 ) -> VoiceService:
     return VoiceService(
@@ -89,6 +99,7 @@ def make_service(
         tmp_path,
         agent_motion=agent_motion,
         tts=tts,
+        local_player=local_player,
     )
 
 
@@ -337,9 +348,15 @@ def test_voice_rejects_out_of_range_distance(client, tmp_path):
 
 def test_voice_tts_speak_frame(client, tmp_path):
     tts = FakeTts()
+    local = FakeLocalPlayer()
     agent = FakeAgent()
     client.app.state.voice_service = make_service(
-        tmp_path, FakeAsr("前进一米。"), execute_commands=True, agent_motion=agent, tts=tts
+        tmp_path,
+        FakeAsr("前进一米。"),
+        execute_commands=True,
+        agent_motion=agent,
+        tts=tts,
+        local_player=local,
     )
     audio = pcm(0.2) + pcm(0.8, 3000) + pcm(0.5)
 
@@ -360,6 +377,8 @@ def test_voice_tts_speak_frame(client, tmp_path):
         assert ws.receive_json()["type"] == "end"
 
     assert tts.texts == ["收到，前进"]
+    time.sleep(0.1)
+    assert local.played == [(tts.audio.data, 16000, 1)]
 
 
 def test_voice_tts_error_is_reported(client, tmp_path):

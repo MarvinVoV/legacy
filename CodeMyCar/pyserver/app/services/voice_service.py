@@ -6,6 +6,7 @@ AgentMotionService（后续阶段接入）。
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import math
 import re
@@ -18,6 +19,7 @@ from typing import Any, Protocol
 
 from app.models.agent_motion import MotionError, MoveRequest
 from app.services.baidu_tts import TtsAudio
+from app.services.local_audio import LocalAudioPlayer
 from app.services.vad import EnergyVad, VadConfig
 from app.services.voice_intent import VoiceIntent
 
@@ -54,6 +56,7 @@ class VoiceConfig:
     max_session_s: float = 12.0
     execute_commands: bool = False
     tts_feedback: bool = True
+    local_playback: bool = True
     max_distance_mm: int = 1000
     max_turn_deg: int = 90
     speed_cm_s: int = 10
@@ -168,13 +171,26 @@ class VoiceService:
         *,
         agent_motion: AgentMotionProtocol | None = None,
         tts: TtsProtocol | None = None,
+        local_player: LocalAudioPlayer | None = None,
     ) -> None:
         self.config = config
         self.asr = asr
         self.agent_motion = agent_motion
         self.tts = tts
+        self.local_player = local_player
         self.artifact_dir = Path(artifact_dir)
         self._active: set[str] = set()
+        self._local_tasks: set[asyncio.Task] = set()
+
+    def play_local(self, audio: TtsAudio) -> None:
+        """在 pyserver 所在机器上播放 TTS；不阻塞 WS。"""
+        if self.local_player is None or not self.config.local_playback:
+            return
+        task = asyncio.create_task(
+            self.local_player.play_pcm(audio.data, audio.sample_rate, audio.channels)
+        )
+        self._local_tasks.add(task)
+        task.add_done_callback(self._local_tasks.discard)
 
     def create_session(self, device_id: str) -> VoiceSession:
         if device_id in self._active:
