@@ -1,0 +1,19 @@
+{
+  "physical_reference": "two starting ground tape markers corresponding to two fixed body points on the same side, front and rear; do not use steering tire edges or tile seam straightness",
+  "operator_confirmation": "标记、空间和线缆已就绪，可以第一轮",
+  "firmware_sha256": "4cc0546e37ba2ef8709f9a5aabbd09bf151f4ecff5f4774741fe096a39b706a0",
+  "firmware_reflashed": false,
+  "parameters_changed": false,
+  "speed_cm_s": 10,
+  "requested_legs_cm": [
+    100,
+    -100
+  ],
+  "qualification": "Qualitative gross closure check. Marker placement/projection uncertainty not calibrated; not millimeter accuracy validation. Closure alone does not prove single-leg straightness.",
+  "operator_end_observation": {
+    "raw_initial_reply": "前后都向右偏移了9cm",
+    "valid_for_lateral_acceptance": false,
+    "reason": "Comparison reference misunderstood; user subsequently confirmed measurement was wrong and requested repeat. Do not treat 9cm as vehicle drift.",
+    "user_correction": "哦 那刚测错了，再来一次 先稍等"
+  }
+}

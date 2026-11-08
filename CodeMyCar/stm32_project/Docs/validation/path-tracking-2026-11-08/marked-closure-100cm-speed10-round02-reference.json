@@ -1,0 +1,14 @@
+{
+  "physical_reference": "Same two fixed body points versus their own ground tape markers at pre-departure origin; not outbound endpoint and not tile seam.",
+  "operator_confirmation": "开始把 (after explicit reference clarification and repositioning pause)",
+  "firmware_sha256": "4cc0546e37ba2ef8709f9a5aabbd09bf151f4ecff5f4774741fe096a39b706a0",
+  "firmware_reflashed": false,
+  "parameters_changed": false,
+  "requested_legs_cm": [
+    100,
+    -100
+  ],
+  "speed_cm_s": 10,
+  "operator_end_observation": "pending",
+  "qualification": "Qualitative marker closure check; marker placement/projection uncertainty uncalibrated; does not independently certify single-leg straightness."
+}
