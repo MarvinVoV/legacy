@@ -1,0 +1,24 @@
+{
+  "firmware_sha256": "4cc0546e37ba2ef8709f9a5aabbd09bf151f4ecff5f4774741fe096a39b706a0",
+  "source_base_commit": "42855ca",
+  "source_dirty": true,
+  "configuration": {
+    "CMCAR_IMU_MAG_DIAGNOSTICS": true,
+    "CMCAR_STRAIGHT_FORWARD_TRIM_US": 0,
+    "CMCAR_STRAIGHT_REVERSE_TRIM_US": 0,
+    "CMCAR_MOTOR_PID_FINE_INTEGRATION": false,
+    "CMCAR_STRAIGHT_PATH_CONTROL": false
+  },
+  "straight_goal": {
+    "kp": 0.6,
+    "ki": 0.08,
+    "kd_measurement": 0.08,
+    "derivative_filter_s": 0.08,
+    "deadband_deg": 0.05,
+    "curvature_correction_max_1pm": 1
+  },
+  "legacy_drive_kp": 0.3,
+  "arc_control": "unchanged",
+  "last_confirmed_stop": 126,
+  "ground_lateral_accuracy_accepted": false
+}

@@ -195,3 +195,11 @@ for FINE_INTEGRATION in 0 1; do
   -lm -o "${TMPDIR:-/tmp}/motor_pid_tracking_test"
 "${TMPDIR:-/tmp}/motor_pid_tracking_test"
 done
+
+echo "== heading delayed plant and damping lifecycle =="
+"$CC" -std=c11 -Wall -Wextra -O2 \
+  -I "$DIR/tests/host/stubs" -I "$DIR/Application/Services/Ctrl/Inc" \
+  "$DIR/tests/host/heading_transient_test.c" \
+  "$DIR/Application/Services/Ctrl/Src/heading_control.c" \
+  -lm -o "${TMPDIR:-/tmp}/heading_transient_test"
+"${TMPDIR:-/tmp}/heading_transient_test"

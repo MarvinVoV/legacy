@@ -703,3 +703,10 @@ fit_wheel_geometry_consistency.py是只读探索分析：历史四段60cm弧线�
 
 
 同固件弧线诊断：ground_matched_arcs_initial_used.py首段停车后即读残余速度而中止，后续ground_matched_arcs_continuation_used.py仅从该终点跑其余三段，并等待连续3个linear<0.1cm/s/angular<0.5deg/s新鲜样本再继续。两个硬编码计划不能当通用运动脚本直接运行。fit_matched_wheel_geometry_consistency.py离线拟合不写标定；replay_matched_arcs_closure.py固定两份数据回放，replay_full_capture_closure.py PREFIX [PREFIX...]可分析同一会话多份捕获，假定捕获间未挪车。后者按收到的10Hz轮程/IMU时间插值，包含已记录的停车滚行，不能当独立位置真值；弧线反向distance/turn不是实际路径回放，不能只看终点误差验收闭合精度。
+
+
+## 直线GOAL阻尼候选回归与独立延迟模型
+
+run.sh新增heading_transient_test（目前20组/24次执行）：真实HeadingControl配独立自行车yaw模型，基线参数与候选在相同延迟/量化/扰动下比较全程峰值yaw及累计横偏，覆盖正反向、10/30cm/s、150/250ms执行器响应；不将模型mm当作真实精度。生命周期断言覆盖测量微分无参考阶跃冲击、换向/停用/长时隙清历史、yaw跨界及D占用执行器余量时PI抗饱和。编译命令可独立复用run.sh末尾该段，不连接硬件。
+
+新增kpGoal只用于固定参考GOAL，legacy kp仍0.3，曲线控制不变；kd仅GOAL有效。ground-damped-*是首次实机候选，不合并主线，外部横移是否改善仍须反馈/重复验证。脚本damped_heading_short_pair_used.py与long_pair_used.py分别固定20cm与2m往返，逐段可靠STOP、连续3个新鲜零速样本才继续；使用前仍需确认物理空间并改新捕获前缀，禁止直接覆盖本次证据。

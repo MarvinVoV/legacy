@@ -5,7 +5,7 @@
  *
  *   ψ̇=-v·κ；直行 e=sign(v)·(ψ-ψ_ref)，转弯 e=κ_ff-(-ψ̇/v)。
  *
- * 输出限幅、抗积分饱和、死区（吸收约 4° 机械回差）。
+ * 输出限幅、抗积分饱和、小角度死区；直行GOAL另含测量微分阻尼。
  */
 
 #ifndef SERVICES_CTRL_INC_HEADING_CONTROL_H_
@@ -26,9 +26,14 @@ typedef struct
     int8_t curveDirection;
 
     /* 参数（直行角度环） */
-    float kp;            /* (1/m)/deg */
+    float kp;            /* legacy DRIVE angle gain, (1/m)/deg */
+    float kpGoal;        /* fixed-reference GOAL angle gain */
     float ki;            /* (1/m)/(deg·s) */
     float deadbandDeg;
+    float kd; /* GOAL damping, (1/m)/(deg/s), filtered quaternion derivative */
+    float previousYawDeg;
+    float filteredYawRateDps;
+    bool yawRateTracking;
 
     /* 参数（转弯曲率/角速度环） */
     float kpRate;

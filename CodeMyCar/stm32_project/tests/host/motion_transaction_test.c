@@ -207,7 +207,7 @@ int main(void)
     assert(MotionService_StartGoal(&c,0,2000,100,35)==0);
     measuredLeftRpm=measuredRightRpm=30;imuYaw=-2;now+=5;MotionService_Run(&c);
     float expectedRaw;
-    assert(steering_lut_curvature_to_raw(-.6f,.141f,&expectedRaw));
+    assert(steering_lut_curvature_to_raw(-1.f,.141f,&expectedRaw));
     expectedRaw-=STEERING_STRAIGHT_FORWARD_TRIM_US/STEERING_SERVO_US_PER_DEG;
     assert(fabsf(lastAngle-(90-expectedRaw))<.02f);
     assert(submittedRpm[0]<submittedRpm[1]);
@@ -224,7 +224,7 @@ int main(void)
     imuYaw=0;measuredLeftRpm=measuredRightRpm=0;now+=5;MotionService_Run(&c);
     assert(MotionService_StartGoal(&c,0,-2000,100,39)==0);
     measuredLeftRpm=measuredRightRpm=-30;imuYaw=-2;now+=5;MotionService_Run(&c);
-    assert(steering_lut_curvature_to_raw(.6f,.141f,&expectedRaw));
+    assert(steering_lut_curvature_to_raw(1.f,.141f,&expectedRaw));
     expectedRaw-=STEERING_STRAIGHT_REVERSE_TRIM_US/STEERING_SERVO_US_PER_DEG;
     assert(fabsf(lastAngle-(90-expectedRaw))<.02f);
     assert(MotionService_EmergencyStop(&c,40)==0);

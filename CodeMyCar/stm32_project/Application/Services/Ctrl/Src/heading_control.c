@@ -7,6 +7,9 @@
 
 /* 默认增益：先保守，落地整定后再放大 */
 #define HC_KP_ANGLE_DEFAULT (0.300f) /* (1/m)/deg */
+#define HC_GOAL_KP_ANGLE_DEFAULT (0.600f)
+#define HC_GOAL_KD_DEFAULT (0.080f)
+#define HC_GOAL_DERIV_FILTER_S (0.080f)
 #define HC_KI_ANGLE_DEFAULT (0.080f) /* (1/m)/(deg·s) */
 #define HC_KP_RATE_DEFAULT (0.400f)  /* (1/m)/(1/m) */
 #define HC_KI_RATE_DEFAULT (0.080f)
@@ -56,9 +59,14 @@ void HeadingControl_Init(HeadingControl* hc, float kp, float ki)
     hc->curveDirection = 0;
     hc->kp = (kp > 0.0f) ? kp : HC_KP_ANGLE_DEFAULT;
     hc->ki = (ki > 0.0f) ? ki : HC_KI_ANGLE_DEFAULT;
+    hc->kpGoal = (kp > 0.0f) ? kp : HC_GOAL_KP_ANGLE_DEFAULT;
     hc->kpRate = HC_KP_RATE_DEFAULT;
     hc->kiRate = HC_KI_RATE_DEFAULT;
     hc->deadbandDeg = HC_DEADBAND_DEG_DEFAULT;
+    hc->kd = HC_GOAL_KD_DEFAULT;
+    hc->previousYawDeg = 0.0f;
+    hc->filteredYawRateDps = 0.0f;
+    hc->yawRateTracking = false;
     hc->deadbandK = HC_DEADBAND_K_DEFAULT;
     hc->maxCorr = HC_MAX_CORR_DEFAULT;
     hc->maxStraightCorr = HC_MAX_STRAIGHT_CORR_DEFAULT;
@@ -77,6 +85,8 @@ void HeadingControl_Reset(HeadingControl* hc, float yawDeg)
     hc->integral = 0.0f;
     hc->rateIntegral = 0.0f;
     hc->lastTickMs = 0u;
+    hc->yawRateTracking = false;
+    hc->filteredYawRateDps = 0.0f;
 }
 
 void HeadingControl_Disable(HeadingControl* hc)
@@ -92,6 +102,8 @@ void HeadingControl_Disable(HeadingControl* hc)
     hc->rateIntegral = 0.0f;
     hc->lastTickMs = 0u;
     hc->lastCorr = 0.0f;
+    hc->yawRateTracking = false;
+    hc->filteredYawRateDps = 0.0f;
 }
 
 static float clampf(float x, float lo, float hi)
@@ -139,6 +151,7 @@ static float heading_apply(HeadingControl* hc, float yawDeg, float yawRateDps,
         hc->integral = 0.0f;
         hc->rateIntegral = 0.0f;
         hc->motionDirection = direction;
+        hc->yawRateTracking = false;
     }
     const float maxCorr = straight ? hc->maxStraightCorr : hc->maxCorr;
     const float lo = fmaxf(-maxCorr, -hc->maxKappa-ff);
@@ -152,6 +165,20 @@ static float heading_apply(HeadingControl* hc, float yawDeg, float yawRateDps,
             hc->integral = 0.0f;
             hc->rateIntegral = 0.0f;
         }
+        float damping = 0.0f;
+        if (referenceDeg && hc->straightMode && hc->yawRateTracking && dt > 0.0f)
+        {
+            /* Differentiate measurement, never reference: no setpoint kick.
+             * Quaternion sample holds and quantization are smoothed at 80ms.
+             * Do not substitute calibrated body gyro, whose moving integral
+             * disagreed with GRV in the ground captures. */
+            const float rate = wrap180(yawDeg-hc->previousYawDeg)/dt;
+            hc->filteredYawRateDps += dt/(HC_GOAL_DERIV_FILTER_S+dt)*(rate-hc->filteredYawRateDps);
+            damping = hc->kd*direction*hc->filteredYawRateDps;
+        }
+        else { hc->filteredYawRateDps = 0.0f; }
+        hc->previousYawDeg = yawDeg;
+        hc->yawRateTracking = referenceDeg != NULL;
         hc->straightMode = true;
         if (referenceDeg) { hc->psiRefDeg = *referenceDeg; }
         hc->curveDirection = 0;
@@ -159,7 +186,9 @@ static float heading_apply(HeadingControl* hc, float yawDeg, float yawRateDps,
         hc->lastErrorDeg = error;
         const float deadband = referenceDeg ? HC_GOAL_DEADBAND_DEG : hc->deadbandDeg;
         if (fabsf(error) < deadband) { error = 0.0f; }
-        corr = pi_correction(hc->kp, hc->ki, &hc->integral, error, dt, lo, hi);
+        /* Anti-windup must include the damping actuator headroom. */
+        corr = pi_correction(referenceDeg ? hc->kpGoal : hc->kp, hc->ki, &hc->integral, error, dt,
+                             lo-damping, hi-damping) + damping;
     }
     else
     {
@@ -170,6 +199,8 @@ static float heading_apply(HeadingControl* hc, float yawDeg, float yawRateDps,
             hc->rateIntegral = 0.0f;
         }
         hc->straightMode = false;
+        hc->yawRateTracking = false;
+        hc->filteredYawRateDps = 0.0f;
         hc->curveDirection = curve;
         float error = ff + yawRateDps * 0.017453293f / vMps;
         hc->lastErrorDeg = error;
