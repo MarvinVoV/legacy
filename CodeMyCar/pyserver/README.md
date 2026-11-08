@@ -38,6 +38,8 @@ MQTT_HOST=192.168.1.10 make dev
 
 ## 测试
 
+完整清单、独立运行、FakeMQTT复用及跨板集成步骤见[控制系统测试指南](../stm32_project/Docs/Control-Test-Guide-For-Agents.md)。
+
 **离线测试**（无需 broker、无需板子）：
 
 ```bash
@@ -45,7 +47,7 @@ make test          # 跑全部 pytest（命令模型 / MQTT handler / API 鉴权
 make test-watch    # 改动自动重跑（需 brew install entr）
 ```
 
-测试覆盖：`tests/test_commands.py`（字段范围、枚举与 STM32 对齐）、`tests/test_mqtt.py`（topic 匹配、payload 解析、session）、`tests/test_ping.py`（ping/pong 匹配、并发、超时）、`tests/test_api.py`（命令下发、设备状态、API Key）、`tests/test_agent_motion.py`（Agent move/stop/state、可靠 STOP 双确认、session 隔离、pivot 拒绝）、`tests/test_device_status.py`（超声波障碍距离字段）、`tests/test_logging_setup.py`（文件日志轮转/清理）。共 81 项，全部在内存中用 FakeMQTT 跑；conftest 会禁用真实 MQTT 连接，即使本机跑着 broker 也不会读到真实设备数据。
+测试覆盖：`tests/test_commands.py`（字段范围、枚举与 STM32 对齐）、`tests/test_mqtt.py`（topic 匹配、payload 解析、session）、`tests/test_ping.py`（ping/pong 匹配、并发、超时）、`tests/test_api.py`（命令下发、设备状态、API Key）、`tests/test_agent_motion.py`（Agent move/stop/state、可靠 STOP 双确认、session 隔离、pivot 拒绝）、`tests/test_stop_session_sync.py`（新会话确认、旧会话隔离、STOP 重发与 pending 清理）、`tests/test_device_status.py`（超声波障碍距离字段）、`tests/test_logging_setup.py`（文件日志轮转/清理）。截至2026-11-08收集85项，以当前 collect 结果为准。conftest 会禁用真实 MQTT 连接；需要收发的测试使用替身，即使本机跑着 broker 也不会读到真实设备数据。
 
 ## 常用命令（Makefile）
 
