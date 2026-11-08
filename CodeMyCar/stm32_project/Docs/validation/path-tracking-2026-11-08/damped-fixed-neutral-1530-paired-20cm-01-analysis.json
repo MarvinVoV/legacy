@@ -1,0 +1,20 @@
+[
+  {
+    "direction": 1,
+    "signed_distance_cm": 23.0,
+    "imu_ccw_change_deg": -0.9000000000000057,
+    "effective_right_curvature_1pm": 0.06829549246934376,
+    "commands": 20,
+    "successful_unique_ack": 20,
+    "all_commands_acknowledged": true
+  },
+  {
+    "direction": -1,
+    "signed_distance_cm": -22.1,
+    "imu_ccw_change_deg": 2.0,
+    "effective_right_curvature_1pm": 0.1579483485967719,
+    "commands": 21,
+    "successful_unique_ack": 20,
+    "all_commands_acknowledged": false
+  }
+]

@@ -1,0 +1,174 @@
+diff --git a/CodeMyCar/stm32_project/Application/Services/Ctrl/Inc/heading_control.h b/CodeMyCar/stm32_project/Application/Services/Ctrl/Inc/heading_control.h
+index 4643f54..c0007d9 100644
+--- a/CodeMyCar/stm32_project/Application/Services/Ctrl/Inc/heading_control.h
++++ b/CodeMyCar/stm32_project/Application/Services/Ctrl/Inc/heading_control.h
+@@ -19,7 +19,7 @@ typedef struct
+     bool active;         /* 是否有有效 IMU 数据 */
+     bool straightMode;   /* 上一次使用的模式 */
+     float psiRefDeg;     /* 直行目标航向 */
+-    float integral;      /* 直行角度积分 (1/m) */
++    float integral;      /* angle error integral (deg*s); ki converts to 1/m */
+     float rateIntegral;  /* 转弯角速度积分 */
+     uint32_t lastTickMs;
+     int8_t motionDirection;
+@@ -47,6 +47,7 @@ typedef struct
+     /* 诊断 */
+     float lastErrorDeg;
+     float lastCorr;
++    float lastSteerBiasKappa; /* learned steady actuator offset, not geometric yaw */
+ } HeadingControl;
+ 
+ /** 初始化参数（默认值见实现）。传入 0 表示用默认。 */
+diff --git a/CodeMyCar/stm32_project/Application/Services/Ctrl/Src/heading_control.c b/CodeMyCar/stm32_project/Application/Services/Ctrl/Src/heading_control.c
+index 884bf88..7729a83 100644
+--- a/CodeMyCar/stm32_project/Application/Services/Ctrl/Src/heading_control.c
++++ b/CodeMyCar/stm32_project/Application/Services/Ctrl/Src/heading_control.c
+@@ -10,6 +10,7 @@
+ #define HC_GOAL_KP_ANGLE_DEFAULT (0.600f)
+ #define HC_GOAL_KD_DEFAULT (0.080f)
+ #define HC_GOAL_DERIV_FILTER_S (0.080f)
++#define HC_GOAL_MAX_STEER_BIAS (0.500f)
+ #define HC_KI_ANGLE_DEFAULT (0.080f) /* (1/m)/(deg·s) */
+ #define HC_KP_RATE_DEFAULT (0.400f)  /* (1/m)/(1/m) */
+ #define HC_KI_RATE_DEFAULT (0.080f)
+@@ -73,6 +74,7 @@ void HeadingControl_Init(HeadingControl* hc, float kp, float ki)
+     hc->maxKappa = 3.770f; /* STEERING_KAPPA_MAX_1PM */
+     hc->lastErrorDeg = 0.0f;
+     hc->lastCorr = 0.0f;
++    hc->lastSteerBiasKappa = 0.0f;
+ }
+ 
+ void HeadingControl_Reset(HeadingControl* hc, float yawDeg)
+@@ -85,6 +87,7 @@ void HeadingControl_Reset(HeadingControl* hc, float yawDeg)
+     hc->integral = 0.0f;
+     hc->rateIntegral = 0.0f;
+     hc->lastTickMs = 0u;
++    hc->lastSteerBiasKappa = 0.0f;
+     hc->yawRateTracking = false;
+     hc->filteredYawRateDps = 0.0f;
+ }
+@@ -102,6 +105,7 @@ void HeadingControl_Disable(HeadingControl* hc)
+     hc->rateIntegral = 0.0f;
+     hc->lastTickMs = 0u;
+     hc->lastCorr = 0.0f;
++    hc->lastSteerBiasKappa = 0.0f;
+     hc->yawRateTracking = false;
+     hc->filteredYawRateDps = 0.0f;
+ }
+@@ -189,6 +193,17 @@ static float heading_apply(HeadingControl* hc, float yawDeg, float yawRateDps,
+         /* Anti-windup must include the damping actuator headroom. */
+         corr = pi_correction(referenceDeg ? hc->kpGoal : hc->kp, hc->ki, &hc->integral, error, dt,
+                              lo-damping, hi-damping) + damping;
++        hc->lastSteerBiasKappa = 0.0f;
++        if (referenceDeg && hc->ki > 0.0f)
++        {
++            /* A steady integral cancels actuator bias; it is not a request
++             * for continued vehicle yaw. Keep its authority bounded. */
++            const float limit = HC_GOAL_MAX_STEER_BIAS/hc->ki;
++            hc->integral = clampf(hc->integral, -limit, limit);
++            hc->lastSteerBiasKappa = hc->ki*hc->integral;
++            corr = clampf(hc->kpGoal*error + hc->lastSteerBiasKappa,
++                          lo-damping, hi-damping) + damping;
++        }
+     }
+     else
+     {
+@@ -199,6 +214,7 @@ static float heading_apply(HeadingControl* hc, float yawDeg, float yawRateDps,
+             hc->rateIntegral = 0.0f;
+         }
+         hc->straightMode = false;
++        hc->lastSteerBiasKappa = 0.0f;
+         hc->yawRateTracking = false;
+         hc->filteredYawRateDps = 0.0f;
+         hc->curveDirection = curve;
+diff --git a/CodeMyCar/stm32_project/Application/Services/Ctrl/Src/motion_service.c b/CodeMyCar/stm32_project/Application/Services/Ctrl/Src/motion_service.c
+index cc01be0..239c344 100644
+--- a/CodeMyCar/stm32_project/Application/Services/Ctrl/Src/motion_service.c
++++ b/CodeMyCar/stm32_project/Application/Services/Ctrl/Src/motion_service.c
+@@ -973,9 +973,10 @@ static float heading_correct(MotionContext* ctx, float kappa, bool straight)
+     {
+         lastLogMs = nowMs;
+         LOG_INFO(LOG_MODULE_MOTION,
+-                 "HEAD straight=%d yaw=%.2f ref=%.2f err=%.2f corr=%.3f k=%.3f v=%.3f",
++                 "HEAD straight=%d yaw=%.2f ref=%.2f err=%.2f corr=%.3f k=%.3f ib=%.3f v=%.3f",
+                  (int)straight, imu.yawDeg, s_headingControl.psiRefDeg,
+-                 s_headingControl.lastErrorDeg, s_headingControl.lastCorr, out, v);
++                 s_headingControl.lastErrorDeg, s_headingControl.lastCorr, out,
++                 s_headingControl.lastSteerBiasKappa, v);
+     }
+     return out;
+ }
+@@ -1230,16 +1231,27 @@ static void handle_goal(MotionContext* ctx)
+         steering_lut_angle_to_curvature(out.steerAngleDeg, wheelbase_m, &curvature))
+     {
+         curvature = CLAMP(curvature, -STEERING_KAPPA_MAX_1PM, STEERING_KAPPA_MAX_1PM);
+-        /* GOAL 也走 IMU 航向闭环：修正曲率同时作用于舵机和双轮差速 */
++        /* GOAL uses IMU feedback. Transient correction affects steering and
++         * wheel geometry; steady straight bias is separated below. */
+         /* The requested maneuver owns the mode. Corrective curvature must
+          * not turn a straight GOAL into a yaw-rate-following arc. With IMU,
+          * the fixed-reference angle loop alone owns straight steering. */
+         const bool straight = ctx->goal.target.turnDdeg == 0;
+         if (straight && ctx->goalUsesImu) { curvature = 0.0f; }
+         const float curvature_eff = heading_correct(ctx, curvature, straight);
++        float wheel_curvature = curvature_eff;
++        if (straight && ctx->goalUsesImu)
++        {
++            /* Steady yaw-hold integral learns an actuator offset, not a
++             * turning radius. Only transient P/D correction belongs in the
++             * rear-wheel geometry. Servo still receives the full output. */
++            wheel_curvature = CLAMP(curvature_eff-s_headingControl.lastSteerBiasKappa,
++                                    -s_headingControl.maxStraightCorr,
++                                    s_headingControl.maxStraightCorr);
++        }
+         if ((straight && ctx->goalUsesImu) || fabsf(curvature_eff - curvature) > 1e-4f)
+         {
+-            const float delta_eff = atanf(wheelbase_m * curvature_eff) * 57.29578f;
++            const float delta_eff = atanf(wheelbase_m * wheel_curvature) * 57.29578f;
+             const float wheel_r_m = mm_to_m(ctx->chassisConfig.wheelRadiusMM);
+             const float rpm_avg = 0.5f * (out.leftRpm + out.rightRpm);
+             const float v_mps = rpm_avg * 2.0f * 3.14159265f * wheel_r_m / 60.0f;
+diff --git a/CodeMyCar/stm32_project/tests/host/heading_transient_test.c b/CodeMyCar/stm32_project/tests/host/heading_transient_test.c
+index 4f629df..b12d8da 100644
+--- a/CodeMyCar/stm32_project/tests/host/heading_transient_test.c
++++ b/CodeMyCar/stm32_project/tests/host/heading_transient_test.c
+@@ -59,6 +59,7 @@ int main(void){
+  HeadingControl_HoldHeading(&h,0,0,.1f,0);
+  for(int i=0;i<1000;++i){tick+=5;out=HeadingControl_HoldHeading(&h,.1f,0,.1f,0);assert(fabsf(out)<=.01001f);}
+  assert(fabsf(h.integral)<.001f);
+- HeadingControl_Reset(&h,0);assert(!h.yawRateTracking && h.filteredYawRateDps==0);
++ assert(fabsf(h.lastSteerBiasKappa)<=.50001f);
++ HeadingControl_Reset(&h,0);assert(!h.yawRateTracking && h.filteredYawRateDps==0 && h.lastSteerBiasKappa==0);
+  puts("heading delayed-plant and derivative lifecycle: PASS");
+ }
+diff --git a/CodeMyCar/stm32_project/tests/host/motion_transaction_test.c b/CodeMyCar/stm32_project/tests/host/motion_transaction_test.c
+index 01b60f0..f3d3f52 100644
+--- a/CodeMyCar/stm32_project/tests/host/motion_transaction_test.c
++++ b/CodeMyCar/stm32_project/tests/host/motion_transaction_test.c
+@@ -258,5 +258,26 @@ int main(void)
+     assert(MotionService_StartGoal(&c,0,-2000,100,47)==0 && c.goalPath.direction==-1);
+     assert(c.goalPath.leftM==0 && c.goalPath.maxAbsLeftM==0);
+     assert(MotionService_EmergencyStop(&c,48)==0);
++#if !CMCAR_STRAIGHT_PATH_CONTROL
++    /* A learned steering neutral must not remain a rear-wheel turn request.
++     * Build integral using a yaw disturbance, then return exactly to the
++     * accepted heading. After damping settles, rear RPM must be equal while
++     * the servo keeps its learned offset. Exercise both travel directions. */
++    for(int direction=-1;direction<=1;direction+=2) {
++        measuredLeftRpm=measuredRightRpm=0;imuYaw=0;now+=5;MotionService_Run(&c);
++        assert(MotionService_StartGoal(&c,0,direction*2000,100,60+direction)==0);
++        measuredLeftRpm=measuredRightRpm=direction*30;
++        for(int i=0;i<320;i++) {
++            imuYaw=i<120 ? direction*-.8f : 0;
++            leftRevs+=direction*.5f/circ;rightRevs+=direction*.5f/circ;
++            now+=5;safety_channel_update(&front,100,now);safety_channel_update(&rear,100,now);
++            MotionService_Run(&c);assert(!c.faultLatched && c.goal.active);
++        }
++        const float trim=direction>0 ? STEERING_STRAIGHT_FORWARD_TRIM_US : STEERING_STRAIGHT_REVERSE_TRIM_US;
++        assert(fabsf(lastAngle-parked-trim/STEERING_SERVO_US_PER_DEG)>.02f);
++        assert(fabsf(submittedRpm[0]-submittedRpm[1])<.001f);
++        assert(MotionService_EmergencyStop(&c,70+direction)==0);
++    }
++#endif
+     puts("motion_transaction: all tests passed");
+ }

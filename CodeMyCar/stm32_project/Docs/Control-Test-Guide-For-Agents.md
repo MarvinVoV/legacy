@@ -710,3 +710,6 @@ fit_wheel_geometry_consistency.py是只读探索分析：历史四段60cm弧线�
 run.sh新增heading_transient_test（目前20组/24次执行）：真实HeadingControl配独立自行车yaw模型，基线参数与候选在相同延迟/量化/扰动下比较全程峰值yaw及累计横偏，覆盖正反向、10/30cm/s、150/250ms执行器响应；不将模型mm当作真实精度。生命周期断言覆盖测量微分无参考阶跃冲击、换向/停用/长时隙清历史、yaw跨界及D占用执行器余量时PI抗饱和。编译命令可独立复用run.sh末尾该段，不连接硬件。
 
 新增kpGoal只用于固定参考GOAL，legacy kp仍0.3，曲线控制不变；kd仅GOAL有效。ground-damped-*是首次实机候选，不合并主线，外部横移是否改善仍须反馈/重复验证。脚本damped_heading_short_pair_used.py与long_pair_used.py分别固定20cm与2m往返，逐段可靠STOP、连续3个新鲜零速样本才继续；使用前仍需确认物理空间并改新捕获前缀，禁止直接覆盖本次证据。
+
+
+后续验收反例已归档：阻尼版首轮前进约2mm/倒车3–5mm改善未在第二轮重复（前进右6mm、返回右约1.8cm）；积分/轮速分离候选虽通过24次host执行及负面对照，实车仍右8–9mm/返回右约2cm，因此已撤回。实验仅存steer-integral-split-rejected-experiment.patch，不能把此patch当已验收修复重新应用。新不变量的激励必须超过motion_calc_drive的0.1°几何死区，过小扰动会让旧策略也通过；负面对照已证明有效激励能捕获耦合。自然固定中位实验逆向最后raw seq84未捕获ACK，不能写作全部ACK通过，但STOP136可靠确认。最后恢复阻尼版后STOP151确认。

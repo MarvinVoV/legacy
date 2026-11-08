@@ -19,6 +19,10 @@
   },
   "legacy_drive_kp": 0.3,
   "arc_control": "unchanged",
-  "last_confirmed_stop": 126,
-  "ground_lateral_accuracy_accepted": false
+  "last_confirmed_stop": 151,
+  "ground_lateral_accuracy_accepted": false,
+  "compiled_git_sha": "8cbc7ded2bee",
+  "compiled_git_dirty": 0,
+  "compiled_metadata_stale": true,
+  "note": "Source working parent recorded separately; configure-time compiled metadata was cached. Firmware SHA256 is authoritative. Restored after rejected integral split experiment."
 }

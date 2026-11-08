@@ -1,0 +1,11 @@
+{
+  "experiment_sha256": "9a2194bdea3c81c34ac1ae2e183d6052d299b43891907f3e32167ad3fcc36734",
+  "source_parent_commit": "ce768c6",
+  "compiled_git_sha": "8cbc7ded2bee",
+  "compiled_git_dirty": 0,
+  "accepted": false,
+  "user_feedback": "No improvement: forward right approx 8-9mm; return end right approx 2cm relative baseline.",
+  "reverted_source_and_firmware": true,
+  "restored_sha256": "4cc0546e37ba2ef8709f9a5aabbd09bf151f4ecff5f4774741fe096a39b706a0",
+  "final_stop_seq": 151
+}

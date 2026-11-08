@@ -1,0 +1,122 @@
+{
+  "capture": "ground-integral-split-short-pair-01",
+  "legs": [
+    {
+      "distance_cm": 20,
+      "seq": 139,
+      "measured": {
+        "distance_cm": 19.5,
+        "turn_deg": 0.077,
+        "duration_ms": 2071,
+        "final_state": "done"
+      },
+      "peak_relative_yaw_10hz_deg": 0.2,
+      "wheel_tracking_2hz_samples_above_25rpm": {
+        "L": {
+          "samples": 3,
+          "mean_actual_minus_target_rpm": 1.0666666666666675
+        },
+        "R": {
+          "samples": 3,
+          "mean_actual_minus_target_rpm": -0.06666666666666761
+        }
+      },
+      "wheel_tracking_time_bins": {
+        "0.4_to_3s": {
+          "L": {
+            "samples": 3,
+            "mean_actual_minus_target_rpm": 1.0666666666666675
+          },
+          "R": {
+            "samples": 3,
+            "mean_actual_minus_target_rpm": -0.06666666666666761
+          }
+        },
+        "3_to_8s": {
+          "L": {
+            "samples": 0,
+            "mean_actual_minus_target_rpm": null
+          },
+          "R": {
+            "samples": 0,
+            "mean_actual_minus_target_rpm": null
+          }
+        },
+        "after_8s": {
+          "L": {
+            "samples": 0,
+            "mean_actual_minus_target_rpm": null
+          },
+          "R": {
+            "samples": 0,
+            "mean_actual_minus_target_rpm": null
+          }
+        }
+      },
+      "last_path_log": "PATH yl=-0.36 gl=-0.04 x=189.6 off=0.003 en=0 ed=0.94 ff=0.0 "
+    },
+    {
+      "distance_cm": -20,
+      "seq": 141,
+      "measured": {
+        "distance_cm": -19.5,
+        "turn_deg": -0.15,
+        "duration_ms": 2312,
+        "final_state": "done"
+      },
+      "peak_relative_yaw_10hz_deg": 0.22,
+      "wheel_tracking_2hz_samples_above_25rpm": {
+        "L": {
+          "samples": 4,
+          "mean_actual_minus_target_rpm": 2.6000000000000023
+        },
+        "R": {
+          "samples": 4,
+          "mean_actual_minus_target_rpm": 3.2250000000000005
+        }
+      },
+      "wheel_tracking_time_bins": {
+        "0.4_to_3s": {
+          "L": {
+            "samples": 4,
+            "mean_actual_minus_target_rpm": 2.6000000000000023
+          },
+          "R": {
+            "samples": 4,
+            "mean_actual_minus_target_rpm": 3.2250000000000005
+          }
+        },
+        "3_to_8s": {
+          "L": {
+            "samples": 0,
+            "mean_actual_minus_target_rpm": null
+          },
+          "R": {
+            "samples": 0,
+            "mean_actual_minus_target_rpm": null
+          }
+        },
+        "after_8s": {
+          "L": {
+            "samples": 0,
+            "mean_actual_minus_target_rpm": null
+          },
+          "R": {
+            "samples": 0,
+            "mean_actual_minus_target_rpm": null
+          }
+        }
+      },
+      "last_path_log": "PATH yl=-0.57 gl=-0.54 x=-195.2 off=-0.002 en=0 ed=-0.81 ff=0.0 "
+    }
+  ],
+  "final_stop": {
+    "ok": true,
+    "stopped": true,
+    "accepted": true,
+    "confirmed": true,
+    "seq": 143
+  },
+  "error": null,
+  "limitations": "Short transient windows, rounded 2Hz RPM and 10Hz yaw; no external lateral-position measurement."
+}

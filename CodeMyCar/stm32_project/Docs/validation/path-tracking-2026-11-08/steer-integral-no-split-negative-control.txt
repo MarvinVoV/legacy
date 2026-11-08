@@ -1,0 +1,3 @@
+== motion transaction ==
+Assertion failed: (fabsf(submittedRpm[0]-submittedRpm[1])<.001f), function main, file motion_transaction_test.c, line 277.
+/private/tmp/cmcar-integral-no-split-negative.sh: line 5: 13001 Abort trap: 6           "${TMPDIR:-/tmp}/motion_transaction_test"

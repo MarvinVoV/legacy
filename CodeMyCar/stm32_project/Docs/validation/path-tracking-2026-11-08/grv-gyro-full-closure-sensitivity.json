@@ -1,0 +1,197 @@
+{
+  "results": [
+    {
+      "capture": "ground-load-roundtrip-200cm-speed10-01",
+      "assumed_gyro_bias_dps": 0.0,
+      "estimates": {
+        "grv": {
+          "forward_mm": 0.00333715859962469,
+          "left_mm": -2.9169175365031816,
+          "yaw_change_deg": 0.03999999999999915
+        },
+        "gyro": {
+          "forward_mm": 1.0051754877248233,
+          "left_mm": -52.41479315543086,
+          "yaw_change_deg": 2.406585000000654
+        }
+      }
+    },
+    {
+      "capture": "ground-load-roundtrip-200cm-speed10-01",
+      "assumed_gyro_bias_dps": -0.005,
+      "estimates": {
+        "grv": {
+          "forward_mm": 0.00333715859962469,
+          "left_mm": -2.9169175365031816,
+          "yaw_change_deg": 0.03999999999999915
+        },
+        "gyro": {
+          "forward_mm": 1.1943312323995323,
+          "left_mm": -56.349821104134286,
+          "yaw_change_deg": 2.653780000000656
+        }
+      }
+    },
+    {
+      "capture": "ground-load-roundtrip-200cm-speed10-01",
+      "assumed_gyro_bias_dps": 0.005,
+      "estimates": {
+        "grv": {
+          "forward_mm": 0.00333715859962469,
+          "left_mm": -2.9169175365031816,
+          "yaw_change_deg": 0.03999999999999915
+        },
+        "gyro": {
+          "forward_mm": 0.8336147360997925,
+          "left_mm": -48.47912062438714,
+          "yaw_change_deg": 2.159390000000657
+        }
+      }
+    },
+    {
+      "capture": "ground-no-trim-roundtrip-200cm-speed10-01",
+      "assumed_gyro_bias_dps": 0.0,
+      "estimates": {
+        "grv": {
+          "forward_mm": 0.009130932101712785,
+          "left_mm": -6.013611684254647,
+          "yaw_change_deg": 0.10000000000000003
+        },
+        "gyro": {
+          "forward_mm": -0.008029235646615729,
+          "left_mm": 1.1405914566501192,
+          "yaw_change_deg": -1.2768849999999823
+        }
+      }
+    },
+    {
+      "capture": "ground-no-trim-roundtrip-200cm-speed10-01",
+      "assumed_gyro_bias_dps": -0.005,
+      "estimates": {
+        "grv": {
+          "forward_mm": 0.009130932101712785,
+          "left_mm": -6.013611684254647,
+          "yaw_change_deg": 0.10000000000000003
+        },
+        "gyro": {
+          "forward_mm": -0.05059461636102147,
+          "left_mm": -2.7689193337726645,
+          "yaw_change_deg": -1.0301599999999833
+        }
+      }
+    },
+    {
+      "capture": "ground-no-trim-roundtrip-200cm-speed10-01",
+      "assumed_gyro_bias_dps": 0.005,
+      "estimates": {
+        "grv": {
+          "forward_mm": 0.009130932101712785,
+          "left_mm": -6.013611684254647,
+          "yaw_change_deg": 0.10000000000000003
+        },
+        "gyro": {
+          "forward_mm": 0.051878299621277546,
+          "left_mm": 5.049870505097842,
+          "yaw_change_deg": -1.5236099999999824
+        }
+      }
+    },
+    {
+      "capture": "ground-damped-roundtrip-200cm-speed10-01",
+      "assumed_gyro_bias_dps": 0.0,
+      "estimates": {
+        "grv": {
+          "forward_mm": -0.00023338505673198284,
+          "left_mm": -2.356921004817567,
+          "yaw_change_deg": 0.009999999999999981
+        },
+        "gyro": {
+          "forward_mm": -0.1899830201407393,
+          "left_mm": -11.479597968100993,
+          "yaw_change_deg": 0.4130550000000336
+        }
+      }
+    },
+    {
+      "capture": "ground-damped-roundtrip-200cm-speed10-01",
+      "assumed_gyro_bias_dps": -0.005,
+      "estimates": {
+        "grv": {
+          "forward_mm": -0.00023338505673198284,
+          "left_mm": -2.356921004817567,
+          "yaw_change_deg": 0.009999999999999981
+        },
+        "gyro": {
+          "forward_mm": -0.20754506814109075,
+          "left_mm": -15.459957667742255,
+          "yaw_change_deg": 0.6620550000000351
+        }
+      }
+    },
+    {
+      "capture": "ground-damped-roundtrip-200cm-speed10-01",
+      "assumed_gyro_bias_dps": 0.005,
+      "estimates": {
+        "grv": {
+          "forward_mm": -0.00023338505673198284,
+          "left_mm": -2.356921004817567,
+          "yaw_change_deg": 0.009999999999999981
+        },
+        "gyro": {
+          "forward_mm": -0.15459354007515846,
+          "left_mm": -7.499403463837891,
+          "yaw_change_deg": 0.16405500000003465
+        }
+      }
+    },
+    {
+      "capture": "ground-damped-roundtrip-200cm-speed10-repeat-01",
+      "assumed_gyro_bias_dps": 0.0,
+      "estimates": {
+        "grv": {
+          "forward_mm": 0.0008229284568850304,
+          "left_mm": -3.1323877202547044,
+          "yaw_change_deg": -0.020000000000000018
+        },
+        "gyro": {
+          "forward_mm": 0.0701656417262082,
+          "left_mm": 0.9913321716133532,
+          "yaw_change_deg": -0.20540500000015374
+        }
+      }
+    },
+    {
+      "capture": "ground-damped-roundtrip-200cm-speed10-repeat-01",
+      "assumed_gyro_bias_dps": -0.005,
+      "estimates": {
+        "grv": {
+          "forward_mm": 0.0008229284568850304,
+          "left_mm": -3.1323877202547044,
+          "yaw_change_deg": -0.020000000000000018
+        },
+        "gyro": {
+          "forward_mm": 5.6316183596250013e-05,
+          "left_mm": -2.959473890235193,
+          "yaw_change_deg": 0.04304999999984344
+        }
+      }
+    },
+    {
+      "capture": "ground-damped-roundtrip-200cm-speed10-repeat-01",
+      "assumed_gyro_bias_dps": 0.005,
+      "estimates": {
+        "grv": {
+          "forward_mm": 0.0008229284568850304,
+          "left_mm": -3.1323877202547044,
+          "yaw_change_deg": -0.020000000000000018
+        },
+        "gyro": {
+          "forward_mm": 0.15787460937363096,
+          "left_mm": 4.941797283854898,
+          "yaw_change_deg": -0.4538600000001529
+        }
+      }
+    }
+  ],
+  "limitations": "Continuous gyro integration from rounded 10Hz logs; bias +/-0.005dps is a sensitivity perturbation, not a measured confidence interval. No external truth; inconsistent predictions preclude switching control source based on these captures."
+}
