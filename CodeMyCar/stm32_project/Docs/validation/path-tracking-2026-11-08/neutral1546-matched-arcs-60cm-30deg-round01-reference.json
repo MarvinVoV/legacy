@@ -1,5 +1,5 @@
 {
-  "status": "awaiting_operator_observation",
+  "status": "operator_reported_after_test",
   "neutral_us": 1546,
   "path_outer_loop_enabled": false,
   "target_sequence_cm_deg": [
@@ -22,5 +22,16 @@
   ],
   "speed_cm_s": 10,
   "world_path_replay_guaranteed": false,
-  "last_confirmed_stop_seq": 22
+  "last_confirmed_stop_seq": 22,
+  "operator_raw": "左转倒回时，整车向右偏了大概 2mm 左右，右转倒回时，和原来停车线向左偏了大概 2mm 左右",
+  "left_pair_return_observed": {
+    "direction": "right",
+    "approx_mm": 2
+  },
+  "right_pair_return_observed": {
+    "direction": "left",
+    "approx_mm": 2
+  },
+  "combined_closure_mm": null,
+  "reference_limit": "operator approximate observations; do not add/subtract pair readings or certify world-path replay"
 }
