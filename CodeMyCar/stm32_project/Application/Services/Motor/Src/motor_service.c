@@ -244,7 +244,9 @@ int MotorService_brakeAll(MotorService* service)
         return ERR_MOTOR_INVALID_PARAM;
     }
 
-    /* 两轮都短接制动；每轮独立加锁，避免和 updateState 竞争 */
+    /* 两轮都短接制动；每轮独立加锁，避免和 updateState 竞争。
+       任一轮制动失败都必须向上传播，不能宣布"已制动"。 */
+    bool all_ok = true;
     for (uint8_t i = 0; i < MOTOR_MAX_NUM; i++)
     {
         MotorInstance* instance = &service->instances[i];
@@ -254,7 +256,9 @@ int MotorService_brakeAll(MotorService* service)
         }
         if (osMutexAcquire(instance->mutex, MUTEX_TIMEOUT_MS) != osOK)
         {
-            LOG_WARN(LOG_MODULE_MOTOR, "Mutex timeout for motor %u", (unsigned)i);
+            LOG_WARN(LOG_MODULE_MOTOR, "Mutex timeout for motor %u (brake skipped)",
+                     (unsigned)i);
+            all_ok = false;
             continue;
         }
 
@@ -266,7 +270,7 @@ int MotorService_brakeAll(MotorService* service)
 
         osMutexRelease(instance->mutex);
     }
-    return ERR_SUCCESS;
+    return all_ok ? ERR_SUCCESS : ERR_MOTOR_MUTEX_FAIL;
 }
 
 void MotorService_updateState(MotorInstance* instance)

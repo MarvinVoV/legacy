@@ -139,7 +139,10 @@ void ImuService_Update(ImuService* s)
     }
 
     const float gyroZDps = s->gyroZ * IMU_RAD2DEG;
-    if (s->calibrating)
+    const bool newGyroSample = (s->gyroCount != s->calibLastGyroCount);
+    s->calibLastGyroCount = s->gyroCount;
+
+    if (s->calibrating && newGyroSample)
     {
         /* 只在接近静止时采样：车在转动时把样本丢弃并重新计数 */
         if (fabsf(gyroZDps) > IMU_CALIB_MAX_DPS)
@@ -156,9 +159,10 @@ void ImuService_Update(ImuService* s)
         {
             s->biasDps = (float)(s->calibSumDps / (double)s->calibCount);
             s->calibrating = false;
+            s->biasValid = true;
         }
     }
-    else if (fabsf(gyroZDps - s->biasDps) < 0.5f)
+    else if (s->biasValid && newGyroSample && fabsf(gyroZDps - s->biasDps) < 0.5f)
     {
         /* 长时间静止时缓慢跟踪零偏漂移 */
         s->biasDps += 0.0005f * (gyroZDps - s->biasDps);
@@ -169,13 +173,18 @@ void ImuService_Update(ImuService* s)
     const float qx = s->quatX;
     const float qy = s->quatY;
     const float qz = s->quatZ;
-    if ((qw * qw + qx * qx + qy * qy + qz * qz) < 0.5f)
+    const float norm2 = qw * qw + qx * qx + qy * qy + qz * qz;
+    if (!isfinite(norm2) || norm2 < 0.5f || norm2 > 1.5f)
     {
-        return; /* 尚无有效四元数 */
+        return; /* 尚无有效四元数或数值异常 */
     }
 
     const float raw = atan2f(2.0f * (qw * qz + qx * qy),
                              1.0f - 2.0f * (qy * qy + qz * qz)) * IMU_RAD2DEG;
+    if (!isfinite(raw))
+    {
+        return;
+    }
 
     if (!s->lastRawValid)
     {

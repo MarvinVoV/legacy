@@ -49,6 +49,43 @@ int main(void)
     }
     assert(instance.state.commandedAngleDeg <= 90.0f);
     assert(last_hw_angle <= 90.0f);
+    /* --- CTRL-05 回归：立即命令即使落在死区内，也必须取消旧的平滑轨迹 --- */
+    SteerConfig cfg2 = cfg;
+    cfg2.deadZoneDeg = 1.0f; /* 故意放大死区 */
+    SteerInstance inst2 = {0};
+    assert(SteerService_init(&inst2, &cfg2, &driver) == 0);
+    assert(SteerService_setAngleSmoothly(&inst2, 140.0f) == 0);
+    tick_ms += 20;
+    assert(SteerService_update(&inst2) == 0);
+    assert(inst2.state.motionState == STEER_MOTION_STATE_MOVING);
+    const float before = inst2.state.commandedAngleDeg;
+
+    /* 立即回到 0°：与当前位置(≈0.072°)差 < 死区 1°，不写 PWM，但必须取消轨迹 */
+    assert(SteerService_setAngleImmediate(&inst2, 0.0f) == 0);
+    assert(inst2.state.motionState == STEER_MOTION_STATE_IDLE);
+    assert(fabsf(inst2.smoothCtrl.targetAngleDeg - 0.0f) < 1e-6f);
+
+    /* 后续 update 不应再向 140° 移动 */
+    for (int i = 0; i < 50; ++i)
+    {
+        tick_ms += 20;
+        assert(SteerService_update(&inst2) == 0);
+    }
+    assert(fabsf(inst2.state.commandedAngleDeg - before) < 1e-6f);
+
+    /* --- CTRL-04 回归：运动中刷新同方向目标，速度不归零 --- */
+    SteerInstance inst3 = {0};
+    assert(SteerService_init(&inst3, &cfg, &driver) == 0);
+    assert(SteerService_setAngleSmoothly(&inst3, 140.0f) == 0);
+    tick_ms += 20;
+    assert(SteerService_update(&inst3) == 0);
+    const float sp = inst3.smoothCtrl.currentSpeedDegPerMs;
+    assert(sp > 0.0f);
+
+    assert(SteerService_setAngleSmoothly(&inst3, 141.0f) == 0); /* 同方向微调目标 */
+    assert(fabsf(inst3.smoothCtrl.currentSpeedDegPerMs - sp) < 1e-9f);
+    assert(fabsf(inst3.smoothCtrl.targetAngleDeg - 141.0f) < 1e-6f);
+
     puts("servo_service: all tests passed");
     return 0;
 }

@@ -1,6 +1,7 @@
 #include "heading_control.h"
 
 #include <math.h>
+#include <stddef.h>
 
 #include "stm32h7xx_hal.h"
 
@@ -56,6 +57,7 @@ void HeadingControl_Init(HeadingControl* hc, float kp, float ki)
     hc->deadbandDeg = HC_DEADBAND_DEG_DEFAULT;
     hc->deadbandK = HC_DEADBAND_K_DEFAULT;
     hc->maxCorr = HC_MAX_CORR_DEFAULT;
+    hc->maxKappa = 3.770f; /* STEERING_KAPPA_MAX_1PM */
     hc->lastErrorDeg = 0.0f;
     hc->lastCorr = 0.0f;
 }
@@ -79,8 +81,11 @@ void HeadingControl_Disable(HeadingControl* hc)
         return;
     }
     hc->active = false;
+    hc->straightMode = false; /* 下次调用重新捕获参考航向 */
+    hc->psiRefDeg = 0.0f;
     hc->integral = 0.0f;
     hc->rateIntegral = 0.0f;
+    hc->lastTickMs = 0u;
     hc->lastCorr = 0.0f;
 }
 
@@ -112,13 +117,16 @@ float HeadingControl_Apply(HeadingControl* hc, float yawDeg, float yawRateDps,
     {
         if (!hc->straightMode)
         {
-            /* 刚进入直行：以当前航向为基准 */
+            /* 刚进入直行：以当前航向为基准，并清掉转弯段的角速度积分 */
             hc->straightMode = true;
             hc->psiRefDeg = yawDeg;
             hc->integral = 0.0f;
+            hc->rateIntegral = 0.0f;
         }
 
-        float err = wrap180(yawDeg - hc->psiRefDeg);
+        /* 倒车时运动学方向反转：同样的舵角产生的航向变化相反 */
+        const float dir = (vMps >= 0.0f) ? 1.0f : -1.0f;
+        float err = dir * wrap180(yawDeg - hc->psiRefDeg);
         hc->lastErrorDeg = err;
 
         /* 死区：吸收约 4° 回差带来的抖动 */
@@ -138,13 +146,24 @@ float HeadingControl_Apply(HeadingControl* hc, float yawDeg, float yawRateDps,
     }
     else
     {
-        hc->straightMode = false;
+        if (hc->straightMode)
+        {
+            /* 直行 → 转弯：不携带直行段的角度积分 */
+            hc->straightMode = false;
+            hc->integral = 0.0f;
+            hc->rateIntegral = 0.0f;
+        }
 
-        /* 由角速度反推实际曲率：κ = -ω/v（ω 逆时针为正） */
+        /* 由角速度反推实际曲率：ψ̇ = -v·κ → κ = -ψ̇/v（v 可为负，倒车同样成立） */
         float kappaMeas = kappaFf;
-        if (vMps > 0.03f)
+        if (fabsf(vMps) > 0.03f)
         {
             kappaMeas = -(yawRateDps * 0.017453293f) / vMps;
+        }
+        else
+        {
+            /* 速度过低时反馈不可用：冻结角速度积分，仅保留已有修正量 */
+            hc->rateIntegral *= 0.98f;
         }
         float err = kappaFf - kappaMeas;
         hc->lastErrorDeg = err;
@@ -172,5 +191,14 @@ float HeadingControl_Apply(HeadingControl* hc, float yawDeg, float yawRateDps,
     }
     hc->lastCorr = corr;
 
-    return kappaFf + corr;
+    float out = kappaFf + corr;
+    if (out > hc->maxKappa)
+    {
+        out = hc->maxKappa;
+    }
+    if (out < -hc->maxKappa)
+    {
+        out = -hc->maxKappa;
+    }
+    return out;
 }

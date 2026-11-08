@@ -39,8 +39,24 @@ static void send_heading_frame(const ImuService* s)
     payload[3] = (uint8_t)((ts >> 24) & 0xFFu);
     payload[4] = (uint8_t)SENSOR_HEADING;
 
-    int16_t yaw_ddeg = (int16_t)lroundf(s->yawDeg * 10.0f);
-    int16_t rate_cdps = (int16_t)lroundf(s->yawRateDps * 100.0f);
+    if (!isfinite(s->yawDeg) || !isfinite(s->yawRateDps))
+    {
+        return;
+    }
+
+    /* 连续角回绕到 [-180,180]，避免 int16 在约 9 圈后溢出 */
+    float yawWrapped = s->yawDeg;
+    while (yawWrapped > 180.0f)  { yawWrapped -= 360.0f; }
+    while (yawWrapped < -180.0f) { yawWrapped += 360.0f; }
+
+    long yaw_l = lroundf(yawWrapped * 10.0f);
+    long rate_l = lroundf(s->yawRateDps * 100.0f);
+    if (yaw_l > 1800L)   { yaw_l = 1800L; }
+    if (yaw_l < -1800L)  { yaw_l = -1800L; }
+    if (rate_l > 32767L) { rate_l = 32767L; }
+    if (rate_l < -32767L){ rate_l = -32767L; }
+    const int16_t yaw_ddeg = (int16_t)yaw_l;
+    const int16_t rate_cdps = (int16_t)rate_l;
 
     payload[5] = (uint8_t)((uint16_t)yaw_ddeg & 0xFFu);
     payload[6] = (uint8_t)((uint16_t)yaw_ddeg >> 8);
@@ -82,11 +98,13 @@ static void ImuTask_doTask(void* pvParameters)
     uint32_t lastWake = osKernelGetTickCount();
     uint32_t lastLog = lastWake;
     bool needInit = true;
+    uint32_t nextInitTick = 0u;
+    uint32_t initDoneHal = 0u;
 
     while (1)
     {
         /* 初始化放在任务里：默认任务栈只有 512 B，SH-2 协议栈缓冲放不下 */
-        if (needInit)
+        if (needInit && (int32_t)(osKernelGetTickCount() - nextInitTick) >= 0)
         {
             needInit = false;
             /* 地址探测：区分 NOACK / BUSY / OK */
@@ -98,23 +116,35 @@ static void ImuTask_doTask(void* pvParameters)
             const int rc = ImuService_Init(svc, &hi2c1);
             if (rc != ERR_SUCCESS)
             {
-                LOG_WARN(LOG_MODULE_SENSOR, "IMU init failed: 0x%04X", rc);
+                LOG_WARN(LOG_MODULE_SENSOR, "IMU init failed: 0x%04X (retry in 2s)", rc);
+                needInit = true;
+                nextInitTick = osKernelGetTickCount() + 2000u;
             }
             else
             {
+                initDoneHal = HAL_GetTick();
                 LOG_INFO(LOG_MODULE_SENSOR, "IMU ready (SH-2)");
             }
         }
 
         ImuService_Update(svc);
 
-        /* 超过 2 s 没有姿态数据：重开 SH-2 会话（含硬复位） */
-        if (svc->inited && svc->lastUpdateMs != 0u &&
-            HAL_GetTick() - svc->lastUpdateMs > IMU_TIMEOUT_MS)
+        /* 数据过期（2 s）或初始化后 1.5 s 仍无首帧 → 重开会话 */
+        if (svc->inited)
         {
-            LOG_WARN(LOG_MODULE_SENSOR, "IMU timeout -> reopen SH-2");
-            ImuService_Close(svc);
-            needInit = true;
+            const uint32_t nowHal = HAL_GetTick();
+            const bool stale = (svc->lastUpdateMs != 0u) &&
+                               (nowHal - svc->lastUpdateMs > IMU_TIMEOUT_MS);
+            const bool noFirst = (svc->lastUpdateMs == 0u) &&
+                                 (nowHal - initDoneHal > 1500u);
+            if (stale || noFirst)
+            {
+                LOG_WARN(LOG_MODULE_SENSOR, "IMU %s -> reopen SH-2",
+                         noFirst ? "no first frame" : "timeout");
+                ImuService_Close(svc);
+                needInit = true;
+                nextInitTick = osKernelGetTickCount() + 500u;
+            }
         }
 
         const uint32_t now = osKernelGetTickCount();

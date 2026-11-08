@@ -34,7 +34,8 @@ typedef struct
     float kiRate;
     float deadbandK;     /* 1/m */
 
-    float maxCorr;       /* 1/m */
+    float maxCorr;       /* 修正量限幅 (1/m) */
+    float maxKappa;      /* 最终曲率限幅 (1/m)，与 STEERING_KAPPA_MAX_1PM 一致 */
 
     /* 诊断 */
     float lastErrorDeg;

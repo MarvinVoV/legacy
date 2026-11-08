@@ -35,12 +35,14 @@ typedef struct
     /* 零偏标定 */
     bool calibrating;
     uint32_t calibCount;
+    uint32_t calibLastGyroCount; /* 只在新陀螺样本上累计 */
     double calibSumDps;
 
     /* 诊断 */
     uint32_t grvCount;
     uint32_t gyroCount;
     uint32_t accelCount;
+    bool biasValid; /* 零偏标定完成 */
     uint32_t lastUpdateMs;
 } ImuService;
 

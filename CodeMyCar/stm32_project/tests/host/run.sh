@@ -83,6 +83,15 @@ echo "== steering LUT =="
   -lm -o "${TMPDIR:-/tmp}/steering_lut_test"
 "${TMPDIR:-/tmp}/steering_lut_test"
 
+echo "== heading control =="
+"$CC" -std=c11 -Wall -Wextra -O2 \
+  -I "$DIR/tests/host/stubs" \
+  -I "$DIR/Application/Services/Ctrl/Inc" \
+  "$DIR/tests/host/heading_control_test.c" \
+  "$DIR/Application/Services/Ctrl/Src/heading_control.c" \
+  -lm -o "${TMPDIR:-/tmp}/heading_control_test"
+"${TMPDIR:-/tmp}/heading_control_test"
+
 echo "== PID simulation =="
 "$CC" -std=c11 -Wall -Wextra -O2 \
   -I "$DIR/tests/host/stubs" \

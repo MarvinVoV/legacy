@@ -601,6 +601,19 @@ void MotionService_Run(MotionContext* ctx)
         stop_actuators(ctx);
     }
 
+    /* 每次从停止进入运动（模式变化）时，用当前航向重新锁定 ψ_ref，
+       避免沿用上一次运动留下的目标航向 */
+    static MotionMode s_prevMode = MOTION_EMERGENCY_STOP;
+    if (current_target.mode != s_prevMode)
+    {
+        ImuService* imuAtStart = ImuTask_GetService();
+        if (imuAtStart != NULL && imuAtStart->yawValid)
+        {
+            HeadingControl_Reset(&s_headingControl, imuAtStart->yawDeg);
+        }
+        s_prevMode = current_target.mode;
+    }
+
     // 根据模式执行控制
     switch (current_target.mode)
     {
@@ -678,7 +691,10 @@ void MotionService_Run(MotionContext* ctx)
         }
         else if (safety_channel_blocked(guard))
         {
-            MotorService_brakeAll(ctx->motorService);
+            if (MotorService_brakeAll(ctx->motorService) != ERR_SUCCESS)
+            {
+                LOG_ERROR(LOG_MODULE_MOTION, "SAFETY brake failed (wheel not braked)");
+            }
             ctx->safetyBraked = true;
             left              = 0.0f;
             right             = 0.0f;
@@ -782,7 +798,12 @@ static void abort_goal_locked(MotionContext* ctx, uint8_t newState)
 static float heading_correct(MotionContext* ctx, float kappa, bool straight)
 {
     ImuService* imu = ImuTask_GetService();
-    if (imu == NULL || !imu->yawValid)
+
+    /* IMU 健康检查：无数据、数据过期（>200 ms）、或安全制动期间一律退出闭环 */
+    const bool imu_stale = (imu == NULL) ||
+                           (imu->lastUpdateMs != 0u &&
+                            (HAL_GetTick() - imu->lastUpdateMs) > 200u);
+    if (imu == NULL || !imu->yawValid || imu_stale || ctx->safetyBraked)
     {
         HeadingControl_Disable(&s_headingControl);
         return kappa;
@@ -793,8 +814,20 @@ static float heading_correct(MotionContext* ctx, float kappa, bool straight)
     const float right_mps = ctx->state.drive.rightRpm * 2.0f * 3.14159265f * wheel_r_m / 60.0f;
     const float v = 0.5f * (left_mps + right_mps);
 
-    return HeadingControl_Apply(&s_headingControl, imu->yawDeg, imu->yawRateDps,
-                                v, kappa, straight);
+    const float out = HeadingControl_Apply(&s_headingControl, imu->yawDeg, imu->yawRateDps,
+                                           v, kappa, straight);
+
+    static uint32_t lastLogMs = 0u;
+    const uint32_t nowMs = HAL_GetTick();
+    if (nowMs - lastLogMs >= 1000u)
+    {
+        lastLogMs = nowMs;
+        LOG_INFO(LOG_MODULE_MOTION,
+                 "HEAD straight=%d yaw=%.2f ref=%.2f err=%.2f corr=%.3f k=%.3f v=%.3f",
+                 (int)straight, imu->yawDeg, s_headingControl.psiRefDeg,
+                 s_headingControl.lastErrorDeg, s_headingControl.lastCorr, out, v);
+    }
+    return out;
 }
 
 /* "前轮朝正"对应的舵机绝对角：由标定表在 kappa = 0 处查得（2026-11-03 实测
@@ -883,9 +916,8 @@ static void handle_direct_control(MotionContext* ctx, const MotionTarget* target
 {
     const float curvature = CLAMP(target->params.directCtrl.curvature1pm,
                                   -STEERING_KAPPA_MAX_1PM, STEERING_KAPPA_MAX_1PM);
-    /* 直行（左右轮目标接近）→ 航向保持；否则交给曲率前馈 */
-    const bool straight =
-        fabsf(target->params.directCtrl.leftRpm - target->params.directCtrl.rightRpm) <= 3.0f;
+    /* 直行判定以曲率为准：同 RPM 但非零曲率仍是转弯 */
+    const bool straight = fabsf(curvature) < 0.05f;
     const float curvature_eff = heading_correct(ctx, curvature, straight);
     float raw_steer = 0.0f;
     if (!steering_lut_curvature_to_raw(curvature_eff,

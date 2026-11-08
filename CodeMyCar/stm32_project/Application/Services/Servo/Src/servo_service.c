@@ -92,13 +92,21 @@ int SteerService_setAngleSmoothly(SteerInstance* instance, float targetAngle)
         osMutexRelease(instance->mutex);
         return ERR_SUCCESS;
     }
-    /* MotionService may refresh the same steering target every control cycle.
-       Preserve the active trajectory instead of resetting its speed to zero. */
-    if (instance->state.motionState == STEER_MOTION_STATE_MOVING &&
-        fabsf(clampedAngle - instance->smoothCtrl.targetAngleDeg) <= 0.001f)
+    /* 运动中的目标刷新（例如 IMU 闭环每周期给出略有变化的目标）：
+       同方向时只更新目标、保留当前速度，避免反复从零速起步；
+       只有需要反向时才重建轨迹。 */
+    if (instance->state.motionState == STEER_MOTION_STATE_MOVING)
     {
-        osMutexRelease(instance->mutex);
-        return ERR_SUCCESS;
+        const float newDelta = clampedAngle - instance->state.commandedAngleDeg;
+        const float curDelta = instance->smoothCtrl.targetAngleDeg -
+                               instance->state.commandedAngleDeg;
+        if ((newDelta >= 0.0f) == (curDelta >= 0.0f))
+        {
+            instance->smoothCtrl.targetAngleDeg = clampedAngle;
+            instance->state.targetAngleDeg = clampedAngle;
+            osMutexRelease(instance->mutex);
+            return ERR_SUCCESS;
+        }
     }
     // 初始化平滑控制上下文
     instance->smoothCtrl = (SmoothControlContext){
@@ -184,7 +192,17 @@ int SteerService_setAngleImmediate(SteerInstance* instance, const float angle)
     // 计算角度差（浮点）
     const float delta = clampedAngle - instance->state.commandedAngleDeg;
 
-    // 死区判断（浮点容差）
+    /* 立即命令必须先取消旧轨迹：即使角度差落在死区内，
+       也不能让之前的平滑目标（MOVING）继续生效 */
+    instance->smoothCtrl = (SmoothControlContext){
+        .targetAngleDeg = clampedAngle,
+        .currentSpeedDegPerMs = 0.0f,
+        .state = STEER_STATE_IDLE
+    };
+    instance->state.motionState = STEER_MOTION_STATE_IDLE;
+    instance->state.targetAngleDeg = clampedAngle;
+
+    // 死区判断（浮点容差）：只决定是否需要写 PWM
     if (fabsf(delta) <= instance->config.deadZoneDeg)
     {
         osMutexRelease(instance->mutex);
@@ -192,15 +210,7 @@ int SteerService_setAngleImmediate(SteerInstance* instance, const float angle)
     }
 
     // 强制更新实际角度（绕过平滑控制）
-    instance->state.targetAngleDeg = clampedAngle;
     instance->state.commandedAngleDeg = clampedAngle;
-
-    // 清除平滑控制上下文（适配新状态结构）
-    instance->smoothCtrl = (SmoothControlContext){
-        .targetAngleDeg = clampedAngle,
-        .currentSpeedDegPerMs = 0.0f, // 重置速度
-        .state = STEER_STATE_IDLE     // 强制设为空闲状态
-    };
 
     // 立即驱动硬件
     const int err = ServoDriver_setAngle(instance->driver, clampedAngle);
