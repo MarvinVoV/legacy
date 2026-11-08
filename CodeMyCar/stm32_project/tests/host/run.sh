@@ -166,3 +166,15 @@ echo "== motion task asynchronous telemetry =="
   "$DIR/tests/host/motion_task_test.c" "$DIR/Application/System/Protocol/Src/motion_status.c" \
   -o "${TMPDIR:-/tmp}/motion_task_test"
 "${TMPDIR:-/tmp}/motion_task_test"
+
+
+echo "== steering full PWM pipeline =="
+"$CC" -std=c11 -Wall -Wextra -O2 -include stdbool.h -include string.h -include math.h \
+  -I "$DIR/Application/Modules/Servo/Inc" -I "$DIR/Application/System/Utils/Inc" \
+  -I "$DIR/tests/host/stubs" -I "$DIR/Application/Services/Servo/Inc" \
+  "$DIR/tests/host/steering_pipeline_test.c" \
+  "$DIR/Application/Services/Servo/Src/servo_service.c" \
+  "$DIR/Application/Modules/Servo/Src/servo_driver.c" \
+  "$DIR/Application/System/Utils/Src/steering_lut.c" \
+  -lm -o "${TMPDIR:-/tmp}/steering_pipeline_test"
+"${TMPDIR:-/tmp}/steering_pipeline_test"

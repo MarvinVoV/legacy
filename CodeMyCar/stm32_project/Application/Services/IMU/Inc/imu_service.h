@@ -63,6 +63,15 @@ typedef struct
     uint32_t lastGyroMs;
     uint32_t processedGrvCount;
     bool gyroValid;
+
+    /* Task-private timing diagnostics, microseconds modulo 2^32. No control
+     * decisions use these until host/SH-2 clock alignment is characterized. */
+    uint32_t grvSampleUs;
+    uint32_t gyroSampleUs;
+    int32_t grvRxAgeUs;
+    int32_t gyroRxAgeUs;
+    int32_t grvMaxRxAgeUs;
+    int32_t gyroMaxRxAgeUs;
 } ImuService;
 
 /** 打开 SH-2 会话并使能报告。失败返回非 0。 */

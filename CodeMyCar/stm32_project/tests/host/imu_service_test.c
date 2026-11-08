@@ -60,6 +60,20 @@ int main(void)
     ImuService_GetSnapshot(&s,&snap);assert(!snap.valid); /* gyro-only stale */
     report(&s,SH2_GYROSCOPE_CALIBRATED,0);
     ImuService_GetSnapshot(&s,&snap);assert(snap.valid);
+    /* Diagnose report age across the 32-bit microsecond wrap. This records
+     * SH-2 reconstructed timestamps, not an independently measured latency. */
+    now=4294968u;
+    value=(sh2_SensorValue_t){.sensorId=SH2_GAME_ROTATION_VECTOR,
+        .timestamp=(uint64_t)now*1000u-120000u};
+    value.un.gameRotationVector.real=1;inject=1;ImuService_Update(&s);
+    assert(s.grvRxAgeUs==120000 && s.grvMaxRxAgeUs>=120000);
+    value=(sh2_SensorValue_t){.sensorId=SH2_GYROSCOPE_CALIBRATED,
+        .timestamp=(uint64_t)now*1000u-5000u};
+    inject=1;ImuService_Update(&s);
+    assert(s.gyroRxAgeUs==5000);
+    assert((int32_t)(s.grvSampleUs-s.gyroSampleUs)==-115000);
+    value.timestamp=(uint64_t)now*1000u+1000u;
+    inject=1;ImuService_Update(&s);assert(s.gyroRxAgeUs==-1000);
     ImuService_Close(&s);ImuService_GetSnapshot(&s,&snap);assert(!snap.valid);
     assert(ImuService_Init(&s,0)==0);
     ImuService_GetSnapshot(&s,&snap);assert(snap.referenceId!=reference);

@@ -1,0 +1,18 @@
+{
+  "samples": 15,
+  "grv_rx_min_max_us": [
+    2900,
+    5100
+  ],
+  "gyro_rx_min_max_us": [
+    2100,
+    3600
+  ],
+  "sample_pair_min_max_us": [
+    -600,
+    1000
+  ],
+  "grv_peak_since_open_us": 18100,
+  "gyro_peak_since_open_us": 18100,
+  "limits": "Stationary only; reconstructed SH-2 timestamps use host I2C receive time, not independent hardware IRQ arrival; values do not measure absolute true sensor latency."
+}

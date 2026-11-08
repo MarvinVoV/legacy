@@ -1,0 +1,62 @@
+{
+  "pre_stop": {
+    "ok": true,
+    "stopped": true,
+    "accepted": true,
+    "confirmed": true,
+    "seq": 230
+  },
+  "before": {
+    "ok": true,
+    "online": true,
+    "stm32_connected": true,
+    "motion_supported": true,
+    "motion": {
+      "state": "idle",
+      "seq": 230,
+      "age_ms": 4,
+      "stale": false
+    },
+    "pose": {
+      "x_cm": -199.7,
+      "y_cm": 1.2,
+      "heading_deg": -0.449,
+      "odometer_cm": -199.7
+    },
+    "velocity": {
+      "linear_cm_s": 0.0,
+      "angular_deg_s": 0.0
+    }
+  },
+  "start_t": 1794122675.5318139,
+  "end_t": 1794122705.6488588,
+  "after": {
+    "ok": true,
+    "online": true,
+    "stm32_connected": true,
+    "motion_supported": true,
+    "motion": {
+      "state": "idle",
+      "seq": 230,
+      "age_ms": 922,
+      "stale": false
+    },
+    "pose": {
+      "x_cm": -199.7,
+      "y_cm": 1.2,
+      "heading_deg": -0.449,
+      "odometer_cm": -199.7
+    },
+    "velocity": {
+      "linear_cm_s": 0.0,
+      "angular_deg_s": 0.0
+    }
+  },
+  "stop": {
+    "ok": true,
+    "stopped": true,
+    "accepted": true,
+    "confirmed": true,
+    "seq": 231
+  }
+}

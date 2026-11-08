@@ -59,12 +59,18 @@ static void imu_sensor_cb(void* cookie, sh2_SensorEvent_t* event)
             s->quatZ = value.un.gameRotationVector.k;
             s->quatW = value.un.gameRotationVector.real;
             s->status = value.status;
+            s->grvSampleUs = (uint32_t)value.timestamp;
+            s->grvRxAgeUs = (int32_t)((uint32_t)(HAL_GetTick()*1000u)-s->grvSampleUs);
+            if (s->grvRxAgeUs > s->grvMaxRxAgeUs) { s->grvMaxRxAgeUs = s->grvRxAgeUs; }
             s->grvCount++;
             break;
         case SH2_GYROSCOPE_CALIBRATED:
             s->gyroX = value.un.gyroscope.x;
             s->gyroY = value.un.gyroscope.y;
             s->gyroZ = value.un.gyroscope.z;
+            s->gyroSampleUs = (uint32_t)value.timestamp;
+            s->gyroRxAgeUs = (int32_t)((uint32_t)(HAL_GetTick()*1000u)-s->gyroSampleUs);
+            if (s->gyroRxAgeUs > s->gyroMaxRxAgeUs) { s->gyroMaxRxAgeUs = s->gyroRxAgeUs; }
             s->gyroCount++;
             s->gyroValid = isfinite(s->gyroX) && isfinite(s->gyroY) && isfinite(s->gyroZ);
             if (s->gyroValid)

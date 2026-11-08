@@ -1,0 +1,10 @@
+Assertion failed: (pulse==STEERING_SERVO_STRAIGHT_US), function main, file steering_pipeline_test.c, line 51.
+k=-0.060 expected=1539.09us actual=1538us settle<=3us=80ms
+k=-0.120 expected=1548.18us actual=1546us settle<=3us=80ms
+k=-0.170 expected=1555.75us actual=1554us settle<=3us=80ms
+k=+0.060 expected=1522.73us actual=1523us settle<=3us=180ms
+k=+0.120 expected=1515.46us actual=1517us settle<=3us=60ms
+k=+0.170 expected=1509.40us actual=1511us settle<=3us=60ms
+k=-0.020 expected=1533.03us actual=1532us settle<=3us=160ms
+k=+0.020 expected=1527.58us actual=1528us settle<=3us=40ms
+k=+0.000 expected=1530.00us actual=1529us settle<=3us=5ms

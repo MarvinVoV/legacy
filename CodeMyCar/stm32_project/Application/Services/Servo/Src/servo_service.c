@@ -195,11 +195,8 @@ int SteerService_setAngleImmediate(SteerInstance* instance, const float angle)
     const float clampedAngle = fmaxf(fminf(angle, maxAngle), minAngle);
 
 
-    // 计算角度差（浮点）
-    const float delta = clampedAngle - instance->state.commandedAngleDeg;
-
-    /* 立即命令必须先取消旧轨迹：即使角度差落在死区内，
-       也不能让之前的平滑目标（MOVING）继续生效 */
+    /* An immediate destination is exact, especially STOP's calibrated neutral.
+     * A smoothing dead zone must not retain a previous correction pulse. */
     instance->smoothCtrl = (SmoothControlContext){
         .targetAngleDeg = clampedAngle,
         .currentSpeedDegPerMs = 0.0f,
@@ -208,17 +205,6 @@ int SteerService_setAngleImmediate(SteerInstance* instance, const float angle)
     instance->state.motionState = STEER_MOTION_STATE_IDLE;
     instance->state.targetAngleDeg = clampedAngle;
 
-    // 死区判断（浮点容差）：只决定是否需要写 PWM
-    if (fabsf(delta) <= instance->config.deadZoneDeg)
-    {
-        osMutexRelease(instance->mutex);
-        return ERR_SUCCESS;
-    }
-
-    // 强制更新实际角度（绕过平滑控制）
-    instance->state.commandedAngleDeg = clampedAngle;
-
-    // 立即驱动硬件
     const int err = ServoDriver_setAngle(instance->driver, clampedAngle);
     if (err != ERR_SUCCESS)
     {
@@ -226,6 +212,8 @@ int SteerService_setAngleImmediate(SteerInstance* instance, const float angle)
         LOG_ERROR(LOG_MODULE_SERVO, "ServoDriver_setAngle failed");
         return err;
     }
+    /* Only record a submitted angle after the hardware write succeeds. */
+    instance->state.commandedAngleDeg = clampedAngle;
 
     // 更新状态
     instance->state.motionState = STEER_MOTION_STATE_IDLE;

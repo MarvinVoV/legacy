@@ -95,6 +95,7 @@ static void ImuTask_doTask(void* pvParameters)
     ImuService* svc = (ImuService*)pvParameters;
     uint32_t lastWake = osKernelGetTickCount();
     uint32_t lastLog = lastWake;
+    uint32_t lastTimingLog = lastWake;
     bool needInit = true;
     uint32_t nextInitTick = 0u;
     uint32_t initDoneHal = 0u;
@@ -171,6 +172,15 @@ static void ImuTask_doTask(void* pvParameters)
                          sh2_diag_last_hdr[2], sh2_diag_last_hdr[3],
                          sh2_diag_last_pl[0], sh2_diag_last_pl[1],
                          sh2_diag_last_pl[2], sh2_diag_last_pl[3]);
+            }
+            if (now-lastTimingLog >= 1000u && svc->grvCount && svc->gyroCount)
+            {
+                lastTimingLog = now;
+                LOG_INFO(LOG_MODULE_SENSOR,
+                         "IMU_TIME grv_rx=%ld gyro_rx=%ld pair=%ld max=%ld/%ld us",
+                         (long)svc->grvRxAgeUs, (long)svc->gyroRxAgeUs,
+                         (long)(int32_t)(svc->grvSampleUs-svc->gyroSampleUs),
+                         (long)svc->grvMaxRxAgeUs, (long)svc->gyroMaxRxAgeUs);
             }
             send_heading_frame(svc); /* 10 Hz 上报航向 */
             send_imu_frame(svc);     /* 10 Hz 上报六轴原始数据 */

@@ -58,9 +58,9 @@ int main(void)
     tick_ms += 20;
     assert(SteerService_update(&inst2) == 0);
     assert(inst2.state.motionState == STEER_MOTION_STATE_MOVING);
-    const float before = inst2.state.commandedAngleDeg;
 
-    /* 立即回到 0°：与当前位置(≈0.072°)差 < 死区 1°，不写 PWM，但必须取消轨迹 */
+
+    /* Immediate 0deg must cancel the trajectory AND submit exactly 0, even inside the dead zone. */
     assert(SteerService_setAngleImmediate(&inst2, 0.0f) == 0);
     assert(inst2.state.motionState == STEER_MOTION_STATE_IDLE);
     assert(fabsf(inst2.smoothCtrl.targetAngleDeg - 0.0f) < 1e-6f);
@@ -71,7 +71,8 @@ int main(void)
         tick_ms += 20;
         assert(SteerService_update(&inst2) == 0);
     }
-    assert(fabsf(inst2.state.commandedAngleDeg - before) < 1e-6f);
+    assert(fabsf(inst2.state.commandedAngleDeg) < 1e-6f);
+    assert(fabsf(last_hw_angle) < 1e-6f);
 
     /* --- CTRL-04 回归：运动中刷新同方向目标，速度不归零 --- */
     SteerInstance inst3 = {0};

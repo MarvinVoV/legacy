@@ -1,0 +1,20 @@
+{
+  "duration_s": 30.033999999999992,
+  "imu_log_samples": 286,
+  "yaw_first_deg": -0.2,
+  "yaw_last_deg": -0.19,
+  "yaw_range_deg": 0.010000000000000009,
+  "yaw_linear_drift_dps": 0.0003594955715701554,
+  "yaw_rate_mean_dps": 0.0,
+  "yaw_rate_stdev_dps": 0.0,
+  "yaw_rate_absmax_dps": 0.0,
+  "gyro_integral_deg": 0.0,
+  "imu_status_values": [
+    3
+  ],
+  "grv_report_hz": 99.78690817073985,
+  "gyro_report_hz": 99.78690817073985,
+  "wheel_max_abs_mmps": 0,
+  "odometer_range_mm": 0,
+  "limitations": "IMU 10Hz rounded logs; assumes car body stayed still, encoder zero alone cannot prove no manual rotation. No moving/vibration accuracy inference."
+}

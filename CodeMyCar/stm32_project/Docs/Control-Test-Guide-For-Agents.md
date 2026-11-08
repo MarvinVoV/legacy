@@ -668,3 +668,13 @@ cc -std=c11 -O2 -g -fsanitize=address,undefined \
 ## 2026-11-08机械中位统一与直行优化交接
 
 最新状态先看 [START HERE](START-HERE-Straight-Control-Handoff-2026-11-08.md)。当前1530µs零位统一到生产LUT、STOP、启动安全脉冲，不再使用方向曲率偏置。16组入口不变：steering_lut组校验1530与安全夹限；motion_transaction组新增停车/零曲率前进/倒车共用中位且轮速目标相等；heading_control组验证固定参考0.05°死区与正反向残余偏置模型。历史v1–v6外部测量与车载估计相冲突的记录必须保留，不把其结果冒充v7已验收。
+
+
+## 新增：真实转向PWM流水线回归（2026-11-08）
+
+`bash stm32_project/tests/host/run.sh`现在包含steering_pipeline_test，18组，事务组仍OFF/ON双编译。此组编译真实LUT、平滑服务及ServoDriver，仅mock ServoHAL与RTOS，因此覆盖0.1deg量化、微秒PWM映射、200Hz/50Hz刷新与反向。补上旧servo_service_test替换驱动的缺口；不要把mock输出当机械轮角测量。
+
+特别断言：小纠偏及反向目标能在500ms内进入目标±3us；STOP式立即回中必须精确提交1530us，不能以平滑死区跳过；HAL写入失败不能更新commandedAngleDeg。精确回中断言在修复前稳定失败，证据见validation/path-tracking-2026-11-08/exact-neutral-before-fix-failed.txt。全套通过及烧录静态读回记录同目录；未追加新运动或3cm精度验收。独立编译命令可直接复用run.sh末尾“steering full PWM pipeline”段，需要其显式-include标准头以适配精简host桩；不会连接硬件。
+
+
+IMU时序诊断回归也加入imu_service_test：微秒计时低32位回绕、延迟样本记录、负年龄及样本时间差。IMU_TIME为1Hz诊断，不是新增安全门禁；SH-2时间使用主机I2C接收时间重建，不能称为独立硬件采样延迟测量。静止实机15秒的记录见imu-time-diagnostic-15s-analysis.json，运动中尚待采集。
