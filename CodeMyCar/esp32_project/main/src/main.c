@@ -17,7 +17,9 @@
 #include "mqtt_service.h"
 #include "nvs_flash.h"
 #include "remote_log.h"
+#include "sdkconfig.h"
 #include "uart_service.h"
+#include "voice_service.h"
 #include "wifi_service.h"
 
 static const char* TAG = "main";
@@ -68,6 +70,11 @@ void app_main(void)
 
     /* 5. 启动 WiFi（后续由事件驱动 MQTT 连接和桥接） */
     ESP_ERROR_CHECK(wifi_service_start());
+
+#if CONFIG_CMCAR_VOICE_ENABLED
+    ESP_ERROR_CHECK(voice_service_start());
+    ESP_LOGI(TAG, "voice service started");
+#endif
 
     ESP_LOGI(TAG, "System ready. Free heap: %zu bytes",
              esp_get_free_heap_size());

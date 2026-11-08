@@ -102,6 +102,7 @@ async def lifespan(app: FastAPI):
             execute_commands=settings.voice_execute_commands,
             tts_feedback=settings.voice_tts_feedback,
             local_playback=settings.voice_local_playback,
+            speak_recognized=settings.voice_speak_recognized,
             max_distance_mm=settings.voice_max_distance_mm,
             max_turn_deg=settings.voice_max_turn_deg,
             speed_cm_s=settings.voice_speed_cm_s,

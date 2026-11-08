@@ -84,6 +84,7 @@ def make_service(
     tts=None,
     local_player=None,
     tts_feedback: bool = True,
+    speak_recognized: bool = False,
 ) -> VoiceService:
     return VoiceService(
         VoiceConfig(
@@ -94,6 +95,7 @@ def make_service(
             max_session_s=12.0,
             execute_commands=execute_commands,
             tts_feedback=tts_feedback,
+            speak_recognized=speak_recognized,
         ),
         asr,
         tmp_path,
@@ -344,6 +346,33 @@ def test_voice_rejects_out_of_range_distance(client, tmp_path):
         assert ws.receive_json()["type"] == "end"
 
     assert agent.moves == []
+
+
+def test_voice_speaks_recognized_text(client, tmp_path):
+    tts = FakeTts()
+    local = FakeLocalPlayer()
+    client.app.state.voice_service = make_service(
+        tmp_path,
+        FakeAsr("前进一米。"),
+        tts=tts,
+        local_player=local,
+        speak_recognized=True,
+    )
+    audio = pcm(0.2) + pcm(0.8, 3000) + pcm(0.5)
+
+    with client.websocket_connect("/api/v1/voice/stream") as ws:
+        ws.send_text(start_frame())
+        assert ws.receive_json()["type"] == "ready"
+        ws.send_bytes(audio)
+        final = ws.receive_json()
+        assert final["type"] == "final"
+        assert final["text"] == "前进一米。"
+        ws.send_text('{"type":"end"}')
+        assert ws.receive_json()["type"] == "end"
+
+    time.sleep(0.1)
+    assert tts.texts == ["前进一米。"]
+    assert local.played == [(tts.audio.data, 16000, 1)]
 
 
 def test_voice_tts_speak_frame(client, tmp_path):

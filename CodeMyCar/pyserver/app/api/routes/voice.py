@@ -124,6 +124,14 @@ async def _handle_segment(
     if not await _send_json(ws, frame):
         return False
 
+    # 调试模式：直接把识别文本 TTS 后在 pyserver 本机播放，不下发运动
+    if service.config.speak_recognized and text and service.tts is not None:
+        try:
+            audio = await service.tts.synthesize(text, aue=4)
+            service.play_local(audio)
+        except Exception as exc:  # noqa: BLE001 - 调试播放失败不影响主流程
+            logger.warning("recognized tts failed: %s", exc)
+
     if intent is not None and service.config.execute_commands:
         action = await service.execute_intent(device_id, intent)
         if not await _send_json(ws, {"type": "action", **action}):

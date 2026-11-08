@@ -3859,6 +3859,17 @@ CONFIG_CMCAR_UART_TX_QUEUE_DEPTH=8
 # end of UART Configuration
 
 #
+# Voice Control
+#
+# default:
+CONFIG_CMCAR_VOICE_ENABLED=y
+# default:
+CONFIG_CMCAR_VOICE_WS_URL="ws://192.168.31.120:8000/api/v1/voice/stream"
+# default:
+CONFIG_CMCAR_VOICE_RECORD_SECONDS=5
+# end of Voice Control
+
+#
 # WiFi Configuration
 #
 CONFIG_CMCAR_WIFI_SSID="Xiaomi_8D22"
@@ -3877,6 +3888,15 @@ CONFIG_CJSON_NESTING_LIMIT=1000
 # default:
 CONFIG_CJSON_CIRCULAR_LIMIT=10000
 # end of cJSON
+
+#
+# ESP WebSocket client
+#
+# default:
+# CONFIG_ESP_WS_CLIENT_ENABLE_DYNAMIC_BUFFER is not set
+# default:
+# CONFIG_ESP_WS_CLIENT_SEPARATE_TX_LOCK is not set
+# end of ESP WebSocket client
 
 #
 # ESP-MQTT Configurations

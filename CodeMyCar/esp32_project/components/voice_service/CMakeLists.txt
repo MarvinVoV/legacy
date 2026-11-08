@@ -1,0 +1,10 @@
+idf_component_register(
+    SRCS "src/voice_service.c"
+    INCLUDE_DIRS "include"
+    REQUIRES
+        esp_driver_i2s
+        esp_driver_uart
+        esp_websocket_client
+        wifi_service
+        common
+)

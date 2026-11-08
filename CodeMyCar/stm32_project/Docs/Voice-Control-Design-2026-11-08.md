@@ -189,6 +189,19 @@ silero-vad 仍推荐作为下一步升级：抗噪更好，但会引入 torch/on
 - 语音 STOP 是辅助手段；HTTP/服务端 STOP 和物理急停仍是主急停。
 - 立即反馈（<100 ms）仍建议用本地提示音；TTS 用于语义确认。
 
+### 5.8 ESP32 WebSocket 上传（已实现）
+
+- 组件 `esp32_project/components/voice_service`，集成进主 bridge；
+- I2S RX：16 kHz、32-bit slot、stereo，取左声道转 16-bit mono；
+- 串口 `s` + Enter 触发一次 5 s 录音；`CMCAR_VOICE_RECORD_SECONDS` 可调；
+- `esp_websocket_client` 连 `CMCAR_VOICE_WS_URL`（默认
+  `ws://192.168.31.120:8000/api/v1/voice/stream`）；
+- 发 `start` → 20 ms PCM 块 → `end`；服务端 `final/action/speak` 文本打印到串口；
+- 音频任务优先级低于 bridge；WS 客户端和 voice 任务优先级 4，不阻塞 UART/MQTT/STOP；
+- `speak` 二进制帧当前忽略（车上喇叭未解决）；TTS 反馈可在 Mac 本机播放；
+- 实测：`s` 触发后 5 s / 160000 bytes 上传成功，pyserver 返回 5000 ms 段、
+  `final`/`end`；首次测试未说话，ASR 文本为空。
+
 ## 6. WebSocket 协议
 
 ```text
@@ -329,7 +342,7 @@ Content-Type: application/json
 
 | 阶段 | 内容 | 通过标准 |
 |---|---|---|
-| P0 | ESP32 麦克风 → WS → PC 存 WAV（无 VAD/ASR） | 16 kHz/时长/RMS 正确；连续 10 分钟不崩；UART 不受影响 |
+| P0 | ESP32 麦克风 → WS → pyserver（主 bridge 集成） | 已实现并烧录；5 s/160000 bytes 上传成功，待真实语音验收 |
 | P1 | PC silero-vad + 百度 ASR + WAV 归档 | 20 条真实录音识别率与延迟有记录 |
 | P2 | 意图 → AgentMotionService + TTS 反馈（PC 侧） | 替身测试已通过；实车悬空验收待做 |
 | P3 | 门控按键 → WakeNet；落地 10 cm/s 短距离 | 重新确认场地后，语音动作、断网停车、STOP 通过 |
@@ -352,12 +365,15 @@ Content-Type: application/json
 - `scripts/voice_ws_client.py`：把 WAV 推给运行中的 pyserver，打印 ready/final/end。
 - `scripts/voice_loop_test.py`：录音 → 百度 ASR → 文本 → 百度 TTS → Mac 播放；
   实测识别“是前进一米，左转后退。”并在 Mac 播放成功。
-- 全量 pytest：**147 项通过**。
+- 全量 pytest：**148 项通过**。
 - 真实链路：`voice_ws_client.py` 推送 Mac 麦克风录音，服务端返回
   `text="前进一米。"`、`intent=forward`、`distance_mm=1000`，并写出 full/seg WAV。
 - TTS 回环：合成“收到，正在前进” → 1.91 s WAV → 再送 ASR 得到同一文本。
 - 本机播放：`LocalAudioPlayer` 合成“收到，正在前进”（1.99 s）后用 `afplay` 在 Mac 播放成功；
   单元测试用 `FakeLocalPlayer` 断言 TTS 音频被交给本机播放器。
+- ESP32：主 bridge + `voice_service` 构建通过（app 1.01 MB，31% free）；`s` 触发
+  5 s / 160000 bytes 上传成功，pyserver 返回 `ready`/`final`/`end`；首次测试未说话，
+  ASR 文本为空。
 
 **待实现**
 
@@ -380,7 +396,7 @@ Content-Type: application/json
 
 ## 13. 当前进度与下一步
 
-- 已建分支 `codex/voice-baidu-asr`，未改 main、未 push。
+- 已建分支 `codex/voice-baidu-asr`；ESP32 WS 集成分支 `codex/voice-esp32-ws`，未 push。
 - 已实现 `app/services/baidu_asr.py`、配置项、7 项单测、冒烟脚本；真实接口 4/4 识别成功。
 - 已用 Mac 内置麦克风录真实语音验证：`前进一米` → `前进一米。`（444 ms）。
 - 已核对百度官方文档：JSON 上传参数、16k/8k、60 秒上限、dev_pid 取值、自定义词库、
@@ -397,10 +413,14 @@ Content-Type: application/json
   TTS `speak` + PCM 反馈；替身测试通过，实车悬空/落地未验收。
 - TTS 反馈可在 pyserver 本机播放（macOS `afplay`），用于车上功放/喇叭不可用的台架测试；
   已实测“收到，正在前进”在 Mac 播放成功。
-- 下一步：ESP32 单麦克风 I2S 推流（P0），再做悬空与落地联调。
+- ESP32 侧已把 `voice_service` 集成进主 bridge：I2S RX + `esp_websocket_client`，
+  串口 `s` 触发 5 s 上传；已烧录并验证 WS 会话（5 s/160000 bytes、`final`/`end`）。
+  首次测试未说话，ASR 文本为空；下一步用真实语音验证。
+- 下一步：真实语音验证 ESP32 上传 → ASR → TTS，再做悬空与落地联调。
 
 ## 14. 相关文件
 
+- `esp32_project/components/voice_service/`（I2S RX + WS 上传）
 - `pyserver/app/services/baidu_asr.py`
 - `pyserver/app/services/baidu_tts.py`
 - `pyserver/app/services/local_audio.py`

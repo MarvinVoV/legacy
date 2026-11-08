@@ -57,6 +57,7 @@ class VoiceConfig:
     execute_commands: bool = False
     tts_feedback: bool = True
     local_playback: bool = True
+    speak_recognized: bool = False  # 调试：把识别文本直接 TTS 播放（不下发运动）
     max_distance_mm: int = 1000
     max_turn_deg: int = 90
     speed_cm_s: int = 10

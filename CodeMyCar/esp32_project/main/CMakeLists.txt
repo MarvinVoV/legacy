@@ -10,4 +10,5 @@ idf_component_register(
         remote_log
         bridge
         health_monitor
+        voice_service
 )

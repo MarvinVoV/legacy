@@ -1,0 +1,23 @@
+menu "Voice Control"
+
+    config CMCAR_VOICE_ENABLED
+        bool "Enable voice WebSocket upload"
+        default y
+        help
+            启用 I2S 麦克风采集和 WebSocket 推流。
+            运行时在串口输入 s + 回车，录一段音频并上传 pyserver。
+
+    config CMCAR_VOICE_WS_URL
+        string "pyserver WebSocket URL"
+        default "ws://192.168.31.120:8000/api/v1/voice/stream"
+        help
+            pyserver 语音端点，必须和 pyserver 在同一局域网。
+
+    config CMCAR_VOICE_RECORD_SECONDS
+        int "Record seconds per trigger"
+        default 5
+        range 1 10
+        help
+            每次触发上传的录音长度。
+
+endmenu
