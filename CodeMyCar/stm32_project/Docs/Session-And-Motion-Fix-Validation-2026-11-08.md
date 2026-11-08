@@ -1,5 +1,7 @@
 # 会话同步、停车确认及航向积分修复验收
 
+> 后续进度：本批已合并 main；后续修复与验收见 [后续控制修复与分阶段验收](Remaining-Control-Fixes-And-Validation-2026-11-08.md)。下文保留本批交付当时的记录。
+
 日期：2026-11-08。开发分支：`codex/stm32-control-safety-rereview`。承接 `a514908` 的 STM32 严重控制修复。本批修改 ESP32、pyserver、STM32，未纳入已有前端工作区改动，未合并 main、未 push。
 
 ## 1. 会话缺陷修复

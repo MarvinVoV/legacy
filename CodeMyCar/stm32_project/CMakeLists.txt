@@ -90,6 +90,9 @@ target_compile_definitions(${PROJECT_NAME}.elf PRIVATE
 # 超声波整体开关：OFF 时不测距、不蜂鸣、不参与安全限速（台架/未放置时用）。
 # 用法：cmake --preset NoSonar
 option(CMCAR_SONAR_ENABLED "Enable ultrasonic sensing and safety governor" ON)
+option(CMCAR_DIFFERENTIAL_DIAGNOSTICS "Allow differential yaw on a suspended diagnostic chassis" OFF)
+target_compile_definitions(${PROJECT_NAME}.elf PRIVATE
+        CMCAR_DIFFERENTIAL_DIAGNOSTICS=$<BOOL:${CMCAR_DIFFERENTIAL_DIAGNOSTICS}>)
 if (NOT CMCAR_SONAR_ENABLED)
     target_compile_definitions(${PROJECT_NAME}.elf PRIVATE CMCAR_SONAR_DISABLED=1)
 endif ()

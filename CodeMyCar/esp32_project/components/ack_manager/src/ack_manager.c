@@ -61,6 +61,15 @@ bool ackmgr_is_free(const ack_manager_t* m, uint8_t seq)
     return true;
 }
 
+void ackmgr_cancel_motion(ack_manager_t* m)
+{
+    if (m == NULL) { return; }
+    for (unsigned i = 0; i < ACK_MGR_MAX_PENDING; ++i)
+    {
+        if (!m->slots[i].priority) { m->slots[i].active = false; }
+    }
+}
+
 static bool add_internal(ack_manager_t* m, uint8_t seq, uint8_t client_seq,
                          const uint8_t* frame, size_t len, uint32_t now_ms,
                          bool priority)
@@ -189,7 +198,7 @@ uint32_t ackmgr_scan(ack_manager_t* m, uint32_t now_ms, uint32_t timeout_ms,
         }
         else if (resend != NULL)
         {
-            resend(m->slots[i].frame, m->slots[i].frame_len, ctx);
+            resend(m->slots[i].frame, m->slots[i].frame_len, m->slots[i].priority, ctx);
             m->slots[i].send_time_ms = now_ms;
         }
     }

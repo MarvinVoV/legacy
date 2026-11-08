@@ -229,8 +229,7 @@ int MotorService_emergencyStop(MotorService* service, MotorID motorId)
     MotorDriver_EmergencyStop(instance->driver);
 
     // 更新状态
-    instance->state.velocity.rpm = 0.0f;
-    instance->state.velocity.mps = 0.0f;
+    /* A stop request cannot prove zero measured wheel speed. */
     instance->state.mode         = MOTOR_DRIVER_MODE_STOP;
 
     osMutexRelease(instance->mutex);
@@ -266,8 +265,7 @@ int MotorService_brakeAll(MotorService* service)
 
         MotorDriver_BrakeStop(instance->driver);
 
-        instance->state.velocity.rpm = 0.0f;
-        instance->state.velocity.mps = 0.0f;
+        /* Preserve measurements until the next encoder update. */
         instance->state.mode         = MOTOR_DRIVER_MODE_STOP;
 
         osMutexRelease(instance->mutex);

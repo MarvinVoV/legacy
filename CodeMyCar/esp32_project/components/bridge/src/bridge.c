@@ -194,11 +194,13 @@ typedef struct
 {
     uint8_t frames[ACK_MGR_MAX_PENDING][PKT_MAX_FRAME_SIZE];
     size_t lengths[ACK_MGR_MAX_PENDING];
+    bool priority[ACK_MGR_MAX_PENDING];
     size_t count;
+    uint32_t epoch;
 } ack_retry_batch_t;
 
 /* ackmgr_scan 在锁内只复制待重传帧，绝不调用可能等待 UART 队列的 API。 */
-static void ack_collect_retry(const uint8_t* frame, size_t len, void* ctx)
+static void ack_collect_retry(const uint8_t* frame, size_t len, bool priority, void* ctx)
 {
     ack_retry_batch_t* batch = (ack_retry_batch_t*)ctx;
     if (batch == NULL || frame == NULL || len > PKT_MAX_FRAME_SIZE ||
@@ -208,6 +210,7 @@ static void ack_collect_retry(const uint8_t* frame, size_t len, void* ctx)
     }
     memcpy(batch->frames[batch->count], frame, len);
     batch->lengths[batch->count] = len;
+    batch->priority[batch->count] = priority;
     batch->count++;
 }
 
@@ -231,6 +234,7 @@ static void pending_retransmit_scan(void)
     {
         return; /* 非阻塞：拿不到锁就下个周期再扫 */
     }
+    batch.epoch = uart_service_tx_epoch();
     const uint32_t lost = ackmgr_scan(&s_ackmgr, now_ms(),
                                       BRIDGE_ACK_TIMEOUT_MS,
                                       BRIDGE_ACK_MAX_RETRIES,
@@ -245,7 +249,12 @@ static void pending_retransmit_scan(void)
     }
     for (size_t i = 0; i < batch.count; i++)
     {
-        if (uart_service_send(batch.frames[i], batch.lengths[i]) != ESP_OK)
+        /* A STOP retry must establish a barrier too, including when its first
+         * enqueue failed. Ordinary copied retries keep their captured epoch. */
+        const esp_err_t err = batch.priority[i]
+            ? uart_service_send_stop(batch.frames[i], batch.lengths[i])
+            : uart_service_send_at_epoch(batch.frames[i], batch.lengths[i], batch.epoch);
+        if (err != ESP_OK)
         {
             ESP_LOGW(TAG, "ACK retry queue full, seq=%u",
                      (unsigned)batch.frames[i][3]);
@@ -306,7 +315,7 @@ static void process_downlink(const char* payload, size_t payload_len)
     const bool priority = cmd_mode == BRIDGE_MODE_EMERGENCY_STOP;
     uint8_t frame_seq = client_seq;
     bool ack_locked = false;
-    if (ack_req)
+    if (ack_req || priority)
     {
         if (xSemaphoreTake(s_ack_mutex, pdMS_TO_TICKS(10)) != pdTRUE)
         {
@@ -314,6 +323,7 @@ static void process_downlink(const char* payload, size_t payload_len)
             return;
         }
         ack_locked = true;
+        if (priority) { ackmgr_cancel_motion(&s_ackmgr); }
         if (!ackmgr_is_free(&s_ackmgr, client_seq))
         {
             if (cmd_mode == BRIDGE_MODE_GOAL)
@@ -349,16 +359,23 @@ static void process_downlink(const char* payload, size_t payload_len)
             &s_ackmgr, frame_seq, client_seq, out_buf, out_len, now_ms(), priority);
         xSemaphoreGive(s_ack_mutex);
         ack_locked = false;
-        if (!added)
+        if (!added && !priority)
         {
             ESP_LOGW(TAG, "Pending ACK table full/collision, dropping command");
             return;
         }
     }
+    else if (ack_locked)
+    {
+        xSemaphoreGive(s_ack_mutex);
+    }
 
     if (priority)
     {
-        uart_service_send_priority(out_buf, out_len);
+        if (uart_service_send_stop(out_buf, out_len) != ESP_OK)
+        {
+            ESP_LOGE(TAG, "STOP barrier enqueue failed");
+        }
     }
     else
     {
@@ -366,7 +383,7 @@ static void process_downlink(const char* payload, size_t payload_len)
     }
 }
 
-/* MQTT 下行回调（esp_mqtt client 任务上下文）：仅投队列即返回，不阻塞 client 任务 */
+/* MQTT callback only validates/copies; never waits for UART or takes ACK locks. */
 static void on_mqtt_data(const char* topic, size_t topic_len,
                          const uint8_t* payload, size_t payload_len,
                          void* user_ctx)
@@ -385,6 +402,14 @@ static void on_mqtt_data(const char* topic, size_t topic_len,
     downlink_msg_t msg;
     msg.len = payload_len;
     memcpy(msg.payload, payload, payload_len);
+    uint8_t control[BRIDGE_CONTROL_CMD_SIZE], seq;
+    bool ack_req;
+    const bool stop = bridge_json_to_control_cmd((const char*)payload, payload_len,
+        control, &seq, &ack_req) > 0 && control[2] == BRIDGE_MODE_EMERGENCY_STOP;
+    /* This callback is the sole producer. An already popped old command is
+     * completed by the single consumer before STOP; queued old commands are
+     * discarded here. UART's separate epoch barrier covers its own consumer. */
+    if (stop) { xQueueReset(s_downlink_queue); }
     if (xQueueSend(s_downlink_queue, &msg, 0) != pdPASS)
     {
         ESP_LOGW(TAG, "Downlink queue full, dropping cmd");

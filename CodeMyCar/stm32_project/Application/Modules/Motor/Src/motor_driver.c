@@ -414,9 +414,8 @@ void MotorDriver_EmergencyStop(MotorDriver* driver)
     driver->filter.lpf_state        = 0.0f;
     driver->filter.pwm_filter_state = 0.0f;
 
-    driver->state.velocity.rpm   = 0.0f;
-    driver->state.velocity.radps = 0.0f;
-    driver->state.velocity.mps   = 0.0f;
+    /* Velocity belongs to the encoder measurement domain too. Clearing it
+     * here would let STOP confirmation report zero while wheels still coast. */
     driver->state.openLoopDuty   = 0.0f;
     driver->state.appliedDuty    = 0.0f;
     driver->state.mode           = MOTOR_DRIVER_MODE_STOP;

@@ -39,10 +39,12 @@ typedef struct
     uint8_t next_seq;
 } ack_manager_t;
 
-typedef void (*ackmgr_resend_fn)(const uint8_t* frame, size_t len, void* ctx);
+typedef void (*ackmgr_resend_fn)(const uint8_t* frame, size_t len, bool priority, void* ctx);
 
 /** 初始化（清空表，next_seq=0） */
 void ackmgr_init(ack_manager_t* m);
+/** Cancel pre-STOP motion retries; already copied batches need an epoch gate. */
+void ackmgr_cancel_motion(ack_manager_t* m);
 
 /** 分配一个当前未在途的 seq（0..255 回绕，跳过 active 槽位以避免碰撞） */
 uint8_t ackmgr_alloc_seq(ack_manager_t* m);

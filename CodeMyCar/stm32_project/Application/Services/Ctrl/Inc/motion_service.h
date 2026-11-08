@@ -117,6 +117,8 @@ typedef struct
     ChassisConfig  chassisConfig; ///< 底盘物理配置
     MotionTarget   motionTarget;  ///< 运动控制目标
     MotionState    state;         ///< 运动系统状态
+    bool motorStateValid;        /* Both wheel measurements are fresh/finite. */
+    bool motorStateMonitorStarted;
     osMutexId_t    targetMutex;   ///< 目标参数互斥锁
     volatile bool stopPending;   /* Asserted before waiting for transaction lock. */
     uint32_t lastStopReportMs;

@@ -12,6 +12,7 @@
 #include "uart_service.h"
 
 #include <string.h>
+#include <stdatomic.h>
 
 #include "cmcar_errors.h"
 #include "cmcar_events.h"
@@ -22,6 +23,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/ringbuf.h"
 #include "freertos/task.h"
+#include "freertos/semphr.h"
 #include "task_priorities.h"
 
 static const char* TAG = "uart_svc";
@@ -60,11 +62,15 @@ static QueueHandle_t s_uart_event_queue = NULL;
 typedef struct {
     uint8_t data[PKT_MAX_FRAME_SIZE];
     uint8_t len;
+    uint32_t epoch;
 } uart_tx_msg_t;
 
 static uart_tx_msg_t s_tx_queue_storage[TX_QUEUE_DEPTH];
 static StaticQueue_t s_tx_queue_struct;
 static QueueHandle_t s_tx_queue = NULL;
+static StaticSemaphore_t s_tx_gate_storage;
+static SemaphoreHandle_t s_tx_gate;
+static _Atomic uint32_t s_tx_epoch;
 
 /* 协议解析器 */
 static pkt_parser_t s_parser;
@@ -159,6 +165,22 @@ static void uart_rx_task(void* arg)
     }
 }
 
+static void uart_tx_write(const uart_tx_msg_t* msg)
+{
+    /* Serialize the last epoch check with the actual driver write. A
+     * message popped before STOP but not yet written is also discarded. */
+    xSemaphoreTake(s_tx_gate, portMAX_DELAY);
+    if (msg->epoch == uart_service_tx_epoch())
+    {
+        const int written = uart_write_bytes(UART_PORT, msg->data, msg->len);
+        if (written < 0 || (size_t)written != msg->len)
+        {
+            ESP_LOGE(TAG, "UART write error: wrote %d/%d", written, msg->len);
+        }
+    }
+    xSemaphoreGive(s_tx_gate);
+}
+
 static void uart_tx_task(void* arg)
 {
     uart_tx_msg_t msg;
@@ -170,11 +192,7 @@ static void uart_tx_task(void* arg)
             continue;
         }
 
-        const int written = uart_write_bytes(UART_PORT, msg.data, msg.len);
-        if (written < 0 || (size_t)written != msg.len)
-        {
-            ESP_LOGE(TAG, "UART write error: wrote %d/%d", written, msg.len);
-        }
+        uart_tx_write(&msg);
     }
 }
 
@@ -230,6 +248,9 @@ esp_err_t uart_service_init(void)
     s_tx_queue = xQueueCreateStatic(TX_QUEUE_DEPTH, sizeof(uart_tx_msg_t),
                                     (uint8_t*)s_tx_queue_storage,
                                     &s_tx_queue_struct);
+    s_tx_gate = xSemaphoreCreateMutexStatic(&s_tx_gate_storage);
+    atomic_init(&s_tx_epoch, 1u);
+    if (s_tx_queue == NULL || s_tx_gate == NULL) { return ESP_ERR_NO_MEM; }
 
     /* 初始化协议解析器 */
     pkt_parser_init(&s_parser);
@@ -280,37 +301,57 @@ esp_err_t uart_service_register_rx_cb(uart_frame_rx_cb_t cb, void* user_ctx)
 
 esp_err_t uart_service_send(const uint8_t* data, size_t len)
 {
-    if (data == NULL || len == 0 || len > PKT_MAX_FRAME_SIZE)
-    {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    uart_tx_msg_t msg = { .len = (uint8_t)len };
-    memcpy(msg.data, data, len);
-
-    if (xQueueSend(s_tx_queue, &msg, pdMS_TO_TICKS(100)) != pdPASS)
-    {
-        ESP_LOGW(TAG, "TX queue full, frame dropped");
-        return CMCAR_ERR_QUEUE_FULL;
-    }
-
-    return ESP_OK;
+    return uart_service_send_at_epoch(data, len, uart_service_tx_epoch());
 }
 
-esp_err_t uart_service_send_priority(const uint8_t* data, size_t len)
+static esp_err_t send_guarded(const uint8_t* data, size_t len, uint32_t epoch,
+                              bool priority, bool barrier)
 {
     if (data == NULL || len == 0 || len > PKT_MAX_FRAME_SIZE)
     {
         return ESP_ERR_INVALID_ARG;
     }
-    uart_tx_msg_t msg = { .len = (uint8_t)len };
-    memcpy(msg.data, data, len);
-    if (xQueueSendToFront(s_tx_queue, &msg, pdMS_TO_TICKS(100)) != pdPASS)
+    if (s_tx_gate == NULL || xSemaphoreTake(s_tx_gate, pdMS_TO_TICKS(100)) != pdTRUE)
     {
-        ESP_LOGW(TAG, "TX queue full, priority frame dropped");
-        return CMCAR_ERR_QUEUE_FULL;
+        return ESP_ERR_TIMEOUT;
     }
-    return ESP_OK;
+    if (!barrier && epoch != uart_service_tx_epoch())
+    {
+        xSemaphoreGive(s_tx_gate);
+        return ESP_ERR_INVALID_STATE;
+    }
+    if (barrier)
+    {
+        epoch = atomic_fetch_add_explicit(&s_tx_epoch, 1u, memory_order_acq_rel) + 1u;
+        xQueueReset(s_tx_queue);
+    }
+    uart_tx_msg_t msg = { .len = (uint8_t)len, .epoch = epoch };
+    memcpy(msg.data, data, len);
+    /* No blocking queue send while holding the consumer's gate. */
+    const BaseType_t sent = priority ? xQueueSendToFront(s_tx_queue, &msg, 0)
+                                    : xQueueSend(s_tx_queue, &msg, 0);
+    xSemaphoreGive(s_tx_gate);
+    return sent == pdPASS ? ESP_OK : CMCAR_ERR_QUEUE_FULL;
+}
+
+uint32_t uart_service_tx_epoch(void)
+{
+    return atomic_load_explicit(&s_tx_epoch, memory_order_acquire);
+}
+
+esp_err_t uart_service_send_at_epoch(const uint8_t* data, size_t len, uint32_t epoch)
+{
+    return send_guarded(data, len, epoch, false, false);
+}
+
+esp_err_t uart_service_send_priority(const uint8_t* data, size_t len)
+{
+    return send_guarded(data, len, uart_service_tx_epoch(), true, false);
+}
+
+esp_err_t uart_service_send_stop(const uint8_t* data, size_t len)
+{
+    return send_guarded(data, len, 0u, true, true);
 }
 
 esp_err_t uart_service_stop(void)

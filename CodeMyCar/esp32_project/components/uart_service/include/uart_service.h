@@ -30,5 +30,11 @@ esp_err_t uart_service_send(const uint8_t* data, size_t len);
 /** Safety-critical send placed at the front of the TX queue. */
 esp_err_t uart_service_send_priority(const uint8_t* data, size_t len);
 
+/** Epoch captured with a retry batch. STOP invalidates all older epochs. */
+uint32_t uart_service_tx_epoch(void);
+esp_err_t uart_service_send_at_epoch(const uint8_t* data, size_t len, uint32_t epoch);
+/** Discard older queued/popped TX messages and enqueue STOP as a barrier. */
+esp_err_t uart_service_send_stop(const uint8_t* data, size_t len);
+
 /** 停止并释放资源 */
 esp_err_t uart_service_stop(void);

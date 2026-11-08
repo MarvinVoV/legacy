@@ -8,6 +8,7 @@
 static uint32_t now=1000;
 static unsigned depth;
 static bool mutexFail, injectStop, inhibited=true, brakeFail;
+static bool measurementFail, measurementStale;
 static MotionContext* current;
 static SafetyChannel front,rear;
 static float lastAngle;
@@ -28,7 +29,7 @@ int MotorService_setTargetRPM(MotorService* s,MotorID i,float v)
 int MotorService_brakeAll(MotorService* s)
 {MotorService_SetInhibit(s,true);return brakeFail?ERR_MOTOR_MUTEX_FAIL:0;}
 bool MotorService_getStateEx(MotorService* s,MotorID i,MotorState* o)
-{(void)s;(void)i;*o=(MotorState){0};return true;}
+{(void)s;(void)i;*o=(MotorState){.lastUpdate=measurementStale?now-201:now};return !measurementFail;}
 int SteerService_setAngleImmediate(SteerInstance* s,float a)
 {(void)s;lastAngle=a;return 0;}
 int SteerService_setAngleSmoothly(SteerInstance* s,float a)
@@ -57,6 +58,15 @@ int main(void)
     safety_channel_init(&rear,true,0,12,40);
     for(int i=0;i<5;i++){safety_channel_update(&front,100,now);safety_channel_update(&rear,100,now);}
     assert(MotionContext_Init(&c,&motor,&steer,&cfg)==0);
+    measurementStale=true;now+=2000;
+    MotionService_Run(&c);
+    assert(!c.faultLatched && !c.motorStateValid);
+    assert(MotionService_SetDriveParams(&c,0.1f,0,0)==ERR_MOTION_EMERGENCY_ACTIVE);
+    measurementStale=false;
+    for(int i=0;i<5;i++){safety_channel_update(&front,100,now);safety_channel_update(&rear,100,now);}
+    MotionService_Run(&c); /* initial fresh zero-speed measurements */
+    assert(MotionService_SetDifferentialParams(&c,0,0.5f,0)==ERR_MOTION_GEOMETRY);
+    assert(MotionService_GetCurrentMode(&c)==MOTION_EMERGENCY_STOP);
     assert(MotionService_SetDriveParams(&c,0.1f,0,1)==0);
     injectStop=true;MotionService_Run(&c);
     assert(inhibited && driveSubmits==0 && depth==0);
@@ -77,5 +87,20 @@ int main(void)
     assert(!MotionService_ShouldReportFast(&c));
     c.state.drive.leftRpm=0.2f;
     assert(MotionService_ShouldReportFast(&c));
+    brakeFail=false;
+    MotionService_Run(&c);
+    assert(MotionService_ClearFault(&c,7)==0);
+    assert(MotionService_SetDriveParams(&c,0.1f,0,8)==0);
+    MotionService_Run(&c);
+    measurementFail=true;now+=100;
+    MotionService_Run(&c);assert(!c.faultLatched);
+    now+=101;MotionService_Run(&c);
+    assert(c.faultLatched && inhibited && c.faultCode==MOTION_ERR_ENCODER);
+    assert(MotionService_ClearFault(&c,9)==ERR_MOTION_CLEAR_FAILED);
+    measurementFail=false;MotionService_Run(&c);
+    assert(MotionService_ClearFault(&c,10)==0);
+    assert(MotionService_SetDriveParams(&c,0.1f,0,11)==0);
+    measurementStale=true;MotionService_Run(&c);
+    assert(c.faultLatched && inhibited && c.faultCode==MOTION_ERR_ENCODER);
     puts("motion_transaction: all tests passed");
 }

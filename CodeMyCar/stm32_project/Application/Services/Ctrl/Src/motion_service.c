@@ -32,6 +32,11 @@
 
 /// mode 1-3 必须由上游持续刷新；超时后 STM32 本地硬停
 #define MOTION_COMMAND_LEASE_MS (500u)
+#define MOTION_MEASUREMENT_MAX_AGE_MS (200u)
+
+#ifndef CMCAR_DIFFERENTIAL_DIAGNOSTICS
+#define CMCAR_DIFFERENTIAL_DIAGNOSTICS 0
+#endif
 
 /// 双轮同步闭环：直线运动时按两轮实际转速差修正目标，抵消左右摩擦差异
 #define MOTION_SYNC_KP (0.50f)
@@ -145,6 +150,7 @@ int MotionContext_Init(MotionContext* ctx, MotorService* motor, SteerInstance* s
     // 初始化为紧急停止模式
     ctx->motionTarget.mode = MOTION_EMERGENCY_STOP;
     ctx->state.currentMode = MOTION_EMERGENCY_STOP;
+    ctx->state.timestamp = HAL_GetTick();
     control_lease_init(&ctx->commandLease, MOTION_COMMAND_LEASE_MS);
     encoder_fault_monitor_init(&ctx->encoderMonitor[MOTOR_LEFT_WHEEL]);
     encoder_fault_monitor_init(&ctx->encoderMonitor[MOTOR_RIGHT_WHEEL]);
@@ -180,6 +186,13 @@ int MotionService_SetDifferentialParams(MotionContext* ctx, float linear, float 
     {
         LOG_ERROR(LOG_MODULE_MOTION, "Invalid parameters");
         return ERR_MOTION_INVALID_PARAM;
+    }
+
+    /* Centered Ackermann wheels cannot execute differential yaw/pivot.
+     * A nonzero angular demand requires an explicit diagnostic firmware. */
+    if (!CMCAR_DIFFERENTIAL_DIAGNOSTICS && angular != 0.0f)
+    {
+        return ERR_MOTION_GEOMETRY;
     }
 
     // 获取互斥锁
@@ -615,6 +628,14 @@ void MotionService_Run(MotionContext* ctx)
         {
             MotionService_LatchFault(ctx, MOTION_ERR_INTERNAL);
         }
+        /* Refresh measurements before planning, completion checks or release
+         * of the hardware inhibit. Heartbeats alone do not prove samples work. */
+        if (!ctx->motorStateMonitorStarted)
+        {
+            ctx->motorStateMonitorStarted = true;
+            ctx->state.timestamp = HAL_GetTick();
+        }
+        update_runtime_state(ctx);
         // 拷贝整个结构体（确保内存布局一致）
         memcpy(&current_target, &ctx->motionTarget, sizeof(MotionTarget));
         /* Recursive transaction lock stays held through actuator commit. */
@@ -789,9 +810,6 @@ void MotionService_Run(MotionContext* ctx)
     }
 
 
-    // 更新运行时状态
-    update_runtime_state(ctx);
-
     if (goal_is_stalled(ctx, HAL_GetTick()))
     {
         LOG_ERROR(LOG_MODULE_MOTION, "goal stalled");
@@ -812,7 +830,9 @@ static inline float mm_to_m(const float mm)
 
 static bool drive_is_stopped(const MotionContext* ctx)
 {
-    return fabsf(ctx->state.drive.leftRpm) <= MOTION_STOP_RPM_EPSILON &&
+    return ctx->motorStateValid &&
+           HAL_GetTick() - ctx->state.timestamp <= MOTION_MEASUREMENT_MAX_AGE_MS &&
+           fabsf(ctx->state.drive.leftRpm) <= MOTION_STOP_RPM_EPSILON &&
            fabsf(ctx->state.drive.rightRpm) <= MOTION_STOP_RPM_EPSILON;
 }
 
@@ -1201,8 +1221,32 @@ static void update_runtime_state(MotionContext* ctx)
             LOG_WARN(LOG_MODULE_MOTION, "motor state read failed (n=%u), skip state update",
                      (unsigned)s_failCount);
         }
+        if (current_time - ctx->state.timestamp > MOTION_MEASUREMENT_MAX_AGE_MS)
+        {
+            ctx->motorStateValid = false;
+            if (!ctx->faultLatched) { MotionService_LatchFault(ctx, MOTION_ERR_ENCODER); }
+        }
         return;
     }
+
+    if (current_time - left_state.lastUpdate > MOTION_MEASUREMENT_MAX_AGE_MS ||
+        current_time - right_state.lastUpdate > MOTION_MEASUREMENT_MAX_AGE_MS ||
+        !isfinite(left_state.velocity.rpm) || !isfinite(right_state.velocity.rpm) ||
+        !isfinite(left_state.velocity.mps) || !isfinite(right_state.velocity.mps) ||
+        !isfinite(left_state.position.revolutions) || !isfinite(right_state.position.revolutions))
+    {
+        const bool wasValid = ctx->motorStateValid;
+        ctx->motorStateValid = false;
+        /* Tasks can run before MotorTask's first sample. Never release drive
+         * in that interval; fault if the first sample misses the 200ms bound. */
+        if (!ctx->faultLatched && (wasValid ||
+            current_time - ctx->state.timestamp > MOTION_MEASUREMENT_MAX_AGE_MS))
+        {
+            MotionService_LatchFault(ctx, MOTION_ERR_ENCODER);
+        }
+        return;
+    }
+    ctx->motorStateValid = true;
 
     // 获取转向状态
     const SteerState steer_state = SteerService_getState(ctx->steerServo);

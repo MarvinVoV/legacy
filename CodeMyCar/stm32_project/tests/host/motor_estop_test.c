@@ -134,9 +134,9 @@ int main(void)
     {
         assert(near_zero(driver.filter.filterBuffer[i]));
     }
-    assert(near_zero(driver.state.velocity.rpm));
-    assert(near_zero(driver.state.velocity.radps));
-    assert(near_zero(driver.state.velocity.mps));
+    assert(driver.state.velocity.rpm == 24.0f);
+    assert(driver.state.velocity.radps == 2.5f);
+    assert(driver.state.velocity.mps == 0.08f);
     assert(near_zero(driver.state.openLoopDuty));
     assert(near_zero(driver.state.appliedDuty));
 
