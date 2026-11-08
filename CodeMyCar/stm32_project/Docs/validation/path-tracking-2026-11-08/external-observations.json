@@ -25,5 +25,16 @@
       "longitudinal_separation": "not supplied",
       "interpretation": "user confirms same-side zero baseline; supports actual right displacement 30/32 mm, but wheel-edge geometry and longitudinal separation are unknown; terminal near-parallel appearance does not prove no heading excursion during travel"
     }
+  },
+  "path-off-control-reverse-200cm-speed30": {
+    "source": "user",
+    "original_reply": "还是偏离的很离谱，前后轮距离左边基线差不多都是 3.1cm 左右",
+    "endpoint_front_to_left_line_mm": 31,
+    "endpoint_rear_to_left_line_mm": 31,
+    "baseline_before_short_roundtrip_mm": {
+      "front": 0,
+      "rear": 0
+    },
+    "comparison": "approximately same endpoint offsets as ON 30/32mm; no proven feedback benefit or worsening; actual body-axis alignment has not been measured"
   }
 }
