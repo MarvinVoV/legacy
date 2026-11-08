@@ -10,6 +10,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "motor_driver.h"
 
@@ -169,6 +170,23 @@ int main(void)
     assert(driver.state.lastControlTick==7u);
     assert(driver.state.position.totalPulses==9889);
     assert(fabsf(driver.state.velocity.rpm-50.0f)<0.001f);
+    MotorSpec legacy=spec;
+    legacy.speedTrimScale=1.023f;
+    MotorDriver exact={.halCfg=&hal,.spec=&legacy};
+    PID_Params params={.kp=.5f,.ki=.6f,.kd=.03f,.output_max=1};
+    assert(!MotorDriver_Init(&exact,&params)); /* old code accepted +2.3% bias */
+    legacy.speedTrimScale=NAN;
+    assert(!MotorDriver_Init(&exact,&params));
+    legacy.speedTrimScale=1;
+    assert(MotorDriver_Init(&exact,&params));
+    MotorDriver_SetMode(&exact,MOTOR_DRIVER_MODE_CLOSED_LOOP);
+    for(int sign=-1;sign<=1;sign+=2) {
+        MotorDriver_SetTargetRPM(&exact,sign*300);
+        for(int i=0;i<600;i++){s_tick+=5;MotorDriver_Update(&exact);}
+        assert(fabsf(exact.control.rampedTargetRPM-sign*300)<.001f);
+        assert(fabsf(exact.control.targetRPM)<=300);
+    }
+    free(exact.filter.filterBuffer);
     printf("motor_estop: all tests passed\n");
     return 0;
 }

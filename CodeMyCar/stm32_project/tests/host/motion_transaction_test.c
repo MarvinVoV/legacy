@@ -242,5 +242,19 @@ int main(void)
     assert(fabsf(lastAngle-parked)<.02f);
     assert(fabsf(submittedRpm[0]-submittedRpm[1])<.0001f);
     assert(MotionService_EmergencyStop(&c,44)==0);
+    assert(!c.goalPath.active && c.goalPath.headingOffsetDeg==0);
+    imuYaw=0;measuredLeftRpm=measuredRightRpm=0;now+=5;MotionService_Run(&c);
+    assert(MotionService_StartGoal(&c,0,2000,100,45)==0 && c.goalPath.active);
+    /* Fixed local frame, independent of the erroneous differential pose. */
+    imuYaw=2;leftRevs+=10/circ;rightRevs+=10/circ;
+    now+=5;MotionService_Run(&c);
+    assert(c.goalPath.leftM>0 && c.goalPath.forwardM>0 && !c.faultLatched);
+    assert(c.goalGyroPath.active && c.goalGyroPath.leftM==0); /* gyro fixture is 0 */
+    assert(MotionService_EmergencyStop(&c,46)==0 && !c.goalPath.active);
+    assert(!c.goalGyroPath.active);
+    now+=5;MotionService_Run(&c);
+    assert(MotionService_StartGoal(&c,0,-2000,100,47)==0 && c.goalPath.direction==-1);
+    assert(c.goalPath.leftM==0 && c.goalPath.maxAbsLeftM==0);
+    assert(MotionService_EmergencyStop(&c,48)==0);
     puts("motion_transaction: all tests passed");
 }

@@ -40,7 +40,7 @@ typedef struct
     float    maxRPM;        ///< 最大转速（转/分钟）
     float    feedforwardScale; ///< 低速前馈缩放
     float    forwardScale;     ///< 正转方向标定；<=0 时按 1.0 处理
-    float    speedTrimScale;   ///< 单轮速度标定系数；<=0 时按 1.0 处理（修正左右轮摩擦差异）
+    float    speedTrimScale;   ///< 旧字段，仅允许0（默认）或1；不得缩放闭环目标RPM
 } MotorSpec;
 
 /**

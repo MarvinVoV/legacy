@@ -15,6 +15,7 @@
 #include "seq_dedup.h"
 #include "control_lease.h"
 #include "encoder_fault_monitor.h"
+#include "straight_path.h"
 
 //------------------------------------------------------------------------------
 // 类型定义
@@ -132,6 +133,12 @@ typedef struct
     float goalYawStartDeg;
     uint32_t goalImuReferenceId;
     float goalEncoderHeadingDeg; /* Independent diagnostic estimate, right-positive. */
+    StraightPath goalPath;       /* High-rate local IMU+wheel estimator, straight GOAL only. */
+    StraightPath goalGyroPath;   /* Diagnostic only: body-Z gyro integration, NOT position truth. */
+    float goalGyroYawDeg;
+    float goalPreviousGyroRateDps;
+    uint32_t goalPathControlTick;
+    uint32_t goalPathLogTick;
     seq_dedup_t     goalSeqDedup; ///< 最近处理过的 goal seq
     bool            goalBlocked;  ///< GOAL 是否因障碍持续被挡
     uint32_t        goalBlockedMs;///< 开始被挡的时刻

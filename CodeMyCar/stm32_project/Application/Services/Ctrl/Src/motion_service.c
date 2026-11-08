@@ -34,6 +34,10 @@
 #define MOTION_COMMAND_LEASE_MS (500u)
 #define MOTION_MEASUREMENT_MAX_AGE_MS (200u)
 
+#ifndef CMCAR_STRAIGHT_PATH_CONTROL
+#define CMCAR_STRAIGHT_PATH_CONTROL 0
+#endif
+
 #ifndef CMCAR_DIFFERENTIAL_DIAGNOSTICS
 #define CMCAR_DIFFERENTIAL_DIAGNOSTICS 0
 #endif
@@ -491,10 +495,23 @@ int MotionService_StartGoal(MotionContext* ctx, int16_t turnDdeg, int16_t distan
         osMutexRelease(ctx->targetMutex);
         return ERR_MOTION_SENSOR_UNAVAILABLE;
     }
+    StraightPath pathCandidate = {0};
+    if (usesImu && turnDdeg == 0 &&
+        !straight_path_start(&pathCandidate, imu.yawDeg, mm_to_m(distanceMm)))
+    {
+        osMutexRelease(ctx->targetMutex);
+        return ERR_MOTION_INVALID_PARAM;
+    }
     ctx->goalUsesImu = usesImu;
     ctx->goalYawStartDeg = usesImu ? imu.yawDeg : 0.0f;
     ctx->goalImuReferenceId = usesImu ? imu.referenceId : 0u;
     ctx->goalEncoderHeadingDeg = 0.0f;
+    ctx->goalPath = pathCandidate;
+    ctx->goalGyroPath = pathCandidate;
+    ctx->goalGyroYawDeg = usesImu ? imu.yawDeg : 0.0f;
+    ctx->goalPreviousGyroRateDps = usesImu ? imu.yawRateDps : 0.0f;
+    ctx->goalPathControlTick = now;
+    ctx->goalPathLogTick = now-1000u;
     HeadingControl_Disable(&s_headingControl);
     ctx->goal = candidate;
     ctx->motionTarget.mode = MOTION_GOAL;
@@ -929,9 +946,24 @@ static float heading_correct(MotionContext* ctx, float kappa, bool straight)
 
     const bool straightGoal = ctx->motionTarget.mode == MOTION_GOAL &&
                               ctx->goalUsesImu && ctx->goal.target.turnDdeg == 0;
+    float headingReference = ctx->goalYawStartDeg;
+    if (straightGoal && ctx->goalPath.active)
+    {
+        const uint32_t tick = HAL_GetTick();
+        const float dt = (float)(uint32_t)(tick-ctx->goalPathControlTick)*0.001f;
+        ctx->goalPathControlTick = tick;
+        const float remaining = fabsf(mm_to_m(ctx->goal.target.distanceMm) -
+                                       mm_to_m(ctx->goal.distanceTravelMm));
+        const float candidateRef = straight_path_reference(&ctx->goalPath, v, remaining, dt);
+#if CMCAR_STRAIGHT_PATH_CONTROL
+        headingReference = candidateRef;
+#else
+        (void)candidateRef; /* Shadow estimator: never changes actuator commands. */
+#endif
+    }
     const float out = straightGoal
         ? HeadingControl_HoldHeading(&s_headingControl, imu.yawDeg, imu.yawRateDps,
-                                     v, ctx->goalYawStartDeg)
+                                     v, headingReference)
         : HeadingControl_Apply(&s_headingControl, imu.yawDeg, imu.yawRateDps,
                                v, kappa, straight);
 
@@ -962,6 +994,8 @@ static float steer_straight_angle(const MotionContext* ctx)
 
 static void stop_actuators(MotionContext* ctx)
 {
+    straight_path_stop(&ctx->goalPath);
+    straight_path_stop(&ctx->goalGyroPath);
     ctx->lastStopReportMs = HAL_GetTick();
     ctx->stopReportPending = true;
     MotorService_SetInhibit(ctx->motorService, true);
@@ -1160,6 +1194,17 @@ static void handle_goal(MotionContext* ctx)
 
     const MotionGoalConfig cfg = goal_cfg_from(&ctx->chassisConfig);
     const MotionGoalOutput out = motion_goal_step(&ctx->goal, &cfg, HAL_GetTick());
+
+    if (ctx->goalPath.active && (out.finished || out.error != 0 ||
+        (uint32_t)(HAL_GetTick()-ctx->goalPathLogTick) >= 1000u))
+    {
+        ctx->goalPathLogTick = HAL_GetTick();
+        LOG_INFO(LOG_MODULE_MOTION, "PATH yl=%.2f gl=%.2f x=%.1f off=%.3f en=%d ed=%.2f",
+                 ctx->goalPath.leftM*1000.0f,
+                 ctx->goalGyroPath.active ? ctx->goalGyroPath.leftM*1000.0f : NAN,
+                 ctx->goalPath.forwardM*1000.0f, ctx->goalPath.headingOffsetDeg,
+                 CMCAR_STRAIGHT_PATH_CONTROL, ctx->goalEncoderHeadingDeg);
+    }
 
     if (out.finished || out.error != 0)
     {
@@ -1396,6 +1441,34 @@ static void update_runtime_state(MotionContext* ctx)
             LOG_ERROR(LOG_MODULE_MOTION, "goal IMU unavailable/reference changed");
             MotionService_LatchFault(ctx, MOTION_ERR_IMU);
             return;
+        }
+        if (ctx->goalUsesImu && ctx->goalPath.active &&
+            !straight_path_update(&ctx->goalPath,
+                                 0.5f*(delta_left_dist+delta_right_dist), imu.yawDeg))
+        {
+            MotionService_LatchFault(ctx, MOTION_ERR_INTERNAL);
+            return;
+        }
+        if (ctx->goalUsesImu && ctx->goalGyroPath.active)
+        {
+            /* Same sensor, different diagnostic path. Sampling latest 100Hz
+             * gyro in this 200Hz loop avoids trusting a 10Hz telemetry sum.
+             * This does not compensate mounting tilt or prove absolute yaw. */
+            if (delta_time > 0.2f)
+            {
+                straight_path_stop(&ctx->goalGyroPath);
+            }
+            else if (delta_time > 0.0f)
+            {
+                ctx->goalGyroYawDeg += 0.5f*(ctx->goalPreviousGyroRateDps+
+                                             imu.yawRateDps)*delta_time;
+                ctx->goalPreviousGyroRateDps = imu.yawRateDps;
+                if (!straight_path_update(&ctx->goalGyroPath,
+                        0.5f*(delta_left_dist+delta_right_dist), ctx->goalGyroYawDeg))
+                {
+                    straight_path_stop(&ctx->goalGyroPath);
+                }
+            }
         }
         const MotionGoalConfig goal_cfg = goal_cfg_from(&ctx->chassisConfig);
         ctx->goal.headingTravelDeg = ctx->goalEncoderHeadingDeg;

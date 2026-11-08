@@ -126,7 +126,9 @@ echo "== imu service =="
 "${TMPDIR:-/tmp}/imu_service_test"
 
 echo "== motion transaction =="
+for PATH_CONTROL in 0 1; do
 "$CC" -std=c11 -Wall -Wextra -O2 \
+  -DCMCAR_STRAIGHT_PATH_CONTROL="$PATH_CONTROL" \
   -I "$DIR/tests/host/stubs" -I "$DIR/Application/Services/Ctrl/Inc" \
   -I "$DIR/Application/Services/Motor/Inc" -I "$DIR/Application/Modules/Motor/Inc" \
   -I "$DIR/Application/Services/Servo/Inc" -I "$DIR/Application/Services/IMU/Inc" \
@@ -143,8 +145,20 @@ echo "== motion transaction =="
   "$DIR/Application/System/Utils/Src/steering_lut.c" \
   "$DIR/Application/System/Utils/Src/control_lease.c" \
   "$DIR/Application/System/Utils/Src/encoder_fault_monitor.c" \
+  "$DIR/Application/System/Utils/Src/straight_path.c" \
   -lm -o "${TMPDIR:-/tmp}/motion_transaction_test"
 "${TMPDIR:-/tmp}/motion_transaction_test"
+done
+
+echo "== local straight path =="
+"$CC" -std=c11 -Wall -Wextra -O2 \
+  -I "$DIR/tests/host/stubs" -I "$DIR/Application/System/Utils/Inc" \
+  -I "$DIR/Application/Services/Ctrl/Inc" \
+  "$DIR/tests/host/straight_path_test.c" \
+  "$DIR/Application/System/Utils/Src/straight_path.c" \
+  "$DIR/Application/Services/Ctrl/Src/heading_control.c" \
+  -lm -o "${TMPDIR:-/tmp}/straight_path_test"
+"${TMPDIR:-/tmp}/straight_path_test"
 
 echo "== motion task asynchronous telemetry =="
 "$CC" -std=c11 -Wall -Wextra -O2 \

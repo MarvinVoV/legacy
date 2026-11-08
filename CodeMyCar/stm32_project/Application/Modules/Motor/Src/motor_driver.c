@@ -116,6 +116,15 @@ bool MotorDriver_Init(MotorDriver* driver, const PID_Params* initialPid)
         LOG_ERROR(LOG_MODULE_MOTOR, "Invalid encoderPPR or gearRatio");
         return false;
     }
+    /* Closed-loop target RPM is a physical contract shared with chassis
+     * kinematics and wheel synchronization. Legacy open-loop speed trim may
+     * not secretly change that target; friction belongs to effort/FF tuning. */
+    const float legacyTrim = driver->spec->speedTrimScale;
+    if (!isfinite(legacyTrim) || (legacyTrim != 0.0f && fabsf(legacyTrim-1.0f)>1e-6f))
+    {
+        LOG_ERROR(LOG_MODULE_MOTOR, "Legacy RPM trim must be 0/default or 1");
+        return false;
+    }
 
     PIDController_Init(&driver->control.pidCtrl, initialPid);
 
@@ -297,11 +306,7 @@ void MotorDriver_Update(MotorDriver* driver)
          * 减速（|目标| < |当前| 且同号）走更快的速率，安全限速时能迅速停车；
          * 跨 0 换向按加速处理，先收敛到 0 再建速。 */
         const float cur       = driver->control.rampedTargetRPM;
-        /* 单轮标定：补偿左右轮摩擦/减速箱差异。跟随目标符号，前进/倒车都生效。 */
-        const float trim = (driver->spec->speedTrimScale > 0.0f)
-                               ? driver->spec->speedTrimScale
-                               : 1.0f;
-        const float tgt       = driver->control.targetRPM * trim;
+        const float tgt       = driver->control.targetRPM;
         const bool  reducing  = (fabsf(tgt) < fabsf(cur)) && ((tgt * cur) >= 0.0f);
         const float ramp_step = (reducing ? MOTOR_DECEL_RPM_PER_S : MOTOR_ACCEL_RPM_PER_S) *
                                 delta_time_s;

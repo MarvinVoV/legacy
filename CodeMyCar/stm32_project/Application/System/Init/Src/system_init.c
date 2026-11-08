@@ -111,10 +111,9 @@ static int init_motor_service(void)
         .wheelRadiusMM = DEFAULT_CHASSIS_CFG.wheelRadiusMM,
         .feedforwardScale = 1.4f,
         .forwardScale = 1.15f,
-        // 2026-11-04 地面标定（2m 直行）：trim 越大右轮目标越快、越向左偏。
-        //   1.05 -> +138mm（左）  1.00 -> -121mm（右）  1.023 -> -8mm
-        //   1.03 -> +47mm（左）  零点约 1.024，取实测最优的 1.023。
-        .speedTrimScale = 1.023f
+        // Old 1.023 target bias conflicts with wheel sync and IMU feedback.
+        // Keep requested RPM exact; calibrate wheel distance/effort separately.
+        .speedTrimScale = 1.0f
     };
 
     // 左轮PID参数
