@@ -44,6 +44,13 @@ class Settings(BaseSettings):
     agent_min_turn_radius_mm: int = 260  # 与 STM32 实测等效最大转角 28.5°、轴距 141mm 对应
     agent_allow_pivot_goal: bool = False  # Ackermann 底盘禁止反向双轮原地旋转
 
+    # 语音识别（百度短语音，密钥只放 .env / 环境变量）
+    baidu_speech_api_key: str = ""
+    baidu_speech_secret_key: str = ""
+    baidu_speech_app_id: str = ""
+    baidu_speech_dev_pid: int = 1537  # 普通话（纯中文）
+    baidu_speech_timeout_s: float = 10.0
+
     # 日志
     log_level: str = "INFO"
     log_dir: str = "logs"
