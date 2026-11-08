@@ -4,6 +4,7 @@
 #include "imu_service.h"
 #include "safety_service.h"
 #include "error_code.h"
+#include "steering_lut.h"
 
 static uint32_t now=1000;
 static unsigned depth;
@@ -197,5 +198,33 @@ int main(void)
     imuReference++;imuYaw=20;
     MotionService_Run(&c);
     assert(fabsf(lastAngle-straightAngle)<0.001f);
+
+    /* A long straight GOAL must immediately correct the same yaw error
+     * regardless of remaining distance. Old residual-angle/distance logic
+     * switched to rate control and produced distance-dependent steering. */
+    assert(MotionService_EmergencyStop(&c,34)==0);
+    imuYaw=0;measuredLeftRpm=measuredRightRpm=0;now+=5;MotionService_Run(&c);
+    assert(MotionService_StartGoal(&c,0,2000,100,35)==0);
+    measuredLeftRpm=measuredRightRpm=30;imuYaw=-2;now+=5;MotionService_Run(&c);
+    float expectedRaw;
+    assert(steering_lut_curvature_to_raw(-.6f,.141f,&expectedRaw));
+    assert(fabsf(lastAngle-(90-expectedRaw))<.02f);
+    assert(submittedRpm[0]<submittedRpm[1]);
+    const float firstCorrection=lastAngle;
+    for(int i=0;i<30;i++){now+=5;MotionService_Run(&c);}
+    assert(lastAngle>=firstCorrection && !c.faultLatched);
+    assert(MotionService_EmergencyStop(&c,36)==0);
+    imuYaw=0;measuredLeftRpm=measuredRightRpm=0;now+=5;MotionService_Run(&c);
+    assert(MotionService_StartGoal(&c,0,500,100,37)==0);
+    measuredLeftRpm=measuredRightRpm=30;imuYaw=-2;now+=5;MotionService_Run(&c);
+    assert(fabsf(lastAngle-firstCorrection)<.02f);
+    assert(MotionService_EmergencyStop(&c,38)==0);
+    /* Reverse uses the same accepted yaw, with opposite steering sign. */
+    imuYaw=0;measuredLeftRpm=measuredRightRpm=0;now+=5;MotionService_Run(&c);
+    assert(MotionService_StartGoal(&c,0,-2000,100,39)==0);
+    measuredLeftRpm=measuredRightRpm=-30;imuYaw=-2;now+=5;MotionService_Run(&c);
+    assert(steering_lut_curvature_to_raw(.6f,.141f,&expectedRaw));
+    assert(fabsf(lastAngle-(90-expectedRaw))<.02f);
+    assert(MotionService_EmergencyStop(&c,40)==0);
     puts("motion_transaction: all tests passed");
 }

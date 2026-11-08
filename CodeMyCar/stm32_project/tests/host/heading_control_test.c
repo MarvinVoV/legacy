@@ -35,14 +35,13 @@ int main(void)
     HeadingControl hc;
 
     /* ---------- 直行：前进方向 ---------- */
-    HeadingControl_Init(&hc, 0.0f, 0.0f); /* 用默认增益 0.02 / 0.002 */
+    HeadingControl_Init(&hc, 0.0f, 0.0f);
     g_tick = 1000u;
     (void)HeadingControl_Apply(&hc, 0.0f, 0.0f, 0.1f, 0.0f, true); /* 捕获 ref=0 */
 
     g_tick = 1010u; /* dt = 10 ms */
     float out = HeadingControl_Apply(&hc, -5.0f, 0.0f, 0.1f, 0.0f, true);
-    /* err = -5 → corr ≈ 0.02*(-5) + 0.002*(-5*0.01) = -0.1001 */
-    near(out, -0.10f, 0.01f);
+    near(out, -1.0f, 0.01f);
 
     /* ---------- 直行：倒车方向必须反向 ---------- */
     HeadingControl_Init(&hc, 0.0f, 0.0f);
@@ -51,7 +50,7 @@ int main(void)
 
     g_tick = 1010u;
     out = HeadingControl_Apply(&hc, -5.0f, 0.0f, -0.1f, 0.0f, true);
-    near(out, +0.10f, 0.01f);
+    near(out, +1.0f, 0.01f);
 
     /* ---------- 转弯：角速度反馈（前进） ---------- */
     HeadingControl_Init(&hc, 0.0f, 0.0f);
@@ -88,7 +87,7 @@ int main(void)
     g_tick = 1000u;
     (void)HeadingControl_Apply(&hc, 0.0f, 0.0f, 0.1f, 0.0f, true);
     g_tick = 1010u;
-    out = HeadingControl_Apply(&hc, -0.3f, 0.0f, 0.1f, 0.0f, true); /* < 0.5° 死区 */
+    out = HeadingControl_Apply(&hc, -0.1f, 0.0f, 0.1f, 0.0f, true);
     near(out, 0.0f, 0.001f);
 
     /* ---------- Disable 后重新捕获参考航向（IMU-P2-01） ---------- */
@@ -117,6 +116,41 @@ int main(void)
     hc.rateIntegral=2;
     HeadingControl_Apply(&hc,0,0,0.2f,-1,false);
     assert(hc.rateIntegral<=0);
+
+    /* A GOAL reference belongs to command acceptance, not to the first
+     * measurable wheel speed or a restart after a zero-speed sample. */
+    HeadingControl_Init(&hc,0,0);
+    out=HeadingControl_HoldHeading(&hc,-3,0,0,0);
+    assert(out==0);
+    g_tick+=5;
+    out=HeadingControl_HoldHeading(&hc,-3,0,0.1f,0);
+    assert(out<-.35f && hc.straightMode && hc.psiRefDeg==0);
+    g_tick+=5;HeadingControl_HoldHeading(&hc,-4,0,0,0);
+    g_tick+=5;out=HeadingControl_HoldHeading(&hc,-4,0,0.1f,0);
+    assert(out<-.45f && hc.psiRefDeg==0);
+    assert(HeadingControl_HoldHeading(&hc,0,0,.1f,NAN)==0 && !hc.active);
+
+    /* 2m plant at 0.1m/s with constant +0.5/m steering bias and a
+     * 150ms actuator lag. Measure the ENTIRE path, not only final yaw.
+     * This is a sensitivity/regression model, not a hardware accuracy claim. */
+    for(int sign=-1;sign<=1;sign+=2) {
+        HeadingControl_Init(&hc,0,0);
+        float yaw=0, actualK=0, lateral=0, peak=0;
+        const float v=sign*.1f,dt=.005f;
+        for(int i=0;i<4000;i++) {
+            g_tick+=5;
+            const float rate=-v*(actualK+.5f)*57.2957795f;
+            const float k=HeadingControl_HoldHeading(&hc,yaw,rate,v,0);
+            assert(hc.straightMode && hc.psiRefDeg==0 && fabsf(k)<=hc.maxStraightCorr+.0001f);
+            actualK+=(k-actualK)*dt/.15f;
+            yaw+=-v*(actualK+.5f)*57.2957795f*dt;
+            lateral+=-v*sinf(yaw*.017453293f)*dt;
+            peak=fmaxf(peak,fabsf(yaw));
+        }
+        printf("biased straight sign=%d peak=%.3fdeg final=%.3fdeg lateral=%.4fm\n",
+               sign,(double)peak,(double)yaw,(double)lateral);
+        assert(peak<2 && fabsf(yaw)<.3f && fabsf(lateral)<.04f);
+    }
     puts("heading_control: all tests passed");
     return 0;
 }

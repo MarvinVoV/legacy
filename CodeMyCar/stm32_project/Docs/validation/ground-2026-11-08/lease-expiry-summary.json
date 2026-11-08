@@ -1,0 +1,91 @@
+{
+  "pre_stop": {
+    "ok": true,
+    "stopped": true,
+    "accepted": true,
+    "confirmed": true,
+    "seq": 79
+  },
+  "before": {
+    "ok": true,
+    "online": true,
+    "stm32_connected": true,
+    "motion_supported": true,
+    "motion": {
+      "state": "idle",
+      "seq": 79,
+      "age_ms": 4,
+      "stale": false
+    },
+    "pose": {
+      "x_cm": -285.1,
+      "y_cm": -1154.9,
+      "heading_deg": -159.669,
+      "odometer_cm": 1738.4
+    },
+    "velocity": {
+      "linear_cm_s": 0.0,
+      "angular_deg_s": 0.0
+    }
+  },
+  "send": {
+    "success": true,
+    "message": "Command sent",
+    "data": null
+  },
+  "ack": {
+    "seq": 211,
+    "ack": true,
+    "status": 0,
+    "session_id": 1864212810
+  },
+  "expired": {
+    "seq": 211,
+    "state": "idle",
+    "error": 0,
+    "mode": 0,
+    "fault": false,
+    "lease_expired": true,
+    "goal_heading_source": "imu",
+    "x_mm": -2883,
+    "y_mm": 11561,
+    "theta_mdeg": 158906,
+    "odometer_mm": 17418,
+    "goal_distance_mm": 595,
+    "goal_turn_mdeg": 30658,
+    "goal_duration_ms": 5967,
+    "left_mmps": 1,
+    "right_mmps": 0,
+    "session_id": 1864212810
+  },
+  "observed_expired_ms": 805.5,
+  "final_stop": {
+    "ok": true,
+    "stopped": true,
+    "accepted": true,
+    "confirmed": true,
+    "seq": 80
+  },
+  "after": {
+    "ok": true,
+    "online": true,
+    "stm32_connected": true,
+    "motion_supported": true,
+    "motion": {
+      "state": "idle",
+      "seq": 80,
+      "age_ms": 3,
+      "stale": false
+    },
+    "pose": {
+      "x_cm": -288.3,
+      "y_cm": -1156.1,
+      "heading_deg": -158.906,
+      "odometer_cm": 1741.8
+    },
+    "velocity": {
+      "linear_cm_s": 0.0,
+      "angular_deg_s": 0.0
+    }
+  }
+}

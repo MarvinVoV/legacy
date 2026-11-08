@@ -900,6 +900,10 @@ static void abort_goal_locked(MotionContext* ctx, uint8_t newState)
 /* 用 IMU 航向反馈修正曲率；IMU 不可用时原样返回 */
 static float heading_correct(MotionContext* ctx, float kappa, bool straight)
 {
+    if (ctx->motionTarget.mode == MOTION_GOAL && !ctx->goalUsesImu)
+    {
+        return kappa; /* Keep the transaction's explicit encoder-only source. */
+    }
     ImuSnapshot imu;
     static bool referenceKnown;
     static uint32_t referenceId;
@@ -923,8 +927,13 @@ static float heading_correct(MotionContext* ctx, float kappa, bool straight)
     const float right_mps = ctx->state.drive.rightRpm * 2.0f * 3.14159265f * wheel_r_m / 60.0f;
     const float v = 0.5f * (left_mps + right_mps);
 
-    const float out = HeadingControl_Apply(&s_headingControl, imu.yawDeg, imu.yawRateDps,
-                                           v, kappa, straight);
+    const bool straightGoal = ctx->motionTarget.mode == MOTION_GOAL &&
+                              ctx->goalUsesImu && ctx->goal.target.turnDdeg == 0;
+    const float out = straightGoal
+        ? HeadingControl_HoldHeading(&s_headingControl, imu.yawDeg, imu.yawRateDps,
+                                     v, ctx->goalYawStartDeg)
+        : HeadingControl_Apply(&s_headingControl, imu.yawDeg, imu.yawRateDps,
+                               v, kappa, straight);
 
     static uint32_t lastLogMs = 0u;
     const uint32_t nowMs = HAL_GetTick();
@@ -1175,9 +1184,13 @@ static void handle_goal(MotionContext* ctx)
     {
         curvature = CLAMP(curvature, -STEERING_KAPPA_MAX_1PM, STEERING_KAPPA_MAX_1PM);
         /* GOAL 也走 IMU 航向闭环：修正曲率同时作用于舵机和双轮差速 */
-        const bool straight = fabsf(curvature) < 0.05f;
+        /* The requested maneuver owns the mode. Corrective curvature must
+         * not turn a straight GOAL into a yaw-rate-following arc. With IMU,
+         * the fixed-reference angle loop alone owns straight steering. */
+        const bool straight = ctx->goal.target.turnDdeg == 0;
+        if (straight && ctx->goalUsesImu) { curvature = 0.0f; }
         const float curvature_eff = heading_correct(ctx, curvature, straight);
-        if (fabsf(curvature_eff - curvature) > 1e-4f)
+        if ((straight && ctx->goalUsesImu) || fabsf(curvature_eff - curvature) > 1e-4f)
         {
             const float delta_eff = atanf(wheelbase_m * curvature_eff) * 57.29578f;
             const float wheel_r_m = mm_to_m(ctx->chassisConfig.wheelRadiusMM);

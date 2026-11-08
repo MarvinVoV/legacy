@@ -1,0 +1,11 @@
+{
+  "reference_wrapped_yaw_deg": 126.9,
+  "heading_samples": 94,
+  "max_abs_yaw_deviation_deg": 6.800000000000011,
+  "peak_signed_ccw_deviation_deg": -6.800000000000011,
+  "peak_after_start_s": 4.484,
+  "last_running_heading_deviation_deg": -0.9000000000000057,
+  "post_stop_heading_deviation_deg": -0.4000000000000057,
+  "odometry_estimated_lateral_cm": 5.143328416772029,
+  "goal_reported_turn_deg": 0.526
+}

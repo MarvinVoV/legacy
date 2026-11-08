@@ -1,0 +1,109 @@
+{
+  "before": {
+    "state": {
+      "ok": true,
+      "online": true,
+      "stm32_connected": true,
+      "motion_supported": true,
+      "motion": {
+        "state": "idle",
+        "seq": 52,
+        "age_ms": 158,
+        "stale": false
+      },
+      "pose": {
+        "x_cm": -50.4,
+        "y_cm": -1084.8,
+        "heading_deg": -162.678,
+        "odometer_cm": 1489.3
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    "status": {
+      "success": true,
+      "message": "ok",
+      "data": {
+        "device_id": "DEV_1",
+        "online": true,
+        "last_heartbeat_age": 6.3,
+        "uptime_s": 453,
+        "heap_free": 276728,
+        "stm32_connected": true,
+        "front_distance_cm": null,
+        "rear_distance_cm": null,
+        "sensor_age_s": null,
+        "yaw_deg": -17.6,
+        "yaw_rate_dps": 0.0,
+        "imu_status": 3,
+        "imu_age_s": 0.2,
+        "accel_mps2": [
+          0.117,
+          -0.613,
+          9.871
+        ],
+        "gyro_radps": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "imu_raw_age_s": 0.2
+      }
+    }
+  },
+  "move": {
+    "ok": true,
+    "seq": 53,
+    "requested": {
+      "distance_cm": -10,
+      "turn_deg": 0,
+      "speed_cm_s": 6
+    },
+    "measured": {
+      "distance_cm": -9.5,
+      "turn_deg": -0.417,
+      "duration_ms": 2106,
+      "final_state": "done"
+    },
+    "errors": {
+      "distance_cm": -0.5,
+      "turn_deg": 0.42
+    },
+    "pose": {
+      "x_cm": -41.3,
+      "y_cm": -1082.1,
+      "heading_deg": -162.992
+    }
+  },
+  "stop": {
+    "ok": true,
+    "stopped": true,
+    "accepted": true,
+    "confirmed": true,
+    "seq": 54
+  },
+  "after": {
+    "ok": true,
+    "online": true,
+    "stm32_connected": true,
+    "motion_supported": true,
+    "motion": {
+      "state": "idle",
+      "seq": 54,
+      "age_ms": 104,
+      "stale": false
+    },
+    "pose": {
+      "x_cm": -41.1,
+      "y_cm": -1082.1,
+      "heading_deg": -163.037,
+      "odometer_cm": 1479.6
+    },
+    "velocity": {
+      "linear_cm_s": 0.0,
+      "angular_deg_s": 0.0
+    }
+  }
+}

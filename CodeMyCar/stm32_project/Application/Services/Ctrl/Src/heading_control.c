@@ -6,13 +6,14 @@
 #include "stm32h7xx_hal.h"
 
 /* 默认增益：先保守，落地整定后再放大 */
-#define HC_KP_ANGLE_DEFAULT (0.020f) /* (1/m)/deg */
-#define HC_KI_ANGLE_DEFAULT (0.002f) /* (1/m)/(deg·s) */
+#define HC_KP_ANGLE_DEFAULT (0.300f) /* (1/m)/deg */
+#define HC_KI_ANGLE_DEFAULT (0.080f) /* (1/m)/(deg·s) */
 #define HC_KP_RATE_DEFAULT (0.400f)  /* (1/m)/(1/m) */
 #define HC_KI_RATE_DEFAULT (0.080f)
-#define HC_DEADBAND_DEG_DEFAULT (0.5f)
+#define HC_DEADBAND_DEG_DEFAULT (0.2f)
 #define HC_DEADBAND_K_DEFAULT (0.05f)
 #define HC_MAX_CORR_DEFAULT (0.30f) /* 1/m，约 ±5° 转向 */
+#define HC_MAX_STRAIGHT_CORR_DEFAULT (1.0f) /* 1/m; final actuator clamp still applies */
 
 /*
  * 符号约定（2026-11-07 实测校准）：
@@ -59,6 +60,7 @@ void HeadingControl_Init(HeadingControl* hc, float kp, float ki)
     hc->deadbandDeg = HC_DEADBAND_DEG_DEFAULT;
     hc->deadbandK = HC_DEADBAND_K_DEFAULT;
     hc->maxCorr = HC_MAX_CORR_DEFAULT;
+    hc->maxStraightCorr = HC_MAX_STRAIGHT_CORR_DEFAULT;
     hc->maxKappa = 3.770f; /* STEERING_KAPPA_MAX_1PM */
     hc->lastErrorDeg = 0.0f;
     hc->lastCorr = 0.0f;
@@ -110,8 +112,9 @@ static float pi_correction(float kp, float ki, float* integral,
     return clampf(kp * error + ki * *integral, lo, hi);
 }
 
-float HeadingControl_Apply(HeadingControl* hc, float yawDeg, float yawRateDps,
-                          float vMps, float kappaFf, bool straight)
+static float heading_apply(HeadingControl* hc, float yawDeg, float yawRateDps,
+                           float vMps, float kappaFf, bool straight,
+                           const float* referenceDeg)
 {
     if (hc == NULL) { return kappaFf; }
     if (!isfinite(kappaFf)) { HeadingControl_Disable(hc); return 0.0f; }
@@ -136,18 +139,20 @@ float HeadingControl_Apply(HeadingControl* hc, float yawDeg, float yawRateDps,
         hc->rateIntegral = 0.0f;
         hc->motionDirection = direction;
     }
-    const float lo = fmaxf(-hc->maxCorr, -hc->maxKappa-ff);
-    const float hi = fminf(hc->maxCorr, hc->maxKappa-ff);
+    const float maxCorr = straight ? hc->maxStraightCorr : hc->maxCorr;
+    const float lo = fmaxf(-maxCorr, -hc->maxKappa-ff);
+    const float hi = fminf(maxCorr, hc->maxKappa-ff);
     float corr;
     if (straight)
     {
         if (!hc->straightMode)
         {
-            hc->psiRefDeg = yawDeg;
+            hc->psiRefDeg = referenceDeg ? *referenceDeg : yawDeg;
             hc->integral = 0.0f;
             hc->rateIntegral = 0.0f;
         }
         hc->straightMode = true;
+        if (referenceDeg) { hc->psiRefDeg = *referenceDeg; }
         hc->curveDirection = 0;
         float error = direction * wrap180(yawDeg-hc->psiRefDeg);
         hc->lastErrorDeg = error;
@@ -173,4 +178,17 @@ float HeadingControl_Apply(HeadingControl* hc, float yawDeg, float yawRateDps,
     const float out = clampf(ff+corr, -hc->maxKappa, hc->maxKappa);
     hc->lastCorr = out-ff;
     return out;
+}
+
+float HeadingControl_Apply(HeadingControl* hc, float yawDeg, float yawRateDps,
+                          float vMps, float kappaFf, bool straight)
+{
+    return heading_apply(hc, yawDeg, yawRateDps, vMps, kappaFf, straight, NULL);
+}
+
+float HeadingControl_HoldHeading(HeadingControl* hc, float yawDeg, float yawRateDps,
+                                float vMps, float referenceDeg)
+{
+    if (!isfinite(referenceDeg)) { HeadingControl_Disable(hc); return 0.0f; }
+    return heading_apply(hc, yawDeg, yawRateDps, vMps, 0.0f, true, &referenceDeg);
 }

@@ -36,6 +36,7 @@ typedef struct
     float deadbandK;     /* 1/m */
 
     float maxCorr;       /* 修正量限幅 (1/m) */
+    float maxStraightCorr; /* 直行需能抵消固定转向偏置，独立于弯道反馈限幅 */
     float maxKappa;      /* 最终曲率限幅 (1/m)，与 STEERING_KAPPA_MAX_1PM 一致 */
 
     /* 诊断 */
@@ -65,5 +66,9 @@ void HeadingControl_Disable(HeadingControl* hc);
  */
 float HeadingControl_Apply(HeadingControl* hc, float yawDeg, float yawRateDps,
                            float vMps, float kappaFf, bool straight);
+
+/* 距离型直行 GOAL：以事务开始时的航向为固定参考，无残差曲率前馈。 */
+float HeadingControl_HoldHeading(HeadingControl* hc, float yawDeg, float yawRateDps,
+                                float vMps, float referenceDeg);
 
 #endif /* SERVICES_CTRL_INC_HEADING_CONTROL_H_ */

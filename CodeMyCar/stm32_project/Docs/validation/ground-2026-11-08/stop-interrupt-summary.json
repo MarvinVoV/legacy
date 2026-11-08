@@ -1,0 +1,70 @@
+{
+  "before": {
+    "ok": true,
+    "online": true,
+    "stm32_connected": true,
+    "motion_supported": true,
+    "motion": {
+      "state": "idle",
+      "seq": 58,
+      "age_ms": 66,
+      "stale": false
+    },
+    "pose": {
+      "x_cm": -79.7,
+      "y_cm": -1089.3,
+      "heading_deg": -162.767,
+      "odometer_cm": 1519.0
+    },
+    "velocity": {
+      "linear_cm_s": 0.0,
+      "angular_deg_s": 0.0
+    }
+  },
+  "move": {
+    "http_error": 409,
+    "body": "{\"detail\":{\"code\":\"aborted_by_stop\",\"message\":\"stopped by request\",\"detail\":{}}}"
+  },
+  "interrupt_stop": {
+    "ms": 560.9,
+    "response": {
+      "ok": true,
+      "stopped": true,
+      "accepted": true,
+      "confirmed": true,
+      "seq": 60
+    }
+  },
+  "final_stop": {
+    "ms": 104.5,
+    "response": {
+      "ok": true,
+      "stopped": true,
+      "accepted": true,
+      "confirmed": true,
+      "seq": 61
+    }
+  },
+  "after": {
+    "ok": true,
+    "online": true,
+    "stm32_connected": true,
+    "motion_supported": true,
+    "motion": {
+      "state": "idle",
+      "seq": 61,
+      "age_ms": 3,
+      "stale": false
+    },
+    "pose": {
+      "x_cm": -89.9,
+      "y_cm": -1092.7,
+      "heading_deg": -160.388,
+      "odometer_cm": 1529.8
+    },
+    "velocity": {
+      "linear_cm_s": 0.0,
+      "angular_deg_s": 0.0
+    }
+  }
+}
