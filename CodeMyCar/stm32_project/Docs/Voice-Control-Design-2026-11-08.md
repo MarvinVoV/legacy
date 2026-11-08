@@ -213,6 +213,8 @@ Content-Type: application/json
 - 自定义词库只对 1537 生效，可在百度控制台加入固定命令短语（如“前进一米”），提高短句识别；
 - 单次最长 60 秒，本项目按 3–10 秒一段调用；
 - 鉴权可用 access_token 或 API Key Bearer，二选一；本项目用 access_token；
+- 除 JSON 外还支持 RAW 上传：`Content-Type: audio/pcm;rate=16000`，body 直接放 PCM，
+  省去 base64 约 1/3 的膨胀；第一版用 JSON，参数更集中；
 - `err_no != 0` 视为失败，记录 `err_no/err_msg`，不要重试到死。
 
 ### 7.3 实测结果（2026-11-08）
