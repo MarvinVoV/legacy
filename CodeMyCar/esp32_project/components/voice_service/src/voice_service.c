@@ -24,6 +24,7 @@
 #include "esp_websocket_client.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
+#include "freertos/ringbuf.h"
 #include "freertos/task.h"
 #include "sdkconfig.h"
 #include "wifi_service.h"
@@ -39,6 +40,7 @@
 
 static const char *TAG = "voice";
 static i2s_chan_handle_t s_rx;
+static RingbufHandle_t s_ring;
 static EventGroupHandle_t s_ws_events;
 static volatile bool s_trigger;
 static volatile bool s_busy;
@@ -106,10 +108,64 @@ static esp_err_t i2s_rx_init(void)
     return i2s_channel_enable(s_rx);
 }
 
+static void capture_task(void *arg)
+{
+    (void)arg;
+    int32_t *raw = malloc(sizeof(int32_t) * VOICE_CHUNK_FRAMES * 2);
+    int16_t *pcm = malloc(sizeof(int16_t) * VOICE_CHUNK_FRAMES);
+    if (raw == NULL || pcm == NULL) {
+        ESP_LOGE(TAG, "capture buffer alloc failed");
+        free(raw);
+        free(pcm);
+        vTaskDelete(NULL);
+        return;
+    }
+
+    int chunk_count = 0;
+    while (true) {
+        size_t bytes_read = 0;
+        esp_err_t err = i2s_channel_read(
+            s_rx, raw, sizeof(int32_t) * VOICE_CHUNK_FRAMES * 2, &bytes_read,
+            portMAX_DELAY);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "I2S read failed: %s", esp_err_to_name(err));
+            vTaskDelay(pdMS_TO_TICKS(100));
+            continue;
+        }
+        int frames = (int)(bytes_read / (sizeof(int32_t) * 2));
+        if (frames <= 0) {
+            continue;
+        }
+
+        int64_t sum_sq = 0;
+        int peak = 0;
+        for (int i = 0; i < frames; i++) {
+            int32_t v = raw[2 * i] >> 16;
+            pcm[i] = (int16_t)v;
+            sum_sq += (int64_t)v * v;
+            int a = v < 0 ? -v : v;
+            if (a > peak) {
+                peak = a;
+            }
+        }
+        xRingbufferSend(s_ring, pcm, frames * sizeof(int16_t), 0);
+
+        chunk_count++;
+        if ((chunk_count % 25) == 0) {
+            int rms = (int)sqrt((double)sum_sq / frames);
+            ESP_LOGI(TAG, "mic rms=%d peak=%d", rms, peak);
+        }
+    }
+}
+
 static void run_session(void)
 {
     if (s_rx == NULL) {
         ESP_LOGE(TAG, "I2S not initialized");
+        return;
+    }
+    if (s_ring == NULL) {
+        ESP_LOGE(TAG, "capture ring not initialized");
         return;
     }
 
@@ -162,54 +218,23 @@ static void run_session(void)
         goto cleanup;
     }
 
-    int32_t *raw = malloc(sizeof(int32_t) * VOICE_CHUNK_FRAMES * 2);
-    int16_t *pcm = malloc(sizeof(int16_t) * VOICE_CHUNK_FRAMES);
-    if (raw == NULL || pcm == NULL) {
-        ESP_LOGE(TAG, "audio buffer alloc failed");
-        free(raw);
-        free(pcm);
-        goto cleanup;
-    }
-
     int chunks = (CONFIG_CMCAR_VOICE_RECORD_SECONDS * 1000) / 20;
     for (int c = 0; c < chunks; c++) {
-        size_t bytes_read = 0;
-        err = i2s_channel_read(
-            s_rx, raw, sizeof(int32_t) * VOICE_CHUNK_FRAMES * 2, &bytes_read,
-            pdMS_TO_TICKS(1000));
-        if (err != ESP_OK) {
-            ESP_LOGE(TAG, "I2S read failed: %s", esp_err_to_name(err));
-            break;
-        }
-        int frames = (int)(bytes_read / (sizeof(int32_t) * 2));
-        if (frames <= 0) {
+        size_t item_size = 0;
+        void *item = xRingbufferReceive(s_ring, &item_size, pdMS_TO_TICKS(1000));
+        if (item == NULL) {
+            ESP_LOGW(TAG, "voice ring empty");
             continue;
         }
-        int64_t sum_sq = 0;
-        int peak = 0;
-        for (int i = 0; i < frames; i++) {
-            int32_t v = raw[2 * i] >> 16;
-            pcm[i] = (int16_t)v;
-            sum_sq += (int64_t)v * v;
-            int a = v < 0 ? -v : v;
-            if (a > peak) {
-                peak = a;
-            }
-        }
-        if ((c % 25) == 0) {
-            int rms = (int)sqrt((double)sum_sq / frames);
-            ESP_LOGI(TAG, "mic rms=%d peak=%d", rms, peak);
-        }
         int sent = esp_websocket_client_send_bin(
-            ws, (const char *)pcm, frames * sizeof(int16_t), pdMS_TO_TICKS(1000));
+            ws, (const char *)item, item_size, pdMS_TO_TICKS(1000));
+        vRingbufferReturnItem(s_ring, item);
         if (sent < 0) {
             ESP_LOGE(TAG, "send pcm failed");
             break;
         }
     }
 
-    free(raw);
-    free(pcm);
     const char *end = "{\"type\":\"end\"}";
     esp_websocket_client_send_text(ws, end, (int)strlen(end), pdMS_TO_TICKS(1000));
     vTaskDelay(pdMS_TO_TICKS(2000));
@@ -298,6 +323,13 @@ esp_err_t voice_service_start(void)
         return ESP_OK; /* 不阻塞 bridge */
     }
 
+    s_ring = xRingbufferCreate(32768, RINGBUF_TYPE_BYTEBUF);
+    if (s_ring == NULL) {
+        ESP_LOGE(TAG, "ring buffer alloc failed; voice disabled");
+        return ESP_OK;
+    }
+
+    xTaskCreate(capture_task, "voice_capture", 4096, NULL, 8, NULL);
     xTaskCreate(voice_task, "voice_task", VOICE_TASK_STACK, NULL, 4, NULL);
     xTaskCreate(console_task, "voice_console", VOICE_CONSOLE_STACK, NULL, 2, NULL);
     ESP_LOGI(TAG, "voice service started");

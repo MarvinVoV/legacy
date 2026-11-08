@@ -193,14 +193,19 @@ silero-vad 仍推荐作为下一步升级：抗噪更好，但会引入 torch/on
 
 - 组件 `esp32_project/components/voice_service`，集成进主 bridge；
 - I2S RX：16 kHz、32-bit slot、stereo，取左声道转 16-bit mono；
+- **采集与 WS 发送解耦**：独立 `voice_capture` 任务（优先级 8）持续读 I2S，
+  写入 32 KB 环形缓冲；`voice_task`（优先级 4）负责 WS 会话和发送，避免 WS 发送阻塞
+  I2S DMA 导致音频被覆盖；
 - 串口 `s` + Enter 触发一次 5 s 录音；`CMCAR_VOICE_RECORD_SECONDS` 可调；
+- 调试用自动循环 `CMCAR_VOICE_AUTO_LOOP` 已实现但当前关闭，避免持续录音；
 - `esp_websocket_client` 连 `CMCAR_VOICE_WS_URL`（默认
   `ws://192.168.31.120:8000/api/v1/voice/stream`）；
 - 发 `start` → 20 ms PCM 块 → `end`；服务端 `final/action/speak` 文本打印到串口；
-- 音频任务优先级低于 bridge；WS 客户端和 voice 任务优先级 4，不阻塞 UART/MQTT/STOP；
 - `speak` 二进制帧当前忽略（车上喇叭未解决）；TTS 反馈可在 Mac 本机播放；
-- 实测：`s` 触发后 5 s / 160000 bytes 上传成功，pyserver 返回 5000 ms 段、
-  `final`/`end`；首次测试未说话，ASR 文本为空。
+- 实测：独立采集任务后，靠近麦克风说话时 `mic rms=1876–9889`、峰值 12754，
+  麦克风链路正常；此前低电平是单任务里 WS 发送阻塞 I2S DMA 导致的音频覆盖；
+- 自动会话与说话时机曾错开，ASR 只拿到 720 ms 片段（误识别“我知道”）；
+  下一步加“录音开始”提示音/门控，让用户知道何时说话。
 
 ## 6. WebSocket 协议
 
@@ -413,10 +418,12 @@ Content-Type: application/json
   TTS `speak` + PCM 反馈；替身测试通过，实车悬空/落地未验收。
 - TTS 反馈可在 pyserver 本机播放（macOS `afplay`），用于车上功放/喇叭不可用的台架测试；
   已实测“收到，正在前进”在 Mac 播放成功。
-- ESP32 侧已把 `voice_service` 集成进主 bridge：I2S RX + `esp_websocket_client`，
-  串口 `s` 触发 5 s 上传；已烧录并验证 WS 会话（5 s/160000 bytes、`final`/`end`）。
-  首次测试未说话，ASR 文本为空；下一步用真实语音验证。
-- 下一步：真实语音验证 ESP32 上传 → ASR → TTS，再做悬空与落地联调。
+- ESP32 侧已把 `voice_service` 集成进主 bridge：I2S RX + `esp_websocket_client`；
+  采集任务与 WS 发送已解耦（32 KB ring buffer），靠近麦克风说话时
+  `mic rms=1876–9889`、峰值 12754，麦克风链路确认正常；
+  自动循环已关闭，避免持续录音。
+- 下一步：加“录音开始”提示音/门控，让用户知道何时说话；再把 ASR 文本直接 TTS
+  回到 Mac，完成稳定闭环。
 
 ## 14. 相关文件
 

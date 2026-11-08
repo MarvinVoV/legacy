@@ -5,6 +5,7 @@ idf_component_register(
         esp_driver_i2s
         esp_driver_uart
         esp_websocket_client
+        esp_ringbuf
         wifi_service
         common
 )
