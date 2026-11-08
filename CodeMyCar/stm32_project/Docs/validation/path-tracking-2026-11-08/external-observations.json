@@ -12,6 +12,18 @@
     "actual": "right nearly 30 mm, worse than feedback OFF",
     "result": "failed; firmware rolled back to OFF",
     "oscillation": "not answered",
-    "source": "user"
+    "source": "user",
+    "endpoint_measurements": {
+      "front_wheel_to_tile_line_mm": 30,
+      "rear_wheel_to_tile_line_mm": 32,
+      "measurement_points": "wheels, not fixed chassis points",
+      "same_side": true,
+      "initial_distances": {
+        "front_mm": 0,
+        "rear_mm": 0
+      },
+      "longitudinal_separation": "not supplied",
+      "interpretation": "user confirms same-side zero baseline; supports actual right displacement 30/32 mm, but wheel-edge geometry and longitudinal separation are unknown; terminal near-parallel appearance does not prove no heading excursion during travel"
+    }
   }
 }
