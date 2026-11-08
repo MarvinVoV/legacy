@@ -2,6 +2,8 @@
 
 **最新现场优先读本段**：地面STOP151确认双轮零速/IMU status3。阻尼版99c142c第二轮前进右约6mm、返回终点右约1.8cm，重复性未通过；之后积分/轮速分离候选9a2194实测仍右8–9mm/约2cm，已撤回本轮源代码并刷回精确4cc0546e37ba2ef8709f9a5aabbd09bf151f4ecff5f4774741fe096a39b706a0。拒绝的实验仅存patch/证据，不要恢复使用。当前trim0/0、细积分OFF、PATH OFF、磁诊断ON，直行精度未解决。新线索：用户舵机接TB6612模块“5V VCC”，已确认是淘宝成品驱动板的5V电源总线供舵机/STM32/ESP32；具体模块规格/芯片逻辑VCC未知，不能据此判接线错。用户无万用表或独立5V电源，动态供电尚无法验证；未证明硬件根因，不盲改接线或要求购买。源码仍在codex/straight-path-tracking，未merge main/未push。CMake嵌入git SHA/dirty可能缓存旧值，不能凭运行版本标签识别当前固件，须用ELF哈希。详情见阶段报告末尾。当前agent seq151，新运动重新确认空间/线缆。
 
+**新增测量基准审计，后续 agent 必须先读**：[Straight-Drive-Measurement-Reference-Audit-2026-11-08.md](Straight-Drive-Measurement-Reference-Audit-2026-11-08.md)。用户提出瓷砖不直，独立基准确实未验证。历史相对瓷砖的毫米/厘米观察不能当成已证实的真实轨迹误差；也不能反过来认定是瓷砖问题。先做同一车架点对起点固定标记的闭合验证，再继续标定，避免按未验证参照反复调参。此轮只读核查数据，没有新运动或代码改动，STOP151记录不变。
+
 ## 后续开发阶段入口（优先于下方历史现场状态）
 
 当前后续开发在`codex/straight-path-tracking`，阶段基线提交`d4a6046`（后续提交与当前工作区以git log/status为准），尚未合并main，未push。已移除右轮隐藏2.3%闭环RPM目标偏置，新增默认关闭的局部路径反馈/影子估计，详见[Straight-Path-Tracking-And-RPM-Contract-Validation-2026-11-08.md](Straight-Path-Tracking-And-RPM-Contract-Validation-2026-11-08.md)。**车上镜像及最后停车状态以该文档最新追加记录为准**；下文main/v7及seq191属于上一阶段归档，不能直接用作当前状态。
