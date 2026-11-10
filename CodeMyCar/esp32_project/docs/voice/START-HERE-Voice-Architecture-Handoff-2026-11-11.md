@@ -2,6 +2,8 @@
 
 日期：2026-11-11。用户因token紧张要求收尾，停止扩展功能。
 
+> 小智整体架构与参考实现探索：[Xiaozhi-ESP32-Architecture-Exploration-2026-11-11.md](Xiaozhi-ESP32-Architecture-Exploration-2026-11-11.md)
+
 ## Git与硬件现场
 
 - `main`已包含此前S3迁移与控制回归基线：`4d7e771`，尚未push。

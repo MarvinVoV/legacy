@@ -1,5 +1,8 @@
 # 本地小智方案对照分析（2026-11-09）
 
+> 2026-11-11 补充：完整的分层/任务/状态机/协议/音频前端探索见
+> [Xiaozhi-ESP32-Architecture-Exploration-2026-11-11.md](../../esp32_project/docs/voice/Xiaozhi-ESP32-Architecture-Exploration-2026-11-11.md)。
+
 ## 范围
 
 只读分析用户给定目录 `/Users/sunyameng/github/legacy/xiaozhi-esp32-main`（2026-11-11 从 Downloads 移入 legacy），未修改、编译或烧录该项目，未连接其云平台。分析对象是这份本地副本，不代表GitHub所有历史版本。阅读其AGENTS、音频架构、LiteAudioEngine、AfeAudioEngine、EspWakeWord、AudioService、Application/状态机、WebSocket协议、目标配置与组件清单。
