@@ -36,7 +36,11 @@ bool voice_frontend_init(void)
 {
     if (afe) return true;
     models = esp_srmodel_init("model");
-    char *wake = models ? esp_srmodel_filter(models, "wn9_", "nihaoxiaozhi") : NULL;
+    /* WakeNet9l is the fast-speech variant (tts3); WakeNet9 often misses a
+     * quickly spoken "你好小智". Keep the fallback so a stale sdkconfig fails
+     * loudly here instead of silently loading an unrelated model. */
+    char *wake = models ? esp_srmodel_filter(models, "wn9l_", "nihaoxiaozhi") : NULL;
+    if (!wake && models) wake = esp_srmodel_filter(models, "wn9_", "nihaoxiaozhi");
     if (!wake) goto fail;
     afe_config_t *cfg = afe_config_init("M", models, AFE_TYPE_FD, AFE_MODE_LOW_COST);
     if (!cfg) goto fail;

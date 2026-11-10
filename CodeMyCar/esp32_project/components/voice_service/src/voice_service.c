@@ -61,7 +61,17 @@ static esp_err_t run_session(void)
     if (result != ESP_OK) return result;
     voice_transport_set_audio_callback(transport, on_server_audio, NULL);
     (void)set_state(VOICE_LISTENING);
-    if (continuous) voice_audio_flush(); /* Never replay audio from a previous connection. */
+    if (continuous) {
+        voice_audio_flush(); /* Never replay audio from a previous connection. */
+        if (CONFIG_CMCAR_VOICE_WAKE_ENABLED) {
+            /* WakeNet fires at the end of the phrase, but the AFE output still
+             * contains its tail. The server is playing the ready cue now, so
+             * discard that tail instead of letting one-shot ASR treat the
+             * wake word itself as the command and close before the user speaks. */
+            vTaskDelay(pdMS_TO_TICKS(250));
+            voice_audio_flush();
+        }
+    }
     voice_sequence_t sequence = {0};
     voice_frame_t frame;
     size_t samples = 0;
