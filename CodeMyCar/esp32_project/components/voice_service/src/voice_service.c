@@ -221,7 +221,11 @@ static void voice_task(void *arg)
 #if CONFIG_CMCAR_VOICE_WAKE_ENABLED
     voice_frame_t frame;
     unsigned received = 0;
+#if CONFIG_CMCAR_VOICE_MODE_CONVERSATION
+    ESP_LOGI(TAG, "Say nihaoxiaozhi, then speak naturally; pause 700 ms to end a turn");
+#else
     ESP_LOGI(TAG, "Say nihaoxiaozhi; wait for the local tone before speaking");
+#endif
     while (true) {
         if (!voice_audio_receive(&frame, 500)) continue;
         bool wake = voice_audio_detect_wake(&frame);
