@@ -11,6 +11,7 @@ enum {
     VOICE_PEER_FINAL = 1u << 4,
     VOICE_PEER_RECOGNIZING = 1u << 5,
     VOICE_PEER_DISCONNECTED = 1u << 6,
+    VOICE_PEER_SPEAK = 1u << 7,
 };
 
 /* One parser per connection; no shared/global callback buffer. */
@@ -18,6 +19,9 @@ typedef struct {
     char text[2048];
     size_t used;
     size_t total;
+    int speak_rate;
+    int speak_channels;
+    size_t speak_bytes;
 } voice_message_t;
 
 uint32_t voice_message_feed(voice_message_t *message, const char *data,

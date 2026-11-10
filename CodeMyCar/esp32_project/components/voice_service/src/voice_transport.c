@@ -13,8 +13,50 @@ struct voice_transport {
     esp_websocket_client_handle_t client;
     EventGroupHandle_t events;
     voice_message_t message;
+    voice_transport_audio_cb_t audio_cb;
+    void *audio_arg;
+    size_t speak_remaining;
+    int speak_rate;
+    int speak_channels;
+    uint8_t speak_carry;
+    bool speak_have_carry;
+    int16_t speak_pcm[1025];
 };
 static const char *TAG = "voice_transport";
+
+static void feed_binary(voice_transport_t *t, const char *data, size_t len)
+{
+    if (t->speak_remaining == 0 || len == 0) return;
+    if (len > t->speak_remaining) {
+        ESP_LOGW(TAG, "speak frame exceeds declared bytes; truncating");
+        len = t->speak_remaining;
+    }
+    const uint8_t *src = (const uint8_t *)data;
+    size_t frames = 0;
+    if (t->speak_have_carry) {
+        t->speak_pcm[frames++] = (int16_t)(t->speak_carry | ((uint16_t)src[0] << 8));
+        src++;
+        len--;
+        t->speak_have_carry = false;
+    }
+    size_t pairs = len / 2;
+    if (pairs > 1024 - frames) pairs = 1024 - frames;
+    for (size_t i = 0; i < pairs; ++i) {
+        t->speak_pcm[frames++] = (int16_t)(src[2 * i] | ((uint16_t)src[2 * i + 1] << 8));
+    }
+    if ((len & 1u) && pairs * 2 < len) {
+        t->speak_carry = src[pairs * 2];
+        t->speak_have_carry = true;
+    }
+    t->speak_remaining -= len;
+    if (frames > 0 && t->audio_cb != NULL) {
+        esp_err_t err = t->audio_cb(t->speak_pcm, frames, t->speak_rate,
+                                    t->speak_channels, t->audio_arg);
+        if (err != ESP_OK) {
+            ESP_LOGW(TAG, "speak sink rejected PCM: %s", esp_err_to_name(err));
+        }
+    }
+}
 
 static void on_event(void *arg, esp_event_base_t base, int32_t id, void *payload)
 {
@@ -27,10 +69,21 @@ static void on_event(void *arg, esp_event_base_t base, int32_t id, void *payload
         events = id == WEBSOCKET_EVENT_DISCONNECTED ? VOICE_PEER_DISCONNECTED : VOICE_PEER_FAILED;
     } else if (id == WEBSOCKET_EVENT_DATA) {
         const esp_websocket_event_data_t *data = payload;
-        if (data->op_code == 1 || (data->op_code == 0 && t->message.total))
+        if (data->data_len <= 0) return;
+        if (data->op_code == 1 || (data->op_code == 0 && t->message.total)) {
             events = voice_message_feed(&t->message, data->data_ptr,
                 data->data_len, data->payload_offset, data->payload_len);
-        /* Binary TTS is deliberately drained while output is on the Mac. */
+            if (events & VOICE_PEER_SPEAK) {
+                t->speak_remaining = t->message.speak_bytes;
+                t->speak_rate = t->message.speak_rate;
+                t->speak_channels = t->message.speak_channels;
+                t->speak_have_carry = false;
+                t->speak_carry = 0;
+            }
+        } else if (data->op_code == 2 ||
+                   (data->op_code == 0 && t->speak_remaining > 0)) {
+            feed_binary(t, data->data_ptr, (size_t)data->data_len);
+        }
     }
     if (events) {
         xEventGroupSetBits(t->events, events);
@@ -108,6 +161,14 @@ timeout:
 }
 
 uint32_t voice_transport_events(voice_transport_t *t) { return xEventGroupGetBits(t->events); }
+
+void voice_transport_set_audio_callback(voice_transport_t *t,
+                                        voice_transport_audio_cb_t cb, void *arg)
+{
+    if (!t) return;
+    t->audio_cb = cb;
+    t->audio_arg = arg;
+}
 
 esp_err_t voice_transport_send_pcm(voice_transport_t *t, const int16_t *pcm, size_t samples)
 {

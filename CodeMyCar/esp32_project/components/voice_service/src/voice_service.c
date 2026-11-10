@@ -3,6 +3,7 @@
  */
 #include "voice_service.h"
 #include "voice_audio.h"
+#include "voice_output.h"
 #include "voice_state.h"
 #include "voice_transport.h"
 #include <stdatomic.h>
@@ -17,6 +18,7 @@
 
 #define VOICE_LISTEN_TIMEOUT_MS 20000
 #define VOICE_RESULT_TIMEOUT_MS 45000
+#define VOICE_PLAYBACK_TIMEOUT_MS 10000
 #define VOICE_COOLDOWN_MS 1500
 #if CONFIG_IDF_TARGET_ESP32S3
 #define VOICE_TASK_STACK 8192
@@ -42,6 +44,13 @@ static bool set_state(voice_state_t next)
     return true;
 }
 
+static esp_err_t on_server_audio(const int16_t *pcm, size_t frames,
+                                 int sample_rate, int channels, void *arg)
+{
+    (void)arg;
+    return voice_output_write(pcm, frames, sample_rate, channels);
+}
+
 static esp_err_t run_session(void)
 {
     if (!set_state(VOICE_CONNECTING)) return ESP_ERR_INVALID_STATE;
@@ -50,6 +59,7 @@ static esp_err_t run_session(void)
     voice_transport_t *transport = NULL;
     esp_err_t result = voice_transport_open(&transport, continuous, CONFIG_CMCAR_VOICE_WAKE_ENABLED);
     if (result != ESP_OK) return result;
+    voice_transport_set_audio_callback(transport, on_server_audio, NULL);
     (void)set_state(VOICE_LISTENING);
     if (continuous) voice_audio_flush(); /* Never replay audio from a previous connection. */
     voice_sequence_t sequence = {0};
@@ -95,6 +105,12 @@ static esp_err_t run_session(void)
     }
     (void)set_state(VOICE_PROCESSING);
     result = voice_transport_finish(transport, VOICE_RESULT_TIMEOUT_MS);
+    if (result == ESP_OK && voice_output_enabled()) {
+        esp_err_t drained = voice_output_wait_drained(VOICE_PLAYBACK_TIMEOUT_MS);
+        if (drained != ESP_OK) {
+            ESP_LOGW(TAG, "Playback did not drain: %s", esp_err_to_name(drained));
+        }
+    }
     goto close;
 abort:
     voice_transport_abort(transport);
@@ -179,16 +195,23 @@ esp_err_t voice_service_start(void)
     if (atomic_load(&s_state) != VOICE_STARTING) return ESP_ERR_INVALID_STATE;
     esp_err_t err = voice_audio_init();
     if (err != ESP_OK) goto disabled;
+    err = voice_output_init(voice_audio_codec());
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "Playback unavailable (%s); ASR/control continue",
+                 esp_err_to_name(err));
+    }
     TaskHandle_t supervisor = NULL;
     if (xTaskCreate(voice_task, "voice_session", VOICE_TASK_STACK, NULL,
                     TASK_PRIO_VOICE_NETWORK, &supervisor) != pdPASS) {
         err = ESP_ERR_NO_MEM;
+        voice_output_destroy();
         voice_audio_destroy();
         goto disabled;
     }
     err = voice_audio_start();
     if (err != ESP_OK) {
         vTaskDelete(supervisor);
+        voice_output_destroy();
         voice_audio_destroy();
         goto disabled;
     }

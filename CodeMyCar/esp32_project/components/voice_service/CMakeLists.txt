@@ -1,6 +1,10 @@
 set(voice_sources
     "src/voice_service.c"
     "src/voice_audio.c"
+    "src/voice_codec.c"
+    "src/voice_codec_i2s.c"
+    "src/voice_codec_board.c"
+    "src/voice_output.c"
     "src/voice_transport.c"
     "src/voice_protocol.c"
     "src/voice_state.c")

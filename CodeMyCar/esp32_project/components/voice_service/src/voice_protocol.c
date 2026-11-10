@@ -19,13 +19,36 @@ uint32_t voice_message_feed(voice_message_t *m, const char *data,
     cJSON *root = cJSON_ParseWithLengthOpts(m->text, m->used + 1, NULL, true);
     cJSON *type = cJSON_GetObjectItemCaseSensitive(root, "type");
     uint32_t event = 0;
+    m->speak_rate = 0;
+    m->speak_channels = 0;
+    m->speak_bytes = 0;
     if (!cJSON_IsObject(root) || !cJSON_IsString(type)) event = VOICE_PEER_FAILED;
     else if (!strcmp(type->valuestring, "ready")) event = VOICE_PEER_READY;
     else if (!strcmp(type->valuestring, "final")) event = VOICE_PEER_FINAL;
     else if (!strcmp(type->valuestring, "recognizing")) event = VOICE_PEER_RECOGNIZING;
     else if (!strcmp(type->valuestring, "end")) event = VOICE_PEER_END;
     else if (!strcmp(type->valuestring, "error")) event = VOICE_PEER_FAILED;
-    /* Additional events such as speak/action are forward-compatible. */
+    else if (!strcmp(type->valuestring, "speak")) {
+        cJSON *rate = cJSON_GetObjectItemCaseSensitive(root, "rate");
+        cJSON *channels = cJSON_GetObjectItemCaseSensitive(root, "channels");
+        cJSON *bytes = cJSON_GetObjectItemCaseSensitive(root, "bytes");
+        const int r = cJSON_IsNumber(rate) ? rate->valueint : 16000;
+        const int c = cJSON_IsNumber(channels) ? channels->valueint : 1;
+        const double b = cJSON_IsNumber(bytes) ? bytes->valuedouble : 0.0;
+        if ((rate && !cJSON_IsNumber(rate)) ||
+            (channels && !cJSON_IsNumber(channels)) ||
+            (bytes && !cJSON_IsNumber(bytes)) ||
+            r < 8000 || r > 48000 || c < 1 || c > 2 ||
+            b < 0.0 || b > 2.0 * 1024 * 1024) {
+            event = VOICE_PEER_FAILED;
+        } else {
+            event = VOICE_PEER_SPEAK;
+            m->speak_rate = r;
+            m->speak_channels = c;
+            m->speak_bytes = (size_t)b;
+        }
+    }
+    /* Additional events are forward-compatible. */
     cJSON_Delete(root);
     m->used = m->total = 0;
     return event;

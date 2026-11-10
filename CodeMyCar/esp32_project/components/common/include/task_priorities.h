@@ -24,6 +24,7 @@ typedef enum
     TASK_PRIO_VOICE_CAPTURE = 4, /* bounded I2S capture, below control bridge */
     TASK_PRIO_VOICE_FRONTEND = 3,
     TASK_PRIO_VOICE_NETWORK = 4,
+    TASK_PRIO_VOICE_OUTPUT = 3,
     TASK_PRIO_VOICE_CONSOLE = 2,
 
     TASK_PRIO_REMOTE_LOG = 5,  /* 远程日志发布（与上行同级） */

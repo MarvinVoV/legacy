@@ -11,6 +11,14 @@ menu "Voice Control"
         default 32
         range 16 96
 
+    config CMCAR_VOICE_CODEC_BOARD
+        bool "Use board-specific audio codec (new hardware)"
+        default n
+        help
+            关闭时使用现有 ICS43434 I2S 麦克风（输入 only）。
+            新麦克风/功放板到货后，在 voice_codec_board.c 实现
+            voice_codec_board_init() 并打开此选项；不要提前假定接线。
+
     config CMCAR_VOICE_I2S_BCLK
         int "Microphone I2S BCLK GPIO"
         default 12 if IDF_TARGET_ESP32S3

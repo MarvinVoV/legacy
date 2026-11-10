@@ -29,7 +29,16 @@ int main(void)
     assert(message(&a, "{\"type\":\"recognizing\"}") == VOICE_PEER_RECOGNIZING);
     assert(message(&a, "{\"type\":\"error\"}") == VOICE_PEER_FAILED);
     assert(message(&a, "{\"type\":\"final\"}") == VOICE_PEER_FINAL);
-    assert(message(&a, "{\"type\":\"speak\"}") == 0);
+    assert(message(&a, "{\"type\":\"speak\"}") == VOICE_PEER_SPEAK);
+    assert(a.speak_rate == 16000);
+    assert(a.speak_channels == 1);
+    assert(a.speak_bytes == 0);
+    assert(message(&a, "{\"type\":\"speak\",\"text\":\"收到\",\"rate\":16000,"
+                       "\"channels\":1,\"bytes\":640}") == VOICE_PEER_SPEAK);
+    assert(a.speak_rate == 16000 && a.speak_channels == 1 && a.speak_bytes == 640);
+    assert(message(&a, "{\"type\":\"speak\",\"rate\":0}") == VOICE_PEER_FAILED);
+    assert(message(&a, "{\"type\":\"speak\",\"channels\":3}") == VOICE_PEER_FAILED);
+    assert(message(&a, "{\"type\":\"speak\",\"bytes\":-2}") == VOICE_PEER_FAILED);
     assert(message(&a, ready) == VOICE_PEER_READY);
 
     voice_sequence_t seq = {0};
