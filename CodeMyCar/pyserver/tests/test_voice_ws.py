@@ -11,6 +11,8 @@ from types import SimpleNamespace
 from app.models.agent_motion import MotionError
 from app.services.baidu_asr import BaiduAsrError
 from app.services.baidu_tts import BaiduTtsError, TtsAudio
+from app.services.conversation import ConversationConfig
+from app.services.llm import LlmDone, LlmTextDelta
 from app.services.voice_service import VoiceConfig, VoiceService
 
 
@@ -470,3 +472,53 @@ def test_voice_execution_error_speaks_failure(client, tmp_path):
         assert ws.receive_bytes() == tts.audio.data
         ws.send_text('{"type":"end"}')
         assert ws.receive_json()["type"] == "end"
+
+
+def test_conversation_mode_streams_llm_reply_without_new_wake(client, tmp_path):
+    tts = FakeTts()
+    local = FakeLocalPlayer()
+    client.app.state.voice_service = make_service(
+        tmp_path, FakeAsr("你好"), tts=tts, local_player=local
+    )
+
+    class FakeConversationLlm:
+        async def stream_chat(self, messages, *, tools=None, cancel=None):
+            assert messages[0]["role"] == "system"
+            yield LlmTextDelta("你好，")
+            yield LlmTextDelta("我在。")
+            yield LlmDone(content="你好，我在。", tool_calls=())
+
+    client.app.state.voice_llm = FakeConversationLlm()
+    client.app.state.voice_conversation_config = ConversationConfig(
+        idle_s=1.0, turn_end_ms=200
+    )
+    audio = pcm(0.2) + pcm(0.8, 3000) + pcm(1.0)  # route's VAD default is 700 ms
+
+    with client.websocket_connect("/api/v1/voice/stream") as ws:
+        ws.send_text(start_frame(mode="conversation"))
+        ready = ws.receive_json()
+        assert ready["type"] == "ready"
+        assert ready["mode"] == "conversation"
+        ws.send_bytes(audio[:32000])
+        ws.send_bytes(audio[32000:])
+        first = ws.receive_json()
+        assert first["type"] == "user_text"
+        seen_speak = False
+        while True:
+            frame = ws.receive_json()
+            if frame["type"] == "assistant_delta":
+                continue
+            if frame["type"] == "speak":
+                seen_speak = True
+                assert frame["turn"] == 1
+                assert ws.receive_bytes() == tts.audio.data
+                continue
+            if frame["type"] == "assistant_done":
+                assert frame["text"] == "你好，我在。"
+                break
+        assert seen_speak
+        end = ws.receive_json()
+        assert end["type"] == "end"
+        assert end["reason"] == "idle"
+    assert tts.texts
+    assert local.played

@@ -57,7 +57,8 @@ static esp_err_t run_session(void)
     if (!wifi_service_is_connected()) return ESP_ERR_INVALID_STATE;
     const bool continuous = CONFIG_CMCAR_VOICE_CONTINUOUS || CONFIG_CMCAR_VOICE_WAKE_ENABLED;
     voice_transport_t *transport = NULL;
-    esp_err_t result = voice_transport_open(&transport, continuous, CONFIG_CMCAR_VOICE_WAKE_ENABLED);
+    esp_err_t result = voice_transport_open(&transport, continuous, CONFIG_CMCAR_VOICE_WAKE_ENABLED,
+                                            VOICE_SESSION_COMMAND);
     if (result != ESP_OK) return result;
     voice_transport_set_audio_callback(transport, on_server_audio, NULL);
     (void)set_state(VOICE_LISTENING);
@@ -142,6 +143,77 @@ static void perform_session(void)
     (void)set_state(VOICE_IDLE);
 }
 
+#if CONFIG_CMCAR_VOICE_MODE_CONVERSATION
+static esp_err_t run_conversation(void)
+{
+    if (!set_state(VOICE_CONNECTING)) return ESP_ERR_INVALID_STATE;
+    if (!wifi_service_is_connected()) return ESP_ERR_INVALID_STATE;
+    voice_transport_t *transport = NULL;
+    esp_err_t result = voice_transport_open(&transport, true, false,
+                                            VOICE_SESSION_CONVERSATION);
+    if (result != ESP_OK) return result;
+    voice_transport_set_audio_callback(transport, on_server_audio, NULL);
+    (void)set_state(VOICE_LISTENING);
+    voice_audio_flush();
+    /* Drop the tail of the wake phrase before the first user turn. */
+    vTaskDelay(pdMS_TO_TICKS(250));
+    voice_audio_flush();
+
+    voice_sequence_t sequence = {0};
+    voice_frame_t frame;
+    TickType_t last_audio = xTaskGetTickCount();
+    while (true) {
+        uint32_t events = voice_transport_events(transport);
+        /* A clean server end can race the socket close; end wins. */
+        if (events & VOICE_PEER_END) { result = ESP_OK; break; }
+        if (events & VOICE_PEER_FAILED) { result = ESP_FAIL; break; }
+        if (events & VOICE_PEER_DISCONNECTED) { result = ESP_FAIL; break; }
+        if (!voice_audio_receive(&frame, 100)) {
+            if (xTaskGetTickCount() - last_audio > pdMS_TO_TICKS(5000)) {
+                ESP_LOGE(TAG, "Conversation audio producer stalled");
+                result = ESP_ERR_TIMEOUT;
+                break;
+            }
+            continue;
+        }
+        last_audio = xTaskGetTickCount();
+        if (!frame.frames || frame.frames > VOICE_CHUNK_FRAMES ||
+            !voice_sequence_accept(&sequence, frame.sequence)) {
+            ESP_LOGE(TAG, "Conversation audio discontinuity");
+            result = ESP_ERR_INVALID_STATE;
+            voice_transport_abort(transport);
+            break;
+        }
+        result = voice_transport_send_pcm(transport, frame.pcm, frame.frames);
+        if (result != ESP_OK) {
+            /* The server may close immediately after {"type":"end"}; a send
+             * already in flight then fails, but the session ended cleanly. */
+            if (voice_transport_events(transport) & VOICE_PEER_END) {
+                result = ESP_OK;
+            }
+            break;
+        }
+    }
+    voice_transport_close(transport);
+    return result;
+}
+
+static void perform_conversation(void)
+{
+    esp_err_t result = run_conversation();
+    if (result != ESP_OK) {
+        ESP_LOGW(TAG, "Conversation ended: %s", esp_err_to_name(result));
+    }
+    (void)set_state(VOICE_COOLDOWN);
+    vTaskDelay(pdMS_TO_TICKS(VOICE_COOLDOWN_MS));
+    voice_audio_flush();
+    voice_audio_reset_wake();
+    atomic_store(&s_manual_trigger, false);
+    (void)voice_audio_take_energy_trigger();
+    (void)set_state(VOICE_IDLE);
+}
+#endif
+
 static void voice_task(void *arg)
 {
     (void)arg;
@@ -159,7 +231,13 @@ static void voice_task(void *arg)
                 (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT),
                 (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM),
                 (unsigned)uxTaskGetStackHighWaterMark(NULL));
-        if (wake || manual) perform_session();
+        if (wake || manual) {
+#if CONFIG_CMCAR_VOICE_MODE_CONVERSATION
+            perform_conversation();
+#else
+            perform_session();
+#endif
+        }
     }
 #elif CONFIG_CMCAR_VOICE_CONTINUOUS
     while (true) {

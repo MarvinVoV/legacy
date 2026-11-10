@@ -7,13 +7,19 @@
 
 typedef struct voice_transport voice_transport_t;
 
+typedef enum {
+    VOICE_SESSION_COMMAND = 0,
+    VOICE_SESSION_CONVERSATION = 1,
+} voice_session_mode_t;
+
 /* Called from the WebSocket task for server TTS PCM. Return quickly; the
  * output layer owns buffering and drops on overload. */
 typedef esp_err_t (*voice_transport_audio_cb_t)(const int16_t *pcm, size_t frames,
                                                 int sample_rate, int channels,
                                                 void *arg);
 
-esp_err_t voice_transport_open(voice_transport_t **out, bool continuous, bool one_shot);
+esp_err_t voice_transport_open(voice_transport_t **out, bool continuous, bool one_shot,
+                               voice_session_mode_t mode);
 void voice_transport_set_audio_callback(voice_transport_t *transport,
                                         voice_transport_audio_cb_t cb, void *arg);
 uint32_t voice_transport_events(voice_transport_t *transport);

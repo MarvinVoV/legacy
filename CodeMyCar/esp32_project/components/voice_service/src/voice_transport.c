@@ -109,7 +109,8 @@ static bool send_text(voice_transport_t *t, const char *text, unsigned timeout_m
     return esp_websocket_client_send_text(t->client, text, n, pdMS_TO_TICKS(timeout_ms)) == n;
 }
 
-esp_err_t voice_transport_open(voice_transport_t **out, bool continuous, bool one_shot)
+esp_err_t voice_transport_open(voice_transport_t **out, bool continuous, bool one_shot,
+                               voice_session_mode_t mode)
 {
     *out = NULL;
     voice_transport_t *t = calloc(1, sizeof(*t));
@@ -143,6 +144,8 @@ esp_err_t voice_transport_open(voice_transport_t **out, bool continuous, bool on
         cJSON_AddNumberToObject(start, "rate", 16000) &&
         cJSON_AddNumberToObject(start, "ch", 1) &&
         cJSON_AddNumberToObject(start, "bits", 16) &&
+        cJSON_AddStringToObject(start, "mode",
+            mode == VOICE_SESSION_CONVERSATION ? "conversation" : "command") &&
         cJSON_AddBoolToObject(start, "continuous", continuous) &&
         cJSON_AddBoolToObject(start, "one_shot", one_shot);
     char *text = complete ? cJSON_PrintUnformatted(start) : NULL;

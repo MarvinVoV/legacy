@@ -100,7 +100,14 @@ def _safe_name(value: str) -> str:
 
 
 class VoiceSession:
-    def __init__(self, service: VoiceService, device_id: str, continuous: bool = False) -> None:
+    def __init__(
+        self,
+        service: VoiceService,
+        device_id: str,
+        continuous: bool = False,
+        *,
+        end_silence_ms: int | None = None,
+    ) -> None:
         self.service = service
         self.device_id = device_id
         self.id = uuid.uuid4().hex[:12]
@@ -129,7 +136,9 @@ class VoiceSession:
                 start_rms=cfg.vad_start_rms,
                 end_rms=cfg.vad_end_rms,
                 min_speech_ms=cfg.min_speech_ms,
-                end_silence_ms=cfg.end_silence_ms,
+                end_silence_ms=(
+                    cfg.end_silence_ms if end_silence_ms is None else end_silence_ms
+                ),
                 pre_roll_ms=cfg.pre_roll_ms,
                 max_segment_ms=cfg.max_segment_ms,
             )
@@ -295,7 +304,7 @@ class VoiceService:
         """
         if self.local_player is None or not self.config.local_playback:
             return
-        if self._playback_pending >= 4:
+        if self._playback_pending >= 16:
             logger.warning("voice playback queue full; discarding stale feedback")
             return
         self._playback_pending += 1
@@ -333,12 +342,20 @@ class VoiceService:
         await asyncio.sleep(0.12)
         await self.local_player.play_beep(150, 1000.0)
 
-    def create_session(self, device_id: str, continuous: bool = False) -> VoiceSession:
+    def create_session(
+        self,
+        device_id: str,
+        continuous: bool = False,
+        *,
+        end_silence_ms: int | None = None,
+    ) -> VoiceSession:
         if device_id in self._active:
             raise VoiceSessionBusy(device_id)
         self._active.add(device_id)
         try:
-            return VoiceSession(self, device_id, continuous)
+            return VoiceSession(
+                self, device_id, continuous, end_silence_ms=end_silence_ms
+            )
         except Exception:
             self._active.discard(device_id)
             raise

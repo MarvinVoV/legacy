@@ -20,6 +20,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
 from app.api.voice_sink import WebSocketEventSink
 from app.config import get_settings
+from app.services.conversation import ConversationConfig, ConversationRunner
 from app.services.voice_pipeline import VoiceSessionRunner, _send_json
 from app.services.voice_service import VoiceService, VoiceSessionBusy
 
@@ -31,22 +32,113 @@ _HANDSHAKE_TIMEOUT_S = 5.0
 _MAX_DEVICE_ID_LEN = 64
 
 
-def _parse_start(meta: Any) -> tuple[str | None, str | None]:
-    """返回 (device_id, error_message)。"""
+def _parse_start(meta: Any) -> tuple[str | None, str | None, str | None]:
+    """返回 (device_id, mode, error_message)。"""
     if not isinstance(meta, dict) or meta.get("type") != "start":
-        return None, "first frame must be start"
+        return None, None, "first frame must be start"
     if meta.get("rate") != 16000:
-        return None, "rate must be 16000"
+        return None, None, "rate must be 16000"
     if meta.get("ch", 1) != 1:
-        return None, "only mono is supported"
+        return None, None, "only mono is supported"
     if meta.get("bits", 16) != 16:
-        return None, "only 16-bit PCM is supported"
+        return None, None, "only 16-bit PCM is supported"
     if not isinstance(meta.get("one_shot", False), bool):
-        return None, "one_shot must be boolean"
+        return None, None, "one_shot must be boolean"
+    if not isinstance(meta.get("barge_in", False), bool):
+        return None, None, "barge_in must be boolean"
+    mode = meta.get("mode", "command")
+    if mode not in ("command", "conversation"):
+        return None, None, "invalid mode"
     device = meta.get("device", "DEV_1")
     if not isinstance(device, str) or not device or len(device) > _MAX_DEVICE_ID_LEN:
-        return None, "invalid device"
-    return device, None
+        return None, None, "invalid device"
+    return device, mode, None
+
+
+async def _run_conversation(
+    ws: WebSocket,
+    service: VoiceService,
+    session,
+    sink: WebSocketEventSink,
+    settings,
+) -> None:
+    """Own one long-conversation socket; command mode never enters this path."""
+    llm = getattr(ws.app.state, "voice_llm", None)
+    config = getattr(
+        ws.app.state, "voice_conversation_config", ConversationConfig()
+    )
+    if llm is None:
+        await _send_json(ws, {"type": "error", "message": "LLM is not configured"})
+        session.close()
+        service.release(session)
+        await ws.close(code=1011)
+        return
+
+    runner = ConversationRunner(service, session, sink, llm=llm, config=config)
+    runner.start()
+    max_bytes = int(
+        settings.voice_conversation_max_s * service.config.sample_rate * 2
+    )
+    client_gone = False
+    try:
+        while not runner.ended.is_set():
+            try:
+                msg = await asyncio.wait_for(ws.receive(), timeout=0.5)
+            except TimeoutError:
+                continue
+            if msg.get("type") == "websocket.disconnect":
+                client_gone = True
+                break
+
+            data = msg.get("bytes")
+            if data:
+                if len(data) > 32768 or session.bytes_received + len(data) > max_bytes:
+                    runner.request_end("audio_limit")
+                    break
+                runner.feed(data)
+                continue
+
+            text = msg.get("text")
+            if text is None:
+                continue
+            try:
+                event = json.loads(text)
+            except json.JSONDecodeError:
+                await _send_json(sink, {"type": "error", "message": "invalid json frame"})
+                continue
+            event_type = event.get("type") if isinstance(event, dict) else None
+            if event_type in ("end", "abort", "gap"):
+                runner.request_end(
+                    "client_end" if event_type == "end" else event_type
+                )
+                break
+            await _send_json(
+                sink, {"type": "error", "message": f"unknown frame: {event_type}"}
+            )
+    except WebSocketDisconnect:
+        client_gone = True
+    except Exception:
+        logger.exception("conversation session failed")
+        runner.request_end("error")
+    finally:
+        await runner.close(abort=client_gone)
+        session.close()
+        service.release(session)
+        if not client_gone:
+            await _send_json(
+                sink,
+                {
+                    "type": "end",
+                    "session": session.id,
+                    "reason": runner.end_reason or "closed",
+                    "turns": runner.turn,
+                    "bytes": session.bytes_received,
+                },
+            )
+        try:
+            await ws.close()
+        except Exception:
+            logger.debug("conversation websocket close failed", exc_info=True)
 
 
 @router.websocket("/voice/stream")
@@ -92,17 +184,29 @@ async def voice_stream(ws: WebSocket) -> None:
         await ws.close(code=1008)
         return
 
-    device_id, error = _parse_start(meta)
-    if error or device_id is None:
+    device_id, mode, error = _parse_start(meta)
+    if error or device_id is None or mode is None:
         await _send_json(ws, {"type": "error", "message": error})
         await ws.close(code=1008)
         return
+    if mode == "conversation" and not settings.voice_conversation_enabled:
+        await _send_json(ws, {"type": "error", "message": "conversation mode disabled"})
+        await ws.close(code=1003)
+        return
 
     try:
-        continuous = meta.get("continuous", False)
+        continuous = meta.get("continuous", mode == "conversation")
         if not isinstance(continuous, bool):
             raise TypeError("continuous must be boolean")
-        session = service.create_session(device_id, continuous=continuous)
+        session = service.create_session(
+            device_id,
+            continuous=continuous,
+            end_silence_ms=(
+                settings.voice_conversation_turn_end_ms
+                if mode == "conversation"
+                else None
+            ),
+        )
     except VoiceSessionBusy:
         await _send_json(ws, {"type": "error", "message": "device busy"})
         await ws.close(code=1013)
@@ -113,7 +217,12 @@ async def voice_stream(ws: WebSocket) -> None:
         await ws.close(code=1011)
         return
 
-    logger.info("voice session start device=%s session=%s", device_id, session.id)
+    logger.info(
+        "voice session start device=%s session=%s mode=%s",
+        device_id,
+        session.id,
+        mode,
+    )
     await _send_json(
         ws,
         {
@@ -121,12 +230,17 @@ async def voice_stream(ws: WebSocket) -> None:
             "session": session.id,
             "device": device_id,
             "rate": service.config.sample_rate,
+            "mode": mode,
         },
     )
 
+    sink = WebSocketEventSink(ws)
+    if mode == "conversation":
+        await _run_conversation(ws, service, session, sink, settings)
+        return
+
     # The ready tone is an intentional one-shot cue; it may be captured by the
     # live microphone, so it is only played for one_shot sessions.
-    sink = WebSocketEventSink(ws)
     one_shot = meta.get("one_shot", False)
     runner = VoiceSessionRunner(service, session, sink, one_shot=one_shot)
     if one_shot:

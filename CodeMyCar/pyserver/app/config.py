@@ -91,6 +91,23 @@ class Settings(BaseSettings):
     voice_speed_cm_s: int = 10
     voice_min_turn_distance_cm: int = 30
 
+    # 长会话 / DeepSeek（密钥只放 voice.local.env 或环境变量）
+    voice_conversation_enabled: bool = True
+    voice_conversation_turn_end_ms: int = 700
+    voice_conversation_idle_s: float = 15.0
+    voice_conversation_max_s: float = 600.0
+    voice_conversation_max_turns: int = 30
+    voice_conversation_history_turns: int = 12
+    voice_conversation_history_tokens: int = 8000
+    llm_base_url: str = "https://api.deepseek.com"
+    llm_api_key: str = ""
+    llm_model: str = "deepseek-flash"
+    llm_model_pro: str = "deepseek-v4-pro"
+    llm_thinking: bool = False
+    llm_max_tokens: int = 512
+    llm_temperature: float = 0.7
+    voice_barge_in: bool = False  # Phase 2; Phase 1 is half-duplex
+
     # 日志
     log_level: str = "INFO"
     log_dir: str = "logs"

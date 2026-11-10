@@ -26,7 +26,9 @@ from app.mqtt.topics import (
 )
 from app.services.baidu_asr import BaiduAsrClient
 from app.services.baidu_tts import BaiduTtsClient
+from app.services.conversation import ConversationConfig
 from app.services.device_manager import DeviceManager
+from app.services.llm import DeepSeekLlmClient
 from app.services.local_audio import LocalAudioPlayer
 from app.services.motion_service import AgentMotionService
 from app.services.ping_service import PingRegistry
@@ -118,6 +120,27 @@ async def lifespan(app: FastAPI):
         agent_motion=app.state.agent_motion,
         tts=voice_tts,
         local_player=local_player,
+    )
+    app.state.voice_llm = (
+        DeepSeekLlmClient(
+            api_key=settings.llm_api_key,
+            base_url=settings.llm_base_url,
+            model=settings.llm_model,
+            thinking=settings.llm_thinking,
+            max_tokens=settings.llm_max_tokens,
+            temperature=settings.llm_temperature,
+        )
+        if settings.llm_api_key
+        else None
+    )
+    app.state.voice_conversation_config = ConversationConfig(
+        turn_end_ms=settings.voice_conversation_turn_end_ms,
+        idle_s=settings.voice_conversation_idle_s,
+        max_s=settings.voice_conversation_max_s,
+        max_turns=settings.voice_conversation_max_turns,
+        history_turns=settings.voice_conversation_history_turns,
+        history_tokens=settings.voice_conversation_history_tokens,
+        max_tokens=settings.llm_max_tokens,
     )
 
     # 注册消息处理器（心跳/传感器/日志/ACK/pong/motion）

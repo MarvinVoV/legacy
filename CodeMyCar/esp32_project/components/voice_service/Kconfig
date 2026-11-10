@@ -1,5 +1,18 @@
 menu "Voice Control"
 
+    choice CMCAR_VOICE_MODE
+        prompt "Voice session mode"
+        default CMCAR_VOICE_MODE_COMMAND
+        help
+            COMMAND keeps one utterance per wake and the existing intent path.
+            CONVERSATION keeps one WebSocket session open after a wake and lets
+            the pyserver drive multi-turn ASR -> LLM -> TTS.
+        config CMCAR_VOICE_MODE_COMMAND
+            bool "One command per wake (current behavior)"
+        config CMCAR_VOICE_MODE_CONVERSATION
+            bool "Continuous multi-turn conversation after one wake"
+    endchoice
+
     config CMCAR_VOICE_DENOISE
         bool "Experimental S3 NS during listening (requires A/B validation)"
         depends on IDF_TARGET_ESP32S3

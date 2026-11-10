@@ -44,6 +44,7 @@ async def run(args: argparse.Namespace) -> int:
                     "rate": 16000,
                     "ch": 1,
                     "bits": 16,
+                    "mode": args.mode,
                 }
             )
         )
@@ -54,7 +55,12 @@ async def run(args: argparse.Namespace) -> int:
 
         for offset in range(0, len(pcm), chunk_bytes):
             await ws.send(pcm[offset : offset + chunk_bytes])
-        await ws.send(json.dumps({"type": "end"}))
+        if args.mode == "conversation":
+            # The live S3 streams silence after speech. The file client must do
+            # the same or the server-side VAD never sees end-of-turn.
+            await ws.send(b"\x00\x00" * 16000)
+        else:
+            await ws.send(json.dumps({"type": "end"}))
 
         pending_speak = None
         speak_index = 0
@@ -78,6 +84,9 @@ async def run(args: argparse.Namespace) -> int:
                 print(json.dumps(event, ensure_ascii=False), flush=True)
                 if event.get("type") == "speak" and event.get("bytes"):
                     pending_speak = event
+                if event.get("type") == "assistant_done" and args.mode == "conversation":
+                    # One-turn smoke test: close after the assistant has spoken.
+                    await ws.send(json.dumps({"type": "end"}))
                 if event.get("type") == "end":
                     break
         except websockets.ConnectionClosed:
@@ -96,6 +105,12 @@ def main() -> int:
     parser.add_argument("--device", default="DEV_1")
     parser.add_argument("--chunk-ms", type=int, default=20)
     parser.add_argument("--token", default="", help="CMCAR_API_KEY 启用时使用")
+    parser.add_argument(
+        "--mode",
+        choices=("command", "conversation"),
+        default="command",
+        help="conversation: one-turn long-conversation smoke test",
+    )
     return asyncio.run(run(parser.parse_args()))
 
 
