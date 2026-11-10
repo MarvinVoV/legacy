@@ -13,6 +13,9 @@ from app.services.voice_intent import normalize_numbers, parse_intent
         ("前进3米", "forward", 3000, 0),
         ("前进一百厘米", "forward", 1000, 0),
         ("后退一米", "backward", 1000, 0),
+        # Baidu frequently returns the homophone 后腿 for 后退; the distance
+        # suffix makes this alias unambiguous in the command vocabulary.
+        ("后腿50厘米", "backward", 500, 0),
         ("倒回 50 厘米", "backward", 500, 0),
         ("停止。", "stop", 0, 0),
         ("停车", "stop", 0, 0),

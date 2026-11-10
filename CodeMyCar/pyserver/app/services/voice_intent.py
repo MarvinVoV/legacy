@@ -82,7 +82,7 @@ def parse_intent(raw_text: str) -> VoiceIntent | None:
             else None
         )
     move = re.fullmatch(
-        r"(前进|向前走?|往前走?|后退|向后走?|倒退|倒回)\s*(\d+(?:\.\d+)?)\s*(厘米|米|cm|m)",
+        r"(前进|向前走?|往前走?|后退|后腿|向后走?|倒退|倒回)\s*(\d+(?:\.\d+)?)\s*(厘米|米|cm|m)",
         text,
         re.IGNORECASE,
     )
