@@ -20,12 +20,14 @@
 
 | 模块（voice_service/src下） | 唯一职责 |
 |---|---|
-| `voice_audio.c/.h` | I²S、AFE、采样拼帧、有界PSRAM队列；无网络依赖 |
+| `voice_codec.c/.h`、`voice_codec_i2s.c`、`voice_codec_board.c` | 板级音频边界；当前 ICS43434 仅输入，未来板在此实现输入/输出/参考通道 |
+| `voice_audio.c/.h` | 采集帧、AFE、采样拼帧、有界PSRAM队列；无网络依赖 |
+| `voice_output.c/.h` | 有界TTS播放队列、播放完成等待；无输出codec时为空操作 |
 | `voice_frontend_s3.c` | 单个常驻S3 AFE/WakeNet/VadNet，NS默认关闭 |
-| `voice_transport.c/.h` | 每连接独立上下文、事件组、WebSocket生命周期与发送 |
-| `voice_protocol.c/.h` | 接收缓冲分块校验、JSON事件、PCM序号连续性；可主机测试 |
+| `voice_transport.c/.h` | 每连接独立上下文、事件组、WebSocket生命周期、speak/PCM接收与发送 |
+| `voice_protocol.c/.h` | 接收缓冲分块校验、JSON事件、speak参数、PCM序号连续性；可主机测试 |
 | `voice_state.c/.h` | 合法状态转换表；可主机测试 |
-| `voice_service.c` | 仅编排会话、超时和调试触发，从原618行缩到约203行 |
+| `voice_service.c` | 仅编排会话、超时和调试触发；输出播放完成后再回cooldown |
 
 状态：starting→idle→connecting→listening→processing→cooldown→idle。processing覆盖服务端识别及Mac播放，等服务端end才恢复待机。回调只发事件，只有会话任务写状态。初始化时两个音频任务先等待屏障，资源/任务都成功才释放；失败可在进入算法前清理。C6单独WakeNet适配仍保留，S3不编译该适配。
 
@@ -94,3 +96,46 @@ bash esp32_project/tests/voice_wake_host/run.sh
   语音层不直接操作电机。
 - 下一步仍是实板准确率与高精度验收：S3 真实采集/ASR 对照、不同距离/噪声/儿童语音、
   播放与 AEC 待硬件；网络/VPN 延迟仍单独记录，不归因于本地算法。
+
+## 2026-11-11 夜间：VPN关闭后的百度实测与板级音频边界
+
+用户关闭 VPN 后，百度云直连恢复；以下为本轮实测，不再把网络绕路延迟混入算法结论。
+
+| 项目 | 首次（含token） | 复用token | 说明 |
+|---|---:|---:|---|
+| 百度短语音 ASR | 426 ms | **155 ms** | `mic_fwd.wav` → `"前进一米。"` |
+| 百度 TTS（精品音库 per=5） | 369 ms | **102 ms** | 合成 1990 ms PCM |
+| 本机 WebSocket 全链路 | — | **0.86 s** | 发送 1.1 s WAV → `ready`/`final`/`end` |
+
+WebSocket 全链路 final：`text="前进一米。"`、`intent=forward`、`distance_mm=1000`、
+`execution_enabled=false`；Mac 本地 TTS 回读。0.86 s 含连接、上传、VAD、ASR、TTS
+合成，不含 Mac 播放器墙钟开销。此前 10.5 s / 9.1 s 的记录是 VPN 绕路，不再作为
+云端基线。
+
+### 板级音频抽象（已提交 a590be9）
+
+- `voice_codec_t` 把 I2S 引脚/槽位/位宽和未来的板级 codec、功放、参考通道收口到
+  `voice_codec_i2s.c` / `voice_codec_board.c`；音频会话不再直接依赖 `driver/i2s`。
+- `voice_codec_board.c` 当前是**失败关闭**占位：新板未到货前不猜测接线，不假定 codec
+  型号；打开 `CMCAR_VOICE_CODEC_BOARD` 会返回 `ESP_ERR_NOT_SUPPORTED`。
+- `voice_output` 提供有界 TTS 队列、`wait_drained` 和“队列满丢弃尾部而非阻塞采集”
+  策略；当前 I2S codec 报 `output_channels=0`，所以现有板行为与之前一致。
+- `speak` 头解析已进入 `voice_protocol`：校验 rate/channels/bytes，拒绝 malformed
+  参数；二进制 PCM 支持 WebSocket 分片和奇数字节 carry，交给输出层。
+- 服务端 `speak` 先于 `end`；会话在 `finish` 成功后最多等 10 s 播放排空，再回
+  cooldown。运动执行仍关闭，TTS 不触碰 AgentMotionService。
+
+### 实板验证与未完成项
+
+- S3 已重新烧录并启动：`voice_codec: I2S codec BCLK=12 WS=13 DIN=14 slot=left`、
+  `voice_audio: codec input=16000 Hz`、`voice_output: no playback path on this codec`；
+  AFE/WakeNet/VadNet 正常，WiFi/MQTT ONLINE，麦克风 RMS 约 200–950。
+- 用串口 `s` 手动触发 + Mac 播放“前进一米”注入，S3 走完
+  connecting→listening→processing→cooldown→idle，服务端产生 10.48 s 段；
+  但 ASR `text=None`。这是“扬声器到麦克风”的声学注入不可靠，**不能**据此判断
+  ASR 失败；真实语音验收仍需要用户对着麦克风说唤醒词和指令。
+- 按用户要求本轮起只构建/烧录 S3，不再构建 C6。
+- 主机测试：`voice_session_host`（含新增 speak 参数/非法值）、`voice_frontend_host`、
+  `voice_wake_host` 全部通过；S3 构建通过。pyserver 本轮未改动，保持 197 tests。
+- 下一步：新麦克风/功放板到货后实现 `voice_codec_board.c`（输入、输出、参考通道、
+  音量/静音），再用真实语音验收；自定义唤醒词与 Opus 仍待决策/服务端解码支持。
