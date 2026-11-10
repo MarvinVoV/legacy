@@ -139,3 +139,45 @@ WebSocket 全链路 final：`text="前进一米。"`、`intent=forward`、`dista
   `voice_wake_host` 全部通过；S3 构建通过。pyserver 本轮未改动，保持 197 tests。
 - 下一步：新麦克风/功放板到货后实现 `voice_codec_board.c`（输入、输出、参考通道、
   音量/静音），再用真实语音验收；自定义唤醒词与 Opus 仍待决策/服务端解码支持。
+
+## 2026-11-11 夜间：一次唤醒多轮长会话（Phase 1）
+
+S3 当前 profile 已切换到 `CONFIG_CMCAR_VOICE_MODE_CONVERSATION=y`；命令模式 Kconfig
+仍保留，pyserver 的 `/api/v1/voice/stream` 用 start 帧 `mode` 选择 `command` /
+`conversation`，缺省仍是 command。
+
+### 使用方式
+
+- 说“你好小智”进入一段会话；之后**不需要**每次重复唤醒词；
+- 用户停顿 700 ms 视为一轮结束；LLM 流式回答，按句百度 TTS；
+- 15 秒没有有效用户语音自动结束；说“结束/再见/退出/不聊了”也会结束；
+- Phase 1 是半双工：TTS 播放/思考期间麦克风音频被丢弃，不支持打断；
+- 车控工具（`car_move`/`car_turn`/`car_stop`）默认执行关闭；打开后也仍走
+  AgentMotionService/租约/可靠 STOP，Phase 1 验收不包含运动；
+- Mac 播放只作为 Phase 1 调试输出；新板功放/ES7210 到货后再接设备播放。
+
+### 已实现/验证
+
+- pyserver 新增 `app/services/llm.py`（DeepSeek OpenAI 兼容流式）、
+  `app/services/conversation.py`（VAD 轮次、历史、工具、句级 TTS）、
+  `app/services/conversation_tts` 逻辑在 conversation 内；`voice.py` 路由按
+  mode 隔离；
+- DeepSeek：`deepseek-flash`，thinking 默认关闭；API key 只在
+  `pyserver/voice.local.env`，不入库；
+- 真实 3 轮（文件/WAV 驱动）：ASR → DeepSeek → 百度 TTS 全部成功；第 3 轮
+  “再见”触发 `end(reason=user_end, turns=3)`；
+- pyserver **206 tests passed**；新增 conversation runner/WebSocket 测试；
+- S3 构建、烧录通过；手动触发进入 `mode=conversation`，15 s idle 后
+  `listening -> cooldown -> idle`，无 abort 警告；
+- 未完成：S3 真实麦克风多轮、ES7210/NS4150B 设备播放、打断/AEC（Phase 2）。
+  Mac 扬声器注入 S3 麦克风未产生 ASR 段，属于声学注入限制，不能据此判断
+  麦克风/ASR 失败。
+
+### 下一步
+
+1. 用户对 S3 说“你好小智”后连续说 3–5 轮，验证真实麦克风/ASR/LLM/TTS；
+2. 新板到货后实现 ES7210 输入 + DAC/NS4150B 输出；注意 NS4150B 是模拟输入，
+   需要 DAC，不能直接接 I2S；
+3. Phase 2 打断：优先 ES7210 空闲 ADC 回采参考，其次 TTS PCM 软件参考；
+   没有 AEC 不宣称可靠打断；
+4. 长会话内存/任务/播放队列长时测试；运动工具保持默认关闭。
