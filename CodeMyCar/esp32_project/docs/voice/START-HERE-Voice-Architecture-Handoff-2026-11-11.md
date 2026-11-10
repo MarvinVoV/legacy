@@ -181,3 +181,22 @@ S3 当前 profile 已切换到 `CONFIG_CMCAR_VOICE_MODE_CONVERSATION=y`；命令
 3. Phase 2 打断：优先 ES7210 空闲 ADC 回采参考，其次 TTS PCM 软件参考；
    没有 AEC 不宣称可靠打断；
 4. 长会话内存/任务/播放队列长时测试；运动工具保持默认关闭。
+
+## 2026-11-11 深夜：LLM 模块切到 LangChain（电脑静音）
+
+- pyserver LLM 已从手写 OpenAI/SSE 适配器切换为
+  `langchain_deepseek.ChatDeepSeek`（`langchain>=1.4`、`langchain-deepseek>=1.1`）。
+  保留 `LlmClient` 端口，`ConversationRunner` 不感知 LangChain；工具通过
+  `.bind_tools()`，消息转换/流式/工具调用由 LangChain 负责。
+- `thinking` 默认 disabled，仍用 `deepseek-flash`；密钥只从
+  `pyserver/voice.local.env` 读取。
+- **电脑不发声**：`CMCAR_VOICE_LOCAL_PLAYBACK=false` 已写入本地 env，
+  pyserver 重启时也显式带 0；`VoiceService.play_local` 直接返回，不会启动
+  `afplay`。TTS PCM 仍然生成并下发 S3，但 S3 当前没有功放输出，所以整条
+  链路静音。`pgrep afplay/ffplay` 已确认无播放器进程。
+- 已验证：LangChain ChatDeepSeek 文本流式首 token 约 0.62 s；工具调用
+  `car_move` 可解析；一次真实 conversation WebSocket 会话（WAV 驱动）成功；
+  车控执行关闭时 LLM 正确回答不能动车，未产生运动。
+- pyserver 仍为 **206 tests passed**；`voice.env.example` 已加入 LLM/
+  conversation/静音配置占位。
+- 真实 S3 麦克风语音明天测试；Phase 1 仍半双工，打断 Phase 2。

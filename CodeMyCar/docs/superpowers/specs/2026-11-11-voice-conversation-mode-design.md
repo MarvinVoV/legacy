@@ -217,23 +217,36 @@ class LlmClient(Protocol):
     ) -> AsyncIterator[LlmDelta]: ...
 ```
 
-`DeepSeekLlmClient`:
-- `POST https://api.deepseek.com/chat/completions`
-- `stream=True`
+`DeepSeekLlmClient` (LangChain adapter):
+- wraps `langchain_deepseek.ChatDeepSeek`; `langchain>=1.4`, `langchain-deepseek>=1.1`
+- `streaming=True`, `.astream()`; maps text chunks to `LlmTextDelta` and
+  aggregated `tool_call_chunks` to `LlmToolCall`
+- `.bind_tools()` for `CAR_TOOLS`; LangChain converts the OpenAI-style
+  assistant/tool messages used by `ConversationHistory`
 - `model=deepseek-flash` by default; `deepseek-v4-pro` selectable by config
-- `thinking={"type":"disabled"}` by default
-- parse SSE `delta.content`, `delta.tool_calls`, `finish_reason`
-- timeout: connect 10 s, first token 20 s, total 60 s
-- no key in logs/errors; key only from `pyserver/voice.local.env`
+- `extra_body={"thinking":{"type":"disabled"}}` by default
+- timeout 60 s, one retry; no key in logs/errors; key only from
+  `pyserver/voice.local.env`
+- LangChain is the provider layer; LangGraph/Deep Agents are deliberately not
+  introduced in phase 1 because the conversation state is short-lived and
+  already explicit. They can be added later for durable threads/subagents
+  without changing the audio state machine.
 
 ### 9.5 TTS streaming and ordering
 
 - Sentence boundaries: Chinese `。！？；…` and English `.?!;` plus newline.
-- Minimum chunk length 6 chars; maximum 80 chars; flush remaining at end.
+- Minimum chunk length 2 chars; maximum 80 chars; flush remaining at end.
 - One ordered TTS worker per turn; `seq` increments.
 - Do not start a sentence until it is complete; do not wait for the full LLM answer.
 - TTS failure: send `error`, stop the turn, keep the session alive (or end after repeated failures).
 - Phase 1 half-duplex: while the TTS worker is active, VAD detection is disabled and incoming PCM is drained. This avoids the assistant transcribing its own speech. The earlier ready-tone bug showed why prompt tones must not be conflated with TTS gating; phase 1 uses an explicit `SPEAKING` state.
+- `assistant_done` waits for local playback drain in the current Mac fallback path
+  and caps its optional display text at 400 chars so the S3's 2048-byte JSON
+  buffer cannot abort the session.
+- **Local playback is disabled by default in `pyserver/voice.local.env`**
+  (`CMCAR_VOICE_LOCAL_PLAYBACK=false`): the development computer must stay
+  quiet. TTS PCM is still synthesized and sent to the device; the S3 output is
+  currently a no-op until the new codec/amp is implemented.
 - Phase 2 will replace the drain with AEC + `barge_in` handling.
 
 ### 9.6 Session end
