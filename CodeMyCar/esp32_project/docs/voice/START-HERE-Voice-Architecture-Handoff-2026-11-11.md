@@ -14,7 +14,7 @@
 
 ## 本轮实现
 
-参考本地 `/Users/sunyameng/Downloads/xiaozhi-esp32-main` 的AudioEngine、音频任务与状态机边界，保留本车C架构及既有UART/MQTT/可靠STOP，没有移植整个小智固件。
+参考本地 `/Users/sunyameng/github/legacy/xiaozhi-esp32-main` 的AudioEngine、音频任务与状态机边界，保留本车C架构及既有UART/MQTT/可靠STOP，没有移植整个小智固件。
 
 | 模块（voice_service/src下） | 唯一职责 |
 |---|---|
@@ -75,3 +75,20 @@ bash esp32_project/tests/voice_wake_host/run.sh
 4. 自由对话尚未接LLM，现有功能是指令解析与原文回读。需要用户明确LLM提供商/配置，再接独立对话服务，不能用回读冒充智能回答。
 5. 自定义唤醒词候选“小车小车”，未最终确认，未实现；当前仍是“你好小智”。
 6. 新音频板/功放到货后适配车载播放，再验证同步参考、AEC/打断与双麦；目前不能启用或宣称这些功能已完成。
+
+## 2026-11-11 后续架构收敛（本轮）
+
+- 动作执行从 `VoiceService` 拆到 `app/services/voice_actions.py`：
+  `VoiceActionExecutor` + `VoiceActionConfig` 集中距离/角度限制、圆弧几何和
+  `MotionError` 转换；会话层只决定是否允许执行。新增 9 项精度单测。
+- WebSocket 事件发送抽到 `app/api/voice_sink.py`，路由与 ASR/TTS 流水线不再共享
+  隐式的“一次只发一帧”约定。
+- 连续音频会话增加总时长上限 `voice_max_continuous_s=60`，防止无限流；空闲超时仍独立。
+- 真实 WAV 经当前服务端：ASR `"前进一米。"`、`intent=forward`、`distance_mm=1000`，
+  Mac TTS 回读；`execution_enabled=false`。
+- 服务端 **197 tests passed**；voice session/frontend/wake host 测试通过。
+- 精度边界不变：S3 I2S 16 kHz/32-bit slot/24-bit 数据；左右槽由配置决定；
+  不上增益补丁；STM32 仍只通过 AgentMotionService/MoveRequest 与可靠 STOP 执行，
+  语音层不直接操作电机。
+- 下一步仍是实板准确率与高精度验收：S3 真实采集/ASR 对照、不同距离/噪声/儿童语音、
+  播放与 AEC 待硬件；网络/VPN 延迟仍单独记录，不归因于本地算法。

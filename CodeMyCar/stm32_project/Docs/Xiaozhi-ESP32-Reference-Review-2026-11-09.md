@@ -2,7 +2,7 @@
 
 ## 范围
 
-只读分析用户给定目录 `/Users/sunyameng/Downloads/xiaozhi-esp32-main`，未修改、编译或烧录该项目，未连接其云平台。分析对象是这份本地副本，不代表GitHub所有历史版本。阅读其AGENTS、音频架构、LiteAudioEngine、AfeAudioEngine、EspWakeWord、AudioService、Application/状态机、WebSocket协议、目标配置与组件清单。
+只读分析用户给定目录 `/Users/sunyameng/github/legacy/xiaozhi-esp32-main`（2026-11-11 从 Downloads 移入 legacy），未修改、编译或烧录该项目，未连接其云平台。分析对象是这份本地副本，不代表GitHub所有历史版本。阅读其AGENTS、音频架构、LiteAudioEngine、AfeAudioEngine、EspWakeWord、AudioService、Application/状态机、WebSocket协议、目标配置与组件清单。
 
 用户已确认后续更换为 **ESP32-S3，具体板型未定**。当前任务是研究与迁移规划；暂停C6唤醒功能的继续开发和刷机。下文“S3迁移方案”是后续工作依据，早期C6建议仅作为研究过程记录。
 

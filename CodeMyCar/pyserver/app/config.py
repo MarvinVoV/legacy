@@ -80,6 +80,7 @@ class Settings(BaseSettings):
     voice_vad_pre_roll_ms: int = DEFAULT_VAD_PRE_ROLL_MS
     voice_max_segment_s: float = 10.0
     voice_max_session_s: float = 12.0
+    voice_max_continuous_s: float = 60.0
     voice_execute_commands: bool = False  # 默认关闭；开启后语音意图才会下发运动
     voice_tts_feedback: bool = True
     voice_local_playback: bool = True  # 在 pyserver 所在机器上播放 TTS

@@ -15,9 +15,8 @@ import uuid
 import wave
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Protocol
 
-from app.models.agent_motion import MotionError, MoveRequest
 from app.models.audio import (
     DEFAULT_VAD_END_RMS,
     DEFAULT_VAD_END_SILENCE_MS,
@@ -26,6 +25,11 @@ from app.models.audio import (
     TtsAudio,
 )
 from app.services.vad import SpeechSegmenter, VadConfig
+from app.services.voice_actions import (
+    AgentMotionProtocol,
+    VoiceActionConfig,
+    VoiceActionExecutor,
+)
 from app.services.voice_intent import VoiceIntent
 
 logger = logging.getLogger(__name__)
@@ -43,11 +47,6 @@ class AudioSinkProtocol(Protocol):
     async def play_pcm(self, pcm: bytes, sample_rate: int, channels: int) -> None: ...
     async def play_beep(self, duration_ms: int, freq_hz: float) -> None: ...
     async def aclose(self) -> None: ...
-
-
-class AgentMotionProtocol(Protocol):
-    async def move(self, device_id: str, req: MoveRequest) -> Any: ...
-    async def stop(self, device_id: str) -> dict: ...
 
 
 class VoiceSessionBusy(RuntimeError):
@@ -70,6 +69,7 @@ class VoiceConfig:
     pre_roll_ms: int = DEFAULT_VAD_PRE_ROLL_MS
     max_segment_s: float = 10.0
     max_session_s: float = 12.0
+    max_continuous_s: float = 60.0
     execute_commands: bool = False
     tts_feedback: bool = True
     local_playback: bool = True
@@ -206,14 +206,26 @@ class VoiceService:
         agent_motion: AgentMotionProtocol | None = None,
         tts: TtsProtocol | None = None,
         local_player: AudioSinkProtocol | None = None,
+        actions: VoiceActionExecutor | None = None,
     ) -> None:
         self._archived_segments = 0
         self._archive_limit_reported = False
         self.config = config
         self.asr = asr
-        self.agent_motion = agent_motion
         self.tts = tts
         self.local_player = local_player
+        self.actions = actions
+        if self.actions is None and agent_motion is not None:
+            self.actions = VoiceActionExecutor(
+                agent_motion,
+                VoiceActionConfig(
+                    max_distance_mm=config.max_distance_mm,
+                    max_turn_deg=config.max_turn_deg,
+                    speed_cm_s=config.speed_cm_s,
+                    min_turn_distance_cm=config.min_turn_distance_cm,
+                    min_turn_radius_mm=config.min_turn_radius_mm,
+                ),
+            )
         self.artifact_dir = Path(artifact_dir)
         self._active: set[str] = set()
         self._local_tasks: set[asyncio.Task] = set()
@@ -244,6 +256,9 @@ class VoiceService:
     async def _play(self, audio, tail_s=0.3):
         started = time.monotonic()
         logger.info("voice local playback start bytes=%d", len(audio.data))
+        if self.local_player is None:
+            self._playback_pending -= 1
+            return
         try:
             await self.local_player.play_pcm(audio.data, audio.sample_rate, audio.channels)
             await asyncio.sleep(tail_s)
@@ -309,65 +324,12 @@ class VoiceService:
         self._active.discard(session.device_id)
 
     async def execute_intent(self, device_id: str, intent: VoiceIntent) -> dict:
-        """把已解析的意图交给 AgentMotionService；默认关闭，需显式开启。"""
-        if not self.config.execute_commands or self.agent_motion is None:
+        """把已解析的意图交给 ActionExecutor；默认关闭，需显式开启。"""
+        if not self.config.execute_commands or self.actions is None:
             return {"executed": False, "reason": "voice execution disabled"}
+        return await self.actions.execute(device_id, intent)
 
-        try:
-            if intent.kind in ("stop", "cancel"):
-                result = await self.agent_motion.stop(device_id)
-                return {
-                    "executed": all(result.get(k) for k in ("accepted", "confirmed", "stopped")),
-                    "action": intent.kind,
-                    "result": result,
-                }
-
-            if intent.kind in ("forward", "backward"):
-                if intent.distance_mm <= 0 or intent.distance_mm > self.config.max_distance_mm:
-                    return {
-                        "executed": False,
-                        "reason": "distance out of range",
-                        "limit_mm": self.config.max_distance_mm,
-                    }
-                distance_cm = round(intent.distance_mm / 10)
-                if intent.kind == "backward":
-                    distance_cm = -distance_cm
-                request = MoveRequest(
-                    distance_cm=distance_cm,
-                    turn_deg=0,
-                    speed_cm_s=self.config.speed_cm_s,
-                )
-            elif intent.kind in ("turn_left", "turn_right"):
-                if intent.angle_deg <= 0 or intent.angle_deg > self.config.max_turn_deg:
-                    return {
-                        "executed": False,
-                        "reason": "angle out of range",
-                        "limit_deg": self.config.max_turn_deg,
-                    }
-                # 转向必须是圆弧；距离按最小转弯半径计算，且不小于配置下限
-                arc_cm = max(
-                    self.config.min_turn_distance_cm,
-                    math.ceil(self.config.min_turn_radius_mm * math.radians(intent.angle_deg) / 10),
-                )
-                turn_deg = -intent.angle_deg if intent.kind == "turn_left" else intent.angle_deg
-                request = MoveRequest(
-                    distance_cm=arc_cm,
-                    turn_deg=turn_deg,
-                    speed_cm_s=self.config.speed_cm_s,
-                )
-            else:
-                return {"executed": False, "reason": f"unknown intent: {intent.kind}"}
-
-            result = await self.agent_motion.move(device_id, request)
-            data = result.model_dump() if hasattr(result, "model_dump") else result
-            return {
-                "executed": True,
-                "action": intent.kind,
-                "request": request.model_dump(),
-                "result": data,
-            }
-        except MotionError as exc:
-            return {"executed": False, "error": exc.as_detail()}
-        except Exception as exc:  # 执行失败要回给客户端，不能打断 WS
-            logger.exception("voice execution failed")
-            return {"executed": False, "error": {"code": "internal", "message": str(exc)}}
+    async def stop_action(self, device_id: str) -> None:
+        """Abort path: use the reliable AgentMotionService STOP."""
+        if self.actions is not None:
+            await self.actions.stop(device_id)

@@ -89,6 +89,7 @@ def make_service(
     local_player=None,
     tts_feedback: bool = True,
     speak_recognized: bool = False,
+    max_continuous_s: float = 60.0,
 ) -> VoiceService:
     return VoiceService(
         VoiceConfig(
@@ -98,6 +99,7 @@ def make_service(
             pre_roll_ms=100,
             max_segment_s=10.0,
             max_session_s=12.0,
+            max_continuous_s=max_continuous_s,
             execute_commands=execute_commands,
             tts_feedback=tts_feedback,
             speak_recognized=speak_recognized,
@@ -232,6 +234,17 @@ def test_ws_empty_session_ends_cleanly(client, tmp_path):
         assert end["type"] == "end"
         assert end["segments"] == 0
         assert Path(end["full_wav"]).exists()
+
+
+def test_ws_bounds_continuous_audio(client, tmp_path):
+    client.app.state.voice_service = make_service(tmp_path, None, max_continuous_s=0.05)
+    with client.websocket_connect("/api/v1/voice/stream") as ws:
+        ws.send_text(start_frame(continuous=True))
+        assert ws.receive_json()["type"] == "ready"
+        ws.send_bytes(b"\x00\x00" * 4000)  # 8000 bytes > 0.05 s * 16000 * 2
+        message = ws.receive_json()
+        assert message["type"] == "error"
+        assert "too long" in message["message"]
 
 
 def test_voice_executes_forward_when_enabled(client, tmp_path):

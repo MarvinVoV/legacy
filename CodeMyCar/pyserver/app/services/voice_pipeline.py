@@ -246,12 +246,10 @@ class VoiceSessionRunner:
         await asyncio.gather(self.worker, return_exceptions=True)
         if self.action_task:
             running = not self.action_task.done()
-            if abort and running and self.service.agent_motion is not None:
+            if abort and running:
                 # Cancel an owned active motion via the existing reliable STOP path.
                 try:
-                    await asyncio.wait_for(
-                        self.service.agent_motion.stop(self.session.device_id), 5
-                    )
+                    await asyncio.wait_for(self.service.stop_action(self.session.device_id), 5)
                 except Exception:
                     logger.exception("voice action stop on abort failed")
             self.action_task.cancel()

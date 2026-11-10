@@ -103,6 +103,7 @@ async def lifespan(app: FastAPI):
             pre_roll_ms=settings.voice_vad_pre_roll_ms,
             max_segment_s=settings.voice_max_segment_s,
             max_session_s=settings.voice_max_session_s,
+            max_continuous_s=settings.voice_max_continuous_s,
             execute_commands=settings.voice_execute_commands,
             tts_feedback=settings.voice_tts_feedback,
             local_playback=settings.voice_local_playback,

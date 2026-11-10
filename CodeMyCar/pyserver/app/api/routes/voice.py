@@ -18,6 +18,7 @@ from typing import Any
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
+from app.api.voice_sink import WebSocketEventSink
 from app.config import get_settings
 from app.services.voice_pipeline import VoiceSessionRunner, _send_json
 from app.services.voice_service import VoiceService, VoiceSessionBusy
@@ -123,31 +124,18 @@ async def voice_stream(ws: WebSocket) -> None:
         },
     )
 
-    # No audible ready beep: it would be recorded by the live microphone.
-    class Sink:
-        def __init__(self):
-            self.lock = asyncio.Lock()
-
-        async def send_json(self, payload):
-            async with self.lock:
-                await ws.send_json(payload)
-
-        async def send_bytes(self, data):
-            async with self.lock:
-                await ws.send_bytes(data)
-
-        async def send_audio(self, header, data):
-            async with self.lock:
-                await ws.send_json(header)
-                await ws.send_bytes(data)
-
-    sink = Sink()
+    # The ready tone is an intentional one-shot cue; it may be captured by the
+    # live microphone, so it is only played for one_shot sessions.
+    sink = WebSocketEventSink(ws)
     one_shot = meta.get("one_shot", False)
     runner = VoiceSessionRunner(service, session, sink, one_shot=one_shot)
     if one_shot:
         service.play_ready_tone()
 
     max_bytes = int(service.config.max_session_s * service.config.sample_rate * 2)
+    max_continuous_bytes = int(
+        service.config.max_continuous_s * service.config.sample_rate * 2
+    )
     segments = 0
     aborted = False
     client_gone = False
@@ -169,8 +157,19 @@ async def voice_stream(ws: WebSocket) -> None:
 
             data = msg.get("bytes")
             if data:
-                if len(data) > (32768 if continuous else max_bytes) or (
-                    not continuous and session.bytes_received + len(data) > max_bytes
+                if continuous:
+                    if (
+                        len(data) > 32768
+                        or session.bytes_received + len(data) > max_continuous_bytes
+                    ):
+                        runner.cancelled = True
+                        await _send_json(
+                            sink, {"type": "error", "message": "continuous audio too long"}
+                        )
+                        break
+                elif (
+                    len(data) > max_bytes
+                    or session.bytes_received + len(data) > max_bytes
                 ):
                     runner.cancelled = True
                     await _send_json(sink, {"type": "error", "message": "audio too long"})
