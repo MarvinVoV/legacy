@@ -1,0 +1,1 @@
+voice session: per-connection messages, fragmentation, malformed input, sequence gaps and legal states passed

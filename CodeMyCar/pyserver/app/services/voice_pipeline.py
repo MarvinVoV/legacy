@@ -7,6 +7,7 @@ import logging
 import time
 from typing import Any, Protocol
 
+from app.services.audio_metrics import measure_pcm16
 from app.services.baidu_asr import BaiduAsrError
 from app.services.voice_intent import parse_intent
 from app.services.voice_service import VoiceSegment, VoiceService
@@ -112,6 +113,9 @@ async def _handle_segment(
             frame["angle_deg"] = intent.angle_deg
     if error:
         frame["error"] = error
+    if service.config.archive_continuous_segments:
+        frame["audio_metrics"] = measure_pcm16(segment.pcm).as_dict()
+        logger.info("voice audio metrics index=%d data=%s", segment.index, frame["audio_metrics"])
 
     logger.info(
         "voice result session=%s index=%d text=%r intent=%s",

@@ -11,6 +11,13 @@ from array import array
 from collections import deque
 from dataclasses import dataclass
 
+from app.models.audio import (
+    DEFAULT_VAD_END_RMS,
+    DEFAULT_VAD_END_SILENCE_MS,
+    DEFAULT_VAD_PRE_ROLL_MS,
+    DEFAULT_VAD_START_RMS,
+)
+
 
 @dataclass(frozen=True)
 class VadConfig:
@@ -19,11 +26,11 @@ class VadConfig:
     aggressiveness: int = 2
     sample_rate: int = 16000
     frame_ms: int = 20
-    start_rms: int = 300  # 超过该 RMS 认为开始说话
-    end_rms: int = 200  # 低于该 RMS 认为静音（迟滞）
+    start_rms: int = DEFAULT_VAD_START_RMS
+    end_rms: int = DEFAULT_VAD_END_RMS
     min_speech_ms: int = 150
-    end_silence_ms: int = 800
-    pre_roll_ms: int = 300
+    end_silence_ms: int = DEFAULT_VAD_END_SILENCE_MS
+    pre_roll_ms: int = DEFAULT_VAD_PRE_ROLL_MS
     max_segment_ms: int = 10000
 
     @property
@@ -31,15 +38,19 @@ class VadConfig:
         return self.sample_rate * self.frame_ms // 1000 * 2
 
 
-def pcm_rms(frame: bytes) -> float:
-    """计算 16-bit little-endian PCM 帧的 RMS；非整数帧长按完整样本处理。"""
+def pcm_rms(frame: bytes, *, remove_dc: bool = False) -> float:
+    """PCM16 RMS; optional centering measures AC energy without changing audio."""
     samples = array("h")
     samples.frombytes(frame[: len(frame) // 2 * 2])
     if sys.byteorder != "little":
         samples.byteswap()
     if not samples:
         return 0.0
-    return math.sqrt(sum(s * s for s in samples) / len(samples))
+    mean_square = sum(s * s for s in samples) / len(samples)
+    if remove_dc:
+        mean = sum(samples) / len(samples)
+        mean_square = max(0.0, mean_square - mean * mean)
+    return math.sqrt(mean_square)
 
 
 class SpeechSegmenter:
@@ -104,12 +115,14 @@ class SpeechSegmenter:
 
     def _process(self, frame: bytes) -> bytes | None:
         cfg = self.config
-        rms = pcm_rms(frame)
-        voiced = (
-            self._detector.is_speech(frame, cfg.sample_rate)
-            if self._detector
-            else rms >= (cfg.end_rms if self._in_speech else cfg.start_rms)
-        )
+        threshold = cfg.end_rms if self._in_speech else cfg.start_rms
+        if self._detector:
+            # Keep feeding the classifier on quiet frames so its own noise
+            # adaptation/hangover advances. A DC offset is not speech energy.
+            classified = self._detector.is_speech(frame, cfg.sample_rate)
+            voiced = classified and pcm_rms(frame, remove_dc=True) >= threshold
+        else:
+            voiced = pcm_rms(frame) >= threshold
 
         if not self._in_speech:
             self._pre_roll.append(frame)

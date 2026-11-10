@@ -92,6 +92,8 @@ async def lifespan(app: FastAPI):
     app.state.voice_local_player = local_player
     app.state.voice_service = VoiceService(
         VoiceConfig(
+            archive_continuous_segments=settings.voice_archive_continuous_segments,
+            archive_max_segments=settings.voice_archive_max_segments,
             vad_backend=settings.voice_vad_backend,
             start_trigger_ms=settings.voice_vad_start_trigger_ms,
             vad_start_rms=settings.voice_vad_start_rms,

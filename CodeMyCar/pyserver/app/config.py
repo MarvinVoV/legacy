@@ -4,6 +4,13 @@ from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.models.audio import (
+    DEFAULT_VAD_END_RMS,
+    DEFAULT_VAD_END_SILENCE_MS,
+    DEFAULT_VAD_PRE_ROLL_MS,
+    DEFAULT_VAD_START_RMS,
+)
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -61,14 +68,16 @@ class Settings(BaseSettings):
 
     # 语音 WebSocket（P1：接收 PCM、VAD 切分、WAV 归档；暂不执行运动）
     voice_enabled: bool = True
+    voice_archive_continuous_segments: bool = False  # opt-in local diagnostics; never default-record
+    voice_archive_max_segments: int = 8  # per service lifetime; prevents diagnostic disk growth
     voice_artifact_dir: str = "logs/voice"
     voice_vad_backend: str = "webrtc"  # energy仅用于诊断对照
     voice_vad_start_trigger_ms: int = 60
-    voice_vad_start_rms: int = 300
-    voice_vad_end_rms: int = 200
+    voice_vad_start_rms: int = DEFAULT_VAD_START_RMS
+    voice_vad_end_rms: int = DEFAULT_VAD_END_RMS
     voice_vad_min_speech_ms: int = 150
-    voice_vad_end_silence_ms: int = 800
-    voice_vad_pre_roll_ms: int = 300
+    voice_vad_end_silence_ms: int = DEFAULT_VAD_END_SILENCE_MS
+    voice_vad_pre_roll_ms: int = DEFAULT_VAD_PRE_ROLL_MS
     voice_max_segment_s: float = 10.0
     voice_max_session_s: float = 12.0
     voice_execute_commands: bool = False  # 默认关闭；开启后语音意图才会下发运动

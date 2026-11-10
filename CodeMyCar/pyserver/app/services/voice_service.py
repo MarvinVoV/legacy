@@ -18,7 +18,13 @@ from pathlib import Path
 from typing import Any, Protocol
 
 from app.models.agent_motion import MotionError, MoveRequest
-from app.models.audio import TtsAudio
+from app.models.audio import (
+    DEFAULT_VAD_END_RMS,
+    DEFAULT_VAD_END_SILENCE_MS,
+    DEFAULT_VAD_PRE_ROLL_MS,
+    DEFAULT_VAD_START_RMS,
+    TtsAudio,
+)
 from app.services.vad import SpeechSegmenter, VadConfig
 from app.services.voice_intent import VoiceIntent
 
@@ -52,15 +58,16 @@ class VoiceSessionBusy(RuntimeError):
 class VoiceConfig:
     max_result_age_s: float = 15.0
     archive_continuous_segments: bool = False
+    archive_max_segments: int = 8
     vad_backend: str = "webrtc"
     start_trigger_ms: int = 60
     sample_rate: int = 16000
     frame_ms: int = 20
-    vad_start_rms: int = 300
-    vad_end_rms: int = 200
+    vad_start_rms: int = DEFAULT_VAD_START_RMS
+    vad_end_rms: int = DEFAULT_VAD_END_RMS
     min_speech_ms: int = 150
-    end_silence_ms: int = 800
-    pre_roll_ms: int = 300
+    end_silence_ms: int = DEFAULT_VAD_END_SILENCE_MS
+    pre_roll_ms: int = DEFAULT_VAD_PRE_ROLL_MS
     max_segment_s: float = 10.0
     max_session_s: float = 12.0
     execute_commands: bool = False
@@ -157,7 +164,9 @@ class VoiceSession:
     def _save(self, pcm: bytes) -> VoiceSegment:
         self._index += 1
         path = self.artifact_dir / f"{self.stem}-seg{self._index:02d}.wav"
-        if not self.continuous or self.service.config.archive_continuous_segments:
+        if not self.continuous or (
+            self.service.config.archive_continuous_segments and self.service.reserve_archive()
+        ):
             with wave.open(str(path), "wb") as wav:
                 wav.setnchannels(1)
                 wav.setsampwidth(2)
@@ -198,6 +207,8 @@ class VoiceService:
         tts: TtsProtocol | None = None,
         local_player: AudioSinkProtocol | None = None,
     ) -> None:
+        self._archived_segments = 0
+        self._archive_limit_reported = False
         self.config = config
         self.asr = asr
         self.agent_motion = agent_motion
@@ -207,6 +218,16 @@ class VoiceService:
         self._active: set[str] = set()
         self._local_tasks: set[asyncio.Task] = set()
         self._playback_pending = 0
+
+    def reserve_archive(self) -> bool:
+        """Bound opt-in continuous recording per service lifetime; no disk flood."""
+        if self._archived_segments >= self.config.archive_max_segments:
+            if not self._archive_limit_reported:
+                logger.warning("voice diagnostic recording limit reached; audio still processed")
+                self._archive_limit_reported = True
+            return False
+        self._archived_segments += 1
+        return True
 
     @property
     def is_playing(self) -> bool:
@@ -221,11 +242,14 @@ class VoiceService:
             await self.local_player.aclose()
 
     async def _play(self, audio, tail_s=0.3):
+        started = time.monotonic()
+        logger.info("voice local playback start bytes=%d", len(audio.data))
         try:
             await self.local_player.play_pcm(audio.data, audio.sample_rate, audio.channels)
             await asyncio.sleep(tail_s)
         finally:
             self._playback_pending -= 1
+            logger.info("voice local playback ended elapsed_ms=%.1f", (time.monotonic() - started) * 1000)
 
     def _play_done(self, task):
         self._local_tasks.discard(task)
@@ -245,9 +269,10 @@ class VoiceService:
         task.add_done_callback(self._play_done)
 
     def play_ready_tone(self) -> None:
-        samples = 4000  # 250ms: audible at normal Mac volume, no cloud dependency
+        samples = 10400  # 250ms tone, 150ms gap, 250ms tone; no cloud dependency
         pcm = b"".join(
-            struct.pack("<h", int(8000 * math.sin(2 * math.pi * 1000 * i / 16000)))
+            struct.pack("<h", int(10000 * math.sin(2 * math.pi * 1000 * i / 16000))
+                        if i < 4000 or i >= 6400 else 0)
             for i in range(samples)
         )
         self.play_local(TtsAudio("pcm", 16000, 1, pcm), tail_s=0.08)

@@ -1,4 +1,9 @@
-set(voice_sources "src/voice_service.c")
+set(voice_sources
+    "src/voice_service.c"
+    "src/voice_audio.c"
+    "src/voice_transport.c"
+    "src/voice_protocol.c"
+    "src/voice_state.c")
 if(IDF_TARGET STREQUAL "esp32s3")
     list(APPEND voice_sources "src/voice_frontend_s3.c")
 else()

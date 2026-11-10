@@ -1,0 +1,19 @@
+{
+  "tests_passed": 187,
+  "s3_build": "passed",
+  "c6_build": "passed",
+  "firmware_sha256": "f53748b522c4d373aeefe459ffe6f7cd29b18732ddcd1b125e2cf5a09cd28f0c",
+  "raw_recording_ms": 10060,
+  "over_strict_segment_ms": 2460,
+  "full_comparison_ms": 6000,
+  "accepted_segment_ms": 3540,
+  "user_confirmed_both_complete": true,
+  "final_vad": {
+    "start_rms": 200,
+    "end_rms": 120,
+    "pre_roll_ms": 500,
+    "end_silence_ms": 1000
+  },
+  "baidu_calls_in_diagnostic_phase": false,
+  "motion_commands_in_phase": false
+}

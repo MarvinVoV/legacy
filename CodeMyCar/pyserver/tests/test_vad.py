@@ -3,6 +3,8 @@
 import math
 import struct
 
+import pytest
+
 from app.services.vad import EnergyVad, VadConfig
 
 
@@ -89,4 +91,43 @@ def test_arbitrary_chunk_boundaries():
     vad = EnergyVad(config())
     audio = pcm(0.2) + pcm(0.6, 3000) + pcm(0.5)
     segments = feed_all(vad, audio, chunk=7)
+    assert len(segments) == 1
+
+
+@pytest.fixture
+def speech_classifier(monkeypatch):
+    """An over-eager classifier isolates the energy contract from model heuristics."""
+    import webrtcvad
+
+    class Classifier:
+        calls = 0
+
+        def is_speech(self, frame, rate):
+            self.calls += 1
+            return True
+
+    detector = Classifier()
+    monkeypatch.setattr(webrtcvad, "Vad", lambda mode: detector)
+    return detector
+
+
+def test_webrtc_does_not_treat_dc_offset_as_speech(speech_classifier):
+    vad = EnergyVad(config(backend="webrtc"))
+    dc = struct.pack("<h", 2000) * 16000
+    assert feed_all(vad, dc) == []
+    assert vad.flush() == []
+    assert speech_classifier.calls == 50  # adaptation still sees every 20ms frame
+
+
+def test_webrtc_ends_phrase_on_low_energy_background(speech_classifier):
+    vad = EnergyVad(config(backend="webrtc"))
+    background = struct.pack("<h", 800) * 16000
+    segments = feed_all(vad, pcm(.6, 3000) + background)
+    assert len(segments) == 1
+    assert len(segments[0]) / 32000 < 1.0
+
+
+def test_webrtc_energy_floor_can_be_lowered_for_quiet_speech(speech_classifier):
+    vad = EnergyVad(config(backend="webrtc", start_rms=30, end_rms=20))
+    segments = feed_all(vad, pcm(.6, 100) + pcm(.5))
     assert len(segments) == 1

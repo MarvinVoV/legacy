@@ -4,6 +4,13 @@ import io
 import wave
 from dataclasses import dataclass
 
+# Shared across environment settings, service configuration and the segmenter.
+# RMS is PCM16 amplitude; WebRTC uses AC energy (DC offset excluded).
+DEFAULT_VAD_START_RMS = 200
+DEFAULT_VAD_END_RMS = 120
+DEFAULT_VAD_END_SILENCE_MS = 1000
+DEFAULT_VAD_PRE_ROLL_MS = 500
+
 
 @dataclass(frozen=True)
 class TtsAudio:
