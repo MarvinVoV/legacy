@@ -230,6 +230,7 @@ class VoiceService:
         self._active: set[str] = set()
         self._local_tasks: set[asyncio.Task] = set()
         self._playback_pending = 0
+        self._playback_suppress = 0
 
     def reserve_archive(self) -> bool:
         """Bound opt-in continuous recording per service lifetime; no disk flood."""
@@ -245,25 +246,40 @@ class VoiceService:
     def is_playing(self) -> bool:
         return self._playback_pending > 0
 
+    @property
+    def suppresses_detection(self) -> bool:
+        """True only for TTS feedback that would be captured as user speech.
+
+        The ready tone is a prompt, not feedback. Suppressing detection while
+        it is audible drops the first word of a natural "hear tone, speak now"
+        utterance, which is exactly the failure this flag avoids.
+        """
+        return self._playback_suppress > 0
+
     async def aclose(self) -> None:
         for task in list(self._local_tasks):
             task.cancel()
         await asyncio.gather(*self._local_tasks, return_exceptions=True)
         self._playback_pending = 0
+        self._playback_suppress = 0
         if self.local_player and hasattr(self.local_player, "aclose"):
             await self.local_player.aclose()
 
-    async def _play(self, audio, tail_s=0.3):
+    async def _play(self, audio, tail_s=0.3, suppress_detection=True):
         started = time.monotonic()
         logger.info("voice local playback start bytes=%d", len(audio.data))
         if self.local_player is None:
             self._playback_pending -= 1
+            if suppress_detection:
+                self._playback_suppress -= 1
             return
         try:
             await self.local_player.play_pcm(audio.data, audio.sample_rate, audio.channels)
             await asyncio.sleep(tail_s)
         finally:
             self._playback_pending -= 1
+            if suppress_detection:
+                self._playback_suppress -= 1
             logger.info("voice local playback ended elapsed_ms=%.1f", (time.monotonic() - started) * 1000)
 
     def _play_done(self, task):
@@ -271,15 +287,21 @@ class VoiceService:
         if not task.cancelled() and task.exception():
             logger.error("voice playback failed: %s", task.exception())
 
-    def play_local(self, audio: TtsAudio, *, tail_s: float = 0.3) -> None:
-        """在 pyserver 所在机器上播放 TTS；不阻塞 WS。"""
+    def play_local(self, audio: TtsAudio, *, tail_s: float = 0.3,
+                   suppress_detection: bool = True) -> None:
+        """在 pyserver 所在机器上播放 TTS；不阻塞 WS。
+
+        suppress_detection=False is for prompt tones: they must not gate ASR.
+        """
         if self.local_player is None or not self.config.local_playback:
             return
         if self._playback_pending >= 4:
             logger.warning("voice playback queue full; discarding stale feedback")
             return
         self._playback_pending += 1
-        task = asyncio.create_task(self._play(audio, tail_s))
+        if suppress_detection:
+            self._playback_suppress += 1
+        task = asyncio.create_task(self._play(audio, tail_s, suppress_detection))
         self._local_tasks.add(task)
         task.add_done_callback(self._play_done)
 
@@ -290,7 +312,8 @@ class VoiceService:
                         if i < 4000 or i >= 6400 else 0)
             for i in range(samples)
         )
-        self.play_local(TtsAudio("pcm", 16000, 1, pcm), tail_s=0.08)
+        self.play_local(TtsAudio("pcm", 16000, 1, pcm), tail_s=0.08,
+                        suppress_detection=False)
 
     async def wait_playback(self) -> None:
         await asyncio.gather(*tuple(self._local_tasks), return_exceptions=True)

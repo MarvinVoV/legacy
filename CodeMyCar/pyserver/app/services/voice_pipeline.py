@@ -167,7 +167,7 @@ class VoiceSessionRunner:
         if self.worker.done():
             self.worker.result()
             raise RuntimeError("voice worker stopped")
-        if self.service.is_playing or (self.one_shot and self.segments):
+        if self.service.suppresses_detection or (self.one_shot and self.segments):
             self.session.feed(pcm, detect=False)
             return
         for segment in self.session.feed(pcm):
