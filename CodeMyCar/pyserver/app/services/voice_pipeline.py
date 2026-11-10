@@ -148,9 +148,10 @@ async def _handle_segment(
 class VoiceSessionRunner:
     """One ordered ASR worker, bounded backlog, and a preemptible action task."""
 
-    def __init__(self, service, session, sink):
+    def __init__(self, service, session, sink, one_shot=False):
         self.service, self.session, self.sink = service, session, sink
         self.queue = asyncio.Queue(maxsize=4)
+        self.one_shot = one_shot
         self.cancelled = False
         self.action_task = None
         self.worker = asyncio.create_task(self._work())
@@ -162,11 +163,14 @@ class VoiceSessionRunner:
         if self.worker.done():
             self.worker.result()
             raise RuntimeError("voice worker stopped")
-        if self.service.is_playing:
+        if self.service.is_playing or (self.one_shot and self.segments):
             self.session.feed(pcm, detect=False)
             return
         for segment in self.session.feed(pcm):
             self._enqueue(segment)
+            if self.one_shot:
+                self.session.discard()
+                break
 
     def _enqueue(self, segment):
         self.queue.put_nowait(segment)  # caller fails closed on overflow

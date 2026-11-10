@@ -14,11 +14,12 @@ def main():
     parser.add_argument('--suspended',action='store_true',required=True)
     parser.parse_args()
     capture=Capture('DEV_1')
+    http = urllib.request.build_opener(urllib.request.ProxyHandler({}))
     def post(path,body=None):
         request=urllib.request.Request('http://127.0.0.1:8000/api/v1'+path,
             data=json.dumps(body).encode() if body is not None else None,
             headers={'Content-Type':'application/json'},method='POST')
-        with urllib.request.urlopen(request,timeout=12) as res:return json.load(res)
+        with http.open(request,timeout=12) as res:return json.load(res)
     def stop():
         res=post('/agent/devices/DEV_1/stop')
         assert res.get('confirmed') and res.get('stopped'),res

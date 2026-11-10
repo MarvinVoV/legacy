@@ -1,0 +1,162 @@
+{
+  "stage": "stationary_connectivity_after_serial_open",
+  "pings": [
+    76.3,
+    23.2,
+    8.1
+  ],
+  "stops": [
+    {
+      "ms": 78.1,
+      "result": {
+        "ok": true,
+        "stopped": true,
+        "accepted": true,
+        "confirmed": true,
+        "seq": 7
+      }
+    },
+    {
+      "ms": 196.1,
+      "result": {
+        "ok": true,
+        "stopped": true,
+        "accepted": true,
+        "confirmed": true,
+        "seq": 8
+      }
+    },
+    {
+      "ms": 140.8,
+      "result": {
+        "ok": true,
+        "stopped": true,
+        "accepted": true,
+        "confirmed": true,
+        "seq": 9
+      }
+    },
+    {
+      "ms": 139.3,
+      "result": {
+        "ok": true,
+        "stopped": true,
+        "accepted": true,
+        "confirmed": true,
+        "seq": 10
+      }
+    },
+    {
+      "ms": 108.2,
+      "result": {
+        "ok": true,
+        "stopped": true,
+        "accepted": true,
+        "confirmed": true,
+        "seq": 11
+      }
+    },
+    {
+      "ms": 130.3,
+      "result": {
+        "ok": true,
+        "stopped": true,
+        "accepted": true,
+        "confirmed": true,
+        "seq": 12
+      }
+    },
+    {
+      "ms": 208.6,
+      "result": {
+        "ok": true,
+        "stopped": true,
+        "accepted": true,
+        "confirmed": true,
+        "seq": 13
+      }
+    },
+    {
+      "ms": 85.0,
+      "result": {
+        "ok": true,
+        "stopped": true,
+        "accepted": true,
+        "confirmed": true,
+        "seq": 14
+      }
+    },
+    {
+      "ms": 157.3,
+      "result": {
+        "ok": true,
+        "stopped": true,
+        "accepted": true,
+        "confirmed": true,
+        "seq": 15
+      }
+    },
+    {
+      "ms": 159.0,
+      "result": {
+        "ok": true,
+        "stopped": true,
+        "accepted": true,
+        "confirmed": true,
+        "seq": 16
+      }
+    }
+  ],
+  "status": {
+    "success": true,
+    "message": "ok",
+    "data": {
+      "device_id": "DEV_1",
+      "online": true,
+      "last_heartbeat_age": 12.9,
+      "uptime_s": 63,
+      "heap_free": 102687,
+      "stm32_connected": true,
+      "front_distance_cm": 400,
+      "rear_distance_cm": 400,
+      "sensor_age_s": 0.1,
+      "yaw_deg": -0.3,
+      "yaw_rate_dps": 0.0,
+      "imu_status": 3,
+      "imu_age_s": 0.1,
+      "accel_mps2": [
+        -0.671,
+        -0.746,
+        9.828
+      ],
+      "gyro_radps": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "imu_raw_age_s": 0.1
+    }
+  },
+  "state": {
+    "ok": true,
+    "online": true,
+    "stm32_connected": true,
+    "motion_supported": true,
+    "motion": {
+      "state": "idle",
+      "seq": 16,
+      "age_ms": 106,
+      "stale": false
+    },
+    "pose": {
+      "x_cm": 0.0,
+      "y_cm": 0.0,
+      "heading_deg": 0.0,
+      "odometer_cm": 0.0
+    },
+    "velocity": {
+      "linear_cm_s": 0.0,
+      "angular_deg_s": 0.0
+    }
+  }
+}

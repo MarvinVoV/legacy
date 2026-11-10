@@ -1,6 +1,6 @@
 /**
  * @file main.c
- * @brief CodeMyCar ESP32-C6 固件 v2.0 入口
+ * @brief CodeMyCar network bridge + voice firmware entry
  *
  * 事件驱动架构：app_main 完成初始化后删除自身，
  * 所有工作由各组件任务和 esp_event 事件循环驱动。
@@ -11,6 +11,9 @@
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_system.h"
+#include "esp_chip_info.h"
+#include "esp_flash.h"
+#include "esp_heap_caps.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "health_monitor.h"
@@ -26,7 +29,15 @@ static const char* TAG = "main";
 
 void app_main(void)
 {
-    ESP_LOGI(TAG, "=== CodeMyCar ESP32-C6 v2.0 ===");
+    esp_chip_info_t chip;
+    esp_chip_info(&chip);
+    uint32_t flash_bytes = 0;
+    ESP_ERROR_CHECK(esp_flash_get_size(NULL, &flash_bytes));
+    ESP_LOGI(TAG, "=== CodeMyCar %s ===", CONFIG_IDF_TARGET);
+    ESP_LOGI(TAG, "board cores=%u flash_bytes=%lu psram_bytes=%u internal_free=%u",
+             (unsigned)chip.cores, (unsigned long)flash_bytes,
+             (unsigned)heap_caps_get_total_size(MALLOC_CAP_SPIRAM),
+             (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT));
     ESP_LOGI(TAG, "Free heap: %zu bytes", esp_get_free_heap_size());
 
     /* 1. NVS 初始化 */
@@ -72,8 +83,9 @@ void app_main(void)
     ESP_ERROR_CHECK(wifi_service_start());
 
 #if CONFIG_CMCAR_VOICE_ENABLED
-    ESP_ERROR_CHECK(voice_service_start());
-    ESP_LOGI(TAG, "voice service started");
+    ret = voice_service_start();
+    if (ret != ESP_OK)
+        ESP_LOGW(TAG, "Voice unavailable (%s); control bridge continues", esp_err_to_name(ret));
 #endif
 
     ESP_LOGI(TAG, "System ready. Free heap: %zu bytes",

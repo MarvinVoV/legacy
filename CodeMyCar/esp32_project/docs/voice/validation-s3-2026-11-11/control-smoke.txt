@@ -1,0 +1,13 @@
+{"case": "initial_stop", "pass": true, "ms": 123.6}
+{"case": "direct_forward", "pass": true, "left_mmps": 96, "right_mmps": 101, "stop_ms": 363.9}
+{"case": "direct_reverse", "pass": true, "left_mmps": -82, "right_mmps": -90, "stop_ms": 467.2}
+{"case": "drive_forward", "pass": true, "left_mmps": 75, "right_mmps": 76, "stop_ms": 262.4}
+{"case": "drive_reverse", "pass": true, "left_mmps": -63, "right_mmps": -67, "stop_ms": 426.4}
+{"case": "curve_left", "pass": true, "left_mmps": 62, "right_mmps": 91, "stop_ms": 298.9}
+{"case": "curve_right", "pass": true, "left_mmps": 82, "right_mmps": 72, "stop_ms": 328.8}
+{"case": "lease_expiry", "pass": true, "after_ms": 836.9}
+{"case": "goal_5cm", "pass": true, "heading_source": "imu", "measured": {"distance_cm": 4.6, "turn_deg": 0.008, "duration_ms": 1448, "final_state": "done"}}
+{"case": "interrupt_running_goal", "pass": true, "stop_ms": 207.3, "result": {"detail": {"code": "aborted_by_stop", "message": "stopped by request", "detail": {}}}}
+{"case": "stop_x10", "pass": true, "min_ms": 70.6, "max_ms": 137.9}
+{"total_passed": 11, "results": [{"case": "initial_stop", "pass": true, "ms": 123.6}, {"case": "direct_forward", "pass": true, "left_mmps": 96, "right_mmps": 101, "stop_ms": 363.9}, {"case": "direct_reverse", "pass": true, "left_mmps": -82, "right_mmps": -90, "stop_ms": 467.2}, {"case": "drive_forward", "pass": true, "left_mmps": 75, "right_mmps": 76, "stop_ms": 262.4}, {"case": "drive_reverse", "pass": true, "left_mmps": -63, "right_mmps": -67, "stop_ms": 426.4}, {"case": "curve_left", "pass": true, "left_mmps": 62, "right_mmps": 91, "stop_ms": 298.9}, {"case": "curve_right", "pass": true, "left_mmps": 82, "right_mmps": 72, "stop_ms": 328.8}, {"case": "lease_expiry", "pass": true, "after_ms": 836.9}, {"case": "goal_5cm", "pass": true, "heading_source": "imu", "measured": {"distance_cm": 4.6, "turn_deg": 0.008, "duration_ms": 1448, "final_state": "done"}}, {"case": "interrupt_running_goal", "pass": true, "stop_ms": 207.3, "result": {"detail": {"code": "aborted_by_stop", "message": "stopped by request", "detail": {}}}}, {"case": "stop_x10", "pass": true, "min_ms": 70.6, "max_ms": 137.9}]}
+FINAL_STOP 117.2

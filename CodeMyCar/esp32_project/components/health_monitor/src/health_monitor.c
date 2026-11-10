@@ -20,6 +20,7 @@
 #include "esp_idf_version.h"
 #include "esp_log.h"
 #include "esp_system.h"
+#include "esp_heap_caps.h"
 #include "esp_task_wdt.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
@@ -66,8 +67,9 @@ static void health_mon_task(void* arg)
         esp_task_wdt_reset();
 
         /* 2. 堆监控 */
-        const size_t heap_free = esp_get_free_heap_size();
-        const size_t heap_min = esp_get_minimum_free_heap_size();
+        /* PSRAM must not hide exhaustion of internal RAM used by drivers/tasks. */
+        const size_t heap_free = heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+        const size_t heap_min = heap_caps_get_minimum_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
 
         if (heap_free < HEAP_CRIT_THRESHOLD)
         {

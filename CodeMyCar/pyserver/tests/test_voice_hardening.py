@@ -251,3 +251,91 @@ async def test_expired_audio_never_calls_provider_or_dispatch(tmp_path):
     )
     assert await _handle_segment(sink, service, segment, "test", dispatch)
     assert asr.calls == 0 and sink.frames[0]["error"] == "stale_audio"
+
+
+def test_one_shot_accepts_only_first_utterance(client, tmp_path):
+    asr = FakeAsr()
+    client.app.state.voice_service = make_service(tmp_path, asr)
+    with client.websocket_connect("/api/v1/voice/stream") as ws:
+        ws.send_text(start_frame(continuous=True, one_shot=True))
+        assert ws.receive_json()["type"] == "ready"
+        ws.send_bytes(pcm(0.3, 3000) + pcm(0.3))
+        assert ws.receive_json()["type"] == "recognizing"
+        assert ws.receive_json()["type"] == "final"
+        ws.send_bytes(pcm(0.3, 3000) + pcm(0.3))
+        ws.send_bytes(pcm(0.3, 3000))  # unfinished follow-up must not flush at end
+        ws.send_text('{"type":"end"}')
+        end = ws.receive_json()
+        assert end["type"] == "end" and end["segments"] == 1
+    assert asr.calls == 1
+
+
+def test_one_shot_metadata_rejects_non_boolean(client, tmp_path):
+    client.app.state.voice_service = make_service(tmp_path, FakeAsr())
+    with client.websocket_connect("/api/v1/voice/stream") as ws:
+        ws.send_text(start_frame(one_shot="yes"))
+        assert ws.receive_json()["type"] == "error"
+
+
+def test_one_shot_signals_endpoint_before_slow_asr_finishes(client, tmp_path):
+    release = threading.Event()
+
+    class SlowAsr:
+        completed = False
+
+        async def recognize(self, data):
+            await asyncio.to_thread(release.wait, 3)
+            self.completed = True
+            return "前进一米"
+
+    asr = SlowAsr()
+    client.app.state.voice_service = make_service(tmp_path, asr)
+    try:
+        with client.websocket_connect("/api/v1/voice/stream") as ws:
+            ws.send_text(start_frame(continuous=True, one_shot=True))
+            assert ws.receive_json()["type"] == "ready"
+            ws.send_bytes(pcm(0.3, 3000) + pcm(0.3))
+            assert ws.receive_json()["type"] == "recognizing"
+            assert not asr.completed
+            ws.send_text('{"type":"end"}')
+            release.set()
+            assert ws.receive_json()["type"] == "final"
+            assert ws.receive_json()["type"] == "end"
+    finally:
+        release.set()
+
+
+async def test_failed_local_player_is_reported_and_temp_file_is_removed(monkeypatch):
+    from pathlib import Path
+
+    from app.services.local_audio import LocalAudioPlayer
+
+    paths = []
+
+    class Process:
+        returncode = 2
+
+        async def wait(self):
+            return self.returncode
+
+    async def spawn(*args, **kwargs):
+        paths.append(args[-1])
+        return Process()
+
+    monkeypatch.setattr(asyncio, "create_subprocess_exec", spawn)
+    with pytest.raises(RuntimeError, match="exited with code 2"):
+        await LocalAudioPlayer().play_pcm(b"\0" * 320)
+    assert paths and not Path(paths[0]).exists()
+
+
+async def test_ready_tone_is_local_and_playback_is_awaitable(tmp_path):
+    from tests.test_voice_ws import FakeLocalPlayer
+
+    player = FakeLocalPlayer()
+    service = make_service(tmp_path, FakeAsr(), local_player=player)
+    service.play_ready_tone()
+    assert service.is_playing
+    await service.wait_playback()
+    assert not service.is_playing
+    assert len(player.played) == 1
+    assert player.played[0][1:] == (16000, 1)

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-ESP-IDF firmware (target **ESP32-C6**, IDF v6.1.0) for the CodeMyCar project. The ESP32 is a **network bridge**: it translates JSON `ControlCommand`s from the MQTT broker into v2 binary control frames over UART to an attached MCU (STM32), and translates binary sensor/log frames from the STM32 back into JSON over MQTT. ESP32-C6 has **no hardware FPU** — sensor floats travel as ×1000 scaled integers. The codebase is in C; comments and `README.md` are in Chinese.
+ESP-IDF firmware (IDF v6.1.0) for the CodeMyCar project. New board profile: **ESP32-S3-DevKitC-1 / WROOM-2-N32R16V** (32MB Octal Flash, 16MB PSRAM); legacy **ESP32-C6** remains buildable. The ESP32 is a **network bridge**: it translates JSON `ControlCommand`s from the MQTT broker into v2 binary control frames over UART to an attached MCU (STM32), and translates binary sensor/log frames from the STM32 back into JSON over MQTT. Sensor values retain the existing scaled-integer wire contract on both chips. The codebase is in C; comments and `README.md` are in Chinese.
 
 Protocol layering (post-v2 refactor): **pyserver = JSON-only over MQTT**; **ESP32 `bridge` = sole JSON↔binary translator**; **STM32 = binary-only v2 frames**.
 
@@ -13,6 +13,8 @@ The git repo root (`/Users/sunyameng/github/legacy`) also contains `serial_pkt_p
 ## Build, Flash, Monitor
 
 `idf.py` is the supported entry point. Target is set in `sdkconfig` (`esp32c6`).
+
+For S3 use `python tools/firmware.py build` from `esp32_project/` after activating IDF. It isolates `sdkconfig.s3` and `build-s3/`; flash requires `--port` and a verified S3 device. `python tools/firmware.py --board c6 build` retains the old target. Do not run `set-target` on the existing C6 configuration to migrate the S3 board. Current wiring, memory budget, validation and remaining hardware checks: `docs/voice/S3-N32R16V-Migration-And-Voice-Handoff-2026-11-10.md`. The commands below describe the legacy C6 workflow.
 
 ```bash
 idf.py set-target esp32c6     # only when starting fresh / after fullclean

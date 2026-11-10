@@ -1,0 +1,7 @@
+ready model=wn9s_nihaoxiaozhi word=nihaoxiaozhi frame_samples=512 heap_before=200000 heap_after=200000 largest=100000
+wake audio gap; reset model history
+DETECTED nihaoxiaozhi
+wake init failed; voice disabled, no open-mic fallback
+wake init failed; voice disabled, no open-mic fallback
+wake init failed; voice disabled, no open-mic fallback
+voice_wake: production adapter reframing, gap reset, trigger reset, format and model failures passed (mock engine)

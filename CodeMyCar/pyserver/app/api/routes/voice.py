@@ -40,6 +40,8 @@ def _parse_start(meta: Any) -> tuple[str | None, str | None]:
         return None, "only mono is supported"
     if meta.get("bits", 16) != 16:
         return None, "only 16-bit PCM is supported"
+    if not isinstance(meta.get("one_shot", False), bool):
+        return None, "one_shot must be boolean"
     device = meta.get("device", "DEV_1")
     if not isinstance(device, str) or not device or len(device) > _MAX_DEVICE_ID_LEN:
         return None, "invalid device"
@@ -140,7 +142,10 @@ async def voice_stream(ws: WebSocket) -> None:
                 await ws.send_bytes(data)
 
     sink = Sink()
-    runner = VoiceSessionRunner(service, session, sink)
+    one_shot = meta.get("one_shot", False)
+    runner = VoiceSessionRunner(service, session, sink, one_shot=one_shot)
+    if one_shot:
+        service.play_ready_tone()
 
     max_bytes = int(service.config.max_session_s * service.config.sample_rate * 2)
     segments = 0
@@ -170,7 +175,12 @@ async def voice_stream(ws: WebSocket) -> None:
                     runner.cancelled = True
                     await _send_json(sink, {"type": "error", "message": "audio too long"})
                     break
+                previous_segments = runner.segments
                 runner.feed(data)
+                if one_shot and runner.segments > previous_segments:
+                    # Endpointing has finished. Let the device end its audio
+                    # upload now; cloud ASR/TTS must not consume the mic timeout.
+                    await _send_json(sink, {"type": "recognizing", "index": runner.segments})
                 continue
 
             text = msg.get("text")
@@ -207,6 +217,8 @@ async def voice_stream(ws: WebSocket) -> None:
         try:
             if normal_end and not aborted and not client_gone:
                 await asyncio.wait_for(runner.finish(), timeout=30)
+                if one_shot:
+                    await asyncio.wait_for(service.wait_playback(), timeout=15)
         except Exception:
             logger.exception("voice session finish failed")
             normal_end = False

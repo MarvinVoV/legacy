@@ -24,7 +24,4 @@ else()
 endif()
 
 set(EXTRA_COMPONENT_DIRS components) 
-set(CMAKE_BINARY_DIR "${CMAKE_SOURCE_DIR}/build")
-set(CMAKE_CURRENT_BINARY_DIR "${CMAKE_BINARY_DIR}")
-
 project(esp32_project)

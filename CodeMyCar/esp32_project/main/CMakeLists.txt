@@ -11,4 +11,5 @@ idf_component_register(
         bridge
         health_monitor
         voice_service
+        spi_flash
 )

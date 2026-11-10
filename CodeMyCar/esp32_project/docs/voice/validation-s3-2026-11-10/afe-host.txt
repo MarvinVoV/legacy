@@ -1,0 +1,10 @@
+AFE init failed: voice closed, control bridge remains available
+AFE init failed: voice closed, control bridge remains available
+AFE init failed: voice closed, control bridge remains available
+ready mono 16kHz wake=wn9_nihaoxiaozhi_tts feed_samples=512 AEC=off; workspace prefers PSRAM
+S3 frontend: frame continuity, model failures, controls, half duplex and cleanup passed (mock AFE)
+AFE init failed: voice closed, control bridge remains available
+AFE init failed: voice closed, control bridge remains available
+AFE init failed: voice closed, control bridge remains available
+ready mono 16kHz wake=wn9_nihaoxiaozhi_tts feed_samples=512 AEC=off; workspace prefers PSRAM
+S3 frontend: frame continuity, model failures, controls, half duplex and cleanup passed (mock AFE)

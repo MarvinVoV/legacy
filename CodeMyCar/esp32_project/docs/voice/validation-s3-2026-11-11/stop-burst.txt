@@ -1,0 +1,7 @@
+INITIAL_STOP 188.8
+DIFFERENTIAL_REJECTED {"seq": 240, "ack": true, "status": 3, "session_id": 1014893335}
+{"cycle": 1, "pass": true, "burst": 40, "stop_ms": 440.6, "quiet_samples": 8}
+{"cycle": 2, "pass": true, "burst": 40, "stop_ms": 503.2, "quiet_samples": 8}
+{"cycle": 3, "pass": true, "burst": 40, "stop_ms": 468.8, "quiet_samples": 8}
+{"passed": 3, "min_stop_ms": 440.6, "max_stop_ms": 503.2}
+FINAL_STOP 133.4

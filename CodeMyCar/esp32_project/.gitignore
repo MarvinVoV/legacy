@@ -6,3 +6,6 @@ managed_components/
 .cache/
 eim_config.toml
 .firecrawl/
+build-s3/
+sdkconfig.s3
+sdkconfig.s3.old

@@ -1,0 +1,4 @@
+{"reboot": 1, "session": 2192764983, "first_heartbeat_uptime_s": 2, "wait_after_reset_ms": 3511.0, "stop": {"ok": true, "stopped": true, "accepted": true, "confirmed": true, "seq": 47}}
+{"reboot": 2, "session": 558950576, "first_heartbeat_uptime_s": 2, "wait_after_reset_ms": 3491.2, "stop": {"ok": true, "stopped": true, "accepted": true, "confirmed": true, "seq": 48}}
+{"reboot": 3, "session": 1596613672, "first_heartbeat_uptime_s": 2, "wait_after_reset_ms": 3501.0, "stop": {"ok": true, "stopped": true, "accepted": true, "confirmed": true, "seq": 49}}
+REBOOT_SESSION_PASS 3/3

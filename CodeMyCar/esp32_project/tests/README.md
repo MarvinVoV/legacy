@@ -14,3 +14,8 @@ bash "$PROJECT_ROOT/esp32_project/tests/host/run.sh"
 ```
 
 PROJECT_ROOT设置、平台依赖、失败定位、重复包含.c的链接注意事项均在指南中。
+# S3语音前端与C6兼容测试
+
+从CodeMyCar目录执行 `bash esp32_project/tests/voice_frontend_host/run.sh`：用mock AFE编译实际S3适配器，分别验证NS开/关、320→512采样拼接、初始化失败、半双工控制、超时与清理；启用ASan/UBSan，不访问云、不驱动电机、不证明真实唤醒率。
+
+`bash esp32_project/tests/voice_wake_host/run.sh` 单独验证C6的WakeNet适配器。完整迁移构建、接线、内存预算与真实验收进度见 [S3语音交接](../docs/voice/S3-N32R16V-Migration-And-Voice-Handoff-2026-11-10.md)。

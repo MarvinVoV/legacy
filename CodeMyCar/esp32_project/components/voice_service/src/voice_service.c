@@ -11,16 +11,26 @@
  */
 
 #include "voice_service.h"
+#include "sdkconfig.h"
+#if CONFIG_IDF_TARGET_ESP32S3
+#include "voice_frontend.h"
+#else
+#include "voice_wake.h"
+#endif
 
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdatomic.h>
 
 #include "driver/i2s_std.h"
+#include "driver/gpio.h"
 #include "driver/uart.h"
 #include "esp_event.h"
 #include "esp_log.h"
+#include "esp_system.h"
+#include "esp_heap_caps.h"
 #include "esp_websocket_client.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
@@ -31,16 +41,29 @@
 #include "sdkconfig.h"
 #include "wifi_service.h"
 
-#define VOICE_BCLK_GPIO 18
-#define VOICE_WS_GPIO 19
-#define VOICE_DIN_GPIO 21
+#define VOICE_BCLK_GPIO CONFIG_CMCAR_VOICE_I2S_BCLK
+#define VOICE_WS_GPIO CONFIG_CMCAR_VOICE_I2S_WS
+#define VOICE_DIN_GPIO CONFIG_CMCAR_VOICE_I2S_DIN
+#if CONFIG_CMCAR_VOICE_I2S_RIGHT_CHANNEL
+#define VOICE_INPUT_SLOT 1
+#else
+#define VOICE_INPUT_SLOT 0
+#endif
 #define VOICE_SAMPLE_RATE 16000
 #define VOICE_CHUNK_FRAMES 320
 #define VOICE_WS_CONNECTED_BIT BIT0
 #define VOICE_WS_READY_BIT BIT1
 #define VOICE_WS_END_BIT BIT2
 #define VOICE_WS_FAILED_BIT BIT3
+#define VOICE_WS_FINAL_BIT BIT4
+#define VOICE_WS_RECOGNIZING_BIT BIT5
+#if CONFIG_IDF_TARGET_ESP32S3
+#define VOICE_TASK_STACK 8192
+#define VOICE_WS_STACK 6144
+#else
 #define VOICE_TASK_STACK 6144
+#define VOICE_WS_STACK 4096
+#endif
 #define VOICE_CONSOLE_STACK 4096
 
 static const char *TAG = "voice";
@@ -51,13 +74,68 @@ typedef struct {
     int16_t pcm[VOICE_CHUNK_FRAMES];
 } voice_frame_t;
 static QueueHandle_t s_ring;
+static StaticQueue_t s_ring_control;
+static uint8_t *s_ring_storage;
 static int32_t *s_raw_buffer;
 static int16_t *s_pcm_buffer;
 static char s_control[2048];
 static int s_control_used;
 static EventGroupHandle_t s_ws_events;
-static volatile bool s_trigger;
-static volatile bool s_busy;
+static atomic_bool s_trigger;
+static atomic_bool s_busy;
+static atomic_uint s_replaced_frames;
+
+static void queue_pcm(voice_frame_t *frame)
+{
+    if (xQueueSend(s_ring, frame, 0) != pdTRUE) {
+        voice_frame_t old;
+        xQueueReceive(s_ring, &old, 0);
+        atomic_fetch_add(&s_replaced_frames, 1);
+        xQueueSend(s_ring, frame, 0);
+    }
+}
+
+#if CONFIG_IDF_TARGET_ESP32S3
+static void frontend_task(void *arg)
+{
+    (void)arg;
+    voice_frame_t frame = {0};
+    uint32_t sequence = 0;
+    bool previous_speech = false;
+    while (true) {
+        const int16_t *pcm;
+        size_t samples;
+        bool wake, speech;
+        if (!voice_frontend_fetch(&pcm, &samples, &wake, &speech, !atomic_load(&s_busy))) {
+            /* A timeout/error breaks stream continuity; never join old partial
+             * PCM to new PCM and silently recognise a corrupted command. */
+            frame.frames = 0;
+            ++sequence;
+            vTaskDelay(pdMS_TO_TICKS(10));
+            continue;
+        }
+        if (speech != previous_speech) {
+            ESP_LOGI(TAG, "AFE VAD %s", speech ? "speech" : "silence");
+            previous_speech = speech;
+        }
+        if (wake && CONFIG_CMCAR_VOICE_WAKE_ENABLED && !atomic_load(&s_busy)) {
+            atomic_store(&s_trigger, true);
+            ESP_LOGI(TAG, "DETECTED nihaoxiaozhi");
+        }
+        while (samples) {
+            size_t n = VOICE_CHUNK_FRAMES - frame.frames;
+            if (n > samples) n = samples;
+            memcpy(frame.pcm + frame.frames, pcm, n * sizeof(int16_t));
+            frame.frames += n; pcm += n; samples -= n;
+            if (frame.frames == VOICE_CHUNK_FRAMES) {
+                frame.sequence = sequence++;
+                queue_pcm(&frame);
+                frame.frames = 0;
+            }
+        }
+    }
+}
+#endif
 
 static void ws_event_handler(void *arg, esp_event_base_t base, int32_t event_id,
                              void *event_data)
@@ -91,6 +169,8 @@ static void ws_event_handler(void *arg, esp_event_base_t base, int32_t event_id,
                     cJSON *type = cJSON_GetObjectItemCaseSensitive(msg, "type");
                     if (cJSON_IsString(type) && s_ws_events) {
                         if (!strcmp(type->valuestring, "ready")) xEventGroupSetBits(s_ws_events, VOICE_WS_READY_BIT);
+                        if (!strcmp(type->valuestring, "final")) xEventGroupSetBits(s_ws_events, VOICE_WS_FINAL_BIT);
+                        if (!strcmp(type->valuestring, "recognizing")) xEventGroupSetBits(s_ws_events, VOICE_WS_RECOGNIZING_BIT);
                         if (!strcmp(type->valuestring, "end")) xEventGroupSetBits(s_ws_events, VOICE_WS_END_BIT);
                         if (!strcmp(type->valuestring, "error")) xEventGroupSetBits(s_ws_events, VOICE_WS_FAILED_BIT);
                     }
@@ -109,6 +189,26 @@ static void ws_event_handler(void *arg, esp_event_base_t base, int32_t event_id,
 
 static esp_err_t i2s_rx_init(void)
 {
+    if (!GPIO_IS_VALID_OUTPUT_GPIO(VOICE_BCLK_GPIO) ||
+        !GPIO_IS_VALID_OUTPUT_GPIO(VOICE_WS_GPIO) ||
+        !GPIO_IS_VALID_GPIO(VOICE_DIN_GPIO) ||
+        VOICE_BCLK_GPIO == VOICE_WS_GPIO || VOICE_BCLK_GPIO == VOICE_DIN_GPIO ||
+        VOICE_WS_GPIO == VOICE_DIN_GPIO ||
+        VOICE_BCLK_GPIO == CONFIG_CMCAR_UART_TX_PIN || VOICE_BCLK_GPIO == CONFIG_CMCAR_UART_RX_PIN ||
+        VOICE_WS_GPIO == CONFIG_CMCAR_UART_TX_PIN || VOICE_WS_GPIO == CONFIG_CMCAR_UART_RX_PIN ||
+        VOICE_DIN_GPIO == CONFIG_CMCAR_UART_TX_PIN || VOICE_DIN_GPIO == CONFIG_CMCAR_UART_RX_PIN) {
+        ESP_LOGE(TAG, "Invalid I2S pins or collision with control UART");
+        return ESP_ERR_INVALID_ARG;
+    }
+#if CONFIG_IDF_TARGET_ESP32S3
+    const int pins[] = {VOICE_BCLK_GPIO, VOICE_WS_GPIO, VOICE_DIN_GPIO};
+    for (size_t i = 0; i < sizeof(pins) / sizeof(pins[0]); ++i) {
+        if (pins[i] >= 26 && pins[i] <= 37) {
+            ESP_LOGE(TAG, "I2S pin conflicts with S3 WROOM-2 Flash/PSRAM");
+            return ESP_ERR_INVALID_ARG;
+        }
+    }
+#endif
     i2s_chan_config_t chan_cfg =
         I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_AUTO, I2S_ROLE_MASTER);
     esp_err_t err = i2s_new_channel(&chan_cfg, NULL, &s_rx);
@@ -139,6 +239,9 @@ static esp_err_t i2s_rx_init(void)
     if (err != ESP_OK) {
         return err;
     }
+    /* ICS43434 releases SD in the unused slot. Also keep an unplugged input
+     * quiet instead of feeding floating-pin noise into the wake model. */
+    gpio_set_pull_mode(VOICE_DIN_GPIO, GPIO_PULLDOWN_ONLY);
     return i2s_channel_enable(s_rx);
 }
 
@@ -149,9 +252,10 @@ static void capture_task(void *arg)
     int16_t *pcm = s_pcm_buffer;
 
     int chunk_count = 0;
+#if !CONFIG_IDF_TARGET_ESP32S3
     uint32_t sequence = 0;
-    uint32_t dropped = 0;
     voice_frame_t frame = {0};
+#endif
     while (true) {
         size_t bytes_read = 0;
         esp_err_t err = i2s_channel_read(
@@ -170,7 +274,7 @@ static void capture_task(void *arg)
         int64_t sum_sq = 0;
         int peak = 0;
         for (int i = 0; i < frames; i++) {
-            int32_t v = raw[2 * i] >> 16;
+            int32_t v = raw[2 * i + VOICE_INPUT_SLOT] >> 16;
             pcm[i] = (int16_t)v;
             sum_sq += (int64_t)v * v;
             int a = v < 0 ? -v : v;
@@ -178,22 +282,25 @@ static void capture_task(void *arg)
                 peak = a;
             }
         }
+#if CONFIG_IDF_TARGET_ESP32S3
+        if (!voice_frontend_feed(pcm, (size_t)frames)) {
+            ESP_LOGE(TAG, "AFE feed failed");
+            vTaskDelay(pdMS_TO_TICKS(20));
+        }
+#else
         frame.sequence = sequence++;
         frame.frames = frames;
         memcpy(frame.pcm, pcm, frames * sizeof(int16_t));
-        if (xQueueSend(s_ring, &frame, 0) != pdTRUE) {
-            voice_frame_t old;
-            xQueueReceive(s_ring, &old, 0); /* idle buffer retains newest frames */
-            dropped++;
-            xQueueSend(s_ring, &frame, 0);
-        }
+        queue_pcm(&frame);
+#endif
 
         chunk_count++;
         if ((chunk_count % 25) == 0) {
             int rms = (int)sqrt((double)sum_sq / frames);
-            ESP_LOGI(TAG, "mic rms=%d peak=%d replaced_frames=%lu", rms, peak, (unsigned long)dropped);
+            ESP_LOGI(TAG, "mic rms=%d peak=%d replaced_frames=%u", rms, peak,
+                     (unsigned)atomic_load(&s_replaced_frames));
         }
-        if (!CONFIG_CMCAR_VOICE_CONTINUOUS && !s_busy && (int)sqrt((double)sum_sq / frames) >= CONFIG_CMCAR_VOICE_TRIGGER_RMS) {
+        if (!CONFIG_CMCAR_VOICE_WAKE_ENABLED && !CONFIG_CMCAR_VOICE_CONTINUOUS && !s_busy && (int)sqrt((double)sum_sq / frames) >= CONFIG_CMCAR_VOICE_TRIGGER_RMS) {
             s_trigger = true;
         }
     }
@@ -222,8 +329,8 @@ static void run_session(void)
         .disable_auto_reconnect = true,
         .network_timeout_ms = 5000,
         .buffer_size = 2048,
-        .task_stack = 4096,
-        .task_prio = 4,
+        .task_stack = VOICE_WS_STACK,
+        .task_prio = TASK_PRIO_VOICE_NETWORK,
     };
     esp_websocket_client_handle_t ws = esp_websocket_client_init(&ws_cfg);
     if (ws == NULL) {
@@ -250,11 +357,13 @@ static void run_session(void)
         goto cleanup;
     }
 
-    char start[192];
+    const bool continuous = CONFIG_CMCAR_VOICE_CONTINUOUS || CONFIG_CMCAR_VOICE_WAKE_ENABLED;
+    char start[224];
     int n = snprintf(
         start, sizeof(start),
-        "{\"type\":\"start\",\"device\":\"%s\",\"rate\":16000,\"ch\":1,\"bits\":16,\"continuous\":%s}",
-        CONFIG_CMCAR_DEVICE_ID, CONFIG_CMCAR_VOICE_CONTINUOUS ? "true" : "false");
+        "{\"type\":\"start\",\"device\":\"%s\",\"rate\":16000,\"ch\":1,\"bits\":16,\"continuous\":%s,\"one_shot\":%s}",
+        CONFIG_CMCAR_DEVICE_ID, continuous ? "true" : "false",
+        CONFIG_CMCAR_VOICE_WAKE_ENABLED ? "true" : "false");
     if (esp_websocket_client_send_text(ws, start, n, pdMS_TO_TICKS(1000)) != n) {
         ESP_LOGE(TAG, "send start failed");
         goto cleanup;
@@ -263,16 +372,24 @@ static void run_session(void)
     bits = xEventGroupWaitBits(s_ws_events, VOICE_WS_READY_BIT | VOICE_WS_FAILED_BIT,
                               pdFALSE, pdFALSE, pdMS_TO_TICKS(5000));
     if (!(bits & VOICE_WS_READY_BIT) || (bits & VOICE_WS_FAILED_BIT)) goto cleanup;
-    if (CONFIG_CMCAR_VOICE_CONTINUOUS) xQueueReset(s_ring); /* no replay across reconnect */
+    if (continuous) xQueueReset(s_ring); /* no replay across reconnect */
     voice_frame_t frame;
     uint32_t expected = 0;
     bool have_sequence = false;
     size_t samples = 0;
     const size_t target_samples = CONFIG_CMCAR_VOICE_RECORD_SECONDS * VOICE_SAMPLE_RATE;
     const TickType_t started = xTaskGetTickCount();
-    while (CONFIG_CMCAR_VOICE_CONTINUOUS || samples < target_samples) {
+    while (continuous || samples < target_samples) {
         bits = xEventGroupGetBits(s_ws_events);
         if (!(bits & VOICE_WS_CONNECTED_BIT) || (bits & VOICE_WS_FAILED_BIT)) goto cleanup;
+        if (CONFIG_CMCAR_VOICE_WAKE_ENABLED &&
+            (bits & (VOICE_WS_FINAL_BIT | VOICE_WS_RECOGNIZING_BIT))) break;
+        if (CONFIG_CMCAR_VOICE_WAKE_ENABLED && xTaskGetTickCount() - started > pdMS_TO_TICKS(20000)) {
+            const char *abort = "{\"type\":\"abort\"}";
+            esp_websocket_client_send_text(ws, abort, strlen(abort), pdMS_TO_TICKS(500));
+            ESP_LOGI(TAG, "wake window timed out; returning to idle");
+            goto cleanup;
+        }
         if (xQueueReceive(s_ring, &frame, pdMS_TO_TICKS(500)) != pdTRUE) {
             ESP_LOGE(TAG, "capture stalled"); goto cleanup;
         }
@@ -286,20 +403,20 @@ static void run_session(void)
         expected = frame.sequence + 1;
         have_sequence = true;
         size_t count = frame.frames;
-        if (!CONFIG_CMCAR_VOICE_CONTINUOUS && count > target_samples - samples)
+        if (!continuous && count > target_samples - samples)
             count = target_samples - samples;
         int bytes = count * sizeof(int16_t);
         if (esp_websocket_client_send_bin(ws, (const char *)frame.pcm, bytes,
                                          pdMS_TO_TICKS(500)) != bytes) goto cleanup;
         samples += count;
-        if (!CONFIG_CMCAR_VOICE_CONTINUOUS &&
+        if (!continuous &&
             xTaskGetTickCount() - started > pdMS_TO_TICKS((CONFIG_CMCAR_VOICE_RECORD_SECONDS + 3) * 1000))
             goto cleanup;
     }
     const char *end = "{\"type\":\"end\"}";
     if (esp_websocket_client_send_text(ws, end, strlen(end), pdMS_TO_TICKS(1000)) != strlen(end)) goto cleanup;
     xEventGroupWaitBits(s_ws_events, VOICE_WS_END_BIT | VOICE_WS_FAILED_BIT,
-                       pdFALSE, pdFALSE, pdMS_TO_TICKS(30000));
+                       pdFALSE, pdFALSE, pdMS_TO_TICKS(45000));
 
 cleanup:
     esp_websocket_client_stop(ws);
@@ -311,11 +428,41 @@ cleanup:
 static void voice_task(void *arg)
 {
     (void)arg;
-    while (!wifi_service_is_connected()) {
+    while (!CONFIG_CMCAR_VOICE_WAKE_ENABLED && !wifi_service_is_connected()) {
         vTaskDelay(pdMS_TO_TICKS(500));
     }
 
-#if CONFIG_CMCAR_VOICE_CONTINUOUS
+#if CONFIG_CMCAR_VOICE_WAKE_ENABLED
+    voice_frame_t wake_frame;
+    unsigned wake_frames = 0;
+    ESP_LOGI(TAG, "idle: say nihaoxiaozhi; wait for Mac tone before command");
+    while (true) {
+        if (xQueueReceive(s_ring, &wake_frame, pdMS_TO_TICKS(500)) != pdTRUE) continue;
+#if CONFIG_IDF_TARGET_ESP32S3
+        bool triggered = atomic_exchange(&s_trigger, false);
+#else
+        bool triggered = voice_wake_feed(wake_frame.pcm, wake_frame.frames, wake_frame.sequence);
+#endif
+        if (++wake_frames % 500 == 0)
+            ESP_LOGI(TAG, "wake idle internal_free=%u psram_free=%u stack_watermark=%u",
+                     (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT),
+                     (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM),
+                     (unsigned)uxTaskGetStackHighWaterMark(NULL));
+        if (!triggered && !s_trigger) continue;
+        s_trigger = false;
+        s_busy = true;
+        if (wifi_service_is_connected()) run_session();
+        else ESP_LOGW(TAG, "wake detected while offline; no upload");
+        vTaskDelay(pdMS_TO_TICKS(1500));
+        xQueueReset(s_ring);
+        atomic_store(&s_trigger, false);
+        s_busy = false;
+#if !CONFIG_IDF_TARGET_ESP32S3
+        voice_wake_reset();
+#endif
+        ESP_LOGI(TAG, "idle: say nihaoxiaozhi");
+    }
+#elif CONFIG_CMCAR_VOICE_CONTINUOUS
     while (true) {
         if (wifi_service_is_connected()) {
             s_busy = true;
@@ -365,6 +512,8 @@ static void console_task(void *arg)
             ESP_LOGW(TAG, "UART0 driver install failed: %s", esp_err_to_name(err));
         }
     }
+    if (CONFIG_CMCAR_VOICE_WAKE_ENABLED)
+        ESP_LOGI(TAG, "local wake enabled: nihaoxiaozhi; serial s is debug bypass");
     ESP_LOGI(TAG, "voice ready: type 's' + Enter to record %d s",
              CONFIG_CMCAR_VOICE_RECORD_SECONDS);
 
@@ -391,33 +540,73 @@ esp_err_t voice_service_start(void)
     esp_err_t err = i2s_rx_init();
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "I2S init failed: %s; voice disabled", esp_err_to_name(err));
-        return ESP_OK; /* 不阻塞 bridge */
+        if (s_rx) { i2s_del_channel(s_rx); s_rx = NULL; }
+        return err; /* caller keeps bridge available */
     }
 
-    s_raw_buffer = malloc(sizeof(int32_t) * VOICE_CHUNK_FRAMES * 2);
-    s_pcm_buffer = malloc(sizeof(int16_t) * VOICE_CHUNK_FRAMES);
+    s_raw_buffer = heap_caps_malloc(sizeof(int32_t) * VOICE_CHUNK_FRAMES * 2,
+                                    MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+    s_pcm_buffer = heap_caps_malloc(sizeof(int16_t) * VOICE_CHUNK_FRAMES,
+                                    MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     if (!s_raw_buffer || !s_pcm_buffer) goto task_failure;
-    s_ring = xQueueCreate(32, sizeof(voice_frame_t));
+    size_t queue_bytes = CONFIG_CMCAR_VOICE_QUEUE_FRAMES * sizeof(voice_frame_t);
+#if CONFIG_IDF_TARGET_ESP32S3
+    s_ring_storage = heap_caps_malloc(queue_bytes, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+#else
+    s_ring_storage = heap_caps_malloc(queue_bytes, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+#endif
+    if (s_ring_storage)
+        s_ring = xQueueCreateStatic(CONFIG_CMCAR_VOICE_QUEUE_FRAMES, sizeof(voice_frame_t),
+                                    s_ring_storage, &s_ring_control);
     if (s_ring == NULL) {
         ESP_LOGE(TAG, "audio queue alloc failed; voice disabled");
         goto task_failure;
     }
 
+#if CONFIG_IDF_TARGET_ESP32S3
+    if (!voice_frontend_init()) goto task_failure;
+#else
+    if (!voice_wake_init()) goto task_failure;
+#endif
     TaskHandle_t capture = NULL, sender = NULL;
+#if CONFIG_IDF_TARGET_ESP32S3
+    TaskHandle_t frontend = NULL;
+    if (xTaskCreate(frontend_task, "voice_afe_out", 6144, NULL,
+                    TASK_PRIO_VOICE_FRONTEND, &frontend) != pdPASS) goto task_failure;
+#endif
     if (xTaskCreate(capture_task, "voice_capture", 4096, NULL,
-                    TASK_PRIO_VOICE_CAPTURE, &capture) != pdPASS) goto task_failure;
-    if (xTaskCreate(voice_task, "voice_task", VOICE_TASK_STACK, NULL, 4, &sender) != pdPASS) {
-        vTaskDelete(capture);
+                    TASK_PRIO_VOICE_CAPTURE, &capture) != pdPASS) {
+#if CONFIG_IDF_TARGET_ESP32S3
+        vTaskDelete(frontend);
+#endif
         goto task_failure;
     }
-    if (xTaskCreate(console_task, "voice_console", VOICE_CONSOLE_STACK, NULL, 2, NULL) != pdPASS)
+    if (xTaskCreate(voice_task, "voice_task", VOICE_TASK_STACK, NULL,
+                    TASK_PRIO_VOICE_NETWORK, &sender) != pdPASS) {
+        vTaskDelete(capture);
+#if CONFIG_IDF_TARGET_ESP32S3
+        vTaskDelete(frontend);
+#endif
+        goto task_failure;
+    }
+    if (xTaskCreate(console_task, "voice_console", VOICE_CONSOLE_STACK, NULL,
+                    TASK_PRIO_VOICE_CONSOLE, NULL) != pdPASS)
         ESP_LOGW(TAG, "serial trigger unavailable; network voice still enabled");
-    ESP_LOGI(TAG, "voice service started");
+    ESP_LOGI(TAG, "voice service started: I2S BCLK=%d WS=%d DIN=%d slot=%s queue_bytes=%u",
+             VOICE_BCLK_GPIO, VOICE_WS_GPIO, VOICE_DIN_GPIO,
+             VOICE_INPUT_SLOT ? "right" : "left", (unsigned)queue_bytes);
     return ESP_OK;
 task_failure:
+#if CONFIG_IDF_TARGET_ESP32S3
+    voice_frontend_destroy();
+#else
+    voice_wake_destroy();
+#endif
     ESP_LOGE(TAG, "voice task allocation failed; control bridge remains available");
     if (s_ring) vQueueDelete(s_ring);
     s_ring = NULL;
+    heap_caps_free(s_ring_storage);
+    s_ring_storage = NULL;
     free(s_raw_buffer);
     free(s_pcm_buffer);
     s_raw_buffer = NULL;
@@ -425,5 +614,5 @@ task_failure:
     i2s_channel_disable(s_rx);
     i2s_del_channel(s_rx);
     s_rx = NULL;
-    return ESP_OK;
+    return ESP_ERR_NO_MEM;
 }

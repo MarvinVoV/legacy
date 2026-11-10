@@ -1,0 +1,4 @@
+S3 final build: passed
+esp32_project.bin binary size 0x1794c0 bytes. Smallest app partition is 0x600000 bytes. 0x486b40 bytes (75%) free.
+C6 final build: passed
+esp32_project.bin binary size 0x152150 bytes. Smallest app partition is 0x300000 bytes. 0x1adeb0 bytes (56%) free.

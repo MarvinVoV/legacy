@@ -1024,19 +1024,50 @@ CONFIG_ESPTOOLPY_MONITOR_BAUD=115200
 # Partition Table
 #
 # CONFIG_PARTITION_TABLE_SINGLE_APP is not set
-CONFIG_PARTITION_TABLE_SINGLE_APP_LARGE=y
+# CONFIG_PARTITION_TABLE_SINGLE_APP_LARGE is not set
 # CONFIG_PARTITION_TABLE_TWO_OTA is not set
 # CONFIG_PARTITION_TABLE_TWO_OTA_LARGE is not set
-# CONFIG_PARTITION_TABLE_CUSTOM is not set
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions_voice.csv"
 # default:
-CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
-# default:
-CONFIG_PARTITION_TABLE_FILENAME="partitions_singleapp_large.csv"
+CONFIG_PARTITION_TABLE_FILENAME="partitions_voice.csv"
 # default:
 CONFIG_PARTITION_TABLE_OFFSET=0x8000
 # default:
 CONFIG_PARTITION_TABLE_MD5=y
 # end of Partition Table
+
+#
+# ESP Speech Recognition
+#
+# default:
+CONFIG_AFE_INTERFACE_V1=y
+# default:
+CONFIG_SR_NSN_WEBRTC=y
+# default:
+CONFIG_SR_VADN_WEBRTC=y
+
+#
+# Load Multiple Wake Words (WakeNet9s)
+#
+# default:
+# CONFIG_SR_WN_WN9S_HILEXIN is not set
+# default:
+# CONFIG_SR_WN_WN10S_HILEXIN is not set
+# default:
+# CONFIG_SR_WN_WN9S_HIESP is not set
+CONFIG_SR_WN_WN9S_NIHAOXIAOZHI=y
+# default:
+# CONFIG_SR_WN_WN9S_HIJASON is not set
+# end of Load Multiple Wake Words (WakeNet9s)
+
+# default:
+CONFIG_SR_MN_CN_NONE=y
+# default:
+CONFIG_SR_MN_EN_NONE=y
+# default:
+CONFIG_ESP_SR_EXTERNAL_MODEL_PATH=""
+# end of ESP Speech Recognition
 
 #
 # Compiler options
@@ -3862,7 +3893,18 @@ CONFIG_CMCAR_UART_TX_QUEUE_DEPTH=8
 # Voice Control
 #
 # default:
+CONFIG_CMCAR_VOICE_QUEUE_FRAMES=32
+# default:
+CONFIG_CMCAR_VOICE_I2S_BCLK=18
+# default:
+CONFIG_CMCAR_VOICE_I2S_WS=19
+# default:
+CONFIG_CMCAR_VOICE_I2S_DIN=21
+# default:
+# CONFIG_CMCAR_VOICE_I2S_RIGHT_CHANNEL is not set
+# default:
 CONFIG_CMCAR_VOICE_ENABLED=y
+CONFIG_CMCAR_VOICE_WAKE_ENABLED=y
 CONFIG_CMCAR_VOICE_CONTINUOUS=y
 # default:
 CONFIG_CMCAR_VOICE_WS_URL="ws://192.168.31.120:8000/api/v1/voice/stream"
@@ -3891,6 +3933,31 @@ CONFIG_CJSON_NESTING_LIMIT=1000
 # default:
 CONFIG_CJSON_CIRCULAR_LIMIT=10000
 # end of cJSON
+
+#
+# DSP Library
+#
+# default:
+CONFIG_DSP_ANSI=y
+# default:
+CONFIG_DSP_OPTIMIZATION=0
+# default:
+# CONFIG_DSP_MAX_FFT_SIZE_512 is not set
+# default:
+# CONFIG_DSP_MAX_FFT_SIZE_1024 is not set
+# default:
+# CONFIG_DSP_MAX_FFT_SIZE_2048 is not set
+# default:
+CONFIG_DSP_MAX_FFT_SIZE_4096=y
+# default:
+# CONFIG_DSP_MAX_FFT_SIZE_8192 is not set
+# default:
+# CONFIG_DSP_MAX_FFT_SIZE_16384 is not set
+# default:
+# CONFIG_DSP_MAX_FFT_SIZE_32768 is not set
+# default:
+CONFIG_DSP_MAX_FFT_SIZE=4096
+# end of DSP Library
 
 #
 # ESP WebSocket client

@@ -1,5 +1,10 @@
 # 说明
 
+当前新增 **ESP32-S3-DevKitC-1 / WROOM-2-N32R16V（32MB Flash、16MB PSRAM）** 适配。
+接线、构建命令、内存分配与验收进度见 [S3迁移与语音交接](docs/voice/S3-N32R16V-Migration-And-Voice-Handoff-2026-11-10.md)。
+从CodeMyCar目录执行 `python esp32_project/tools/firmware.py build` 构建S3；旧C6使用 `--board c6`。
+下文保留早期目录及C6使用说明，当前S3构建请以新文档为准。
+
 ## 1. 项目目录
 
 ```bash

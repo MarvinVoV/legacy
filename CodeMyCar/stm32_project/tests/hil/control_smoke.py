@@ -62,13 +62,16 @@ def main():
     args = parser.parse_args()
     capture = Capture(args.device)
     base = f'http://127.0.0.1:8000/api/v1'
+    # This fixture talks only to loopback. macOS system proxies/VPN settings
+    # must not redirect the local control/STOP path through an HTTP proxy.
+    http = urllib.request.build_opener(urllib.request.ProxyHandler({}))
     results = []
 
     def request(path, body=None, post=False):
         data = json.dumps(body).encode() if body is not None else None
         req = urllib.request.Request(base+path,data=data,
             headers={'Content-Type':'application/json'},method='POST' if post else 'GET')
-        with urllib.request.urlopen(req,timeout=12) as r:
+        with http.open(req,timeout=12) as r:
             return json.load(r)
 
     def stop():

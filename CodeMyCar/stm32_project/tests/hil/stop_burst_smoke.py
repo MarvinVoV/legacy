@@ -12,11 +12,12 @@ def main():
     args = parser.parse_args()
     capture = Capture('DEV_1')
     base = 'http://127.0.0.1:8000/api/v1'
+    http = urllib.request.build_opener(urllib.request.ProxyHandler({}))
     def request(path, body=None):
         req = urllib.request.Request(base+path, method='POST',
             data=json.dumps(body).encode() if body is not None else None,
             headers={'Content-Type':'application/json'})
-        with urllib.request.urlopen(req, timeout=12) as res:
+        with http.open(req, timeout=12) as res:
             return json.load(res)
     def stop():
         before = time.monotonic()

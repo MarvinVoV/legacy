@@ -66,7 +66,9 @@ class LocalAudioPlayer:
                 )
                 self._processes.add(proc)
                 try:
-                    await proc.wait()
+                    code = await proc.wait()
+                    if code != 0:
+                        raise RuntimeError(f"local audio player exited with code {code}")
                 finally:
                     if proc.returncode is None:
                         proc.terminate()

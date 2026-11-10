@@ -9,6 +9,7 @@ import asyncio
 import logging
 import math
 import re
+import struct
 import time
 import uuid
 import wave
@@ -219,10 +220,10 @@ class VoiceService:
         if self.local_player and hasattr(self.local_player, "aclose"):
             await self.local_player.aclose()
 
-    async def _play(self, audio):
+    async def _play(self, audio, tail_s=0.3):
         try:
             await self.local_player.play_pcm(audio.data, audio.sample_rate, audio.channels)
-            await asyncio.sleep(0.3)  # half-duplex acoustic tail, configurable later
+            await asyncio.sleep(tail_s)
         finally:
             self._playback_pending -= 1
 
@@ -231,7 +232,7 @@ class VoiceService:
         if not task.cancelled() and task.exception():
             logger.error("voice playback failed: %s", task.exception())
 
-    def play_local(self, audio: TtsAudio) -> None:
+    def play_local(self, audio: TtsAudio, *, tail_s: float = 0.3) -> None:
         """在 pyserver 所在机器上播放 TTS；不阻塞 WS。"""
         if self.local_player is None or not self.config.local_playback:
             return
@@ -239,9 +240,20 @@ class VoiceService:
             logger.warning("voice playback queue full; discarding stale feedback")
             return
         self._playback_pending += 1
-        task = asyncio.create_task(self._play(audio))
+        task = asyncio.create_task(self._play(audio, tail_s))
         self._local_tasks.add(task)
         task.add_done_callback(self._play_done)
+
+    def play_ready_tone(self) -> None:
+        samples = 4000  # 250ms: audible at normal Mac volume, no cloud dependency
+        pcm = b"".join(
+            struct.pack("<h", int(8000 * math.sin(2 * math.pi * 1000 * i / 16000)))
+            for i in range(samples)
+        )
+        self.play_local(TtsAudio("pcm", 16000, 1, pcm), tail_s=0.08)
+
+    async def wait_playback(self) -> None:
+        await asyncio.gather(*tuple(self._local_tasks), return_exceptions=True)
 
     def play_beep(self) -> None:
         """录音开始时在 pyserver 本机响两声，提示用户说话。"""

@@ -12,11 +12,13 @@ parser=argparse.ArgumentParser()
 parser.add_argument('--port',required=True)
 parser.add_argument('--esptool-python',required=True)
 parser.add_argument('--cycles',type=int,default=3)
+parser.add_argument('--chip', choices=('esp32c6','esp32s3'), default='esp32c6')
 args=parser.parse_args()
 capture=Capture('DEV_1')
 url='http://127.0.0.1:8000/api/v1/agent/devices/DEV_1/stop'
+http = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 def stop():
-    with urllib.request.urlopen(urllib.request.Request(url,method='POST'),timeout=8) as r:
+    with http.open(urllib.request.Request(url,method='POST'),timeout=8) as r:
         result=json.load(r)
     assert result.get('confirmed'),result
     return result
@@ -24,7 +26,7 @@ try:
     stop()
     previous=capture.wait('motion',lambda x:'session_id' in x,time.monotonic()-1,3)['session_id']
     for i in range(args.cycles):
-        subprocess.run([args.esptool_python,'-m','esptool','--chip','esp32c6',
+        subprocess.run([args.esptool_python,'-m','esptool','--chip',args.chip,
             '--port',args.port,'--before','default-reset','--after','hard-reset','read-mac'],
             check=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=15)
         start=time.monotonic()

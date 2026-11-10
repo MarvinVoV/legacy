@@ -1,0 +1,26 @@
+{
+  "date": "2026-11-11",
+  "branch": "codex/esp32-s3-voice-migration",
+  "target": "esp32s3",
+  "module": "ESP32-S3-WROOM-2-N32R16V",
+  "flash_bytes": 33554432,
+  "psram_bytes": 16777216,
+  "denoise_default": false,
+  "voice_execute_commands": false,
+  "flashed_app_sha256": "a39f3f18d91251c55f53799c66fc5d7105f78708fefdbb4e4201c0a4f28164d4",
+  "pyserver_tests_passed": 174,
+  "hardware_pending": [
+    "NS-off ASR accuracy comparison",
+    "STM32 UART and reliable STOP integration",
+    "long-run audio and Wi-Fi reconnect stress"
+  ],
+  "latest_build_app": {
+    "sha256": "a39f3f18d91251c55f53799c66fc5d7105f78708fefdbb4e4201c0a4f28164d4",
+    "bytes": 1545408
+  },
+  "latest_build_models": {
+    "sha256": "1bdf9e12805221c583e7ad25b277bf2ad27db78bb4725823e53c910c799fcd23",
+    "bytes": 917053
+  },
+  "note": "The final compatibility build can change app build timestamps; flashed and latest build hashes need not match. No further flash was performed."
+}

@@ -1,11 +1,51 @@
 menu "Voice Control"
 
+    config CMCAR_VOICE_DENOISE
+        bool "Experimental S3 NS during listening (requires A/B validation)"
+        depends on IDF_TARGET_ESP32S3
+        default n
+
+    config CMCAR_VOICE_QUEUE_FRAMES
+        int "Processed PCM queue depth (20ms frames)"
+        default 64 if IDF_TARGET_ESP32S3
+        default 32
+        range 16 96
+
+    config CMCAR_VOICE_I2S_BCLK
+        int "Microphone I2S BCLK GPIO"
+        default 12 if IDF_TARGET_ESP32S3
+        default 18
+        range 0 48
+
+    config CMCAR_VOICE_I2S_WS
+        int "Microphone I2S WS GPIO"
+        default 13 if IDF_TARGET_ESP32S3
+        default 19
+        range 0 48
+
+    config CMCAR_VOICE_I2S_DIN
+        int "Microphone I2S data input GPIO"
+        default 14 if IDF_TARGET_ESP32S3
+        default 21
+        range 0 48
+
+    config CMCAR_VOICE_I2S_RIGHT_CHANNEL
+        bool "Read right I2S slot (otherwise left)"
+        default n
+
     config CMCAR_VOICE_ENABLED
         bool "Enable voice WebSocket upload"
         default y
         help
             启用 I2S 麦克风采集和 WebSocket 推流。
             运行时在串口输入 s + 回车，录一段音频并上传 pyserver。
+
+    config CMCAR_VOICE_WAKE_ENABLED
+        bool "Local nihaoxiaozhi wake, one utterance per wake"
+        default y
+        help
+            Detect locally; no audio upload before wake. Use the board profile
+            to select one compatible model. Missing model fails closed.
 
     config CMCAR_VOICE_CONTINUOUS
         bool "Continuous PCM upload; server VAD owns utterance boundaries"
