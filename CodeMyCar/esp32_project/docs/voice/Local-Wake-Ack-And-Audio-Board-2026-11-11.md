@@ -194,6 +194,33 @@ ESP32-S3
 
 说明书描述：双麦克风、AEC 回声消除、对话实时打断、高信噪比 SNR、3W 音频功放、codec 音频开发；音频芯片 ES7210 + ES8311，功放 NS4150B，VCC/GND 推荐 5V，通信 I2C + I2S。
 
+### 4.0 说明书原始规格（用户提供）
+
+- 双麦克风
+- AEC 回声消除
+- 对话实时打断
+- 高信噪比 SNR
+- 3W 音频功放
+- Codec 音频开发
+
+音频芯片：ES7210 + ES8311  
+音频功放：NS4150B  
+功放功率：3W  
+供电方式：VCC + GND，推荐 5V  
+通信接口：I2C（SDA、SCL）、I2S（MCK、BCK、DI、WS、DO）
+
+接口定义（说明书原文）：
+
+- SDA：Serial Data line，串口数据信号线
+- SCL：Serial Data bit clock / DMIC bit clock
+- MCK：Master clock
+- BCK（原文 MBK）：bit clock 位时钟
+- DI：data input
+- WS：声道选择信号，默认单声道
+- DO：data output
+- EN：NS4150B 音频功放 CTRL 工作模式控制；高电平打开，低电平关闭；
+  支持开发板 GPIO 控制，也可以接 3V3 高电平一直打开
+
 ### 4.1 接口含义
 
 | 板子丝印 | 含义 | 方向/接法 |
