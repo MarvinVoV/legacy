@@ -248,3 +248,14 @@
   `/dev/tty.usbserial-10` 都无法 `tcsetattr`，但设备节点存在、无进程占用。
 - 需要物理 **拔插 ESP32 USB** 让 macOS 重新枚举串口，再烧录 A7。
 - 在此之前不运行 A7，也不宣称 AEC 参考/全双工结果。
+
+### A7 初步结果（2026-11-12）
+
+- 全双工 loopback 已跑通：I2S0 TX STD（ES8311）+ RX TDM 4ch（ES7210）。
+- 两个修复：2.5 KB 接收 buffer 移到 static，避免 app_main 栈溢出；只 enable TX（配对 RX 自动启动），避免 IDF 6.1 full-duplex enable 崩溃。
+- 音量 10、1 kHz tone：
+  - ch0 RMS≈488，ch1≈348，ch2≈359，ch3≈13；
+  - max-lag correlation 0.04–0.17，无某个通道显著高。
+- 音量 0 时 ch0–2 仍有 200–370 RMS，ch3≈65；可能环境声/音量 0 非 hard mute。
+- **结论：尚未确认 ES7210 有可用的硬件 AEC 参考通道**。需要遮麦、拔喇叭/EN 低或原理图确认；在确认前不宣称全双工/实时打断完成。
+- 代码：`tests/audio_board_probe/`；README 记录结果。
