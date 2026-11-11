@@ -226,3 +226,13 @@
 5. 做 **A6/A7**，给出“是否有 AEC 参考”的确定结论。
 
 在 A7 结论出来之前，不改 `voice_conversation` 的音频架构，也不宣称新板 AEC/打断已完成。
+
+---
+
+## 2026-11-12 实测进展
+
+- **A2/A3 通过**：5V/3.3V 正常；I2C 扫描到 ES8311 `0x18`、ES7210 `0x41`（7-bit）。
+- **A4 基本通过**：ES8311 + NS4150B 可播放 1 kHz tone；确认该板 DI/DO 是 **ESP32 视角**：DO→GPIO18（S3 DOUT），DI→GPIO21（S3 DIN）。
+- **A6 初步通过**：ES7210 双麦 MIC1/MIC2，16 kHz 2ch；默认增益 RMS 很低，`esp_codec_dev_set_in_gain(dev, 30.0f)` 后说话 RMS 约 L=290/R=269，环境约 18；两通道都响应。
+- 当前独立固件：`/tmp/cmcar_es7210_capture`，16 kHz、2ch、ES7210 30 dB、打印 L/R RMS。
+- 下一步 **A7**：配置 ES7210 4ch/TDM 或确认 MIC3/参考回采；同时播放 tone 并录各通道，判断是否存在硬件 AEC 参考。未确认前不进入全双工/打断。
