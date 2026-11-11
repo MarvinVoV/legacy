@@ -156,3 +156,44 @@ async def test_idle_timeout_ends_session(tmp_path):
     await asyncio.wait_for(runner.ended.wait(), timeout=2)
     assert runner.end_reason == "idle"
     await close_runner(service, session, runner)
+
+
+class FakeAgentSession:
+    def __init__(self) -> None:
+        self.calls: list[str] = []
+
+    def stream(self, text: str):
+        self.calls.append(text)
+
+        async def generate():
+            yield "你好。"
+            yield "我在。"
+
+        return generate()
+
+
+@pytest.mark.asyncio
+async def test_agent_session_path_streams_tts_without_manual_history(tmp_path):
+    service = make_service(
+        tmp_path, FakeAsr("你好"), tts=FakeTts(), local_player=FakeLocalPlayer()
+    )
+    session = service.create_session("DEV_1", continuous=True, end_silence_ms=200)
+    sink = FakeSink()
+    agent = FakeAgentSession()
+    runner = ConversationRunner(
+        service,
+        session,
+        sink,
+        llm=FakeLlm(["legacy must not be called"]),
+        config=ConversationConfig(idle_s=5, turn_end_ms=200),
+        agent_session=agent,
+    )
+    runner.start()
+    runner.feed(pcm(0.3, 3000) + pcm(0.3))
+    await asyncio.wait_for(sink.done.wait(), timeout=2)
+    events = json_events(sink)
+    assert agent.calls == ["你好"]
+    done = [e for e in events if e["type"] == "assistant_done"]
+    assert done and done[0]["text"] == "你好。我在。"
+    assert service.tts.texts == ["你好。", "我在。"]
+    await close_runner(service, session, runner)

@@ -11,6 +11,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.agent.runtime import AgentRuntime
 from app.api.routes import agent_motion, commands, devices, voice
 from app.config import get_settings
 from app.logging_setup import setup_file_logging
@@ -142,6 +143,14 @@ async def lifespan(app: FastAPI):
         history_tokens=settings.voice_conversation_history_tokens,
         max_tokens=settings.llm_max_tokens,
     )
+    app.state.agent_runtime = None
+    if settings.agent_enabled and settings.agent_runtime == "deepagents":
+        try:
+            app.state.agent_runtime = await AgentRuntime.create(
+                settings, app.state.voice_service
+            )
+        except Exception:
+            logger.exception("Agent runtime unavailable; conversation falls back to legacy")
 
     # 注册消息处理器（心跳/传感器/日志/ACK/pong/motion）
     handlers = create_handlers(
@@ -158,7 +167,7 @@ async def lifespan(app: FastAPI):
     # 连接 MQTT
     try:
         await mqtt_client.connect()
-    except Exception:
+    except Exception:  # noqa: BLE001 - broker unavailable must not stop the API
         logger.warning("MQTT connection failed, server will run without MQTT")
 
     logger.info("CodeMyCar Server v2.0 started")
@@ -166,6 +175,8 @@ async def lifespan(app: FastAPI):
 
     # 关闭
     await mqtt_client.disconnect()
+    if getattr(app.state, "agent_runtime", None) is not None:
+        await app.state.agent_runtime.aclose()
     await app.state.voice_service.aclose()
     if app.state.voice_asr is not None:
         await app.state.voice_asr.aclose()
@@ -217,9 +228,12 @@ _PUBLIC_PATHS = ("/", "/docs", "/openapi.json", "/redoc", "/docs/oauth2-redirect
 
 @app.middleware("http")
 async def api_key_middleware(request: Request, call_next):
-    if settings.api_key and request.url.path not in _PUBLIC_PATHS:
-        if request.headers.get("X-API-Key") != settings.api_key:
-            return JSONResponse(status_code=401, content={"detail": "invalid or missing X-API-Key"})
+    if (
+        settings.api_key
+        and request.url.path not in _PUBLIC_PATHS
+        and request.headers.get("X-API-Key") != settings.api_key
+    ):
+        return JSONResponse(status_code=401, content={"detail": "invalid or missing X-API-Key"})
     return await call_next(request)
 
 

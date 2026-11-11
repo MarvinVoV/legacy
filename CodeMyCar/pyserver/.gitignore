@@ -331,3 +331,7 @@ logs/
 
 # 本地语音密钥（百度等；禁止提交）
 voice.local.env
+
+# Deep Agents local memory, session checkpoints and MCP credentials
+agent_data/
+mcp.servers.json

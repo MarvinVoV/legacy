@@ -74,7 +74,19 @@ async def _run_conversation(
         await ws.close(code=1011)
         return
 
-    runner = ConversationRunner(service, session, sink, llm=llm, config=config)
+    runner = ConversationRunner(
+        service,
+        session,
+        sink,
+        llm=llm,
+        config=config,
+    )
+    runtime = getattr(ws.app.state, "agent_runtime", None)
+    if runtime is not None and getattr(settings, "agent_runtime", "deepagents") == "deepagents":
+        try:
+            runner.agent_session = runtime.new_session(session.device_id, session.id)
+        except Exception:
+            logger.exception("Agent session failed; using legacy conversation path")
     runner.start()
     max_bytes = int(
         settings.voice_conversation_max_s * service.config.sample_rate * 2

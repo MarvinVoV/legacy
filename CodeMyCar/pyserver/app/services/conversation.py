@@ -14,6 +14,7 @@ import asyncio
 import json
 import logging
 import time
+from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
@@ -247,6 +248,10 @@ class CarToolExecutor:
             return {"executed": False, "reason": "tool failed"}
 
 
+class ConversationAgentSession(Protocol):
+    def stream(self, text: str) -> AsyncIterator[str]: ...
+
+
 class ConversationRunner:
     """Owns one conversation session; the route only feeds frames and ends it."""
 
@@ -259,11 +264,13 @@ class ConversationRunner:
         llm: LlmClient,
         config: ConversationConfig | None = None,
         device_id: str | None = None,
+        agent_session: ConversationAgentSession | None = None,
     ) -> None:
         self.service = service
         self.session = session
         self.sink = sink
         self.llm = llm
+        self.agent_session = agent_session
         self.config = config or ConversationConfig()
         self.device_id = device_id or session.device_id
         self.history = ConversationHistory(
@@ -397,6 +404,10 @@ class ConversationRunner:
             self.request_end("user_end")
             return
 
+        if self.agent_session is not None:
+            await self._answer_with_agent(normalized)
+            return
+
         self.history.add_user(text)
         final_text = await self._answer()
         if final_text is not None:
@@ -408,6 +419,35 @@ class ConversationRunner:
                     await asyncio.wait_for(self.service.wait_playback(), timeout=60.0)
                 except TimeoutError:
                     logger.warning("conversation playback did not drain")
+            await self._safe_send(
+                {
+                    "type": "assistant_done",
+                    "turn": self.turn,
+                    "text": final_text[:400],
+                    "interrupted": False,
+                }
+            )
+
+    async def _answer_with_agent(self, text: str) -> None:
+        """Deep Agents owns history/tools/summarization; this layer owns TTS."""
+        if self.agent_session is None:
+            return
+        spoken: list[str] = []
+        chunker = SentenceChunker()
+        async for delta in self.agent_session.stream(text):
+            for sentence in chunker.feed(delta):
+                self.state = "speaking"
+                await self._speak_sentence(sentence, spoken)
+        for sentence in chunker.flush():
+            self.state = "speaking"
+            await self._speak_sentence(sentence, spoken)
+        if self.service.tts is not None:
+            try:
+                await asyncio.wait_for(self.service.wait_playback(), timeout=60.0)
+            except TimeoutError:
+                logger.warning("conversation playback did not drain")
+        final_text = "".join(spoken)
+        if final_text:
             await self._safe_send(
                 {
                     "type": "assistant_done",

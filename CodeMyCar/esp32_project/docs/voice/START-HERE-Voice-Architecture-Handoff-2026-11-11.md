@@ -200,3 +200,39 @@ S3 当前 profile 已切换到 `CONFIG_CMCAR_VOICE_MODE_CONVERSATION=y`；命令
 - pyserver 仍为 **206 tests passed**；`voice.env.example` 已加入 LLM/
   conversation/静音配置占位。
 - 真实 S3 麦克风语音明天测试；Phase 1 仍半双工，打断 Phase 2。
+
+## 2026-11-11 上午：LLM/Agent 分层重构（LangChain + Deep Agents）
+
+pyserver 的 LLM 部分已从 `ConversationRunner` 内的手写历史/工具循环，重构为
+独立 `app/agent` 包；音频/VAD/TTS 层不感知 LangChain。
+
+- `app/agent/model.py`：`ChatDeepSeek` 工厂，thinking 默认关闭；
+- `app/agent/session.py`：每会话 LangGraph thread，只把 `AIMessageChunk.text`
+  交给 TTS，过滤 ToolMessage 和 summarization token；
+- `app/agent/runtime.py`：`create_deep_agent`、SQLite checkpointer、
+  `SummarizationMiddleware`（12k tokens / keep 8）、memory/skills、MCP；
+- `app/agent/memory.py`：`agent_data/AGENTS.md` 可写、`skills/**` 只读；
+- `app/agent/tools.py`：原生 `car_move`/`car_turn`/`car_stop` +
+  `remember_preference`（仅记忆偏好，不改代码）；
+- `app/agent/mcp.py`：`langchain.mcp.MCPAdapter`，配置
+  `mcp.servers.json`（gitignored），可连接 docs MCP；失败不阻断语音；
+- 会话：`thread_id=voice:{device}:{session}`，SQLite
+  `agent_data/sessions.sqlite`；每次新会话重建 agent，使上次写入的
+  `AGENTS.md` 生效；
+- 自动压缩：Deep Agents SummarizationMiddleware；摘要过滤，不送 TTS；
+- 回滚：`CMCAR_AGENT_RUNTIME=legacy` 或 agent 初始化失败会退回旧
+  `ConversationRunner`；command 模式完全不走 agent。
+
+验证：
+
+- pyserver **210 tests passed**（新增 agent session/记忆/MCP fallback 测试）；
+- 真实 Deep Agents + DeepSeek：两轮 WebSocket 会话，上下文保留；
+- 记忆跨会话：第一会话写入偏好，第二会话新 thread 能读到；
+- MCP：docs MCP 3 个工具发现；真实 agent 调用 docs 工具回答；
+- SQLite checkpointer 文件生成；
+- 电脑仍静音：`CMCAR_VOICE_LOCAL_PLAYBACK=false`，无 afplay/ffplay。
+
+限制：Phase 1 仍半双工；设备功放未接；会话恢复未对外暴露；记忆是
+显式工具写入（安全边界），不是后台自动改写；MCP/Deep Agents 版本需锁定并
+回归测试。完整设计见
+`CodeMyCar/docs/superpowers/specs/2026-11-11-agent-runtime-refactor-design.md`。

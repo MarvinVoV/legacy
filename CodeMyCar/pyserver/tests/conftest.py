@@ -7,6 +7,8 @@ from fastapi.testclient import TestClient
 
 # 测试不写 logs/；必须在导入 app.settings 之前设置
 os.environ["CMCAR_LOG_FILE"] = ""
+# 测试不启动真实 Deep Agents/MCP/LLM runtime；对话 runner 用假实现
+os.environ["CMCAR_AGENT_ENABLED"] = "0"
 
 
 class FakeMQTT:

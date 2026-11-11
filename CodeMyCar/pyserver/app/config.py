@@ -108,6 +108,22 @@ class Settings(BaseSettings):
     llm_temperature: float = 0.7
     voice_barge_in: bool = False  # Phase 2; Phase 1 is half-duplex
 
+    # LangChain / Deep Agents runtime
+    agent_enabled: bool = True
+    agent_runtime: str = "deepagents"  # deepagents | legacy
+    agent_data_dir: str = "agent_data"
+    agent_checkpoint_db: str = "agent_data/sessions.sqlite"
+    agent_memory_file: str = "AGENTS.md"
+    agent_skills_dir: str = "skills"
+    agent_summary_trigger_tokens: int = 12000
+    agent_summary_keep_messages: int = 8
+    agent_recursion_limit: int = 40
+    agent_mcp_enabled: bool = True
+    agent_mcp_config: str = "mcp.servers.json"
+    agent_mcp_allow: str = ""
+    agent_mcp_deny: str = ""
+    agent_memory_tool_enabled: bool = True
+
     # 日志
     log_level: str = "INFO"
     log_dir: str = "logs"
