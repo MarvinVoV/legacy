@@ -236,3 +236,15 @@
 - **A6 初步通过**：ES7210 双麦 MIC1/MIC2，16 kHz 2ch；默认增益 RMS 很低，`esp_codec_dev_set_in_gain(dev, 30.0f)` 后说话 RMS 约 L=290/R=269，环境约 18；两通道都响应。
 - 当前独立固件：`/tmp/cmcar_es7210_capture`，16 kHz、2ch、ES7210 30 dB、打印 L/R RMS。
 - 下一步 **A7**：配置 ES7210 4ch/TDM 或确认 MIC3/参考回采；同时播放 tone 并录各通道，判断是否存在硬件 AEC 参考。未确认前不进入全双工/打断。
+
+### A7 代码就绪、烧录被串口状态阻塞
+
+- 独立 loopback 固件已保存在 `tests/audio_board_probe/`：
+  - ES8311 低音量 1 kHz tone；
+  - ES7210 4ch TDM 录制；
+  - 对每通道计算 RMS/与播放 tone 的相关。
+- 当前 `idf.py flash` 失败：
+  `termios.error: (22, 'Invalid argument')`，`/dev/cu.usbserial-10` 和
+  `/dev/tty.usbserial-10` 都无法 `tcsetattr`，但设备节点存在、无进程占用。
+- 需要物理 **拔插 ESP32 USB** 让 macOS 重新枚举串口，再烧录 A7。
+- 在此之前不运行 A7，也不宣称 AEC 参考/全双工结果。
