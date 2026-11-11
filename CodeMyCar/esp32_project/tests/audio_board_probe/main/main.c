@@ -59,8 +59,11 @@ void app_main(void)
     i2c_master_bus_handle_t bus = NULL;
     ESP_ERROR_CHECK(i2c_new_master_bus(&bus_cfg, &bus));
 
+    /* One I2S controller in full-duplex mode: TX STD to ES8311, RX TDM from
+     * ES7210. The previous crash was app_main stack overflow from a 2.5 KB
+     * local buffer, not the duplex controller itself. */
     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
-    chan_cfg.dma_desc_num = 8;
+    chan_cfg.dma_desc_num = 6;
     chan_cfg.dma_frame_num = 240;
     chan_cfg.auto_clear = true;
     i2s_chan_handle_t tx = NULL, rx = NULL;
@@ -93,8 +96,9 @@ void app_main(void)
     tdm_cfg.slot_cfg.total_slot = 4;
     tdm_cfg.clk_cfg.mclk_multiple = I2S_MCLK_MULTIPLE_256;
     ESP_ERROR_CHECK(i2s_channel_init_tdm_mode(rx, &tdm_cfg));
+    /* Enabling TX starts the paired RX in full-duplex; enabling both handles
+     * separately is what the IDF 6.1 driver warns about. */
     ESP_ERROR_CHECK(i2s_channel_enable(tx));
-    ESP_ERROR_CHECK(i2s_channel_enable(rx));
 
     audio_codec_i2s_cfg_t i2s_cfg = {
         .port = I2S_NUM_0, .rx_handle = rx, .tx_handle = tx,
@@ -165,13 +169,14 @@ void app_main(void)
     BaseType_t ok = xTaskCreate(tone_task, "tone", 4096, NULL, 5, NULL);
     if (ok != pdPASS) { ESP_LOGE(TAG, "tone task fail"); return; }
 
-    int16_t buf[FRAMES * 4];
+    static int16_t buf[FRAMES * 4]; /* keep 2.5 KB off the 3.5 KB app_main stack */
     double sums[4] = {0};
-    double corr[4] = {0};
+    double best_corr[4] = {-1, -1, -1, -1};
+    int best_lag[4] = {0, 0, 0, 0};
     double tone_energy = 0;
     for (int n = 0; n < FRAMES; ++n) tone_energy += (double)s_tone[n] * s_tone[n];
     int frames = 0;
-    int target_frames = REC_SECONDS * RATE / FRAMES * 3 / 4;
+    int target_frames = 24; /* 0.48 s is enough for correlation and avoids WDT */
     while (frames < target_frames) {
         ret = esp_codec_dev_read(s_in, buf, sizeof(buf));
         if (ret != ESP_CODEC_DEV_OK) {
@@ -180,20 +185,32 @@ void app_main(void)
             continue;
         }
         for (int ch = 0; ch < 4; ++ch) {
-            double dot = 0, energy = 0;
             for (int n = 0; n < FRAMES; ++n) {
-                double v = buf[n * 4 + ch];
-                sums[ch] += v * v;
-                dot += v * s_tone[n];
-                energy += v * v;
+                sums[ch] += (double)buf[n * 4 + ch] * buf[n * 4 + ch];
             }
-            if (energy > 0) corr[ch] += dot / sqrt(energy * tone_energy);
+            for (int lag = -32; lag <= 32; ++lag) {
+                double dot = 0, energy = 0;
+                for (int n = 0; n < FRAMES; ++n) {
+                    int j = n + lag;
+                    if (j < 0 || j >= FRAMES) continue;
+                    double v = buf[n * 4 + ch];
+                    dot += v * s_tone[j];
+                    energy += v * v;
+                }
+                if (energy > 0) {
+                    double c = fabs(dot / sqrt(energy * tone_energy));
+                    if (c > best_corr[ch]) {
+                        best_corr[ch] = c;
+                        best_lag[ch] = lag;
+                    }
+                }
+            }
         }
         ++frames;
     }
     for (int ch = 0; ch < 4; ++ch) {
-        ESP_LOGI(TAG, "ch%d rms=%.1f corr=%.3f", ch, sqrt(sums[ch] / (frames * FRAMES)),
-                 corr[ch] / (frames > 0 ? frames : 1));
+        ESP_LOGI(TAG, "ch%d rms=%.1f corr=%.3f lag=%d", ch,
+                 sqrt(sums[ch] / (frames * FRAMES)), best_corr[ch], best_lag[ch]);
     }
     ESP_LOGI(TAG, "loopback done frames=%d", frames);
 }
