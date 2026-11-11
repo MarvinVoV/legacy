@@ -229,11 +229,11 @@ ESP32-S3
 | MCK | Master clock | S3 I2S 输出 MCLK（16 kHz 常用 256×fs = 4.096 MHz） |
 | BCK | Bit clock | S3 I2S BCLK |
 | WS | 声道选择/LRCLK | S3 I2S WS；默认 mono 时要改 codec 配置才能用双麦/参考 |
-| DI | data input | **按板子视角**是数据输入到 ES8311 DAC，接 S3 I2S DOUT |
-| DO | data output | **按板子视角**是 ES7210 ADC 数据输出，接 S3 I2S DIN |
+| DI | ESP32 的 data input | ES7210 ADC 数据 → S3 I2S DIN（GPIO21） |
+| DO | ESP32 的 data output | S3 I2S DOUT（GPIO18）→ ES8311 DAC |
 | EN | NS4150B 功放使能 | 高电平开、低电平关；可接 3.3V 常开，或 S3 GPIO 控制 |
 
-⚠️ DI/DO 的“输入/输出”可能按板子或按 ESP32 视角标注。接线前用原理图/万用表确认；接反不会烧，但不会有声音/录音。  
+⚠️ **2026-11-12 实测：这块板的 DI/DO 按 ESP32 视角标注**：DO = ESP32 输出（→ES8311 DAC），DI = ESP32 输入（←ES7210 ADC）。之前按板子视角接反会导致只有爆音没有音频。  
 ⚠️ 所有 I2C/I2S 逻辑是 3.3V；VCC 5V 只进板子的电源/LDO，不要把 5V 加到 SDA/SCL 或 codec 的 3.3V 引脚。
 
 ### 4.2 建议的 S3 GPIO（待按你的实际板子确认）
@@ -404,8 +404,8 @@ ESP32-S3
 | MCK | GPIO15 | S3 I2S 输出 MCLK，16k 建议 4.096MHz |
 | BCK | GPIO16 | S3 I2S BCLK |
 | WS | GPIO17 | S3 I2S WS/LRCLK |
-| DI | GPIO18 | S3 I2S **DOUT** → 板 DI（ES8311 DAC 数据） |
-| DO | GPIO21 | 板 DO（ES7210 ADC 数据）→ S3 I2S **DIN** |
+| DO | GPIO18 | S3 I2S **DOUT** → 板 DO（ES8311 DAC 数据） |
+| DI | GPIO21 | 板 DI（ES7210 ADC 数据）→ S3 I2S **DIN** |
 | EN | GPIO7 | 高电平打开 NS4150B；10k 下拉，初始化完成后拉高 |
 | 喇叭 +/− | 喇叭 | 4Ω/8Ω 3W；BTL 输出，扬声器负端不要接地 |
 
@@ -414,7 +414,7 @@ ESP32-S3
 1. 先只接 VCC/GND，测板上 3.3V；
 2. 接 I2C，扫描 ES7210/ES8311 地址；
 3. 接 I2S 输出（MCK/BCK/WS/DI）和 EN，播放小音量 tone；
-4. 接 DO，录 ES7210；
+4. 接 DI，录 ES7210；
 5. 再做 A7 的参考通道探测。
 
 ### 注意
