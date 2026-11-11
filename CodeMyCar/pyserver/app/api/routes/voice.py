@@ -88,6 +88,9 @@ async def _run_conversation(
         except Exception:
             logger.exception("Agent session failed; using legacy conversation path")
     runner.start()
+    # Conversation has no wake-word prompt otherwise; the cue tells the user
+    # when to speak. It is a prompt, not TTS feedback, so it must not gate ASR.
+    service.play_ready_tone()
     max_bytes = int(
         settings.voice_conversation_max_s * service.config.sample_rate * 2
     )
