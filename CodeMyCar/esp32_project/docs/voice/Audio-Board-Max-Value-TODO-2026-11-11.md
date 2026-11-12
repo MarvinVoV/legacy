@@ -8,6 +8,7 @@ ES8311 2 倍速播放问题已定位并修复（32-bit slot）；A1 仍缺板子
 **相关文档：**
 
 - `Audio-Board-Bring-Up-And-AEC-2026-11-12.md`：接线、通道映射、A7 结论、32-bit 修复、正式接入与已知限制。
+- `Voice-Barge-In-Handoff-2026-11-12.md`：打断架构、双讲检测、阈值待标定项与后续工作。
 - `Local-Wake-Ack-And-Audio-Board-2026-11-11.md`：本地“我在”方案、器件分析、无原理图 AEC 验证。
 - `START-HERE-Voice-Architecture-Handoff-2026-11-11.md`：当前语音架构、长会话和 Agent runtime。
 
@@ -137,7 +138,7 @@ ES8311 2 倍速播放问题已定位并修复（32-bit slot）；A1 仍缺板子
 
 > 目标：从半双工升级到可靠全双工；没有参考就停在这里，不虚假宣传。
 
-- [ ] **C1 参考通道接入 AFE**（ch1 已确认可作参考；下一步把它送进 ESP-SR AFE 并量化 ERLE）
+- [ ] **C1 参考通道接入 AFE**（部分：ch1 已按 "MR" 送入 AFE，FD AEC + NLP 已运行；ERLE 约 10–20 dB；设备端双讲检测与 barge_in 协议已实现，阈值仍待标定，见 Voice-Barge-In 交接文档）
   - 按 A7：硬件参考或软件参考；
   - AFE `mic + reference` 配置；AEC on；
   - 处理参考延迟/时钟/幅度；
