@@ -1,3 +1,11 @@
+/* ES7210 + ES8311 + NS4150B probe: tone playback + 4-channel RMS time series.
+ *
+ * A7 discriminator: the same firmware is run once with the microphones open
+ * and once with them covered. A channel whose RMS does not drop when the mics
+ * are covered is an electrical tap, not acoustic pickup. RMS (not a single
+ * correlation value) is the measurement that decides it.
+ */
+
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
@@ -20,27 +28,77 @@
 #define I2S_WS 17
 #define I2S_DOUT 18
 #define I2S_DIN 21
+
 #define RATE 16000
-#define FRAMES 320
+#define FRAMES 320          /* 20 ms per read at 16 kHz */
 #define TONE_HZ 1000
 #define TONE_AMP 300
-#define REC_SECONDS 3
+#define TONE_SECONDS 40
+
+/* Microphone mapping (A6) needs a broadband, clearly audible source so that
+ * covering one mic produces an unmistakable RMS drop on its channel. Set to
+ * 0 to get the pure 1 kHz reference/tone test back. */
+#define TEST_NOISE 1
+#define NOISE_AMP 2000
+
+#define WINDOW_READS 25     /* 25 * 20 ms = 0.5 s */
+#define WINDOWS 30          /* 15 s time series */
 
 static const char *TAG = "loopback";
 static esp_codec_dev_handle_t s_out;
 static esp_codec_dev_handle_t s_in;
-static int16_t s_tone[FRAMES];
+static int16_t s_ref[FRAMES];           /* mono reference used by correlation */
+static int32_t s_tone[FRAMES * 2];      /* stereo 32-bit slots */
+static int32_t s_silence[FRAMES * 2];
+static volatile bool s_tone_on = true;
+
+static double tone_amp_at(const int16_t *buf, int ch, double f)
+{
+    double re = 0, im = 0, energy = 0;
+    for (int k = 0; k < FRAMES; ++k) {
+        double ph = 2.0 * M_PI * f * k / RATE;
+        double v = buf[k * 4 + ch];
+        re += v * cos(ph);
+        im += v * sin(ph);
+        energy += v * v;
+    }
+    if (energy <= 0) return 0;
+    /* Fraction of the channel's energy explained by a sinusoid at f. */
+    double cre = 2.0 * re / FRAMES, cim = 2.0 * im / FRAMES;
+    return (cre * cre + cim * cim) * FRAMES / (2.0 * energy);
+}
+
+static void scan_frequency(const int16_t *buf, int w)
+{
+    double best_f[4] = {0}, best_fit[4] = {0};
+    for (int ch = 0; ch < 4; ++ch) {
+        for (int f = 200; f <= 4000; f += 50) {
+            double fit = tone_amp_at(buf, ch, f);
+            if (fit > best_fit[ch]) { best_fit[ch] = fit; best_f[ch] = f; }
+        }
+    }
+    ESP_LOGI(TAG, "scan w=%02d f0=%4.0f/%1.2f f1=%4.0f/%1.2f f2=%4.0f/%1.2f f3=%4.0f/%1.2f",
+             w, best_f[0], best_fit[0], best_f[1], best_fit[1],
+             best_f[2], best_fit[2], best_f[3], best_fit[3]);
+}
+
 
 static void tone_task(void *arg)
 {
     (void)arg;
-    const int frames = REC_SECONDS * RATE / FRAMES;
-    for (int n = 0; n < frames; ++n) {
-        int ret = esp_codec_dev_write(s_out, s_tone, sizeof(s_tone));
+    const int writes = TONE_SECONDS * RATE / FRAMES;
+    for (int n = 0; n < writes; ++n) {
+        const int32_t *buf = s_tone_on ? s_tone : s_silence;
+        int ret = esp_codec_dev_write(s_out, (void *)buf, sizeof(s_tone));
         if (ret != ESP_CODEC_DEV_OK) {
             ESP_LOGE(TAG, "tone write failed: %d", ret);
             break;
         }
+    }
+    /* Keep the TX DMA fed with silence so the I2S clock (and paired RX) keeps
+     * running while the capture window finishes. */
+    for (int n = 0; n < 200; ++n) {
+        esp_codec_dev_write(s_out, s_silence, sizeof(s_silence));
     }
     ESP_LOGI(TAG, "tone finished");
     vTaskDelete(NULL);
@@ -60,8 +118,8 @@ void app_main(void)
     ESP_ERROR_CHECK(i2c_new_master_bus(&bus_cfg, &bus));
 
     /* One I2S controller in full-duplex mode: TX STD to ES8311, RX TDM from
-     * ES7210. The previous crash was app_main stack overflow from a 2.5 KB
-     * local buffer, not the duplex controller itself. */
+     * ES7210. A 2.5 KB local buffer used to overflow the app_main stack, and
+     * enabling both handles separately is unsupported; see README. */
     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
     chan_cfg.dma_desc_num = 6;
     chan_cfg.dma_frame_num = 240;
@@ -145,13 +203,13 @@ void app_main(void)
     if (!s_out || !s_in) { ESP_LOGE(TAG, "dev new fail"); return; }
 
     esp_codec_dev_sample_info_t out_fs = {
-        .bits_per_sample = 16, .channel = 2, .channel_mask = 0,
+        .bits_per_sample = 32, .channel = 2, .channel_mask = 0,
         .sample_rate = RATE, .mclk_multiple = 0,
     };
     int ret = esp_codec_dev_open(s_out, &out_fs);
     ESP_LOGI(TAG, "out open=%d", ret);
     if (ret != ESP_CODEC_DEV_OK) return;
-    ret = esp_codec_dev_set_out_vol(s_out, 10);
+    ret = esp_codec_dev_set_out_vol(s_out, TEST_NOISE ? 40 : 40);
     ESP_LOGI(TAG, "out volume ret=%d", ret);
 
     esp_codec_dev_sample_info_t in_fs = {
@@ -161,56 +219,94 @@ void app_main(void)
     ret = esp_codec_dev_open(s_in, &in_fs);
     ESP_LOGI(TAG, "in open=%d", ret);
     if (ret != ESP_CODEC_DEV_OK) return;
-    ESP_LOGI(TAG, "in gain ret=%d", esp_codec_dev_set_in_gain(s_in, 30.0f));
+    ESP_LOGI(TAG, "in gain ret=%d", esp_codec_dev_set_in_gain(s_in, 37.5f));
 
+    uint32_t seed = 0x12345678u;
     for (int n = 0; n < FRAMES; ++n) {
-        s_tone[n] = (int16_t)(TONE_AMP * sin(2.0 * M_PI * TONE_HZ * n / RATE));
+#if TEST_NOISE
+        seed = seed * 1664525u + 1013904223u;
+        s_ref[n] = (int16_t)((int32_t)(seed >> 16) % (2 * NOISE_AMP) - NOISE_AMP);
+#else
+        s_ref[n] = (int16_t)(TONE_AMP * sin(2.0 * M_PI * TONE_HZ * n / RATE));
+#endif
+        s_tone[2 * n] = s_tone[2 * n + 1] = (int32_t)s_ref[n] << 16;
     }
     BaseType_t ok = xTaskCreate(tone_task, "tone", 4096, NULL, 5, NULL);
     if (ok != pdPASS) { ESP_LOGE(TAG, "tone task fail"); return; }
 
     static int16_t buf[FRAMES * 4]; /* keep 2.5 KB off the 3.5 KB app_main stack */
-    double sums[4] = {0};
-    double best_corr[4] = {-1, -1, -1, -1};
-    int best_lag[4] = {0, 0, 0, 0};
-    double tone_energy = 0;
-    for (int n = 0; n < FRAMES; ++n) tone_energy += (double)s_tone[n] * s_tone[n];
-    int frames = 0;
-    int target_frames = 24; /* 0.48 s is enough for correlation and avoids WDT */
-    while (frames < target_frames) {
-        ret = esp_codec_dev_read(s_in, buf, sizeof(buf));
-        if (ret != ESP_CODEC_DEV_OK) {
-            ESP_LOGE(TAG, "in read fail %d", ret);
-            vTaskDelay(pdMS_TO_TICKS(20));
-            continue;
+    ESP_LOGI(TAG, "PROBE START windows=%d window_ms=%d src=%s vol=%d gain=37.5dB",
+             WINDOWS, WINDOW_READS * 20, TEST_NOISE ? "noise" : "1000Hz",
+             TEST_NOISE ? 40 : 40);
+
+    for (int w = 0; w < WINDOWS; ++w) {
+        if (w == WINDOWS / 2) {
+            /* Second half is the silence baseline: same microphone, no tone. */
+            s_tone_on = false;
+            ESP_LOGI(TAG, "TONE OFF");
         }
-        for (int ch = 0; ch < 4; ++ch) {
-            for (int n = 0; n < FRAMES; ++n) {
-                sums[ch] += (double)buf[n * 4 + ch] * buf[n * 4 + ch];
+        if (w == 8) {
+            /* Middle third: tone data keeps streaming but the DAC is muted.
+             * A channel that loses the 1 kHz here follows the analog output;
+             * one that keeps it is a digital tap. */
+            esp_codec_dev_set_out_mute(s_out, true);
+            ESP_LOGI(TAG, "DAC MUTED");
+        }
+        double sum[4] = {0}, sumsq[4] = {0};
+        int peak[4] = {0};
+        int reads = 0;
+        while (reads < WINDOW_READS) {
+            ret = esp_codec_dev_read(s_in, buf, sizeof(buf));
+            if (ret != ESP_CODEC_DEV_OK) {
+                vTaskDelay(pdMS_TO_TICKS(20));
+                continue;
             }
-            for (int lag = -32; lag <= 32; ++lag) {
-                double dot = 0, energy = 0;
+            for (int ch = 0; ch < 4; ++ch) {
                 for (int n = 0; n < FRAMES; ++n) {
-                    int j = n + lag;
+                    int v = buf[n * 4 + ch];
+                    sum[ch] += v;
+                    sumsq[ch] += (double)v * v;
+                    int a = v < 0 ? -v : v;
+                    if (a > peak[ch]) peak[ch] = a;
+                }
+            }
+            ++reads;
+        }
+        const double n = (double)reads * FRAMES;
+        if (!TEST_NOISE && (w == 2 || w == 6)) {
+            scan_frequency(buf, w);
+        }
+        /* Steady-state correlation on the last 20 ms block. A hardware
+         * reference should be a clean, high-correlation copy of the tone. */
+        double tone_energy = 0;
+        for (int k = 0; k < FRAMES; ++k) {
+            tone_energy += (double)s_ref[k] * s_ref[k];
+        }
+        double best[4] = {0, 0, 0, 0};
+        int best_lag[4] = {0, 0, 0, 0};
+        for (int ch = 0; ch < 4; ++ch) {
+            for (int lag = -64; lag <= 64; ++lag) {
+                double dot = 0, energy = 0;
+                for (int k = 0; k < FRAMES; ++k) {
+                    int j = k + lag;
                     if (j < 0 || j >= FRAMES) continue;
-                    double v = buf[n * 4 + ch];
-                    dot += v * s_tone[j];
+                    double v = buf[k * 4 + ch];
+                    dot += v * s_ref[j];
                     energy += v * v;
                 }
                 if (energy > 0) {
                     double c = fabs(dot / sqrt(energy * tone_energy));
-                    if (c > best_corr[ch]) {
-                        best_corr[ch] = c;
-                        best_lag[ch] = lag;
-                    }
+                    if (c > best[ch]) { best[ch] = c; best_lag[ch] = lag; }
                 }
             }
         }
-        ++frames;
+        ESP_LOGI(TAG, "w=%02d t=%.1fs ch0=%4.0f/%4d ch1=%4.0f/%4d ch2=%4.0f/%4d ch3=%4.0f/%4d c=%1.2f,%1.2f,%1.2f,%1.2f",
+                 w, (w + 1) * 0.5,
+                 sqrt(sumsq[0] / n - (sum[0] / n) * (sum[0] / n)), peak[0],
+                 sqrt(sumsq[1] / n - (sum[1] / n) * (sum[1] / n)), peak[1],
+                 sqrt(sumsq[2] / n - (sum[2] / n) * (sum[2] / n)), peak[2],
+                 sqrt(sumsq[3] / n - (sum[3] / n) * (sum[3] / n)), peak[3],
+                 best[0], best[1], best[2], best[3]);
     }
-    for (int ch = 0; ch < 4; ++ch) {
-        ESP_LOGI(TAG, "ch%d rms=%.1f corr=%.3f lag=%d", ch,
-                 sqrt(sums[ch] / (frames * FRAMES)), best_corr[ch], best_lag[ch]);
-    }
-    ESP_LOGI(TAG, "loopback done frames=%d", frames);
+    ESP_LOGI(TAG, "PROBE DONE");
 }
