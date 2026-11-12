@@ -1,0 +1,368 @@
+{
+  "phases": [
+    {
+      "index": 1,
+      "stage": "quiet",
+      "start_utc": "2026-11-12T10:01:02.932904+00:00",
+      "complete": true,
+      "end_utc": "2026-11-12T10:11:03.292707+00:00",
+      "result": {
+        "stage": "quiet",
+        "planned_s": 600,
+        "elapsed_s": 600.348,
+        "complete_audio_bytes": 18412984,
+        "complete_audio_s": 575.406,
+        "interruptions": 7
+      },
+      "annotation": {
+        "phase_index": 1,
+        "label": "mixed_home",
+        "source": "user_report",
+        "note": "External speech/playback present; individual events remain unclassified.",
+        "annotation_utc": "2026-11-12T10:14:54.260279+00:00"
+      },
+      "barge_events": 7,
+      "human_speech_events": 0,
+      "confirmed_false_events": 0,
+      "unclassified_events": 7,
+      "zero_barge_events": false,
+      "server_ack": {
+        "samples": 7,
+        "p50_ms": 118.9,
+        "p95_ms": 152.4,
+        "max_ms": 152.4
+      },
+      "device_dma_drain": {
+        "samples": 7,
+        "p50_ms": 129,
+        "p95_ms": 138,
+        "max_ms": 138
+      },
+      "health": {
+        "samples": 20,
+        "heap_min": 49279,
+        "heap_max": 52807,
+        "minimum_ever": 37968,
+        "heap_first_last": [
+          52675,
+          52695
+        ],
+        "uptime_decreases": 0
+      }
+    },
+    {
+      "index": 2,
+      "stage": "quiet",
+      "start_utc": "2026-11-12T10:11:03.294780+00:00",
+      "complete": true,
+      "end_utc": "2026-11-12T10:21:03.642014+00:00",
+      "result": {
+        "stage": "quiet",
+        "planned_s": 600,
+        "elapsed_s": 600.335,
+        "complete_audio_bytes": 19112626,
+        "complete_audio_s": 597.27,
+        "interruptions": 1
+      },
+      "annotation": {
+        "phase_index": 2,
+        "label": "ambient_noise_echo_baseline_with_one_known_human_utterance",
+        "source": "user_report",
+        "note": "Normal background noise allowed; user reports one accidental soft hmm.",
+        "annotation_utc": "2026-11-12T10:14:54.260681+00:00"
+      },
+      "barge_events": 1,
+      "human_speech_events": 1,
+      "confirmed_false_events": 0,
+      "unclassified_events": 0,
+      "zero_barge_events": false,
+      "server_ack": {
+        "samples": 1,
+        "p50_ms": 109.3,
+        "p95_ms": 109.3,
+        "max_ms": 109.3
+      },
+      "device_dma_drain": {
+        "samples": 1,
+        "p50_ms": 120,
+        "p95_ms": 120,
+        "max_ms": 120
+      },
+      "health": {
+        "samples": 20,
+        "heap_min": 52499,
+        "heap_max": 52807,
+        "minimum_ever": 37968,
+        "heap_first_last": [
+          52695,
+          52695
+        ],
+        "uptime_decreases": 0
+      }
+    },
+    {
+      "index": 3,
+      "stage": "typing",
+      "start_utc": "2026-11-12T10:23:03.276358+00:00",
+      "complete": true,
+      "end_utc": "2026-11-12T10:25:03.624075+00:00",
+      "result": {
+        "stage": "typing",
+        "planned_s": 120,
+        "elapsed_s": 120.347,
+        "complete_audio_bytes": 3520244,
+        "complete_audio_s": 110.008,
+        "interruptions": 3
+      },
+      "annotation": {
+        "phase_index": 3,
+        "label": "typing_plus_computer_movement",
+        "source": "user_report",
+        "note": "User confirms no speech/playback and moved the computer; classify as keyboard plus mechanical disturbance, not isolated typing."
+      },
+      "barge_events": 3,
+      "human_speech_events": 0,
+      "confirmed_false_events": 3,
+      "unclassified_events": 0,
+      "zero_barge_events": false,
+      "server_ack": {
+        "samples": 3,
+        "p50_ms": 115.6,
+        "p95_ms": 128.1,
+        "max_ms": 128.1
+      },
+      "device_dma_drain": {
+        "samples": 3,
+        "p50_ms": 123,
+        "p95_ms": 135,
+        "max_ms": 135
+      },
+      "health": {
+        "samples": 4,
+        "heap_min": 52695,
+        "heap_max": 52807,
+        "minimum_ever": 37968,
+        "heap_first_last": [
+          52695,
+          52807
+        ],
+        "uptime_decreases": 0
+      }
+    },
+    {
+      "index": 4,
+      "stage": "tapping",
+      "start_utc": "2026-11-12T10:25:54.545803+00:00",
+      "complete": true,
+      "end_utc": "2026-11-12T10:27:54.909324+00:00",
+      "result": {
+        "stage": "tapping",
+        "planned_s": 120,
+        "elapsed_s": 120.363,
+        "complete_audio_bytes": 2837888,
+        "complete_audio_s": 88.684,
+        "interruptions": 9
+      },
+      "annotation": {
+        "phase_index": 4,
+        "label": "table_tapping_plus_cabinet_doors",
+        "source": "user_report",
+        "note": "No speech or external playback; light table tapping and nearby cabinet opening/closing noises, louder than anticipated."
+      },
+      "barge_events": 9,
+      "human_speech_events": 0,
+      "confirmed_false_events": 9,
+      "unclassified_events": 0,
+      "zero_barge_events": false,
+      "server_ack": {
+        "samples": 9,
+        "p50_ms": 117.0,
+        "p95_ms": 150.5,
+        "max_ms": 150.5
+      },
+      "device_dma_drain": {
+        "samples": 9,
+        "p50_ms": 123,
+        "p95_ms": 167,
+        "max_ms": 167
+      },
+      "health": {
+        "samples": 4,
+        "heap_min": 50907,
+        "heap_max": 52695,
+        "minimum_ever": 37968,
+        "heap_first_last": [
+          50963,
+          52695
+        ],
+        "uptime_decreases": 0
+      }
+    }
+  ],
+  "failed": [],
+  "annotations": [
+    {
+      "utc": "2026-11-12T10:07:35.227335+00:00",
+      "classification": "ambient_speech_or_external_playback_present",
+      "source": "user_report",
+      "note": "User confirms external speech/playback during early nominal quiet stage. This run is mixed-home endurance, not a validated quiet echo-only baseline. Earlier question timestamps were corrected in commentary to 18:01:27 and 18:02:39; do not infer exact per-event ground truth from the general reply."
+    },
+    {
+      "phase_index": 1,
+      "label": "mixed_home",
+      "source": "user_report",
+      "note": "External speech/playback present; individual events remain unclassified.",
+      "annotation_utc": "2026-11-12T10:14:54.260279+00:00"
+    },
+    {
+      "phase_index": 2,
+      "label": "ambient_noise_echo_baseline_with_one_known_human_utterance",
+      "source": "user_report",
+      "note": "Normal background noise allowed; user reports one accidental soft hmm.",
+      "annotation_utc": "2026-11-12T10:14:54.260681+00:00"
+    },
+    {
+      "event_utc": "2026-11-12T10:13:20.837416+00:00",
+      "phase_index": 2,
+      "classification": "human_speech",
+      "turn": 9,
+      "source": "user_report",
+      "utterance": "嗯",
+      "annotation_utc": "2026-11-12T10:14:54.260691+00:00"
+    },
+    {
+      "phase_index": 3,
+      "label": "keyboard_typing",
+      "source": "user_ready_then_agent_start",
+      "note": "User prepared to type normally for 120s without deliberate speech."
+    },
+    {
+      "phase_index": 3,
+      "label": "typing_plus_computer_movement",
+      "source": "user_report",
+      "note": "User confirms no speech/playback and moved the computer; classify as keyboard plus mechanical disturbance, not isolated typing."
+    },
+    {
+      "phase_index": 4,
+      "label": "light_table_tapping",
+      "source": "user_ready_then_agent_start",
+      "note": "Keep computer, microphone and speaker fixed; light taps on table."
+    },
+    {
+      "phase_index": 3,
+      "event_utc": "2026-11-12T10:23:13.532993+00:00",
+      "turn": 11,
+      "classification": "false_alarm",
+      "source": "user_report_no_speech_computer_moved"
+    },
+    {
+      "phase_index": 3,
+      "event_utc": "2026-11-12T10:23:17.432384+00:00",
+      "turn": 12,
+      "classification": "false_alarm",
+      "source": "user_report_no_speech_computer_moved"
+    },
+    {
+      "phase_index": 3,
+      "event_utc": "2026-11-12T10:23:22.880312+00:00",
+      "turn": 13,
+      "classification": "false_alarm",
+      "source": "user_report_no_speech_computer_moved"
+    },
+    {
+      "phase_index": 4,
+      "label": "table_tapping_plus_cabinet_doors",
+      "source": "user_report",
+      "note": "No speech or external playback; light table tapping and nearby cabinet opening/closing noises, louder than anticipated."
+    },
+    {
+      "phase_index": 4,
+      "event_utc": "2026-11-12T10:26:05.852598+00:00",
+      "turn": 15,
+      "classification": "false_alarm",
+      "source": "user_report_no_speech_table_and_cabinet_noise"
+    },
+    {
+      "phase_index": 4,
+      "event_utc": "2026-11-12T10:26:20.798903+00:00",
+      "turn": 16,
+      "classification": "false_alarm",
+      "source": "user_report_no_speech_table_and_cabinet_noise"
+    },
+    {
+      "phase_index": 4,
+      "event_utc": "2026-11-12T10:26:24.427179+00:00",
+      "turn": 17,
+      "classification": "false_alarm",
+      "source": "user_report_no_speech_table_and_cabinet_noise"
+    },
+    {
+      "phase_index": 4,
+      "event_utc": "2026-11-12T10:26:29.321717+00:00",
+      "turn": 18,
+      "classification": "false_alarm",
+      "source": "user_report_no_speech_table_and_cabinet_noise"
+    },
+    {
+      "phase_index": 4,
+      "event_utc": "2026-11-12T10:26:34.785462+00:00",
+      "turn": 19,
+      "classification": "false_alarm",
+      "source": "user_report_no_speech_table_and_cabinet_noise"
+    },
+    {
+      "phase_index": 4,
+      "event_utc": "2026-11-12T10:26:39.099278+00:00",
+      "turn": 20,
+      "classification": "false_alarm",
+      "source": "user_report_no_speech_table_and_cabinet_noise"
+    },
+    {
+      "phase_index": 4,
+      "event_utc": "2026-11-12T10:26:43.418983+00:00",
+      "turn": 21,
+      "classification": "false_alarm",
+      "source": "user_report_no_speech_table_and_cabinet_noise"
+    },
+    {
+      "phase_index": 4,
+      "event_utc": "2026-11-12T10:26:48.328548+00:00",
+      "turn": 22,
+      "classification": "false_alarm",
+      "source": "user_report_no_speech_table_and_cabinet_noise"
+    },
+    {
+      "phase_index": 4,
+      "event_utc": "2026-11-12T10:27:09.788107+00:00",
+      "turn": 23,
+      "classification": "false_alarm",
+      "source": "user_report_no_speech_table_and_cabinet_noise"
+    }
+  ],
+  "limits": [
+    "Barge events require human labels to classify speech versus false alarms.",
+    "ACK/DMA distributions exclude speech onset to DTD and are not acoustic stop latency.",
+    "No CPU profile, word-level receipt or ASR/child accuracy is measured."
+  ],
+  "serial_since_last_manual_start": {
+    "codec_read_errors": 0,
+    "codec_write_errors": 0,
+    "discontinuities": 0,
+    "producer_stalls": 0,
+    "boot_markers": 0,
+    "replaced_frames_first_last": [
+      0,
+      0
+    ],
+    "mic_ref_clips_first_last": [
+      [
+        0,
+        0
+      ],
+      [
+        8,
+        0
+      ]
+    ]
+  }
+}

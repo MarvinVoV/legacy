@@ -6,6 +6,8 @@
 
 最新开发与验收：[小鸭唤醒、分片修复、打断预滚动与后续计划](Voice-Wake-And-Conversation-Hardening-2026-11-12.md)。新唤醒词已可用；同句换问题的续句丢失已修复，用户确认连续两次均能停播并切换正确故事。长期噪声统计、严格已听文本同步及重连恢复仍未完成。
 
+声学实测与工具：[噪声、耐久、轻声及NS对照](Voice-Acoustic-Acceptance-2026-11-12.md)。已固化基线`5f4f0c4`。实测发现机械噪声误打断及轻声漏检；NS候选仍在验证，不要将链路/ACK通过等同于声学通过。脱敏结构化数据见`validation-acoustic-2026-11-12/`。
+
 1. [本轮修复、实机验收与剩余事项](Voice-Fix-Implementation-And-Hardware-Validation-2026-11-12.md)
 2. [审查发现与修复计划（修复前基线）](Voice-Architecture-Review-And-Fix-Plan-2026-11-12.md)
 3. [前一位agent的打断交接](Voice-Barge-In-Handoff-2026-11-12.md)

@@ -1,0 +1,143 @@
+{
+  "phases": [
+    {
+      "index": 1,
+      "stage": "quiet",
+      "start_utc": "2026-11-12T10:38:53.946696+00:00",
+      "complete": true,
+      "end_utc": "2026-11-12T10:39:54.465118+00:00",
+      "result": {
+        "stage": "quiet",
+        "planned_s": 60.0,
+        "elapsed_s": 60.518,
+        "complete_audio_bytes": 1807708,
+        "complete_audio_s": 56.491,
+        "interruptions": 1
+      },
+      "annotation": {
+        "phase_index": 1,
+        "label": "ns_60s_preflight_with_reported_louder_sound",
+        "source": "user_report",
+        "note": "User reported a louder sound near the end. Event at 57.9s followed by stage ending at60.5s, so no resumption was expected; this is not proof of a device hang. Sound type is not precisely specified."
+      },
+      "barge_events": 1,
+      "human_speech_events": 0,
+      "confirmed_false_events": 0,
+      "unclassified_events": 1,
+      "zero_barge_events": false,
+      "server_ack": {
+        "samples": 1,
+        "p50_ms": 137.7,
+        "p95_ms": 137.7,
+        "max_ms": 137.7
+      },
+      "device_dma_drain": {
+        "samples": 1,
+        "p50_ms": 143,
+        "p95_ms": 143,
+        "max_ms": 143
+      },
+      "health": {
+        "samples": 2,
+        "heap_min": 41839,
+        "heap_max": 42035,
+        "minimum_ever": 26940,
+        "heap_first_last": [
+          41839,
+          42035
+        ],
+        "uptime_decreases": 0
+      }
+    },
+    {
+      "index": 2,
+      "stage": "tapping",
+      "start_utc": "2026-11-12T10:41:52.031061+00:00",
+      "complete": true,
+      "end_utc": "2026-11-12T10:43:52.397512+00:00",
+      "result": {
+        "stage": "tapping",
+        "planned_s": 120,
+        "elapsed_s": 120.366,
+        "complete_audio_bytes": 3846870,
+        "complete_audio_s": 120.215,
+        "interruptions": 0
+      },
+      "annotation": {
+        "phase_index": 2,
+        "label": "ns_table_tapping_plus_cabinet_doors",
+        "source": "user_ready_then_agent_start",
+        "note": "Same fixed voice, volume60, existing RMS300 and200ms DTD, only NSNet2 enabled; reproduce approximate previous noise without speech."
+      },
+      "barge_events": 0,
+      "human_speech_events": 0,
+      "confirmed_false_events": 0,
+      "unclassified_events": 0,
+      "zero_barge_events": true,
+      "server_ack": {
+        "samples": 0,
+        "p50_ms": null,
+        "p95_ms": null,
+        "max_ms": null
+      },
+      "device_dma_drain": {
+        "samples": 0,
+        "p50_ms": null,
+        "p95_ms": null,
+        "max_ms": null
+      },
+      "health": {
+        "samples": 4,
+        "heap_min": 41935,
+        "heap_max": 41939,
+        "minimum_ever": 26940,
+        "heap_first_last": [
+          41939,
+          41935
+        ],
+        "uptime_decreases": 0
+      }
+    }
+  ],
+  "failed": [],
+  "annotations": [
+    {
+      "phase_index": 1,
+      "label": "ns_60s_preflight_with_reported_louder_sound",
+      "source": "user_report",
+      "note": "User reported a louder sound near the end. Event at 57.9s followed by stage ending at60.5s, so no resumption was expected; this is not proof of a device hang. Sound type is not precisely specified."
+    },
+    {
+      "phase_index": 2,
+      "label": "ns_table_tapping_plus_cabinet_doors",
+      "source": "user_ready_then_agent_start",
+      "note": "Same fixed voice, volume60, existing RMS300 and200ms DTD, only NSNet2 enabled; reproduce approximate previous noise without speech."
+    }
+  ],
+  "limits": [
+    "Barge events require human labels to classify speech versus false alarms.",
+    "ACK/DMA distributions exclude speech onset to DTD and are not acoustic stop latency.",
+    "No CPU profile, word-level receipt or ASR/child accuracy is measured."
+  ],
+  "serial_since_last_manual_start": {
+    "codec_read_errors": 0,
+    "codec_write_errors": 0,
+    "discontinuities": 0,
+    "producer_stalls": 0,
+    "boot_markers": 0,
+    "replaced_frames_first_last": [
+      0,
+      0
+    ],
+    "mic_ref_clips_first_last": [
+      [
+        0,
+        0
+      ],
+      [
+        24,
+        0
+      ]
+    ]
+  }
+}
