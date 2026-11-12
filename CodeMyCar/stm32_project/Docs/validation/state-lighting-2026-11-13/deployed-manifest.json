@@ -1,0 +1,15 @@
+{
+  "note": "实际烧录镜像哈希；构建时工作区包含本次未提交改动。硬件验收不包含后续仅注释/文档/服务端里程语义说明的改动。",
+  "images": [
+    {
+      "path": "stm32_project/build/NoSonar/stm32_project.bin",
+      "bytes": 122336,
+      "sha256": "bcf1daf6ef3e511803d303b05f8d1dec26bd7333cd21a88823db96a75a95420f"
+    },
+    {
+      "path": "esp32_project/build-s3/esp32_project.bin",
+      "bytes": 1641744,
+      "sha256": "ec13b4190e1508c267c9d72784b2de67f4e53959caa23ef8fd9de11cf98c7299"
+    }
+  ]
+}

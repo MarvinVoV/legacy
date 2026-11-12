@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "kind": "manual_real_voice_regression",
+  "device_id": "DEV_1",
+  "requires": [
+    "车架稳固、驱动轮悬空、前轮可转向",
+    "两板在线、IMU/灯光状态新鲜",
+    "开始/结束可靠STOP确认",
+    "正常配置 voice_execute_commands=false"
+  ],
+  "temporary_process_environment": {
+    "CMCAR_VOICE_EXECUTE_COMMANDS": "1",
+    "CMCAR_VOICE_MAX_DISTANCE_MM": "100",
+    "CMCAR_VOICE_SPEED_CM_S": "5",
+    "CMCAR_VOICE_MAX_SPEED_CM_S": "5",
+    "CMCAR_VOICE_MAX_TURN_DEG": "0"
+  },
+  "cases": [
+    {
+      "id": "voice_emotion",
+      "utterance": "显示开心的灯光，持续五秒，不要移动。",
+      "expected_tool": "express_emotion",
+      "expected_arguments": {
+        "emotion": "happy",
+        "intensity": 100,
+        "duration_ms": 5000
+      },
+      "forbidden_tools": [
+        "car_drive",
+        "car_move",
+        "car_turn"
+      ],
+      "human_check": "暖金灯效，无车轮运动"
+    },
+    {
+      "id": "voice_straight_goal",
+      "utterance": "以每秒五厘米的速度，直行前进十厘米，不转弯。",
+      "expected_tool": "car_drive",
+      "expected_arguments": {
+        "distance_cm": 10,
+        "turn_deg": 0,
+        "speed_cm_s": 5
+      },
+      "expected_wire_goal": {
+        "mode": 4,
+        "distance_mm": 100,
+        "turn_ddeg": 0,
+        "speed_mm_s": 50
+      },
+      "human_check": "后轮短时正转并自动停车、相应前进/制动灯效"
+    }
+  ],
+  "cleanup": [
+    "停止临时进程，恢复原配置服务",
+    "voice_execute_commands=false",
+    "STOP accepted+confirmed+stopped",
+    "记录命令/GOAL终态/双轮零速和人工确认，缺失项不能记PASS"
+  ]
+}

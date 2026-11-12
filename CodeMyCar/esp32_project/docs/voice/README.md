@@ -1,5 +1,7 @@
 # 语音开发：当前入口
 
+> 2026-11-13最新上层交接：[单Agent、原生情绪工具与真实语音控制验收](../../../pyserver/docs/Single-Agent-Lighting-And-Voice-Acceptance-2026-11-13.md)。当前唯一LangChain/LangGraph Agent；真实语音悬空GOAL已通过，临时运动权限已恢复关闭。既有声学缺陷/边界不因此关闭。
+
 更新：2026-11-12。用户已授权将 `codex/s3-voice-architecture` 当前基线合并至 `main` 并推送；执行结果以 Git 历史为准。历史文档中的“不合并、不push”是当时限制，已由本次授权更新。
 
 **接手先读：[今日语音优化、基线与接手清单](Voice-Baseline-And-Agent-Handoff-2026-11-12.md)**。它汇总今天的修复、代码位置、最终参数、验证证据、未修复项及复测入口；阶段性文档保留作为证据，状态冲突时以此交接和最新声学报告为准。

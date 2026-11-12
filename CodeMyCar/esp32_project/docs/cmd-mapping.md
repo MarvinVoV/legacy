@@ -135,3 +135,7 @@ ControlCommand  ──JSON──►  cJSON 解析 + 组包 ──v2帧──► 
 | `TYPE=SENSOR` | `SensorData{type,timestamp,data}` | `data/{id}/sensor` |
 | `TYPE=LOG` | `LogEntry{level,tag,message}` | `data/{id}/log` |
 | `TYPE=HEARTBEAT` | 不使用（ESP32 心跳由 health_monitor 自产） | `data/{id}/heartbeat` |
+
+## 2026-11-13：独立灯光语义扩展（VISUAL=0x0A）
+
+新增MQTT `cmd:lighting`（emotion/强度/时长/epoch或clear），不进入运动队列、ACK pending或续租路径。S3独立单槽mailbox、低优先级worker限频10Hz并扣除队列等待TTL；STM32本地仲裁，回传44字节状态。原运动帧格式不变。完整20/44字节布局、session/epoch/event语义与HTTP端点见[状态灯实现](../../stm32_project/Docs/WS2812-State-Lighting-Implementation-2026-11-13.md)，[回归指南](../../pyserver/docs/Lighting-And-Voice-Regression-Guide-2026-11-13.md)。需要同步升级S3和STM32；预留voice/level尚未自动从S3实际播放驱动。

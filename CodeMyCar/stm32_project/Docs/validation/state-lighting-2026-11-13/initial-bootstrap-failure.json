@@ -1,0 +1,14 @@
+{
+  "passed": false,
+  "motion": true,
+  "failure": "AssertionError: lighting/device readiness timeout",
+  "final_stop": {
+    "ms": 131.3,
+    "ok": true,
+    "stopped": true,
+    "accepted": true,
+    "confirmed": true,
+    "seq": 0
+  },
+  "cases": []
+}

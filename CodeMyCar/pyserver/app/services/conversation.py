@@ -2,7 +2,7 @@
 
 The command pipeline is intentionally untouched. This module owns:
 
-    VAD turn -> ASR -> context -> DeepSeek stream -> sentence TTS -> sink
+    VAD turn -> ASR -> one AgentSession -> sentence TTS -> sink
 
 The device gates playback echo and negotiates completion/cancellation ACKs.
 This owner joins every turn task before cancellation and listening resume;
@@ -19,14 +19,11 @@ import math
 import sys
 import time
 from collections.abc import AsyncIterator
-from dataclasses import dataclass, field
-from pathlib import Path
+from dataclasses import dataclass
 from typing import Any, Protocol
 
-from app.agent.persona import DEFAULT_PROFILE_DIR, load_profile
-from app.agent.vehicle import DriveArguments, MoveArguments, TurnArguments, VehicleGateway
+from app.agent.session import ConversationAgentSession
 from app.services.audio_metrics import measure_pcm16
-from app.services.llm import LlmClient, LlmDone, LlmTextDelta
 from app.services.voice_diagnostics import InterruptionCapture
 from app.services.voice_service import VoiceService, VoiceSession
 
@@ -52,10 +49,6 @@ class ConversationConfig:
     idle_s: float = 15.0
     max_s: float = 600.0
     max_turns: int = 30
-    history_turns: int = 12
-    history_tokens: int = 8000
-    max_tool_rounds: int = 3
-    max_tokens: int = 512
     # Barge-in: while the assistant speaks, a sustained near-end level above
     # the AEC residual interrupts the reply. Disabled unless both the device
     # and the server opt in.
@@ -73,8 +66,6 @@ class ConversationConfig:
     barge_tail_timeout_s: float = 5.0
     playback_timeout_s: float = 60.0
     settle_timeout_s: float = 4.0
-    system_prompt: str | None = None
-    profile_dir: str = str(DEFAULT_PROFILE_DIR)
 
     @property
     def turn_end_s(self) -> float:
@@ -162,108 +153,6 @@ class SentenceChunker:
         return [piece] if piece else []
 
 
-@dataclass
-class ConversationHistory:
-    system_prompt: str
-    max_turns: int = 12
-    max_tokens: int = 8000
-    messages: list[dict[str, Any]] = field(default_factory=list)
-
-    def __post_init__(self) -> None:
-        self.messages = [{"role": "system", "content": self.system_prompt}]
-
-    def add_user(self, text: str) -> None:
-        self.messages.append({"role": "user", "content": text})
-        self._trim()
-
-    def add_assistant(self, text: str, tool_calls: list[dict] | None = None) -> None:
-        message: dict[str, Any] = {"role": "assistant", "content": text}
-        if tool_calls:
-            message["tool_calls"] = tool_calls
-        self.messages.append(message)
-        self._trim()
-
-    def add_tool(self, tool_call_id: str, content: str) -> None:
-        self.messages.append({"role": "tool", "tool_call_id": tool_call_id, "content": content})
-        self._trim()
-
-    def request_messages(self) -> list[dict[str, Any]]:
-        self._trim()
-        return list(self.messages)
-
-    def _trim(self) -> None:
-        # Preserve the system prompt. Drop oldest complete user turns first.
-        while len(self.messages) > 1 + self.max_turns * 2:
-            self._drop_oldest_turn()
-        while self._estimate_tokens() > self.max_tokens and len(self.messages) > 2:
-            self._drop_oldest_turn()
-
-    def _drop_oldest_turn(self) -> None:
-        if len(self.messages) <= 1:
-            return
-        # Remove the oldest user and everything up to the next user message,
-        # keeping the system prompt at index 0.
-        end = next(
-            (i for i in range(2, len(self.messages)) if self.messages[i].get("role") == "user"),
-            len(self.messages),
-        )
-        del self.messages[1:end]
-
-    def _estimate_tokens(self) -> int:
-        return sum(max(1, len(str(message.get("content", ""))) // 2) for message in self.messages)
-
-
-# Built from the same validated argument models as the production graph.
-
-CAR_TOOLS: list[dict[str, Any]] = [
-    {
-        "type": "function",
-        "function": {
-            "name": name,
-            "description": description,
-            "parameters": schema.model_json_schema()
-            if schema
-            else {"type": "object", "properties": {}},
-        },
-    }
-    for name, description, schema in [
-        ("car_get_state", "Read fresh connection, body pose, capabilities; no movement", None),
-        (
-            "car_drive",
-            "Signed cm path; body turn degrees positive right, negative left even in reverse",
-            DriveArguments,
-        ),
-        ("car_move", "Straight forward/backward motion in metres", MoveArguments),
-        (
-            "car_turn",
-            "Body turn on default short forward arc, not stationary steering",
-            TurnArguments,
-        ),
-        ("car_stop", "Reliable STOP; requires confirmed stopped result", None),
-    ]
-]
-
-
-class CarToolExecutor:
-    def __init__(self, service: VoiceService) -> None:
-        self.service = service
-        self.gateway = VehicleGateway(service)
-
-    async def execute(self, device_id: str, call: Any) -> dict[str, Any]:
-        try:
-            args = json.loads(call.arguments or "{}")
-            if not isinstance(args, dict):
-                return {"executed": False, "reason": "invalid tool arguments"}
-            return await self.gateway.invoke(device_id, call.name, args)
-        except Exception as exc:  # noqa: BLE001 - tool failures must not kill a voice turn
-            logger.warning("conversation tool failed: %s", type(exc).__name__)
-            return {"executed": False, "reason": "tool failed"}
-
-
-class ConversationAgentSession(Protocol):
-    def stream(self, text: str) -> AsyncIterator[str]: ...
-
-
 class ConversationRunner:
     """Owns one conversation session; the route only feeds frames and ends it."""
 
@@ -273,24 +162,16 @@ class ConversationRunner:
         session: VoiceSession,
         sink: ConversationSink,
         *,
-        llm: LlmClient,
+        agent_session: ConversationAgentSession,
         config: ConversationConfig | None = None,
         device_id: str | None = None,
-        agent_session: ConversationAgentSession | None = None,
     ) -> None:
         self.service = service
         self.session = session
         self.sink = sink
-        self.llm = llm
         self.agent_session = agent_session
         self.config = config or ConversationConfig()
         self.device_id = device_id or session.device_id
-        self.history = ConversationHistory(
-            self.config.system_prompt or load_profile(Path(self.config.profile_dir)).system_prompt,
-            max_turns=self.config.history_turns,
-            max_tokens=self.config.history_tokens,
-        )
-        self.tools = CarToolExecutor(service)
         self.state = "listening"
         self.turn = 0
         self.end_reason: str | None = None
@@ -771,32 +652,10 @@ class ConversationRunner:
             self.request_end("user_end")
             return
 
-        if self.agent_session is not None:
-            await self._answer_with_agent(normalized)
-            return
-
-        self.history.add_user(normalized)
-        final_text = await self._answer()
-        if final_text is not None:
-            # A v2 device confirms its DMA tail drained before listening resumes.
-            if self.service.tts is not None:
-                try:
-                    await self._wait_playback()
-                except TimeoutError:
-                    logger.warning("conversation playback did not drain")
-            await self._safe_send(
-                {
-                    "type": "assistant_done",
-                    "turn": self.turn,
-                    "text": final_text[:400],
-                    "interrupted": False,
-                }
-            )
+        await self._answer_with_agent(normalized)
 
     async def _answer_with_agent(self, text: str) -> None:
-        """Deep Agents owns history/tools/summarization; this layer owns TTS."""
-        if self.agent_session is None:
-            return
+        """The single companion graph owns history/tools/summary; this layer owns TTS."""
         spoken: list[str] = []
         chunker = SentenceChunker()
         if self._interrupted_reply:
@@ -853,62 +712,6 @@ class ConversationRunner:
                     "interrupted": False,
                 }
             )
-
-    async def _answer(self) -> str | None:
-        spoken: list[str] = []
-        final_text = ""
-        for round_index in range(self.config.max_tool_rounds + 1):
-            done: LlmDone | None = None
-            chunker = SentenceChunker()
-            async for event in self.llm.stream_chat(
-                self.history.request_messages(),
-                tools=(
-                    [
-                        t
-                        for t in CAR_TOOLS
-                        if self.service.config.execute_commands
-                        or t["function"]["name"] in {"car_get_state", "car_stop"}
-                    ]
-                ),
-            ):
-                if isinstance(event, LlmTextDelta):
-                    for sentence in chunker.feed(event.text):
-                        self.state = "speaking"
-                        await self._speak_sentence(sentence, spoken)
-                elif isinstance(event, LlmDone):
-                    done = event
-            if done is None:
-                break
-            for sentence in chunker.flush():
-                self.state = "speaking"
-                await self._speak_sentence(sentence, spoken)
-
-            if not done.tool_calls or round_index >= self.config.max_tool_rounds:
-                final_text = done.content.strip()
-                if final_text and not spoken:
-                    # Content existed but the chunker had no punctuation.
-                    self.state = "speaking"
-                    await self._speak_sentence(final_text, spoken)
-                self.history.add_assistant(final_text)
-                return final_text or "".join(spoken)
-
-            tool_calls_payload = [
-                {
-                    "id": call.id,
-                    "type": "function",
-                    "function": {"name": call.name, "arguments": call.arguments},
-                }
-                for call in done.tool_calls
-            ]
-            self.history.add_assistant(done.content, tool_calls_payload)
-            for call in done.tool_calls:
-                result = await self.tools.execute(self.device_id, call)
-                self.history.add_tool(call.id, json.dumps(result, ensure_ascii=False))
-        # If the loop ended without a final answer, still return spoken text.
-        final_text = "".join(spoken)
-        if final_text:
-            self.history.add_assistant(final_text)
-        return final_text or None
 
     async def _synthesize(self, sentence: str):
         if self.service.tts is None:

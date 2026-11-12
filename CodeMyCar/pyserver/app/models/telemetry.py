@@ -49,7 +49,7 @@ class MotionStatus(BaseModel):
     x_mm: int = 0
     y_mm: int = 0                # 设备坐标：左正
     theta_mdeg: int = 0          # 设备坐标：CCW 正
-    odometer_mm: int = 0
+    odometer_mm: int = 0  # signed wheel path since STM32 boot; reverse subtracts
     goal_distance_mm: int = 0
     goal_turn_mdeg: int = 0      # 右正
     goal_heading_source: str = "encoder"  # imu or encoder; fixed for each GOAL

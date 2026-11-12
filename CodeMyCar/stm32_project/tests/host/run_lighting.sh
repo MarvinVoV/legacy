@@ -7,5 +7,11 @@ clang -std=c11 -Wall -Wextra -Werror -g -fsanitize=address,undefined \
   -I "$ROOT/Application/Modules/LedStrip/Inc" -I "$ROOT/Application/Services/Lighting/Inc" \
   "$ROOT/tests/host/ws2812_test.c" \
   "$ROOT/Application/Modules/LedStrip/Src/ws2812_encoder.c" \
-  "$ROOT/Application/Services/Lighting/Src/lighting_service.c" -o "$OUT/lighting"
+  "$ROOT/Application/Services/Lighting/Src/lighting_service.c" \
+  "$ROOT/Application/Services/Lighting/Src/lighting_controller.c" -o "$OUT/lighting"
 "$OUT/lighting"
+clang -std=c11 -Wall -Wextra -Werror -g -fsanitize=address,undefined \
+  -I "$ROOT/Application/Modules/LedStrip/Inc" -I "$ROOT/Application/Services/Lighting/Inc" \
+  "$ROOT/tests/host/lighting_controller_test.c" \
+  "$ROOT/Application/Services/Lighting/Src/lighting_controller.c" -o "$OUT/controller"
+"$OUT/controller"

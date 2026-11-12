@@ -10,6 +10,7 @@ from pydantic import ConfigDict
 from app.agent.context import AgentContext
 from app.agent.preferences import MemoryCategory, Preference, PreferenceStore
 from app.agent.vehicle import DriveArguments, MoveArguments, TurnArguments, VehicleGateway
+from app.agent.lighting import EmotionArguments, LightingGateway
 
 
 class DriveToolArguments(DriveArguments):
@@ -25,6 +26,34 @@ class MoveToolArguments(MoveArguments):
 class TurnToolArguments(TurnArguments):
     model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
     runtime: ToolRuntime[AgentContext]
+
+
+class EmotionToolArguments(EmotionArguments):
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
+    runtime: ToolRuntime[AgentContext]
+
+
+def build_lighting_tools(gateway: LightingGateway) -> list:
+    @tool(args_schema=EmotionToolArguments)
+    async def express_emotion(
+        emotion: str, runtime: ToolRuntime[AgentContext], intensity: int = 100, duration_ms: int = 3000
+    ) -> dict:
+        """Express a mood using body lights: calm, happy, curious, comforting or sad.
+
+        Decorative only; no movement. Intensity 0..100, duration 100..10000ms.
+        STM32 owns colors/brightness and local motion/brake/fault indications win.
+        Say it is applied only when confirmed=true; published alone is not confirmation.
+        Use for an explicit request or meaningful emotional moment, not every reply.
+        """
+        return await gateway.express(runtime.context.device_id, emotion=emotion,
+                                     intensity=intensity, duration_ms=duration_ms)
+
+    @tool
+    async def clear_emotion(runtime: ToolRuntime[AgentContext]) -> dict:
+        """Clear the temporary decorative mood and return to local body-state lighting; no motion."""
+        return await gateway.clear(runtime.context.device_id)
+
+    return [express_emotion, clear_emotion]
 
 
 def build_car_tools(service, *, include_motion: bool = True) -> list:

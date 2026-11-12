@@ -6,26 +6,36 @@ import pytest
 
 from app.services.conversation import (
     ConversationConfig,
-    ConversationHistory,
     ConversationRunner,
     SentenceChunker,
 )
-from app.services.llm import LlmDone, LlmTextDelta
 from tests.test_voice_ws import FakeAsr, FakeLocalPlayer, FakeTts, make_service, pcm
 
 
-class FakeLlm:
+class FakeConversationSession:
     def __init__(self, answers: list[str]) -> None:
         self.answers = list(answers)
         self.calls = []
 
-    async def stream_chat(self, messages, *, tools=None, cancel=None):
-        self.calls.append(messages)
-        text = self.answers.pop(0)
-        cut = max(1, len(text) // 2)
-        yield LlmTextDelta(text[:cut])
-        yield LlmTextDelta(text[cut:])
-        yield LlmDone(content=text, tool_calls=())
+    async def stream(self, text):
+        self.calls.append(text)
+        answer = self.answers.pop(0)
+        cut = max(1, len(answer)//2)
+        yield answer[:cut]
+        yield answer[cut:]
+
+
+class FakeConversationRuntime:
+    def __init__(self, session):
+        self.session = session
+        self.sessions = []
+
+    def new_session(self, device_id, session_id):
+        self.sessions.append((device_id, session_id))
+        return self.session
+
+    async def aclose(self):
+        pass
 
 
 class FakeSink:
@@ -56,12 +66,12 @@ async def make_runner(tmp_path, *, answer: str = "你好，我在。", asr_text:
     service = make_service(tmp_path, asr, tts=tts, local_player=player)
     session = service.create_session("DEV_1", continuous=True, end_silence_ms=200)
     sink = FakeSink()
-    llm = FakeLlm([answer])
+    llm = FakeConversationSession([answer])
     runner = ConversationRunner(
         service,
         session,
         sink,
-        llm=llm,
+        agent_session=llm,
         config=ConversationConfig(idle_s=5, turn_end_ms=200),
     )
     runner.start()
@@ -83,19 +93,6 @@ def test_sentence_chunker_splits_and_flushes():
     assert chunker.flush() == ["没有标点"]
 
 
-def test_history_keeps_system_and_trims():
-    history = ConversationHistory("system", max_turns=2, max_tokens=1000)
-    history.add_user("u1")
-    history.add_assistant("a1")
-    history.add_user("u2")
-    history.add_assistant("a2")
-    history.add_user("u3")
-    history.add_assistant("a3")
-    messages = history.request_messages()
-    assert messages[0] == {"role": "system", "content": "system"}
-    assert len(messages) <= 1 + 2 * 2
-
-
 @pytest.mark.asyncio
 async def test_one_turn_streams_speech_and_assistant_done(tmp_path):
     service, session, runner, sink, _llm, tts, player = await make_runner(tmp_path)
@@ -110,12 +107,12 @@ async def test_one_turn_streams_speech_and_assistant_done(tmp_path):
     assert audio[0][1]["turn"] == 1
     assert tts.texts == ["你好，我在。"]
     assert player.played
-    assert runner.history.request_messages()[-1]["content"] == "你好，我在。"
+    assert not hasattr(runner, "history")  # Only AgentSession owns context.
     await close_runner(service, session, runner)
 
 
 @pytest.mark.asyncio
-async def test_second_turn_keeps_history_without_new_wake(tmp_path):
+async def test_second_turn_reuses_one_agent_session_without_new_wake(tmp_path):
     service, session, runner, sink, llm, _tts, _player = await make_runner(
         tmp_path, answer="第一轮回答。", asr_text="第一句"
     )
@@ -128,8 +125,8 @@ async def test_second_turn_keeps_history_without_new_wake(tmp_path):
     user_turns = [e for e in json_events(sink) if e["type"] == "user_text"]
     assert len(user_turns) == 2
     assert len(llm.calls) == 2
-    assert llm.calls[1][0]["role"] == "system"
-    assert any(m.get("content") == "第一轮回答。" for m in llm.calls[1])
+    assert llm.calls == ["第一句", "第一句"]
+    assert runner.agent_session is llm
     await close_runner(service, session, runner)
 
 
@@ -184,7 +181,6 @@ async def test_agent_session_path_streams_tts_without_manual_history(tmp_path):
         service,
         session,
         sink,
-        llm=FakeLlm(["legacy must not be called"]),
         config=ConversationConfig(idle_s=5, turn_end_ms=200),
         agent_session=agent,
     )

@@ -1,0 +1,14 @@
+[1/6] Building C object CMakeFiles/stm32_project.elf.dir/Application/Services/Lighting/Src/lighting_service.c.obj
+[2/6] Building C object CMakeFiles/stm32_project.elf.dir/Application/Services/Lighting/Src/lighting_controller.c.obj
+[3/6] Building C object CMakeFiles/stm32_project.elf.dir/Application/Services/Lighting/Src/lighting_runtime.c.obj
+[4/6] Building C object CMakeFiles/stm32_project.elf.dir/Application/Tasks/LightTask/Src/light_task.c.obj
+[5/6] Building C object CMakeFiles/stm32_project.elf.dir/Application/Tasks/CtrlTask/Src/ctrl_task.c.obj
+[6/6] Linking C executable stm32_project.elf; Building /Users/sunyameng/github/legacy/CodeMyCar/stm32_project/build/NoSonar/stm32_project.hex / Building /Users/sunyameng/github/legacy/CodeMyCar/stm32_project/build/NoSonar/stm32_project.bin
+Memory region         Used Size  Region Size  %age Used
+         DTCMRAM:       68968 B       128 KB     52.62%
+         DMA_RAM:        3392 B         8 KB     41.41%
+          RAM_D1:           0 B       312 KB      0.00%
+          RAM_D2:           0 B        32 KB      0.00%
+          RAM_D3:           0 B        16 KB      0.00%
+         ITCMRAM:           0 B        64 KB      0.00%
+           FLASH:      122336 B         1 MB     11.67%

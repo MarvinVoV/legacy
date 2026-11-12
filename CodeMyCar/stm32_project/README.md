@@ -4,6 +4,9 @@ STM32H723ZGTx 控制固件：通过 UART 与 ESP32 桥接，解析二进制控�
 
 ## 文档
 
+- [状态灯/情绪接口与跨板验收](Docs/WS2812-State-Lighting-Implementation-2026-11-13.md) — 本地状态优先、五情绪、VISUAL协议、真实语音验收和后续语音灯效TODO
+- [状态灯/单Agent/语音可复用回归](../pyserver/docs/Lighting-And-Voice-Regression-Guide-2026-11-13.md) — 单测、真实模型模拟体、跨板HIL、人工语音用例及里程语义
+
 - [**直行优化最新接手入口（先读）**](Docs/START-HERE-Straight-Control-Handoff-2026-11-08.md)：1546µs统一中位、直线/弧线验收、收工状态及下次路径外环TODO。
 
 - [IMU真实转动与微调死区验收](Docs/IMU-Manual-Rotation-And-Steering-Deadzone-Validation-2026-11-08.md) — 人工车体扰动、前进/倒车方向、GOAL动态来源、2°→0.2°死区修复和PWM证据

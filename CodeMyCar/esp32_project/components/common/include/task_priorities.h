@@ -26,6 +26,7 @@ typedef enum
     TASK_PRIO_VOICE_NETWORK = 4,
     TASK_PRIO_VOICE_OUTPUT = 3,
     TASK_PRIO_VOICE_CONSOLE = 2,
+    TASK_PRIO_VISUAL = 2, /* bounded decoration hints, below voice and motion */
 
     TASK_PRIO_REMOTE_LOG = 5,  /* 远程日志发布（与上行同级） */
     TASK_PRIO_MQTT = 4,        /* MQTT 客户端任务（esp_mqtt） */

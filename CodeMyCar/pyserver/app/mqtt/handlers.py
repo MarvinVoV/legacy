@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 from app.models.device import DeviceState
 from app.models.battery import BatteryTelemetry
+from app.models.lighting import LightingTelemetry
 from app.models.telemetry import (
     AckEvent,
     HeartbeatData,
@@ -83,6 +84,17 @@ def create_handlers(
         if device_id not in devices:
             devices[device_id] = DeviceState(device_id=device_id)
         state = devices[device_id]
+        if data.type == "lighting":
+            try:
+                lighting = LightingTelemetry.model_validate(data.data)
+                if state.session_id is not None and lighting.session_id not in (0, state.session_id):
+                    return
+                state.latest_lighting = lighting
+            except ValueError:
+                logger.warning("Invalid lighting telemetry from %s", device_id)
+                return
+            state.last_lighting = time.monotonic()
+            return  # Never replace the latest IMU/ultrasonic/battery reading.
         if data.type == "battery":
             try:
                 battery = BatteryTelemetry.model_validate(data.data)

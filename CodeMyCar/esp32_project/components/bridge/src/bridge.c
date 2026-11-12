@@ -84,6 +84,7 @@ typedef struct
 {
     char payload[DOWNLINK_PAYLOAD_MAX];
     size_t len;
+    uint32_t receivedMs;
 } downlink_msg_t;
 
 static downlink_msg_t s_downlink_storage[DOWNLINK_QUEUE_DEPTH];
@@ -91,6 +92,14 @@ static StaticQueue_t s_downlink_queue_struct;
 static QueueHandle_t s_downlink_queue = NULL;
 static StackType_t s_downlink_stack[BRIDGE_DOWN_STACK / sizeof(StackType_t)];
 static StaticTask_t s_downlink_tcb;
+
+/* Latest emotion hint, isolated from the 4-slot motion/STOP queue. */
+static downlink_msg_t s_visual_storage[1];
+static StaticQueue_t s_visual_queue_struct;
+static QueueHandle_t s_visual_queue;
+static StackType_t s_visual_stack[BRIDGE_DOWN_STACK/sizeof(StackType_t)];
+static StaticTask_t s_visual_tcb;
+static uint32_t s_visual_event;
 
 /* ACK 重传扫描定时器（esp_timer，从 uplink 任务剥离，避免 publish 阻塞拖累重传时序） */
 static esp_timer_handle_t s_retransmit_timer = NULL;
@@ -383,6 +392,28 @@ static void process_downlink(const char* payload, size_t payload_len)
     }
 }
 
+static void bridge_visual_task(void *argument)
+{
+    (void)argument;
+    downlink_msg_t msg;
+    for (;;) {
+        if (xQueueReceive(s_visual_queue,&msg,portMAX_DELAY)!=pdTRUE) continue;
+        pkt_frame_t frame={.type=PKT_TYPE_VISUAL,.payload_len=BRIDGE_LIGHTING_CMD_SIZE};
+        if (!bridge_json_to_lighting(msg.payload,msg.len,s_session_id,++s_visual_event,frame.payload)) continue;
+        const uint32_t age=now_ms()-msg.receivedMs;
+        const unsigned ttl=frame.payload[4]|((unsigned)frame.payload[5]<<8);
+        if (frame.payload[1]!=4u) {
+            if (age>=ttl || ttl-age<100u) continue;
+            const unsigned remaining=ttl-age;
+            frame.payload[4]=(uint8_t)remaining;frame.payload[5]=(uint8_t)(remaining>>8);
+        } else if (age>1000u) continue;
+        uint8_t wire[PKT_MAX_FRAME_SIZE];size_t length=0;
+        if (pkt_encode(&frame,wire,sizeof(wire),&length)==ESP_OK)
+            (void)uart_service_send(wire,length); /* no priority/ACK/retry slots */
+        vTaskDelay(pdMS_TO_TICKS(100u)); /* at most 10 hints/sec; newest pending hint wins */
+    }
+}
+
 /* MQTT callback only validates/copies; never waits for UART or takes ACK locks. */
 static void on_mqtt_data(const char* topic, size_t topic_len,
                          const uint8_t* payload, size_t payload_len,
@@ -400,8 +431,13 @@ static void on_mqtt_data(const char* topic, size_t topic_len,
     }
 
     downlink_msg_t msg;
+    msg.receivedMs=now_ms();
     msg.len = payload_len;
     memcpy(msg.payload, payload, payload_len);
+    if (bridge_json_is_lighting((const char*)payload,payload_len)) {
+        (void)xQueueOverwrite(s_visual_queue,&msg);
+        return;
+    }
     uint8_t control[BRIDGE_CONTROL_CMD_SIZE], seq;
     bool ack_req;
     const bool stop = bridge_json_to_control_cmd((const char*)payload, payload_len,
@@ -534,6 +570,10 @@ static void publish_uplink_frame(const pkt_frame_t* frame)
             n = bridge_log_to_json(frame->payload, frame->payload_len,
                                    json, sizeof(json));
             topic = CMCAR_TOPIC_LOG;
+            break;
+        case PKT_TYPE_VISUAL:
+            n=bridge_lighting_to_json(frame->payload,frame->payload_len,json,sizeof(json));
+            topic=CMCAR_TOPIC_SENSOR;
             break;
         case PKT_TYPE_MOTION:
             n = bridge_motion_to_json(frame->payload, frame->payload_len,
@@ -687,6 +727,8 @@ esp_err_t bridge_init(void)
         DOWNLINK_QUEUE_DEPTH, sizeof(downlink_msg_t),
         (uint8_t*)s_downlink_storage, &s_downlink_queue_struct);
 
+    s_visual_queue=xQueueCreateStatic(1u,sizeof(downlink_msg_t),
+        (uint8_t*)s_visual_storage,&s_visual_queue_struct);
     s_ack_mutex = xSemaphoreCreateMutex();
     ackmgr_init(&s_ackmgr);
 
@@ -741,6 +783,10 @@ esp_err_t bridge_start(void)
         bridge_downlink_task, "bridge_dn",
         BRIDGE_DOWN_STACK / sizeof(StackType_t),
         NULL, TASK_PRIO_BRIDGE_DOWNLINK, s_downlink_stack, &s_downlink_tcb);
+
+    TaskHandle_t visual_handle=xTaskCreateStatic(bridge_visual_task,"bridge_visual",
+        BRIDGE_DOWN_STACK/sizeof(StackType_t),NULL,TASK_PRIO_VISUAL,s_visual_stack,&s_visual_tcb);
+    if (!visual_handle) return ESP_ERR_NO_MEM;
 
     (void)esp_timer_start_periodic(
         s_retransmit_timer, BRIDGE_RETRANSMIT_PERIOD_MS * 1000ULL);

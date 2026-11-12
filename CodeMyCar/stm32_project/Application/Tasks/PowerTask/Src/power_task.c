@@ -7,11 +7,24 @@
 #include "pkt_protocol.h"
 #include "uart_handle.h"
 #include "log_manager.h"
+#include "control_critical.h"
 
 /* Only this task owns I2C2. Sensor faults never block motion initialization. */
 static I2C_HandleTypeDef s_bus;
 static uint8_t s_seq;
 static uint8_t s_address = POWER_INA219_ADDRESS;
+static BatteryReading s_latest;
+static bool s_readingReady;
+
+bool PowerTask_GetReading(BatteryReading *out)
+{
+    if (!out) return false;
+    const uint32_t key=control_critical_enter();
+    *out=s_latest;
+    const bool ready=s_readingReady;
+    control_critical_exit(key);
+    return ready;
+}
 
 static uint32_t bus_clock_hz(void)
 {
@@ -157,6 +170,9 @@ static void power_run(void *arg)
         }
         BatteryReading reading;
         BatteryService_Update(&service,rc,&sample,HAL_GetTick(),&reading);
+        const uint32_t key=control_critical_enter();
+        s_latest=reading;s_readingReady=true;
+        control_critical_exit(key);
         if (HAL_GetTick()-lastReport>=POWER_REPORT_PERIOD_MS) {
             lastReport=HAL_GetTick();
             uint8_t frame[BATTERY_FRAME_SIZE];

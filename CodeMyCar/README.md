@@ -7,6 +7,10 @@ Code my car ~
 
 ## 测试与后续开发
 
+- [最新：状态灯、单Agent与真实语音验收交接](pyserver/docs/Single-Agent-Lighting-And-Voice-Acceptance-2026-11-13.md)
+- [状态灯/语音可复用回归与里程说明](pyserver/docs/Lighting-And-Voice-Regression-Guide-2026-11-13.md)
+- [STM32运行基础性能交接](stm32_project/Docs/STM32-Runtime-Performance-Handoff-2026-11-13.md)
+
 - [**直行优化最新接手入口（先读）**](stm32_project/Docs/START-HERE-Straight-Control-Handoff-2026-11-08.md)：1546µs统一中位、直线/弧线验收、收工状态及下次路径外环TODO。
 
 - [控制系统测试指南（供 agent 复用）](stm32_project/Docs/Control-Test-Guide-For-Agents.md)：STM32/ESP32 单测清单、每组独立命令、服务端筛选、实机集成步骤及夹具边界。

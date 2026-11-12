@@ -1,0 +1,2 @@
+WS2812: GRB/MSB, first/last bit, reset margin, capacity, RGB sequence and brightness cap passed
+lighting: priorities, STOP/fault masking, TTL/epoch/event/session, wrap, battery hysteresis, fade/cap and protocol PASS

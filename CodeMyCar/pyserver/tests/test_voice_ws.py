@@ -12,7 +12,6 @@ from app.models.agent_motion import MotionError
 from app.services.baidu_asr import BaiduAsrError
 from app.services.baidu_tts import BaiduTtsError, TtsAudio
 from app.services.conversation import ConversationConfig
-from app.services.llm import LlmDone, LlmTextDelta
 from app.services.voice_service import VoiceConfig, VoiceService
 
 
@@ -481,14 +480,8 @@ def test_conversation_mode_streams_llm_reply_without_new_wake(client, tmp_path):
         tmp_path, FakeAsr("你好"), tts=tts, local_player=local
     )
 
-    class FakeConversationLlm:
-        async def stream_chat(self, messages, *, tools=None, cancel=None):
-            assert messages[0]["role"] == "system"
-            yield LlmTextDelta("你好，")
-            yield LlmTextDelta("我在。")
-            yield LlmDone(content="你好，我在。", tool_calls=())
-
-    client.app.state.voice_llm = FakeConversationLlm()
+    from tests.test_conversation import FakeConversationSession, FakeConversationRuntime
+    client.app.state.agent_runtime = FakeConversationRuntime(FakeConversationSession(["你好，我在。"]))
     client.app.state.voice_conversation_config = ConversationConfig(
         idle_s=1.0, turn_end_ms=200
     )
@@ -532,11 +525,8 @@ def test_local_ack_suppresses_server_ready_tone(client, tmp_path):
         tmp_path, FakeAsr("你好"), tts=tts, local_player=local
     )
 
-    class FakeConversationLlm:
-        async def stream_chat(self, messages, *, tools=None, cancel=None):
-            yield LlmDone(content="", tool_calls=())
-
-    client.app.state.voice_llm = FakeConversationLlm()
+    from tests.test_conversation import FakeConversationSession, FakeConversationRuntime
+    client.app.state.agent_runtime = FakeConversationRuntime(FakeConversationSession([""]))
     client.app.state.voice_conversation_config = ConversationConfig(
         idle_s=1.0, turn_end_ms=200
     )

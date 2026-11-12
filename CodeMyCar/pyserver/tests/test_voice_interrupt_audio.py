@@ -78,7 +78,7 @@ async def test_preroll_is_held_until_matching_stop_ack_then_transcribed_once(tmp
     await wait_until(lambda: bool(llm.calls))
     assert service.asr.calls == 1 and session.bytes_received == len(trigger_audio)
     assert not runner._post_stop and not runner._barge_audio
-    assert llm.calls[0][-1]["content"] == "换个故事"
+    assert llm.calls[0].endswith("\n换个故事") and "被用户打断" in llm.calls[0]
     await close_runner(service, session, runner)
 
 
@@ -116,7 +116,7 @@ def test_real_websocket_keeps_trigger_sentence_while_old_audio_is_cancelled(
     from app.api.routes import voice
     from app.models.audio import TtsAudio
     from app.services.conversation import ConversationConfig
-    from tests.test_conversation import FakeLlm
+    from tests.test_conversation import FakeConversationRuntime, FakeConversationSession
     from tests.test_voice_ws import FakeAsr, FakeTts, make_service, start_frame
 
     settings = voice.get_settings().model_copy(
@@ -131,8 +131,8 @@ def test_real_websocket_keeps_trigger_sentence_while_old_audio_is_cancelled(
     client.app.state.voice_service = make_service(
         tmp_path, asr, tts=FakeTts(audio=TtsAudio("pcm", 16000, 1, b"\x01\x02" * 32000))
     )
-    llm = FakeLlm(["旧故事。", "小猫的新故事。"])
-    client.app.state.voice_llm = llm
+    llm = FakeConversationSession(["旧故事。", "小猫的新故事。"])
+    client.app.state.agent_runtime = FakeConversationRuntime(llm)
     client.app.state.voice_conversation_config = ConversationConfig(turn_end_ms=200)
     with client.websocket_connect("/api/v1/voice/stream") as ws:
         ws.send_text(
@@ -223,7 +223,7 @@ async def test_request_after_stop_pause_is_retained_while_first_asr_is_inflight(
     await wait_until(lambda: bool(llm.calls))
     assert len(inputs) == 2
     assert len(inputs[1]) > 32000 * 0.8
-    assert llm.calls[0][-1]["content"] == "换一个关于小猫的故事"
+    assert llm.calls[0].endswith("\n换一个关于小猫的故事") and "被用户打断" in llm.calls[0]
     await close_runner(service, session, runner)
 
 
