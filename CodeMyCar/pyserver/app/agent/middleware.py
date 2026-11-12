@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 
 from langchain.agents.middleware import AgentMiddleware
 from langchain_core.messages import SystemMessage
@@ -11,6 +12,8 @@ from langchain_core.messages import SystemMessage
 from app.agent.preferences import PreferenceStore
 from app.agent.skills import SkillCatalog
 from app.agent.vehicle import VehicleGateway
+
+logger = logging.getLogger(__name__)
 
 
 class CompanionContextMiddleware(AgentMiddleware):
@@ -21,13 +24,21 @@ class CompanionContextMiddleware(AgentMiddleware):
 
     async def awrap_model_call(self, request, handler):
         c = request.runtime.context
-        preferences = await asyncio.to_thread(
-            self.store.recall, self.store.scope(c.device_id, c.user_id)
-        )
+        try:
+            preferences = await asyncio.to_thread(
+                self.store.read_document, self.store.scope(c.device_id, c.user_id)
+            )
+        except (OSError, ValueError) as exc:
+            logger.warning("Markdown memory unavailable: %s", type(exc).__name__)
+            preferences = "长期记忆暂不可用；不要声称已读取或已保存，继续正常对话。"
         state = self.gateway.state(c.device_id)
         state["device_id"] = c.device_id
         data = json.dumps(
-            {"vehicle": state, "preferences": preferences, "available_skills": self.skills.list()},
+            {
+                "vehicle": state,
+                "memory_markdown": preferences,
+                "available_skills": self.skills.list(),
+            },
             ensure_ascii=False,
         )
         base = request.system_message.content if request.system_message else ""

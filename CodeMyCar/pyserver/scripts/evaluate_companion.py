@@ -20,10 +20,21 @@ from langchain_core.messages import AIMessage, ToolMessage
 from app.agent.context import AgentContext
 from app.agent.runtime import AgentRuntime
 from app.config import get_settings
+from app.providers.config import load_provider_config
 from app.services.voice_service import VoiceConfig, VoiceService
 from scripts.agent_simulator import SimulatedMotion
 
 CASES = [
+    {
+        "id": "markdown_fact_lifecycle",
+        "prompts": [
+            "请记住：我的玩具小猫名字叫团团，这是长期记录。",
+            "new_session:我的玩具小猫叫什么？请只回答名字。",
+            "请忘记我的玩具小猫名字，并真正从长期记忆里删除，不只是口头答应。",
+            "new_session:长期记忆里还保存着我玩具小猫的名字吗？没有记录就说不知道，不要猜。",
+        ],
+        "memory_empty": True,
+    },
     {
         "id": "automatic_memory_extraction",
         "auto_seed": "我平时最喜欢恐龙故事，请记住这个偏好。",
@@ -155,7 +166,7 @@ async def evaluate_case(spec: dict, root: Path) -> dict:
         session = runtime.new_session("SIMULATED_ONLY", spec["id"])
         for index, prompt in enumerate(spec["prompts"]):
             if prompt.startswith("new_session:"):
-                session = runtime.new_session("SIMULATED_ONLY", spec["id"] + "-new")
+                session = runtime.new_session("SIMULATED_ONLY", f"{spec['id']}-new-{index}")
                 prompt = prompt.removeprefix("new_session:")
             answer = "".join([t async for t in session.stream(prompt)])
             replies.append(answer)
@@ -210,6 +221,11 @@ async def evaluate_case(spec: dict, root: Path) -> dict:
         )
         if spec.get("memory") and not memories:
             failures.append("no durable preference saved")
+        if spec.get("memory_empty"):
+            if "团团" not in replies[1] or memories or "团团" in replies[-1]:
+                failures.append("Markdown memory did not survive new session or was not forgotten")
+            if not any(c["name"] == "forget_preference" for c in calls):
+                failures.append("no real forget tool call")
         return {
             "id": spec["id"],
             "passed": not failures,
@@ -237,10 +253,10 @@ async def main():
     args = parser.parse_args()
     if not args.live:
         parser.error("--live is required; offline tests are pytest tests/test_companion*.py")
-    if not get_settings().llm_api_key:
+    if not load_provider_config(get_settings()).available("llm"):
         parser.error("configured LLM API key is missing")
     report = {
-        "model": get_settings().llm_model,
+        "model": load_provider_config(get_settings()).llm.model,
         "hardware_io": False,
         "external_mcp": False,
         "mcp_mode": "in-process fixture only when specified",

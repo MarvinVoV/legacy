@@ -1,5 +1,7 @@
 # 小鸭：人格、Agent架构与车辆工具验证（2026-11-12）
 
+后续更新：[Markdown人格/记忆与配置化厂商](Markdown-Agent-Profile-And-Provider-Configuration-2026-11-12.md)。本文件中的Python人格、SQLite偏好库和旧Skill目录是阶段实现，已由后续Markdown源文件替代；原验证记录保留。
+
 开发分支：`codex/toy-character-agent`，基于语音合并基线`7192ba1`。本批只修改服务端与交接入口，没有修改/烧录S3或STM32固件，没有执行真实车辆运动。完成后保留开发分支，未获本批合并/push指令。
 
 ## 结论与问题根因

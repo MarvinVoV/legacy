@@ -1,0 +1,74 @@
+{
+  "model": "deepseek-flash",
+  "hardware_io": false,
+  "external_mcp": false,
+  "mcp_mode": "in-process fixture only when specified",
+  "limits": [
+    "Simulated body, not physical motion acceptance",
+    "One sample per case, not a reliability rate",
+    "Reply text checks are narrow assertions, not a full personality/empathy evaluation"
+  ],
+  "cases": [
+    {
+      "id": "markdown_fact_lifecycle",
+      "passed": true,
+      "failures": [],
+      "replies": [
+        "记住啦，你的玩具小猫叫团团。以后聊到它，我就知道是团团了。",
+        "团团",
+        "已经删掉了，长期记忆里不再有玩具小猫的名字。",
+        "我看了一下长期记忆，里面目前是空的，没有关于玩具小猫名字的记录，所以我不知道它叫什么，也不乱猜。你要是愿意告诉我，我可以帮你记下来。"
+      ],
+      "tool_calls": [
+        {
+          "name": "remember_preference",
+          "args": {
+            "category": "fact",
+            "key": "toy_cat_name",
+            "value": "用户的玩具小猫叫团团"
+          },
+          "id": "call_00_0JLji8MlzqcFdfQkRXBn0484",
+          "type": "tool_call"
+        },
+        {
+          "name": "forget_preference",
+          "args": {
+            "category": "fact",
+            "key": "toy_cat_name"
+          },
+          "id": "call_00_8nyd5H3UyDHMdNpKTOB70709",
+          "type": "tool_call"
+        },
+        {
+          "name": "car_get_state",
+          "args": {},
+          "id": "call_00_QCew7H1yOM0Qba5tjsni1469",
+          "type": "tool_call"
+        }
+      ],
+      "tool_results": [
+        {
+          "id": "call_00_0JLji8MlzqcFdfQkRXBn0484",
+          "name": "remember_preference",
+          "content": "{\"saved\": true, \"category\": \"fact\", \"key\": \"toy_cat_name\"}",
+          "status": "success"
+        },
+        {
+          "id": "call_00_8nyd5H3UyDHMdNpKTOB70709",
+          "name": "forget_preference",
+          "content": "{\"forgotten\": true}",
+          "status": "success"
+        },
+        {
+          "id": "call_00_QCew7H1yOM0Qba5tjsni1469",
+          "name": "car_get_state",
+          "content": "{\"ok\": true, \"online\": true, \"stm32_connected\": true, \"motion_supported\": true, \"motion\": {\"state\": \"idle\", \"seq\": 0, \"age_ms\": 0, \"stale\": false}, \"pose\": {\"x_cm\": 0.0, \"y_cm\": 0.0, \"heading_deg\": 0.0, \"odometer_cm\": 0.0}, \"velocity\": {\"linear_cm_s\": 0, \"angular_deg_s\": 0}, \"state_fresh\": true, \"pose_reference\": \"local odometry: x forward, y right, heading clockwise; not absolute localization\", \"capabilities\": {\"motion_enabled\": true, \"max_distance_cm\": 100.0, \"max_turn_deg\": 90, \"max_speed_cm_s\": 30, \"default_speed_cm_s\": 10, \"min_turn_radius_mm\": 260, \"pivot_supported\": false}}",
+          "status": "success"
+        }
+      ],
+      "api_moves": [],
+      "memory_entries": [],
+      "elapsed_s": 10.07
+    }
+  ]
+}

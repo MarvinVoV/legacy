@@ -20,6 +20,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.config import get_settings
+from app.providers.config import BaiduProvider, load_provider_config
 from app.services.baidu_tts import BaiduTtsClient, BaiduTtsError
 
 
@@ -50,7 +51,11 @@ def write_outputs(base: Path, audio) -> list[Path]:
 
 async def _run(text: str, aue: int, base: Path) -> int:
     settings = get_settings()
-    if not settings.baidu_speech_api_key or not settings.baidu_speech_secret_key:
+    config = load_provider_config(settings)
+    provider = config.providers.get("baidu")
+    if not isinstance(provider, BaiduProvider):
+        raise SystemExit("This diagnostic requires a named baidu provider")
+    if not provider.api_key.get_secret_value() or not provider.secret_key.get_secret_value():
         print(
             "未配置密钥：请设置 CMCAR_BAIDU_SPEECH_API_KEY / "
             "CMCAR_BAIDU_SPEECH_SECRET_KEY",
@@ -59,14 +64,15 @@ async def _run(text: str, aue: int, base: Path) -> int:
         return 2
 
     client = BaiduTtsClient(
-        settings.baidu_speech_api_key,
-        settings.baidu_speech_secret_key,
-        per=settings.baidu_tts_per,
-        spd=settings.baidu_tts_spd,
-        pit=settings.baidu_tts_pit,
-        vol=settings.baidu_tts_vol,
-        aue=settings.baidu_tts_aue,
-        timeout_s=settings.baidu_tts_timeout_s,
+        provider.api_key.get_secret_value(),
+        provider.secret_key.get_secret_value(),
+        per=provider.per,
+        spd=provider.spd,
+        pit=provider.pit,
+        vol=provider.vol,
+        aue=provider.aue,
+        timeout_s=config.tts.timeout_s,
+        token_url=str(provider.token_url), tts_url=str(provider.tts_url),
     )
     started = time.monotonic()
     try:

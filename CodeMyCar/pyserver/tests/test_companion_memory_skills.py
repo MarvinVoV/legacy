@@ -15,7 +15,7 @@ from tests.test_companion_graph import call, make_runtime
 
 
 def test_memory_upsert_bound_scope_delete_and_restart(tmp_path):
-    store = PreferenceStore(tmp_path / "memory.db", max_entries=2)
+    store = PreferenceStore(tmp_path / "memories", max_entries=2)
     for key in ("color", "animal", "name"):
         store.remember("one", Preference(category="interest", key=key, value=key))
     assert len(store.recall("one")) == 2 and store.recall("two") == []
@@ -48,7 +48,7 @@ class Extractor:
 
 
 async def test_auto_learn_requires_original_evidence_and_skips_forget_and_smalltalk(tmp_path):
-    store = PreferenceStore(tmp_path / "memory.db")
+    store = PreferenceStore(tmp_path / "memories")
     model = Extractor(
         MemoryCandidates(
             preferences=[
@@ -72,7 +72,7 @@ async def test_auto_learn_requires_original_evidence_and_skips_forget_and_smallt
 
 
 async def test_learning_timeout_and_cancel_do_not_create_orphan_jobs(tmp_path):
-    store = PreferenceStore(tmp_path / "m.db")
+    store = PreferenceStore(tmp_path / "memories")
     learner = MemoryLearner(store, Extractor(delay=10), timeout_s=0.01)
     await asyncio.wait_for(learner.learn("我喜欢猫", AgentContext("DEV_1")), timeout=0.2)
     task = asyncio.create_task(learner.learn("我喜欢猫", AgentContext("DEV_1")))

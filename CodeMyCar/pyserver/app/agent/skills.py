@@ -7,14 +7,16 @@ from pathlib import Path
 
 from langchain.tools import tool
 
+from app.agent.persona import DEFAULT_PROFILE_DIR
+
 _NAME = re.compile(r"^[a-z][a-z0-9-]{0,47}$")
 _MAX_BYTES = 16000
 
 
 class SkillCatalog:
-    def __init__(self, custom_dir: Path) -> None:
+    def __init__(self, custom_dir: Path, *, profile_dir: Path = DEFAULT_PROFILE_DIR) -> None:
         # Builtins win over stale seeds left by old versions in agent_data.
-        self.roots = [Path(__file__).parent / "skills", custom_dir]
+        self.roots = [profile_dir / "skills", custom_dir]
 
     def _entries(self) -> dict[str, tuple[Path, str]]:
         result = {}

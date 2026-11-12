@@ -205,7 +205,7 @@ def test_ready_negotiates_barge_in(client, tmp_path, monkeypatch, device, server
                                  playback_ack=True, local_ack=True))
         ready = ws.receive_json()
         assert ready["type"] == "ready"
-        assert ready["barge_in"] is (device and server)
+        assert ready["barge_in"] is device
         assert ready["playback_ack"] is True
         # The fixture has no live LLM; the socket may end immediately afterwards.
 

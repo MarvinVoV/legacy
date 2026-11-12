@@ -46,7 +46,7 @@ async def test_memory_seed_and_preference_tool(tmp_path):
         checkpoint_db=None,
     )
     ensure_agent_data(config)
-    store = PreferenceStore(config.data_dir / "preferences.sqlite")
+    store = PreferenceStore(config.data_dir / "memories")
     scope = store.scope("DEV_1", "household")
     store.remember(
         scope, Preference(category="style", key="answer", value="用户喜欢简洁的中文回答")

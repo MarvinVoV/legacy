@@ -1,0 +1,49 @@
+# Public, versioned provider wiring. Secrets MUST be ${ENV_VAR} references.
+version = 1
+
+[llm]
+provider = "deepseek"
+model = "${CMCAR_LLM_MODEL:-deepseek-flash}"
+thinking = "${CMCAR_LLM_THINKING:-false}"
+max_tokens = "${CMCAR_LLM_MAX_TOKENS:-2048}"
+temperature = "${CMCAR_LLM_TEMPERATURE:-0.7}"
+timeout_s = 60
+
+[asr]
+provider = "baidu"
+model = "whisper-1" # used only by OpenAI-compatible adapters
+language = "zh"
+timeout_s = "${CMCAR_BAIDU_SPEECH_TIMEOUT_S:-10}"
+
+[tts]
+provider = "baidu"
+model = "gpt-4o-mini-tts" # used only by OpenAI-compatible adapters
+voice = "alloy"
+speed = 1.0
+timeout_s = "${CMCAR_BAIDU_TTS_TIMEOUT_S:-10}"
+
+[providers.deepseek]
+kind = "deepseek"
+base_url = "${CMCAR_LLM_BASE_URL:-https://api.deepseek.com}"
+api_key = "${CMCAR_LLM_API_KEY}"
+
+[providers.baidu]
+kind = "baidu"
+api_key = "${CMCAR_BAIDU_SPEECH_API_KEY}"
+secret_key = "${CMCAR_BAIDU_SPEECH_SECRET_KEY}"
+token_url = "https://aip.baidubce.com/oauth/2.0/token"
+asr_url = "https://vop.baidu.com/server_api"
+tts_url = "https://tsn.baidu.com/text2audio"
+dev_pid = "${CMCAR_BAIDU_SPEECH_DEV_PID:-1537}"
+per = "${CMCAR_BAIDU_TTS_PER:-103}"
+spd = "${CMCAR_BAIDU_TTS_SPD:-6}"
+pit = "${CMCAR_BAIDU_TTS_PIT:-5}"
+vol = "${CMCAR_BAIDU_TTS_VOL:-5}"
+aue = 4 # canonical board audio: 16k / mono / PCM16
+
+# Select this name in llm/asr/tts to use an OpenAI-compatible service.
+# You may add more named providers of the same kind with independent endpoints/keys.
+[providers.openai]
+kind = "openai-compatible"
+base_url = "https://api.openai.com/v1"
+api_key = "${CMCAR_OPENAI_API_KEY}"

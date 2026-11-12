@@ -28,7 +28,7 @@ def make_runtime(tmp_path, responses, *, enabled=True, **config_kw):
     config = AgentConfig(
         data_dir=tmp_path, checkpoint_db=None, memory_auto_learn=False, **config_kw
     )
-    preferences = PreferenceStore(tmp_path / "prefs.sqlite")
+    preferences = PreferenceStore(tmp_path / "memories")
     skills = SkillCatalog(tmp_path / "skills")
     tools = (
         build_car_tools(service, include_motion=enabled)

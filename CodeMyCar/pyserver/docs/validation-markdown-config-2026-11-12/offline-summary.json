@@ -1,0 +1,15 @@
+{
+  "pytest": {
+    "passed": 323,
+    "warnings": 1,
+    "elapsed_s": 11.14,
+    "warning_kind": "LangChain MCP beta"
+  },
+  "ruff": "passed on changed modules",
+  "editable_install": "passed",
+  "live_model_cases": 17,
+  "real_vehicle_motion": false,
+  "speech_providers_live": "baidu retained; compatible adapter HTTP mocked only",
+  "v2_barge_in": "device-selected; old server toggles ignored; websocket integration passed",
+  "audio_segmentation": "still server-side; device utterance-boundary migration not implemented"
+}

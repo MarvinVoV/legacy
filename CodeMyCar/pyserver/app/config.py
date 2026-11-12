@@ -1,6 +1,7 @@
 """应用配置（pydantic-settings 单例）"""
 
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -17,6 +18,7 @@ class Settings(BaseSettings):
         env_prefix="CMCAR_",
         env_file=(".env", "voice.local.env"),
         env_file_encoding="utf-8",
+        extra="ignore",  # vendor-specific ${VAR} secrets belong to provider TOML, not Settings
     )
 
     # MQTT
@@ -100,22 +102,24 @@ class Settings(BaseSettings):
     voice_conversation_max_turns: int = 30
     voice_conversation_history_turns: int = 12
     voice_conversation_history_tokens: int = 8000
-    llm_base_url: str = "https://api.deepseek.com"
+    llm_base_url: str = ""  # compatibility override; default endpoint lives in providers.toml
     llm_api_key: str = ""
     llm_model: str = "deepseek-flash"
     llm_model_pro: str = "deepseek-v4-pro"
     llm_thinking: bool = False
     llm_max_tokens: int = 2048
     llm_temperature: float = 0.7
-    voice_barge_in: bool = False  # requires device AEC (ch1 reference)
-    voice_barge_audio: bool = True  # only after v2 device explicitly negotiates pre-roll
-    voice_barge_in_rms: int = 700
+    voice_barge_in: bool = False  # deprecated v2 gate; retained for old env compatibility
+    voice_barge_audio: bool = True  # deprecated v2 gate; device owns this choice
+    voice_barge_in_rms: int = 700  # legacy energy fallback only, not S3 AFE/DTD
     voice_barge_in_ms: int = 140
 
     # LangChain / Deep Agents runtime
+    providers_config: str = str(Path(__file__).resolve().parents[1] / "config" / "providers.toml")
     agent_enabled: bool = True
     agent_runtime: str = "companion"  # companion | deepagents (compatibility alias) | legacy
     agent_data_dir: str = "agent_data"
+    agent_profile_dir: str = str(Path(__file__).resolve().parents[1] / "agent_profile")
     agent_checkpoint_db: str = "agent_data/sessions.sqlite"
     agent_memory_file: str = "AGENTS.md"
     agent_skills_dir: str = "skills"

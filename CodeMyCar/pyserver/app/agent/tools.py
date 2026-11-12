@@ -92,7 +92,7 @@ def build_memory_tools(store: PreferenceStore) -> list:
     async def remember_preference(
         category: MemoryCategory, key: str, value: str, runtime: ToolRuntime[AgentContext]
     ) -> dict:
-        """Save an explicitly stated durable nickname, interest, style or routine.
+        """Save a durable nickname, preference, fact or confirmed experience to MEMORY.md.
 
         Stable English key (e.g. favorite_animal); same category/key replaces old value.
         Never store secrets, location, sensor data or temporary tasks. Identity is injected.
@@ -108,7 +108,7 @@ def build_memory_tools(store: PreferenceStore) -> list:
     async def forget_preference(
         category: MemoryCategory, key: str, runtime: ToolRuntime[AgentContext]
     ) -> dict:
-        """Delete a saved preference by category/key when asked to forget it."""
+        """Delete a saved memory from MEMORY.md by category/key when asked to forget it."""
         return await asyncio.to_thread(
             store.forget,
             store.scope(runtime.context.device_id, runtime.context.user_id),

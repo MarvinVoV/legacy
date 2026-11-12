@@ -5,11 +5,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from app.agent.persona import DEFAULT_PROFILE_DIR
+
 
 @dataclass(frozen=True)
 class AgentConfig:
     data_dir: Path
     checkpoint_db: Path | None
+    profile_dir: Path = DEFAULT_PROFILE_DIR
     memory_file: str = "/AGENTS.md"  # legacy operator migration path; never injected as policy
     skills_dir: str = "/skills/"
     summary_trigger_tokens: int = 12000

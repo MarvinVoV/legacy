@@ -11,6 +11,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.agent.model import build_chat_model, close_chat_model
 from app.agent.runtime import AgentRuntime
 from app.api.routes import agent_motion, commands, devices, voice
 from app.config import get_settings
@@ -25,8 +26,8 @@ from app.mqtt.topics import (
     SUB_PONG,
     SUB_SENSOR,
 )
-from app.services.baidu_asr import BaiduAsrClient
-from app.services.baidu_tts import BaiduTtsClient
+from app.providers.config import load_provider_config
+from app.providers.factory import build_asr, build_tts, chat_model_kwargs
 from app.services.conversation import ConversationConfig
 from app.services.device_manager import DeviceManager
 from app.services.llm import DeepSeekLlmClient
@@ -41,6 +42,8 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = get_settings()
+    providers = load_provider_config(settings)
+    app.state.provider_config = providers
 
     # 配置日志
     logging.basicConfig(
@@ -61,33 +64,11 @@ async def lifespan(app: FastAPI):
     app.state.ping_registry = PingRegistry()
 
     # Agent 运动服务：per-device 串行化 + ACK/状态等待
-    app.state.agent_motion = AgentMotionService(
-        mqtt_client, device_manager.devices, settings
-    )
+    app.state.agent_motion = AgentMotionService(mqtt_client, device_manager.devices, settings)
 
-    # 语音：有百度密钥才创建 ASR 客户端；没有密钥时仍可做 VAD/WAV 归档
-    voice_asr = None
-    if settings.baidu_speech_api_key and settings.baidu_speech_secret_key:
-        voice_asr = BaiduAsrClient(
-            settings.baidu_speech_api_key,
-            settings.baidu_speech_secret_key,
-            dev_pid=settings.baidu_speech_dev_pid,
-            timeout_s=settings.baidu_speech_timeout_s,
-        )
-    app.state.voice_asr = voice_asr
-    voice_tts = None
-    if settings.baidu_speech_api_key and settings.baidu_speech_secret_key:
-        voice_tts = BaiduTtsClient(
-            settings.baidu_speech_api_key,
-            settings.baidu_speech_secret_key,
-            per=settings.baidu_tts_per,
-            spd=settings.baidu_tts_spd,
-            pit=settings.baidu_tts_pit,
-            vol=settings.baidu_tts_vol,
-            aue=settings.baidu_tts_aue,
-            timeout_s=settings.baidu_tts_timeout_s,
-        )
-    app.state.voice_tts = voice_tts
+    # Vendor composition is configuration-driven; session code sees only ports.
+    voice_asr, voice_tts = build_asr(providers), build_tts(providers)
+    app.state.voice_asr, app.state.voice_tts = voice_asr, voice_tts
     local_player = LocalAudioPlayer(
         command=settings.voice_local_player_command or None,
         enabled=settings.voice_local_playback,
@@ -124,34 +105,32 @@ async def lifespan(app: FastAPI):
         local_player=local_player,
         state_provider=lambda device_id: device_manager.get_status(device_id).model_dump(),
     )
+    model_kwargs = chat_model_kwargs(providers)
+    chat_model = build_chat_model(**model_kwargs) if providers.available("llm") else None
     app.state.voice_llm = (
-        DeepSeekLlmClient(
-            api_key=settings.llm_api_key,
-            base_url=settings.llm_base_url,
-            model=settings.llm_model,
-            thinking=settings.llm_thinking,
-            max_tokens=settings.llm_max_tokens,
-            temperature=settings.llm_temperature,
-        )
-        if settings.llm_api_key
-        else None
+        DeepSeekLlmClient(**model_kwargs, chat_model=chat_model) if chat_model is not None else None
     )
     app.state.voice_conversation_config = ConversationConfig(
+        profile_dir=settings.agent_profile_dir,
         turn_end_ms=settings.voice_conversation_turn_end_ms,
         idle_s=settings.voice_conversation_idle_s,
         max_s=settings.voice_conversation_max_s,
         max_turns=settings.voice_conversation_max_turns,
         history_turns=settings.voice_conversation_history_turns,
         history_tokens=settings.voice_conversation_history_tokens,
-        max_tokens=settings.llm_max_tokens,
+        max_tokens=providers.llm.max_tokens,
         barge_in_rms=settings.voice_barge_in_rms,
         barge_in_ms=settings.voice_barge_in_ms,
     )
     app.state.agent_runtime = None
-    if settings.agent_enabled and settings.agent_runtime in {"companion", "deepagents"}:
+    if (
+        settings.agent_enabled
+        and chat_model is not None
+        and settings.agent_runtime in {"companion", "deepagents"}
+    ):
         try:
             app.state.agent_runtime = await AgentRuntime.create(
-                settings, app.state.voice_service
+                settings, app.state.voice_service, provider_config=providers, model=chat_model
             )
         except Exception:
             logger.exception("Agent runtime unavailable; conversation falls back to legacy")
@@ -186,6 +165,8 @@ async def lifespan(app: FastAPI):
         await app.state.voice_asr.aclose()
     if app.state.voice_tts is not None:
         await app.state.voice_tts.aclose()
+    if chat_model is not None:
+        await close_chat_model(chat_model)
     logger.info("Server shutdown complete")
 
 
@@ -212,10 +193,12 @@ async def agent_validation_handler(request: Request, exc: RequestValidationError
         )
     return await request_validation_exception_handler(request, exc)
 
+
 # CORS（可通过 CMCAR_CORS_ORIGINS 收紧，逗号分隔；"*" 放开全部）
 settings = get_settings()
 _cors_origins = (
-    ["*"] if settings.cors_origins.strip() == "*"
+    ["*"]
+    if settings.cors_origins.strip() == "*"
     else [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
 )
 app.add_middleware(
