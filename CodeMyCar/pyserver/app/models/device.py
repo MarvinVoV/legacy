@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 from app.models.telemetry import HeartbeatData, MotionStatus, SensorData
 from app.models.battery import BatteryTelemetry, BatteryStatus
+from app.models.lighting import LightingTelemetry
 
 
 class DeviceState(BaseModel):
@@ -21,6 +22,8 @@ class DeviceState(BaseModel):
     last_ultrasonic: float = 0.0
     latest_battery: Optional[BatteryTelemetry] = None
     last_battery: float = 0.0  # monotonic receipt clock; other sensors cannot refresh it
+    latest_lighting: Optional[LightingTelemetry] = None
+    last_lighting: float = 0.0
     # IMU 航向帧单独缓存（与超声波帧交替到达，不能互相覆盖）
     latest_heading: Optional[SensorData] = None
     last_heading: float = 0.0
@@ -44,6 +47,8 @@ class DeviceStatus(BaseModel):
     heap_free: Optional[int] = None
     stm32_connected: Optional[bool] = None
     battery: BatteryStatus = Field(default_factory=BatteryStatus)
+    lighting: Optional[LightingTelemetry] = None
+    lighting_age_s: Optional[float] = None
 
     # 超声波测到的**障碍物距离**（不是小车行驶里程/位姿）：
     # 车头/车尾传感器端面到最近障碍物的距离，单位 cm；400 表示超出量程（无遮挡）。

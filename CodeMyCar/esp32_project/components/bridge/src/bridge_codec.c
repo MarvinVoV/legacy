@@ -1,3 +1,4 @@
+#include <math.h>
 /**
  * @file bridge_codec.c
  * @brief JSON ↔ Binary 转换实现（见 docs/cmd-mapping.md）
@@ -548,4 +549,65 @@ int bridge_ack_to_json(uint8_t seq, uint8_t status, char* out, size_t out_size)
         return 0;
     }
     return n;
+}
+
+/* Lighting uses semantic hints only. No GPIO, RGB, motion fields, or ACK table. */
+static const char *const lighting_moods[]={"calm","happy","curious","comforting","sad"};
+bool bridge_json_is_lighting(const char *json,size_t len)
+{
+    cJSON *root=cJSON_ParseWithLength(json,len);
+    if (!root) return false;
+    const cJSON *cmd=cJSON_GetObjectItemCaseSensitive(root,"cmd");
+    const bool result=cJSON_IsString(cmd) && strcmp(cmd->valuestring,"lighting")==0;
+    cJSON_Delete(root);return result;
+}
+int bridge_json_to_lighting(const char *json,size_t len,uint32_t session,uint32_t event,
+                            uint8_t out[BRIDGE_LIGHTING_CMD_SIZE])
+{
+    if (!json || !out || !session) return 0;
+    cJSON *root=cJSON_ParseWithLength(json,len);
+    if (!root) return 0;
+    int result=0;
+    do {
+        const cJSON *cmd=cJSON_GetObjectItemCaseSensitive(root,"cmd");
+        if (!cJSON_IsObject(root) || !cJSON_IsString(cmd) || strcmp(cmd->valuestring,"lighting")) break;
+        const cJSON *epoch=cJSON_GetObjectItemCaseSensitive(root,"epoch");
+        if (!cJSON_IsNumber(epoch) || !isfinite(epoch->valuedouble) || epoch->valuedouble<0 ||
+            epoch->valuedouble>UINT32_MAX || floor(epoch->valuedouble)!=epoch->valuedouble) break;
+        const cJSON *clear=cJSON_GetObjectItemCaseSensitive(root,"clear");
+        if (clear && !cJSON_IsBool(clear)) break;
+        const bool clearing=cJSON_IsTrue(clear);
+        int32_t intensity=0,duration=0;
+        int mood=-1;
+        if (!clearing) {
+            if (!get_required_int(root,"intensity",0,100,&intensity) ||
+                !get_required_int(root,"duration_ms",100,10000,&duration)) break;
+            const cJSON *emotion=cJSON_GetObjectItemCaseSensitive(root,"emotion");
+            if (!cJSON_IsString(emotion)) break;
+            for (unsigned i=0;i<5;++i) if (!strcmp(emotion->valuestring,lighting_moods[i])) mood=(int)i;
+            if (mood<0) break;
+        }
+        memset(out,0,BRIDGE_LIGHTING_CMD_SIZE);
+        out[0]=1;out[1]=clearing ? 4 : 1;out[2]=clearing ? 0 : (uint8_t)mood;
+        out[3]=(uint8_t)intensity;out[4]=(uint8_t)duration;out[5]=(uint8_t)(duration>>8);
+        const uint32_t values[3]={session,(uint32_t)epoch->valuedouble,event};
+        for (unsigned v=0;v<3;++v)
+            for (unsigned b=0;b<4;++b) out[8+v*4+b]=(uint8_t)(values[v]>>(8u*b));
+        result=BRIDGE_LIGHTING_CMD_SIZE;
+    } while (0);
+    cJSON_Delete(root);return result;
+}
+int bridge_lighting_to_json(const uint8_t *p,uint8_t len,char *out,size_t capacity)
+{
+    if (!p || !out || len!=44u || p[0]!=1u || p[1]>7u || p[2]>=5u || p[3]>4u || p[42] || p[43]) return 0;
+    uint32_t session=0,stamp=0,epoch=0;
+    for (unsigned i=0;i<4;++i) { session|=(uint32_t)p[12+i]<<(8u*i);stamp|=(uint32_t)p[16+i]<<(8u*i);epoch|=(uint32_t)p[38+i]<<(8u*i); }
+    const int n=snprintf(out,capacity,
+        "{\"type\":\"lighting\",\"data\":{\"mode\":%u,\"emotion\":\"%s\",\"voice\":%u,\"flags\":%u,\"intensity\":%u,"
+        "\"remaining_ms\":%u,\"accepted\":%u,\"rejected\":%u,\"session_id\":%lu,\"uptime_ms\":%lu,\"epoch\":%lu,"
+        "\"pixels\":[%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u]}}",
+        p[1],lighting_moods[p[2]],p[3],p[4],p[5],p[6]|((unsigned)p[7]<<8),
+        p[8]|((unsigned)p[9]<<8),p[10]|((unsigned)p[11]<<8),(unsigned long)session,(unsigned long)stamp,(unsigned long)epoch,
+        p[20],p[21],p[22],p[23],p[24],p[25],p[26],p[27],p[28],p[29],p[30],p[31],p[32],p[33],p[34],p[35],p[36],p[37]);
+    return n>0 && (size_t)n<capacity ? n : 0;
 }

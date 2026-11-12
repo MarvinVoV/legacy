@@ -85,6 +85,11 @@ class VehicleGateway:
         result["pose_reference"] = (
             "local odometry: x forward, y right, heading clockwise; not absolute localization"
         )
+        result["odometer_semantics"] = {
+            "source": "wheel_encoders", "accumulation": "signed_path",
+            "reset_scope": "stm32_boot", "reverse_decreases": True,
+            "lifetime_total": False, "ground_displacement_truth": False,
+        }
         result["capabilities"] = self.capabilities()
         provider = getattr(self.service, "state_provider", None)
         if provider is not None:
@@ -151,6 +156,7 @@ class VehicleGateway:
             completed = (
                 data.get("ok") is True and data.get("measured", {}).get("final_state") == "done"
             )
+            logger.info("agent vehicle device=%s request=%s executed=%s",device_id,request.model_dump(),completed)
             return {"executed": completed, "request": request.model_dump(), "result": data}
         except MotionError as exc:
             return {"executed": False, "error": exc.as_detail()}

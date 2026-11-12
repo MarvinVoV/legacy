@@ -1,0 +1,85 @@
+{
+  "hardware": "simulated; no MQTT or serial client",
+  "passed": true,
+  "cases": [
+    {
+      "passed": true,
+      "text": "请用灯光表达开心，强度80，持续4秒。不要移动车轮。",
+      "motion_enabled": false,
+      "tools": [
+        {
+          "name": "express_emotion",
+          "result": {
+            "accepted": true,
+            "confirmed": true,
+            "confirmation": "device_state_observed_not_optical_measurement",
+            "emotion": "happy",
+            "display_mode": 0,
+            "overridden_by_fault": false
+          }
+        }
+      ],
+      "lighting_requests": [
+        {
+          "device_id": "AUDIT_SIMULATED_BODY",
+          "emotion": "happy",
+          "intensity": 80,
+          "duration_ms": 4000,
+          "epoch": 1,
+          "clear": false
+        }
+      ],
+      "moves": []
+    },
+    {
+      "passed": true,
+      "text": "请以每秒5厘米的速度，直行前进10厘米，不转弯。",
+      "motion_enabled": true,
+      "tools": [
+        {
+          "name": "car_drive",
+          "result": {
+            "executed": true,
+            "request": {
+              "distance_cm": 10,
+              "turn_deg": 0,
+              "speed_cm_s": 5
+            },
+            "result": {
+              "ok": true,
+              "seq": 1,
+              "requested": {
+                "distance_cm": 10,
+                "turn_deg": 0,
+                "speed_cm_s": 5
+              },
+              "measured": {
+                "distance_cm": 10.0,
+                "turn_deg": 0.0,
+                "duration_ms": 1000,
+                "final_state": "done"
+              },
+              "errors": {
+                "distance_cm": 0.0,
+                "turn_deg": 0.0
+              },
+              "pose": {
+                "x_cm": 10.0,
+                "y_cm": 0.0,
+                "heading_deg": 0.0
+              }
+            }
+          }
+        }
+      ],
+      "lighting_requests": [],
+      "moves": [
+        {
+          "distance_cm": 10,
+          "turn_deg": 0,
+          "speed_cm_s": 5
+        }
+      ]
+    }
+  ]
+}

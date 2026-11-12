@@ -13,7 +13,6 @@ class AgentConfig:
     data_dir: Path
     checkpoint_db: Path | None
     profile_dir: Path = DEFAULT_PROFILE_DIR
-    memory_file: str = "/AGENTS.md"  # legacy operator migration path; never injected as policy
     skills_dir: str = "/skills/"
     summary_trigger_tokens: int = 12000
     summary_keep_messages: int = 8
@@ -35,13 +34,8 @@ class AgentConfig:
             raise ValueError("invalid agent iteration or MCP timeout budget")
         if not 0 < self.memory_learn_timeout_s <= 30:
             raise ValueError("invalid memory learning timeout")
-        for path in (self.memory_file, self.skills_dir):
-            if ".." in Path(path).parts:
-                raise ValueError("agent data paths cannot traverse parents")
-
-    @property
-    def memory_path(self) -> Path:
-        return self.data_dir / self.memory_file.lstrip("/")
+        if ".." in Path(self.skills_dir).parts:
+            raise ValueError("agent data paths cannot traverse parents")
 
     @property
     def skills_path(self) -> Path:

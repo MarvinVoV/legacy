@@ -6,14 +6,45 @@ import asyncio
 import json
 import logging
 
-from langchain.agents.middleware import AgentMiddleware
-from langchain_core.messages import SystemMessage
+from langchain.agents.middleware import AgentMiddleware, TracePolicy, omit_payload
+from langchain_core.messages import AIMessage, ToolMessage, RemoveMessage, SystemMessage
+from langgraph.graph.message import REMOVE_ALL_MESSAGES
 
 from app.agent.preferences import PreferenceStore
 from app.agent.skills import SkillCatalog
 from app.agent.vehicle import VehicleGateway
 
 logger = logging.getLogger(__name__)
+
+
+class IncompleteToolCallsMiddleware(AgentMiddleware):
+    """Repair interrupted checkpoint syntax, without inventing an action result.
+
+    A resumed model request requires a ToolMessage for every prior tool-call id.
+    This is a local message transform, not another agent or another model call.
+    """
+    trace_policy = TracePolicy(process_inputs=omit_payload)
+
+    def before_agent(self, state, runtime):
+        messages = state.get("messages", [])
+        answered = {m.tool_call_id for m in messages if isinstance(m, ToolMessage)}
+        patched, changed = [], False
+        for message in messages:
+            patched.append(message)
+            if not isinstance(message, AIMessage):
+                continue
+            for call in (*message.tool_calls, *message.invalid_tool_calls):
+                identity = call.get("id")
+                if not identity or identity in answered:
+                    continue
+                patched.append(ToolMessage(
+                    tool_call_id=identity, name=call.get("name") or "unknown", status="error",
+                    content="No completed result was recorded: this call was interrupted or invalid. "
+                            "Do not assume success or automatically replay it; check current state first.",
+                ))
+                answered.add(identity)
+                changed = True
+        return {"messages": [RemoveMessage(id=REMOVE_ALL_MESSAGES), *patched]} if changed else None
 
 
 class CompanionContextMiddleware(AgentMiddleware):

@@ -50,6 +50,7 @@ typedef enum
     PROTOCOL_TYPE_MOTION    = 0x07, /* 运动状态上报（36 字节） */
     PROTOCOL_TYPE_SESSION   = 0x08, /* ESP32 启动代次同步 */
     PROTOCOL_TYPE_BUILD_INFO = 0x09, /* STM32 build identity */
+    PROTOCOL_TYPE_VISUAL    = 0x0A, /* Bounded display hints/status; never motion */
     PROTOCOL_TYPE_MAX
 } protocol_type_t;
 

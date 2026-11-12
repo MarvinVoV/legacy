@@ -26,3 +26,6 @@
 自动区格式：`- [fact/toy_cat_name] 玩具猫叫团团`。可以直接编辑值，新会话乃至同一会话下一次模型调用会读到新文件。手写备注放在管理标记外；工具保留这些文字，**不会代替你删除管理区以外的手写笔记**。请在空闲时编辑，不要移除起止标记或制造重复键；格式异常时保留原文件、暂停自动写入，不以空文件覆盖。
 
 当前没有说话人识别，默认household是家庭共享记忆，不会自动区分不同小朋友。ROLE/AGENTS和技能只由维护者修改；自进化是长期事实与经验的更新，不允许模型自行改变车辆权限、代码或角色规则。模板和规则可以进Git，实际家庭记忆不能进Git。
+
+
+灯光表达已接入同一个小鸭Agent：`express_emotion` / `clear_emotion`为本地Tools，不经MCP；流程见[lighting-emotion](skills/lighting-emotion/SKILL.md)。五种情绪为calm/happy/curious/comforting/sad。运动权限关闭时仍可表达情绪；车辆安全和状态灯效始终由STM32覆盖。

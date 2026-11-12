@@ -46,7 +46,7 @@ class SimulatedMotion:
             self.x += d * (math.sin(h + a) - math.sin(h)) / a
             self.y += d * (math.cos(h) - math.cos(h + a)) / a
         self.heading += a
-        self.odometer += abs(d)
+        self.odometer += d  # Match STM32 signed path; reverse subtracts.
         return MoveResult(
             seq=len(self.moves),
             requested=request,

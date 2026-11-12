@@ -1,5 +1,7 @@
 # 控制系统测试指南：独立复用、组件集成与实机验收
 
+> 新增2026-11-13：[状态灯/单Agent/语音可复用回归指南](../../pyserver/docs/Lighting-And-Voice-Regression-Guide-2026-11-13.md)，覆盖新灯光协议、362项pytest、真实模型模拟体、跨板HIL及里程语义。
+
 更新：2026-11-08。基线：main 的 `83efe32` 及文档提交 `eeb3a36`。本文盘点项目现有及本轮新增/扩展的测试，供后续 agent 按功能选取、独立执行、增加回归和组织集成验收。
 
 后续扩展：servo_service_test新增生产死区下5ms命令刷新/20ms舵机更新的微调跟随回归，测试入口与16组数量不变；见 [真实车体转动与死区验收](IMU-Manual-Rotation-And-Steering-Deadzone-Validation-2026-11-08.md)。

@@ -100,8 +100,6 @@ class Settings(BaseSettings):
     voice_conversation_idle_s: float = 15.0
     voice_conversation_max_s: float = 600.0
     voice_conversation_max_turns: int = 30
-    voice_conversation_history_turns: int = 12
-    voice_conversation_history_tokens: int = 8000
     llm_base_url: str = ""  # compatibility override; default endpoint lives in providers.toml
     llm_api_key: str = ""
     llm_model: str = "deepseek-flash"
@@ -117,11 +115,9 @@ class Settings(BaseSettings):
     # LangChain / Deep Agents runtime
     providers_config: str = str(Path(__file__).resolve().parents[1] / "config" / "providers.toml")
     agent_enabled: bool = True
-    agent_runtime: str = "companion"  # companion | deepagents (compatibility alias) | legacy
     agent_data_dir: str = "agent_data"
     agent_profile_dir: str = str(Path(__file__).resolve().parents[1] / "agent_profile")
     agent_checkpoint_db: str = "agent_data/sessions.sqlite"
-    agent_memory_file: str = "AGENTS.md"
     agent_skills_dir: str = "skills"
     agent_summary_trigger_tokens: int = 12000
     agent_summary_keep_messages: int = 8

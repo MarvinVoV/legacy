@@ -39,4 +39,29 @@ int main(void)
     assert(bridge_sensor_to_json(charging,29,json,sizeof(json))>0);
     assert(strstr(json,"\"current_ma\":-120"));
     puts("motion JSON: source flags, maximum values and STOP recognition passed");
+    uint8_t visual[BRIDGE_LIGHTING_CMD_SIZE];
+    const char *happy="{\"cmd\":\"lighting\",\"emotion\":\"happy\",\"intensity\":100,\"duration_ms\":3000,\"epoch\":4294967295}";
+    assert(bridge_json_is_lighting(happy,strlen(happy)));
+    assert(bridge_json_to_lighting(happy,strlen(happy),0x12345678,9,visual)==20);
+    assert(visual[0]==1 && visual[1]==1 && visual[2]==1 && visual[3]==100);
+    assert(visual[4]==0xb8 && visual[5]==0x0b && visual[8]==0x78 && visual[11]==0x12);
+    assert(visual[12]==0xff && visual[15]==0xff && visual[16]==9);
+    assert(!bridge_json_to_control_cmd(happy,strlen(happy),command,&seq,&ack));
+    const char *bad[]={
+        "{\"cmd\":\"lighting\",\"emotion\":\"fault\",\"intensity\":100,\"duration_ms\":3000,\"epoch\":0}",
+        "{\"cmd\":\"lighting\",\"emotion\":\"happy\",\"intensity\":101,\"duration_ms\":3000,\"epoch\":0}",
+        "{\"cmd\":\"lighting\",\"emotion\":\"happy\",\"intensity\":100,\"duration_ms\":10001,\"epoch\":0}",
+        "{\"cmd\":\"lighting\",\"emotion\":\"happy\",\"intensity\":100,\"duration_ms\":3000,\"epoch\":4294967296}",
+        "{\"cmd\":\"lighting\",\"clear\":1,\"epoch\":0}"};
+    for (unsigned i=0;i<sizeof(bad)/sizeof(bad[0]);++i)
+        assert(!bridge_json_to_lighting(bad[i],strlen(bad[i]),1,1,visual));
+    const char *clear="{\"cmd\":\"lighting\",\"clear\":true,\"epoch\":0}";
+    assert(bridge_json_to_lighting(clear,strlen(clear),1,10,visual)==20 && visual[1]==4 && !visual[4]);
+    uint8_t lightStatus[44]={1,0,1,0,4,100,0xb8,0x0b,1,0,0,0,1};
+    assert(bridge_lighting_to_json(lightStatus,44,json,sizeof(json))>0);
+    assert(strstr(json,"\"type\":\"lighting\"") && strstr(json,"\"emotion\":\"happy\""));
+    assert(!bridge_lighting_to_json(lightStatus,43,json,sizeof(json)));
+    assert(!bridge_lighting_to_json(lightStatus,44,json,20));
+    lightStatus[2]=5;assert(!bridge_lighting_to_json(lightStatus,44,json,sizeof(json)));
+    puts("lighting JSON: semantic bounds, independent frame, session/epoch/event and status passed");
 }

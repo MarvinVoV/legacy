@@ -76,32 +76,25 @@ async def _run_conversation(
     barge_audio: bool = False,
 ) -> None:
     """Own one long-conversation socket; command mode never enters this path."""
-    llm = getattr(ws.app.state, "voice_llm", None)
-    config = getattr(
-        ws.app.state, "voice_conversation_config", ConversationConfig()
-    )
-    config = replace(config, barge_in=barge_in, playback_ack=playback_ack,
-                     barge_audio=barge_audio)
-    if llm is None:
-        await _send_json(ws, {"type": "error", "message": "LLM is not configured"})
+    runtime = getattr(ws.app.state, "agent_runtime", None)
+    if runtime is None:
+        await _send_json(ws, {"type": "error", "message": "Conversation agent is unavailable"})
         session.close()
         service.release(session)
         await ws.close(code=1011)
         return
-
-    runner = ConversationRunner(
-        service,
-        session,
-        sink,
-        llm=llm,
-        config=config,
-    )
-    runtime = getattr(ws.app.state, "agent_runtime", None)
-    if runtime is not None and getattr(settings, "agent_runtime", "deepagents") == "deepagents":
-        try:
-            runner.agent_session = runtime.new_session(session.device_id, session.id)
-        except Exception:
-            logger.exception("Agent session failed; using legacy conversation path")
+    config = getattr(ws.app.state, "voice_conversation_config", ConversationConfig())
+    config = replace(config, barge_in=barge_in, playback_ack=playback_ack, barge_audio=barge_audio)
+    try:
+        agent_session = runtime.new_session(session.device_id, session.id)
+    except Exception:
+        logger.exception("Agent session unavailable")
+        await _send_json(ws, {"type": "error", "message": "Conversation agent is unavailable"})
+        session.close()
+        service.release(session)
+        await ws.close(code=1011)
+        return
+    runner = ConversationRunner(service, session, sink, agent_session=agent_session, config=config)
     runner.start()
     # Conversation has no wake-word prompt otherwise; the cue tells the user
     # when to speak. A device that already played its local "我在" must not get

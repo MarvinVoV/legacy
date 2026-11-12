@@ -41,7 +41,7 @@ typedef struct
     int32_t  xMm;            /* 位姿 x（前正） */
     int32_t  yMm;            /* 位姿 y（设备数学坐标：左正） */
     int32_t  thetaMdeg;      /* 航向（CCW 正，0.001°） */
-    int32_t  odometerMm;     /* 累计里程 */
+    int32_t  odometerMm;     /* 启动以来带方向的累计轮程；倒车减少，非累计总路程 */
     int32_t  goalDistanceMm; /* 本次 goal 已行进距离（带方向） */
     int32_t  goalTurnMdeg;   /* 本次 goal 已转角度（右正，未归一化） */
     uint32_t goalDurationMs; /* 本次 goal 已用时 */

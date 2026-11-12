@@ -30,11 +30,12 @@ from app.providers.config import load_provider_config
 from app.providers.factory import build_asr, build_tts, chat_model_kwargs
 from app.services.conversation import ConversationConfig
 from app.services.device_manager import DeviceManager
-from app.services.llm import DeepSeekLlmClient
 from app.services.local_audio import LocalAudioPlayer
 from app.services.motion_service import AgentMotionService
 from app.services.ping_service import PingRegistry
 from app.services.voice_service import VoiceConfig, VoiceService
+from app.agent.lighting import LightingGateway
+from app.services.lighting_service import LightingService
 
 logger = logging.getLogger(__name__)
 
@@ -106,19 +107,12 @@ async def lifespan(app: FastAPI):
         state_provider=lambda device_id: device_manager.get_status(device_id).model_dump(),
     )
     model_kwargs = chat_model_kwargs(providers)
-    chat_model = build_chat_model(**model_kwargs) if providers.available("llm") else None
-    app.state.voice_llm = (
-        DeepSeekLlmClient(**model_kwargs, chat_model=chat_model) if chat_model is not None else None
-    )
+    chat_model = build_chat_model(**model_kwargs) if settings.agent_enabled and providers.available("llm") else None
     app.state.voice_conversation_config = ConversationConfig(
-        profile_dir=settings.agent_profile_dir,
         turn_end_ms=settings.voice_conversation_turn_end_ms,
         idle_s=settings.voice_conversation_idle_s,
         max_s=settings.voice_conversation_max_s,
         max_turns=settings.voice_conversation_max_turns,
-        history_turns=settings.voice_conversation_history_turns,
-        history_tokens=settings.voice_conversation_history_tokens,
-        max_tokens=providers.llm.max_tokens,
         barge_in_rms=settings.voice_barge_in_rms,
         barge_in_ms=settings.voice_barge_in_ms,
     )
@@ -126,14 +120,15 @@ async def lifespan(app: FastAPI):
     if (
         settings.agent_enabled
         and chat_model is not None
-        and settings.agent_runtime in {"companion", "deepagents"}
     ):
         try:
             app.state.agent_runtime = await AgentRuntime.create(
-                settings, app.state.voice_service, provider_config=providers, model=chat_model
+                settings, app.state.voice_service, provider_config=providers, model=chat_model,
+                lighting=LightingGateway(LightingService(mqtt_client),
+                    lambda device_id: device_manager.get_status(device_id).model_dump()),
             )
         except Exception:
-            logger.exception("Agent runtime unavailable; conversation falls back to legacy")
+            logger.exception("Agent runtime unavailable; conversation is disabled until recovery")
 
     # 注册消息处理器（心跳/传感器/日志/ACK/pong/motion）
     handlers = create_handlers(

@@ -9,7 +9,7 @@ import pytest
 
 from app.models.audio import TtsAudio
 from app.services.conversation import ConversationConfig
-from tests.test_conversation import FakeLlm, close_runner, json_events, make_runner
+from tests.test_conversation import FakeConversationRuntime, FakeConversationSession, close_runner, json_events, make_runner
 from tests.test_voice_ws import FakeAsr, FakeTts, make_service, pcm, start_frame
 
 
@@ -222,7 +222,7 @@ async def test_question_about_stopping_is_not_a_stop_command(tmp_path):
 
 def test_websocket_v2_audio_completion_and_end(client, tmp_path):
     client.app.state.voice_service = make_service(tmp_path, FakeAsr("你好"), tts=FakeTts())
-    client.app.state.voice_llm = FakeLlm(["你好。"])
+    client.app.state.agent_runtime = FakeConversationRuntime(FakeConversationSession(["你好。"]))
     client.app.state.voice_conversation_config = ConversationConfig(turn_end_ms=200)
     with client.websocket_connect("/api/v1/voice/stream") as ws:
         ws.send_text(start_frame(mode="conversation", protocol=2, playback_ack=True, local_ack=True))
@@ -256,7 +256,7 @@ def test_websocket_interrupt_cancels_inflight_sentence(client, tmp_path, monkeyp
     settings = Settings(voice_barge_in=True)
     audio = TtsAudio("pcm", 16000, 1, b"\x01\x02" * 32000)
     client.app.state.voice_service = make_service(tmp_path, FakeAsr("你好"), tts=FakeTts(audio))
-    client.app.state.voice_llm = FakeLlm(["很长的回答。"])
+    client.app.state.agent_runtime = FakeConversationRuntime(FakeConversationSession(["很长的回答。"]))
     client.app.state.voice_conversation_config = ConversationConfig(turn_end_ms=200)
     with client.websocket_connect("/api/v1/voice/stream") as ws:
         ws.send_text(start_frame(mode="conversation", protocol=2, playback_ack=True,

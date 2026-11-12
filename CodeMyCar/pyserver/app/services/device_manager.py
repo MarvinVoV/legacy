@@ -103,9 +103,18 @@ class DeviceManager:
             if state.last_imu > 0:
                 imu_raw_age_s = round(time.time() - state.last_imu, 1)
 
+        light_age = time.monotonic() - state.last_lighting if state.last_lighting > 0 else None
+        lighting = state.latest_lighting
+        if (not online or light_age is None or light_age > 3 or
+                (state.heartbeat_data and state.heartbeat_data.stm32_connected is False) or
+                (lighting and state.session_id is not None and lighting.session_id not in (0, state.session_id))):
+            lighting = None
+
         return DeviceStatus(
             device_id=device_id,
             online=online,
+            lighting=lighting,
+            lighting_age_s=round(light_age, 2) if light_age is not None else None,
             last_heartbeat_age=round(age, 1) if age else None,
             uptime_s=state.heartbeat_data.uptime_s if state.heartbeat_data else None,
             heap_free=state.heartbeat_data.heap if state.heartbeat_data else None,

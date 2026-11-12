@@ -1,0 +1,357 @@
+{
+  "limits": {
+    "distance_mm": 100,
+    "speed_cm_s": 5,
+    "turn_deg": 0
+  },
+  "before_stop": {
+    "ok": true,
+    "stopped": true,
+    "accepted": true,
+    "confirmed": true,
+    "seq": 26
+  },
+  "ready_at": 1794505195.148631,
+  "reason": "completed",
+  "final_stop": {
+    "ok": true,
+    "stopped": true,
+    "accepted": true,
+    "confirmed": true,
+    "seq": 1
+  },
+  "restored_execution_setting": false,
+  "commands": [
+    {
+      "at": 1794505165.4643378,
+      "topic": "cmd/DEV_1/exec",
+      "data": {
+        "seq": 26,
+        "cmd": "motion",
+        "motion": {
+          "mode": 0,
+          "params": {}
+        }
+      }
+    },
+    {
+      "at": 1794505269.7548292,
+      "topic": "cmd/DEV_1/exec",
+      "data": {
+        "cmd": "lighting",
+        "emotion": "happy",
+        "intensity": 100,
+        "duration_ms": 5000,
+        "epoch": 1,
+        "clear": false
+      }
+    },
+    {
+      "at": 1794505335.1736069,
+      "topic": "cmd/DEV_1/exec",
+      "data": {
+        "seq": 0,
+        "cmd": "motion",
+        "motion": {
+          "mode": 4,
+          "params": {
+            "turn_ddeg": 0,
+            "distance_mm": 100,
+            "speed_mm_s": 50
+          }
+        }
+      }
+    },
+    {
+      "at": 1794505358.770856,
+      "topic": "cmd/DEV_1/exec",
+      "data": {
+        "seq": 1,
+        "cmd": "motion",
+        "motion": {
+          "mode": 0,
+          "params": {}
+        }
+      }
+    }
+  ],
+  "goal_terminal": [
+    {
+      "at": 1794505337.708522,
+      "topic": "data/DEV_1/motion",
+      "data": {
+        "seq": 0,
+        "state": "done",
+        "error": 0,
+        "mode": 4,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "imu",
+        "x_mm": 649,
+        "y_mm": 70,
+        "theta_mdeg": -2650,
+        "odometer_mm": 656,
+        "goal_distance_mm": 96,
+        "goal_turn_mdeg": -7,
+        "goal_duration_ms": 2453,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3600527042
+      }
+    }
+  ],
+  "lighting_changes": [
+    {
+      "at": 1794505166.0495732,
+      "topic": "data/DEV_1/sensor",
+      "data": {
+        "type": "lighting",
+        "data": {
+          "mode": 0,
+          "emotion": "calm",
+          "voice": 0,
+          "flags": 0,
+          "intensity": 100,
+          "remaining_ms": 0,
+          "accepted": 7,
+          "rejected": 0,
+          "session_id": 3600527042,
+          "uptime_ms": 1604242,
+          "epoch": 0,
+          "pixels": [
+            0,
+            7,
+            3,
+            0,
+            7,
+            3,
+            0,
+            7,
+            3,
+            0,
+            7,
+            3,
+            0,
+            7,
+            3,
+            0,
+            7,
+            3
+          ]
+        }
+      }
+    },
+    {
+      "at": 1794505270.475456,
+      "topic": "data/DEV_1/sensor",
+      "data": {
+        "type": "lighting",
+        "data": {
+          "mode": 0,
+          "emotion": "happy",
+          "voice": 0,
+          "flags": 4,
+          "intensity": 100,
+          "remaining_ms": 4365,
+          "accepted": 8,
+          "rejected": 0,
+          "session_id": 3600527042,
+          "uptime_ms": 1708734,
+          "epoch": 1,
+          "pixels": [
+            5,
+            3,
+            0,
+            5,
+            3,
+            0,
+            5,
+            3,
+            0,
+            5,
+            3,
+            0,
+            5,
+            3,
+            0,
+            5,
+            3,
+            0
+          ]
+        }
+      }
+    },
+    {
+      "at": 1794505275.549645,
+      "topic": "data/DEV_1/sensor",
+      "data": {
+        "type": "lighting",
+        "data": {
+          "mode": 0,
+          "emotion": "calm",
+          "voice": 0,
+          "flags": 0,
+          "intensity": 100,
+          "remaining_ms": 0,
+          "accepted": 8,
+          "rejected": 0,
+          "session_id": 3600527042,
+          "uptime_ms": 1713751,
+          "epoch": 1,
+          "pixels": [
+            0,
+            3,
+            1,
+            0,
+            3,
+            1,
+            0,
+            3,
+            1,
+            0,
+            3,
+            1,
+            0,
+            3,
+            1,
+            0,
+            3,
+            1
+          ]
+        }
+      }
+    },
+    {
+      "at": 1794505335.547818,
+      "topic": "data/DEV_1/sensor",
+      "data": {
+        "type": "lighting",
+        "data": {
+          "mode": 1,
+          "emotion": "calm",
+          "voice": 0,
+          "flags": 0,
+          "intensity": 100,
+          "remaining_ms": 0,
+          "accepted": 8,
+          "rejected": 0,
+          "session_id": 3600527042,
+          "uptime_ms": 1773635,
+          "epoch": 1,
+          "pixels": [
+            0,
+            4,
+            1,
+            0,
+            3,
+            1,
+            0,
+            3,
+            1,
+            0,
+            3,
+            1,
+            0,
+            3,
+            1,
+            0,
+            4,
+            1
+          ]
+        }
+      }
+    },
+    {
+      "at": 1794505337.498904,
+      "topic": "data/DEV_1/sensor",
+      "data": {
+        "type": "lighting",
+        "data": {
+          "mode": 5,
+          "emotion": "calm",
+          "voice": 0,
+          "flags": 0,
+          "intensity": 100,
+          "remaining_ms": 0,
+          "accepted": 8,
+          "rejected": 0,
+          "session_id": 3600527042,
+          "uptime_ms": 1775787,
+          "epoch": 1,
+          "pixels": [
+            12,
+            0,
+            0,
+            0,
+            7,
+            3,
+            0,
+            7,
+            3,
+            0,
+            7,
+            3,
+            0,
+            7,
+            3,
+            12,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    {
+      "at": 1794505337.914322,
+      "topic": "data/DEV_1/sensor",
+      "data": {
+        "type": "lighting",
+        "data": {
+          "mode": 0,
+          "emotion": "calm",
+          "voice": 0,
+          "flags": 0,
+          "intensity": 100,
+          "remaining_ms": 0,
+          "accepted": 8,
+          "rejected": 0,
+          "session_id": 3600527042,
+          "uptime_ms": 1776187,
+          "epoch": 1,
+          "pixels": [
+            7,
+            0,
+            0,
+            0,
+            5,
+            2,
+            0,
+            5,
+            2,
+            0,
+            5,
+            2,
+            0,
+            5,
+            2,
+            7,
+            0,
+            0
+          ]
+        }
+      }
+    }
+  ],
+  "manual_confirmations": [
+    {
+      "utterance": "显示开心的灯光，持续五秒，不要移动。",
+      "observed": "有回答，灯光也变化了"
+    },
+    {
+      "utterance": "以每秒五厘米的速度，直行前进十厘米，不转弯。",
+      "observed": "后轮正转并自动停下，灯效对应"
+    }
+  ],
+  "limits_note": "仅此次悬空人工验收临时启用；结束后恢复 voice_execute_commands=false。证据不代表落地位移或光学测量。",
+  "goal_terminal_repeated_samples": 213
+}

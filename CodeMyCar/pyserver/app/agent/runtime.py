@@ -16,13 +16,14 @@ from app.agent.config import AgentConfig
 from app.agent.context import AgentContext
 from app.agent.mcp import MCPToolRegistry
 from app.agent.memory import MemoryLearner, ensure_agent_data
-from app.agent.middleware import CompanionContextMiddleware
+from app.agent.middleware import CompanionContextMiddleware, IncompleteToolCallsMiddleware
 from app.agent.model import build_chat_model, close_chat_model
 from app.agent.persona import load_profile
 from app.agent.preferences import PreferenceStore
 from app.agent.session import AgentSession
 from app.agent.skills import SkillCatalog
-from app.agent.tools import build_car_tools, build_memory_tools
+from app.agent.tools import build_car_tools, build_memory_tools, build_lighting_tools
+from app.agent.lighting import LightingGateway
 from app.agent.vehicle import VehicleGateway
 from app.config import Settings
 from app.providers.config import load_provider_config
@@ -66,7 +67,6 @@ class AgentRuntime:
         )
 
     def _build_agent(self):
-        from deepagents.middleware.patch_tool_calls import PatchToolCallsMiddleware
         from langchain.agents import create_agent
         from langchain.agents.middleware import SummarizationMiddleware
 
@@ -78,7 +78,7 @@ class AgentRuntime:
             checkpointer=self.checkpointer,
             context_schema=AgentContext,
             middleware=[
-                PatchToolCallsMiddleware(),
+                IncompleteToolCallsMiddleware(),
                 SummarizationMiddleware(
                     model=self.model,
                     trigger=("tokens", self.config.summary_trigger_tokens),
@@ -94,7 +94,8 @@ class AgentRuntime:
 
     @classmethod
     async def create(
-        cls, settings: Settings, service: VoiceService, *, provider_config=None, model=None
+        cls, settings: Settings, service: VoiceService, *, provider_config=None, model=None,
+        lighting: LightingGateway | None = None,
     ) -> AgentRuntime:
         config = AgentConfig(
             data_dir=Path(settings.agent_data_dir),
@@ -102,7 +103,6 @@ class AgentRuntime:
             checkpoint_db=Path(settings.agent_checkpoint_db)
             if settings.agent_checkpoint_db
             else None,
-            memory_file="/" + settings.agent_memory_file.lstrip("/"),
             skills_dir="/" + settings.agent_skills_dir.strip("/") + "/",
             summary_trigger_tokens=settings.agent_summary_trigger_tokens,
             summary_keep_messages=settings.agent_summary_keep_messages,
@@ -144,6 +144,8 @@ class AgentRuntime:
             )
             skills = SkillCatalog(config.skills_path, profile_dir=config.profile_dir)
             tools = build_car_tools(service, include_motion=service.config.execute_commands)
+            if lighting is not None:
+                tools += build_lighting_tools(lighting)
             # Names cannot shadow native permission/identity boundaries.
             reserved = {
                 "car_drive",
@@ -155,6 +157,8 @@ class AgentRuntime:
                 "forget_preference",
                 "list_skills",
                 "get_skill",
+                "express_emotion",
+                "clear_emotion",
             }
             tools += [t for t in mcp.tools if t.name not in reserved]
             tools += skills.tools()

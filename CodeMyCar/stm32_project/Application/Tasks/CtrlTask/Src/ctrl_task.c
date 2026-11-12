@@ -17,6 +17,7 @@
 #include "uart_handle.h"
 #include "system_init.h"
 #include "safety_supervisor.h"
+#include "lighting_runtime.h"
 
 // 累积缓冲区大小
 #define ACCUMULATE_BUF_SIZE ( 5 * PROTOCOL_MAX_DATA_LEN)
@@ -122,12 +123,22 @@ static void dispatcher(uint8_t type, uint8_t seq, uint8_t flags,
         if (total_len == 4u)
         {
             seq_dedup_init(&s_goal_seqs);
+            const uint32_t session=(uint32_t)cmd_payload[0]|((uint32_t)cmd_payload[1]<<8)|
+                ((uint32_t)cmd_payload[2]<<16)|((uint32_t)cmd_payload[3]<<24);
+            LightingRuntime_NewSession(session);
         }
         if (ack_req)
         {
             send_ack(seq, total_len == 4u ? 0u : 2u);
         }
         send_build_info();
+        return;
+    }
+
+    /* Display channel has independent epoch/event ids and no ACK slots/lease. */
+    if (type == PROTOCOL_TYPE_VISUAL)
+    {
+        (void)LightingRuntime_Command(cmd_payload,total_len,HAL_GetTick());
         return;
     }
 

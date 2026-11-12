@@ -14,6 +14,11 @@
 
 /* ControlCmd wire payload 大小（显式宽度，见 docs/cmd-mapping.md §3.2） */
 #define BRIDGE_CONTROL_CMD_SIZE 9
+#define BRIDGE_LIGHTING_CMD_SIZE 20
+bool bridge_json_is_lighting(const char *json,size_t len);
+int bridge_json_to_lighting(const char *json,size_t len,uint32_t session,uint32_t event,
+                            uint8_t out[BRIDGE_LIGHTING_CMD_SIZE]);
+int bridge_lighting_to_json(const uint8_t *payload,uint8_t len,char *out,size_t capacity);
 
 /* 运动模式（与 STM32 motion_common.h 对齐） */
 enum
