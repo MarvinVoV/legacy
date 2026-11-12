@@ -2,6 +2,8 @@
 
 分支`codex/toy-character-agent`，继续前序`4e3951e`。本报告更新前序架构文档中“人格写Python、长期偏好写SQLite、技能在app/agent/skills”的阶段状态，其余车辆安全和声学边界继续适用。没有改动C固件或真实运动参数。
 
+用户随后已授权将本批`4e3951e`、`790ed1b`及交接记录合并至main并push；执行结果以Git历史为准，前序“不合并/不push”是当时状态。合并前复核：已提交代码与323项离线测试、17项真实模型模拟场景记录一致；运行中pyserver HTTP200，启动日志无Traceback，当前仍用deepseek与百度语音，角色配置有效。可作为阶段开发基线；兼容语音厂商仅HTTP模拟验收、声学遗留问题和设备分句迁移的边界保持不变。
+
 ## 已交付
 
 1. `agent_profile/ROLE.md`：小鸭的名字、玩具车身体、性格、丰富但有分寸的情感和说话风格。`AGENTS.md`维护交互/工具/记忆规则；`prompts/SUMMARY.md`与`MEMORY_LEARNING.md`分别维护压缩和自动提取提示词。Python只负责加载和校验，不再嵌入完整人格文本。
