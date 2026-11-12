@@ -56,7 +56,8 @@ ENTRY(Reset_Handler)
 MEMORY
 {
 DTCMRAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 128K
-RAM_D1 (xrw)      : ORIGIN = 0x24000000, LENGTH = 320K
+DMA_RAM (rw)      : ORIGIN = 0x24000000, LENGTH = 8K
+RAM_D1 (xrw)      : ORIGIN = 0x24002000, LENGTH = 312K
 RAM_D2 (xrw)      : ORIGIN = 0x30000000, LENGTH = 32K
 RAM_D3 (xrw)      : ORIGIN = 0x38000000, LENGTH = 16K
 ITCMRAM (xrw)      : ORIGIN = 0x00000000, LENGTH = 64K
@@ -68,7 +69,7 @@ _estack = ORIGIN(DTCMRAM) + LENGTH(DTCMRAM);    /* end of RAM */
 _sstack = _estack - _Min_Stack_Size;
 /* Generate a link error if heap and stack don't fit into RAM */
 _Min_Heap_Size = 0x200;      /* required amount of heap  */
-_Min_Stack_Size = 0x400; /* required amount of stack */
+_Min_Stack_Size = 0x1000; /* required amount of stack */
 
 /* Define output sections */
 SECTIONS
@@ -232,10 +233,13 @@ SECTIONS
   .dma_buffer (NOLOAD) :
   {
     . = ALIGN(32);
+    __dma_start__ = .;
     *(.dma_buffer)
     *(.dma_buffer*)
     . = ALIGN(32);
-  } >RAM_D1
+    __dma_end__ = .;
+  } >DMA_RAM
+  ASSERT(SIZEOF(.dma_buffer) <= LENGTH(DMA_RAM), "DMA buffers exceed non-cacheable MPU region")
 
   PROVIDE( __bss_start = __tbss_start );
   PROVIDE( __bss_size = __bss_end - __bss_start );

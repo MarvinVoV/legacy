@@ -10,6 +10,25 @@ export interface DeviceStatus {
   front_distance_cm: number | null
   rear_distance_cm: number | null
   sensor_age_s: number | null
+  battery?: BatteryStatus
+}
+
+export interface BatteryStatus {
+  available: boolean
+  stale: boolean
+  age_s: number | null
+  voltage_v: number | null
+  bus_voltage_v: number | null
+  filtered_voltage_v: number | null
+  shunt_voltage_mv: number | null
+  current_a: number | null
+  power_w: number | null
+  percent: number | null
+  percent_method: 'voltage_3s_estimate'
+  current_calibrated: boolean
+  shunt_mohm: number | null
+  sensor_address: number | null
+  error: number | null
 }
 
 export interface MotionState {

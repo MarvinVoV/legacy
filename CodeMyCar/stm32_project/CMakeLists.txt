@@ -56,11 +56,11 @@ add_compile_options(-Wall -fstack-usage -fcyclomatic-complexity -ffunction-secti
 add_compile_options($<$<COMPILE_LANGUAGE:ASM>:-x$<SEMICOLON>assembler-with-cpp>)
 
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
-    message(STATUS "Maximum optimization for speed")
-    add_compile_options(-Ofast)
+    message(STATUS "Speed optimization preserving IEEE floating-point semantics")
+    add_compile_options(-O2)
 elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "RelWithDebInfo")
-    message(STATUS "Maximum optimization for speed, debug info included")
-    add_compile_options(-Ofast -g)
+    message(STATUS "Speed optimization preserving IEEE floating-point semantics, with debug info")
+    add_compile_options(-O2 -g)
 elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "MinSizeRel")
     message(STATUS "Maximum optimization for size")
     add_compile_options(-Os)
@@ -72,6 +72,16 @@ endif ()
 include_directories(Core/Inc Drivers/STM32H7xx_HAL_Driver/Inc Drivers/STM32H7xx_HAL_Driver/Inc/Legacy Drivers/CMSIS/Device/ST/STM32H7xx/Include Drivers/CMSIS/Include Drivers/CMSIS/RTOS2/Include Middlewares/Third_Party/FreeRTOS/Source/include Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F Application/Modules/Motor/Inc Application/Modules/Servo/Inc Application/Modules/UART/Inc Application/Modules/Log/Inc Application/System/Protocol/Inc Application/Tasks/ServoTask/Inc Application/Tasks/LogTask/Inc Application/Tasks/CtrlTask/Inc Application/Tasks/MotorTask/Inc Application/Tasks/MotionTask/Inc Application/Tasks/SonarTask/Inc Application/Modules/Ultrasonic/Inc Application/Modules/Buzzer/Inc Application/Modules/IMU/Inc Application/Modules/IMU/ThirdParty Application/Services/IMU/Inc Application/Tasks/ImuTask/Inc Application/Services/Servo/Inc Application/Services/Ctrl/Inc Application/Services/Motor/Inc Application/Services/Safety/Inc Application/System/Utils/Inc Application/System/Init/Inc Application/System/Common/Inc)
 
 add_definitions(-DDEBUG -DUSE_PWR_LDO_SUPPLY -DUSE_HAL_DRIVER -DSTM32H723xx)
+
+include_directories(Application/Modules/Power/Inc Application/Services/Power/Inc
+                    Application/Tasks/PowerTask/Inc)
+include_directories(Application/Modules/LedStrip/Inc Application/Services/Lighting/Inc
+                    Application/Tasks/LightTask/Inc)
+set(CMCAR_POWER_SHUNT_MILLIOHM "0" CACHE STRING "Measured INA219 shunt in milliohms; 0=unknown")
+if (NOT CMCAR_POWER_SHUNT_MILLIOHM MATCHES "^(0|[1-9][0-9]*)$" OR
+    CMCAR_POWER_SHUNT_MILLIOHM GREATER 1000)
+    message(FATAL_ERROR "Power shunt must be an integer 0..1000 milliohms")
+endif ()
 
 file(GLOB_RECURSE SOURCES "Application/*.*" "Core/*.*" "Middlewares/*.*" "Drivers/*.*")
 
@@ -86,6 +96,8 @@ target_compile_definitions(${PROJECT_NAME}.elf PRIVATE
         CMCAR_GIT_SHA="${CMCAR_GIT_SHA}"
         CMCAR_GIT_DIRTY=${CMCAR_GIT_DIRTY}
         CMCAR_PROTOCOL_VERSION=2)
+target_compile_definitions(${PROJECT_NAME}.elf PRIVATE
+        CMCAR_POWER_SHUNT_MILLIOHM=${CMCAR_POWER_SHUNT_MILLIOHM})
 
 # 超声波整体开关：OFF 时不测距、不蜂鸣、不参与安全限速（台架/未放置时用）。
 # 用法：cmake --preset NoSonar
@@ -129,3 +141,17 @@ Building ${BIN_FILE}")
 option(CMCAR_MOTOR_PID_FINE_INTEGRATION "Experimental small-error motor PID integration" OFF)
 target_compile_definitions(${PROJECT_NAME}.elf PRIVATE
         CMCAR_MOTOR_PID_FINE_INTEGRATION=$<BOOL:${CMCAR_MOTOR_PID_FINE_INTEGRATION}>)
+
+set(CMCAR_CPU_MHZ "250" CACHE STRING "CPU MHz (250 or 500); peripheral buses remain unchanged")
+set_property(CACHE CMCAR_CPU_MHZ PROPERTY STRINGS 250 500)
+if (NOT CMCAR_CPU_MHZ MATCHES "^(250|500)$")
+    message(FATAL_ERROR "CPU clock must be 250 or 500MHz")
+endif ()
+option(CMCAR_CPU_CACHE "Enable M7 I/D cache with non-cacheable DMA MPU region" ON)
+target_compile_definitions(${PROJECT_NAME}.elf PRIVATE
+    CMCAR_CPU_MHZ=${CMCAR_CPU_MHZ}
+    CMCAR_CPU_CACHE=$<BOOL:${CMCAR_CPU_CACHE}>)
+
+option(CMCAR_IMU_ASYNC_I2C "Block ImuTask on I2C IRQ completion instead of CPU polling" ON)
+target_compile_definitions(${PROJECT_NAME}.elf PRIVATE
+    CMCAR_IMU_ASYNC_I2C=$<BOOL:${CMCAR_IMU_ASYNC_I2C}>)

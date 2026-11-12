@@ -1,0 +1,19 @@
+{
+  "branch": "codex/ina219-battery-telemetry",
+  "base_commit": "c0fe2de",
+  "shunt_mohm": 100,
+  "current_calibration": "User confirmed R100 marking; nominal conversion configured, not independently metrologically calibrated",
+  "stm32_sonar_enabled": false,
+  "artifacts": [
+    {
+      "file": "stm32_project/build/NoSonar/stm32_project.bin",
+      "bytes": 111520,
+      "sha256": "fad5f3b26497d439f187484a338947daad5343d0ae8cb3a2580f4bc4eb1650cb"
+    },
+    {
+      "file": "esp32_project/build-s3/esp32_project.bin",
+      "bytes": 1640080,
+      "sha256": "1fb36e158eb4af0ab71ffefd1c3ea413044d3255447411c73f179b2d2a067581"
+    }
+  ]
+}

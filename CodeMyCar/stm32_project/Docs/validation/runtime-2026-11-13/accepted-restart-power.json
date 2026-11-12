@@ -1,0 +1,1692 @@
+{
+  "device": "DEV_1",
+  "duration_s": 30,
+  "passed": true,
+  "initial_stop": {
+    "ok": true,
+    "stopped": true,
+    "accepted": true,
+    "confirmed": true,
+    "seq": 98
+  },
+  "summary": {
+    "mqtt_frames": 30,
+    "max_gap_s": 1.147,
+    "voltage_v_range": [
+      11.841,
+      11.841
+    ],
+    "percent_range": [
+      80,
+      80
+    ],
+    "current_calibrated": true,
+    "current_a_range": [
+      0.016,
+      0.019
+    ],
+    "shunt_mohm": 100
+  },
+  "final_stop": {
+    "ok": true,
+    "stopped": true,
+    "accepted": true,
+    "confirmed": true,
+    "seq": 99
+  },
+  "samples": [
+    {
+      "online": true,
+      "stm32_connected": true,
+      "imu_age_s": 0.0,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.32,
+        "voltage_v": 11.841,
+        "bus_voltage_v": 11.84,
+        "filtered_voltage_v": 11.841,
+        "shunt_voltage_mv": 1.81,
+        "current_a": 0.018,
+        "power_w": 0.213,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 98,
+        "age_ms": 4,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "online": true,
+      "stm32_connected": true,
+      "imu_age_s": 0.1,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.39,
+        "voltage_v": 11.841,
+        "bus_voltage_v": 11.84,
+        "filtered_voltage_v": 11.841,
+        "shunt_voltage_mv": 1.81,
+        "current_a": 0.018,
+        "power_w": 0.213,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 98,
+        "age_ms": 88,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "online": true,
+      "stm32_connected": true,
+      "imu_age_s": 0.1,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.28,
+        "voltage_v": 11.841,
+        "bus_voltage_v": 11.84,
+        "filtered_voltage_v": 11.841,
+        "shunt_voltage_mv": 1.69,
+        "current_a": 0.016,
+        "power_w": 0.189,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 98,
+        "age_ms": 682,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "online": true,
+      "stm32_connected": true,
+      "imu_age_s": 0.1,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.36,
+        "voltage_v": 11.841,
+        "bus_voltage_v": 11.84,
+        "filtered_voltage_v": 11.841,
+        "shunt_voltage_mv": 1.71,
+        "current_a": 0.017,
+        "power_w": 0.201,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 98,
+        "age_ms": 666,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "online": true,
+      "stm32_connected": true,
+      "imu_age_s": 0.1,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.35,
+        "voltage_v": 11.841,
+        "bus_voltage_v": 11.84,
+        "filtered_voltage_v": 11.841,
+        "shunt_voltage_mv": 1.67,
+        "current_a": 0.016,
+        "power_w": 0.189,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 98,
+        "age_ms": 565,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "online": true,
+      "stm32_connected": true,
+      "imu_age_s": 0.1,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.35,
+        "voltage_v": 11.841,
+        "bus_voltage_v": 11.84,
+        "filtered_voltage_v": 11.841,
+        "shunt_voltage_mv": 1.79,
+        "current_a": 0.017,
+        "power_w": 0.201,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 98,
+        "age_ms": 580,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "online": true,
+      "stm32_connected": true,
+      "imu_age_s": 0.1,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.42,
+        "voltage_v": 11.841,
+        "bus_voltage_v": 11.84,
+        "filtered_voltage_v": 11.841,
+        "shunt_voltage_mv": 1.88,
+        "current_a": 0.018,
+        "power_w": 0.213,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 98,
+        "age_ms": 632,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "online": true,
+      "stm32_connected": true,
+      "imu_age_s": 0.2,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.4,
+        "voltage_v": 11.841,
+        "bus_voltage_v": 11.84,
+        "filtered_voltage_v": 11.841,
+        "shunt_voltage_mv": 1.78,
+        "current_a": 0.017,
+        "power_w": 0.201,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 98,
+        "age_ms": 715,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "online": true,
+      "stm32_connected": true,
+      "imu_age_s": 0.1,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.49,
+        "voltage_v": 11.841,
+        "bus_voltage_v": 11.84,
+        "filtered_voltage_v": 11.841,
+        "shunt_voltage_mv": 1.67,
+        "current_a": 0.016,
+        "power_w": 0.189,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 98,
+        "age_ms": 705,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "online": true,
+      "stm32_connected": true,
+      "imu_age_s": 0.1,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.45,
+        "voltage_v": 11.841,
+        "bus_voltage_v": 11.84,
+        "filtered_voltage_v": 11.841,
+        "shunt_voltage_mv": 1.81,
+        "current_a": 0.018,
+        "power_w": 0.213,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 98,
+        "age_ms": 623,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "online": true,
+      "stm32_connected": true,
+      "imu_age_s": 0.0,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.44,
+        "voltage_v": 11.841,
+        "bus_voltage_v": 11.84,
+        "filtered_voltage_v": 11.841,
+        "shunt_voltage_mv": 1.89,
+        "current_a": 0.018,
+        "power_w": 0.213,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 98,
+        "age_ms": 750,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "online": true,
+      "stm32_connected": true,
+      "imu_age_s": 0.0,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.43,
+        "voltage_v": 11.841,
+        "bus_voltage_v": 11.84,
+        "filtered_voltage_v": 11.841,
+        "shunt_voltage_mv": 1.76,
+        "current_a": 0.017,
+        "power_w": 0.201,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 98,
+        "age_ms": 739,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "online": true,
+      "stm32_connected": true,
+      "imu_age_s": 0.0,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.4,
+        "voltage_v": 11.841,
+        "bus_voltage_v": 11.84,
+        "filtered_voltage_v": 11.841,
+        "shunt_voltage_mv": 1.68,
+        "current_a": 0.016,
+        "power_w": 0.189,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 98,
+        "age_ms": 655,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "online": true,
+      "stm32_connected": true,
+      "imu_age_s": 0.0,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.5,
+        "voltage_v": 11.841,
+        "bus_voltage_v": 11.84,
+        "filtered_voltage_v": 11.841,
+        "shunt_voltage_mv": 1.79,
+        "current_a": 0.017,
+        "power_w": 0.201,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 98,
+        "age_ms": 670,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "online": true,
+      "stm32_connected": true,
+      "imu_age_s": 0.1,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.47,
+        "voltage_v": 11.841,
+        "bus_voltage_v": 11.84,
+        "filtered_voltage_v": 11.841,
+        "shunt_voltage_mv": 1.88,
+        "current_a": 0.018,
+        "power_w": 0.213,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 98,
+        "age_ms": 793,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "online": true,
+      "stm32_connected": true,
+      "imu_age_s": 0.1,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.56,
+        "voltage_v": 11.841,
+        "bus_voltage_v": 11.84,
+        "filtered_voltage_v": 11.841,
+        "shunt_voltage_mv": 1.77,
+        "current_a": 0.017,
+        "power_w": 0.201,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 98,
+        "age_ms": 693,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "online": true,
+      "stm32_connected": true,
+      "imu_age_s": 0.0,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.44,
+        "voltage_v": 11.841,
+        "bus_voltage_v": 11.84,
+        "filtered_voltage_v": 11.841,
+        "shunt_voltage_mv": 1.68,
+        "current_a": 0.016,
+        "power_w": 0.189,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 98,
+        "age_ms": 759,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "online": true,
+      "stm32_connected": true,
+      "imu_age_s": 0.0,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.53,
+        "voltage_v": 11.841,
+        "bus_voltage_v": 11.84,
+        "filtered_voltage_v": 11.841,
+        "shunt_voltage_mv": 1.8,
+        "current_a": 0.018,
+        "power_w": 0.213,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 98,
+        "age_ms": 840,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "online": true,
+      "stm32_connected": true,
+      "imu_age_s": 0.2,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.53,
+        "voltage_v": 11.841,
+        "bus_voltage_v": 11.84,
+        "filtered_voltage_v": 11.841,
+        "shunt_voltage_mv": 1.9,
+        "current_a": 0.019,
+        "power_w": 0.224,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 98,
+        "age_ms": 818,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "online": true,
+      "stm32_connected": true,
+      "imu_age_s": 0.1,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.58,
+        "voltage_v": 11.841,
+        "bus_voltage_v": 11.84,
+        "filtered_voltage_v": 11.841,
+        "shunt_voltage_mv": 1.76,
+        "current_a": 0.017,
+        "power_w": 0.201,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 98,
+        "age_ms": 742,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "online": true,
+      "stm32_connected": true,
+      "imu_age_s": 0.1,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.59,
+        "voltage_v": 11.841,
+        "bus_voltage_v": 11.84,
+        "filtered_voltage_v": 11.841,
+        "shunt_voltage_mv": 1.68,
+        "current_a": 0.016,
+        "power_w": 0.189,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 98,
+        "age_ms": 752,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "online": true,
+      "stm32_connected": true,
+      "imu_age_s": 0.2,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.48,
+        "voltage_v": 11.841,
+        "bus_voltage_v": 11.84,
+        "filtered_voltage_v": 11.841,
+        "shunt_voltage_mv": 1.8,
+        "current_a": 0.018,
+        "power_w": 0.213,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 98,
+        "age_ms": 785,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "online": true,
+      "stm32_connected": true,
+      "imu_age_s": 0.2,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.57,
+        "voltage_v": 11.841,
+        "bus_voltage_v": 11.84,
+        "filtered_voltage_v": 11.841,
+        "shunt_voltage_mv": 1.9,
+        "current_a": 0.019,
+        "power_w": 0.224,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 98,
+        "age_ms": 870,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "online": true,
+      "stm32_connected": true,
+      "imu_age_s": 0.1,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.56,
+        "voltage_v": 11.841,
+        "bus_voltage_v": 11.84,
+        "filtered_voltage_v": 11.841,
+        "shunt_voltage_mv": 1.76,
+        "current_a": 0.017,
+        "power_w": 0.201,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 98,
+        "age_ms": 861,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "online": true,
+      "stm32_connected": true,
+      "imu_age_s": 0.1,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.64,
+        "voltage_v": 11.841,
+        "bus_voltage_v": 11.84,
+        "filtered_voltage_v": 11.841,
+        "shunt_voltage_mv": 1.68,
+        "current_a": 0.016,
+        "power_w": 0.189,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 98,
+        "age_ms": 793,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "online": true,
+      "stm32_connected": true,
+      "imu_age_s": 0.0,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.64,
+        "voltage_v": 11.841,
+        "bus_voltage_v": 11.84,
+        "filtered_voltage_v": 11.841,
+        "shunt_voltage_mv": 1.81,
+        "current_a": 0.018,
+        "power_w": 0.213,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 98,
+        "age_ms": 805,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "online": true,
+      "stm32_connected": true,
+      "imu_age_s": 0.1,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.52,
+        "voltage_v": 11.841,
+        "bus_voltage_v": 11.84,
+        "filtered_voltage_v": 11.841,
+        "shunt_voltage_mv": 1.89,
+        "current_a": 0.018,
+        "power_w": 0.213,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 98,
+        "age_ms": 834,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "online": true,
+      "stm32_connected": true,
+      "imu_age_s": 0.0,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.38,
+        "voltage_v": 11.841,
+        "bus_voltage_v": 11.84,
+        "filtered_voltage_v": 11.841,
+        "shunt_voltage_mv": 1.76,
+        "current_a": 0.017,
+        "power_w": 0.201,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 98,
+        "age_ms": 895,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "online": true,
+      "stm32_connected": true,
+      "imu_age_s": 0.0,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.35,
+        "voltage_v": 11.841,
+        "bus_voltage_v": 11.84,
+        "filtered_voltage_v": 11.841,
+        "shunt_voltage_mv": 1.7,
+        "current_a": 0.017,
+        "power_w": 0.201,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 98,
+        "age_ms": 857,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "online": true,
+      "stm32_connected": true,
+      "imu_age_s": 0.2,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.39,
+        "voltage_v": 11.841,
+        "bus_voltage_v": 11.84,
+        "filtered_voltage_v": 11.841,
+        "shunt_voltage_mv": 1.82,
+        "current_a": 0.018,
+        "power_w": 0.213,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 98,
+        "age_ms": 842,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    }
+  ],
+  "frames": [
+    {
+      "received_s": 814164.74145975,
+      "type": "battery",
+      "timestamp": 3243,
+      "data": {
+        "bus_mv": 11840,
+        "battery_mv": 11841,
+        "shunt_uv": 1810,
+        "current_ma": 18,
+        "power_mw": 213,
+        "soc_percent": 80,
+        "flags": 7,
+        "error": 0,
+        "address": 64,
+        "shunt_mohm": 100,
+        "filtered_mv": 11841
+      }
+    },
+    {
+      "received_s": 814165.865738125,
+      "type": "battery",
+      "timestamp": 4243,
+      "data": {
+        "bus_mv": 11840,
+        "battery_mv": 11841,
+        "shunt_uv": 1690,
+        "current_ma": 16,
+        "power_mw": 189,
+        "soc_percent": 80,
+        "flags": 7,
+        "error": 0,
+        "address": 64,
+        "shunt_mohm": 100,
+        "filtered_mv": 11841
+      }
+    },
+    {
+      "received_s": 814166.784994083,
+      "type": "battery",
+      "timestamp": 5243,
+      "data": {
+        "bus_mv": 11840,
+        "battery_mv": 11841,
+        "shunt_uv": 1710,
+        "current_ma": 17,
+        "power_mw": 201,
+        "soc_percent": 80,
+        "flags": 7,
+        "error": 0,
+        "address": 64,
+        "shunt_mohm": 100,
+        "filtered_mv": 11841
+      }
+    },
+    {
+      "received_s": 814167.807216125,
+      "type": "battery",
+      "timestamp": 6243,
+      "data": {
+        "bus_mv": 11840,
+        "battery_mv": 11841,
+        "shunt_uv": 1670,
+        "current_ma": 16,
+        "power_mw": 189,
+        "soc_percent": 80,
+        "flags": 7,
+        "error": 0,
+        "address": 64,
+        "shunt_mohm": 100,
+        "filtered_mv": 11841
+      }
+    },
+    {
+      "received_s": 814168.821391291,
+      "type": "battery",
+      "timestamp": 7243,
+      "data": {
+        "bus_mv": 11840,
+        "battery_mv": 11841,
+        "shunt_uv": 1790,
+        "current_ma": 17,
+        "power_mw": 201,
+        "soc_percent": 80,
+        "flags": 7,
+        "error": 0,
+        "address": 64,
+        "shunt_mohm": 100,
+        "filtered_mv": 11841
+      }
+    },
+    {
+      "received_s": 814169.758979208,
+      "type": "battery",
+      "timestamp": 8243,
+      "data": {
+        "bus_mv": 11840,
+        "battery_mv": 11841,
+        "shunt_uv": 1880,
+        "current_ma": 18,
+        "power_mw": 213,
+        "soc_percent": 80,
+        "flags": 7,
+        "error": 0,
+        "address": 64,
+        "shunt_mohm": 100,
+        "filtered_mv": 11841
+      }
+    },
+    {
+      "received_s": 814170.785494541,
+      "type": "battery",
+      "timestamp": 9243,
+      "data": {
+        "bus_mv": 11840,
+        "battery_mv": 11841,
+        "shunt_uv": 1780,
+        "current_ma": 17,
+        "power_mw": 201,
+        "soc_percent": 80,
+        "flags": 7,
+        "error": 0,
+        "address": 64,
+        "shunt_mohm": 100,
+        "filtered_mv": 11841
+      }
+    },
+    {
+      "received_s": 814171.716276541,
+      "type": "battery",
+      "timestamp": 10243,
+      "data": {
+        "bus_mv": 11840,
+        "battery_mv": 11841,
+        "shunt_uv": 1670,
+        "current_ma": 16,
+        "power_mw": 189,
+        "soc_percent": 80,
+        "flags": 7,
+        "error": 0,
+        "address": 64,
+        "shunt_mohm": 100,
+        "filtered_mv": 11841
+      }
+    },
+    {
+      "received_s": 814172.760440625,
+      "type": "battery",
+      "timestamp": 11243,
+      "data": {
+        "bus_mv": 11840,
+        "battery_mv": 11841,
+        "shunt_uv": 1810,
+        "current_ma": 18,
+        "power_mw": 213,
+        "soc_percent": 80,
+        "flags": 7,
+        "error": 0,
+        "address": 64,
+        "shunt_mohm": 100,
+        "filtered_mv": 11841
+      }
+    },
+    {
+      "received_s": 814173.781964833,
+      "type": "battery",
+      "timestamp": 12243,
+      "data": {
+        "bus_mv": 11840,
+        "battery_mv": 11841,
+        "shunt_uv": 1890,
+        "current_ma": 18,
+        "power_mw": 213,
+        "soc_percent": 80,
+        "flags": 7,
+        "error": 0,
+        "address": 64,
+        "shunt_mohm": 100,
+        "filtered_mv": 11841
+      }
+    },
+    {
+      "received_s": 814174.800260791,
+      "type": "battery",
+      "timestamp": 13243,
+      "data": {
+        "bus_mv": 11840,
+        "battery_mv": 11841,
+        "shunt_uv": 1760,
+        "current_ma": 17,
+        "power_mw": 201,
+        "soc_percent": 80,
+        "flags": 7,
+        "error": 0,
+        "address": 64,
+        "shunt_mohm": 100,
+        "filtered_mv": 11841
+      }
+    },
+    {
+      "received_s": 814175.841126708,
+      "type": "battery",
+      "timestamp": 14243,
+      "data": {
+        "bus_mv": 11840,
+        "battery_mv": 11841,
+        "shunt_uv": 1680,
+        "current_ma": 16,
+        "power_mw": 189,
+        "soc_percent": 80,
+        "flags": 7,
+        "error": 0,
+        "address": 64,
+        "shunt_mohm": 100,
+        "filtered_mv": 11841
+      }
+    },
+    {
+      "received_s": 814176.753572166,
+      "type": "battery",
+      "timestamp": 15243,
+      "data": {
+        "bus_mv": 11840,
+        "battery_mv": 11841,
+        "shunt_uv": 1790,
+        "current_ma": 17,
+        "power_mw": 201,
+        "soc_percent": 80,
+        "flags": 7,
+        "error": 0,
+        "address": 64,
+        "shunt_mohm": 100,
+        "filtered_mv": 11841
+      }
+    },
+    {
+      "received_s": 814177.794816041,
+      "type": "battery",
+      "timestamp": 16243,
+      "data": {
+        "bus_mv": 11840,
+        "battery_mv": 11841,
+        "shunt_uv": 1880,
+        "current_ma": 18,
+        "power_mw": 213,
+        "soc_percent": 80,
+        "flags": 7,
+        "error": 0,
+        "address": 64,
+        "shunt_mohm": 100,
+        "filtered_mv": 11841
+      }
+    },
+    {
+      "received_s": 814178.717418,
+      "type": "battery",
+      "timestamp": 17243,
+      "data": {
+        "bus_mv": 11840,
+        "battery_mv": 11841,
+        "shunt_uv": 1770,
+        "current_ma": 17,
+        "power_mw": 201,
+        "soc_percent": 80,
+        "flags": 7,
+        "error": 0,
+        "address": 64,
+        "shunt_mohm": 100,
+        "filtered_mv": 11841
+      }
+    },
+    {
+      "received_s": 814179.858925166,
+      "type": "battery",
+      "timestamp": 18243,
+      "data": {
+        "bus_mv": 11840,
+        "battery_mv": 11841,
+        "shunt_uv": 1680,
+        "current_ma": 16,
+        "power_mw": 189,
+        "soc_percent": 80,
+        "flags": 7,
+        "error": 0,
+        "address": 64,
+        "shunt_mohm": 100,
+        "filtered_mv": 11841
+      }
+    },
+    {
+      "received_s": 814180.776799041,
+      "type": "battery",
+      "timestamp": 19243,
+      "data": {
+        "bus_mv": 11840,
+        "battery_mv": 11841,
+        "shunt_uv": 1800,
+        "current_ma": 18,
+        "power_mw": 213,
+        "soc_percent": 80,
+        "flags": 7,
+        "error": 0,
+        "address": 64,
+        "shunt_mohm": 100,
+        "filtered_mv": 11841
+      }
+    },
+    {
+      "received_s": 814181.788944958,
+      "type": "battery",
+      "timestamp": 20243,
+      "data": {
+        "bus_mv": 11840,
+        "battery_mv": 11841,
+        "shunt_uv": 1900,
+        "current_ma": 19,
+        "power_mw": 224,
+        "soc_percent": 80,
+        "flags": 7,
+        "error": 0,
+        "address": 64,
+        "shunt_mohm": 100,
+        "filtered_mv": 11841
+      }
+    },
+    {
+      "received_s": 814182.744664333,
+      "type": "battery",
+      "timestamp": 21243,
+      "data": {
+        "bus_mv": 11840,
+        "battery_mv": 11841,
+        "shunt_uv": 1760,
+        "current_ma": 17,
+        "power_mw": 201,
+        "soc_percent": 80,
+        "flags": 7,
+        "error": 0,
+        "address": 64,
+        "shunt_mohm": 100,
+        "filtered_mv": 11841
+      }
+    },
+    {
+      "received_s": 814183.750229708,
+      "type": "battery",
+      "timestamp": 22243,
+      "data": {
+        "bus_mv": 11840,
+        "battery_mv": 11841,
+        "shunt_uv": 1680,
+        "current_ma": 16,
+        "power_mw": 189,
+        "soc_percent": 80,
+        "flags": 7,
+        "error": 0,
+        "address": 64,
+        "shunt_mohm": 100,
+        "filtered_mv": 11841
+      }
+    },
+    {
+      "received_s": 814184.8720765,
+      "type": "battery",
+      "timestamp": 23243,
+      "data": {
+        "bus_mv": 11840,
+        "battery_mv": 11841,
+        "shunt_uv": 1800,
+        "current_ma": 18,
+        "power_mw": 213,
+        "soc_percent": 80,
+        "flags": 7,
+        "error": 0,
+        "address": 64,
+        "shunt_mohm": 100,
+        "filtered_mv": 11841
+      }
+    },
+    {
+      "received_s": 814185.789580916,
+      "type": "battery",
+      "timestamp": 24243,
+      "data": {
+        "bus_mv": 11840,
+        "battery_mv": 11841,
+        "shunt_uv": 1900,
+        "current_ma": 19,
+        "power_mw": 224,
+        "soc_percent": 80,
+        "flags": 7,
+        "error": 0,
+        "address": 64,
+        "shunt_mohm": 100,
+        "filtered_mv": 11841
+      }
+    },
+    {
+      "received_s": 814186.813586291,
+      "type": "battery",
+      "timestamp": 25243,
+      "data": {
+        "bus_mv": 11840,
+        "battery_mv": 11841,
+        "shunt_uv": 1760,
+        "current_ma": 17,
+        "power_mw": 201,
+        "soc_percent": 80,
+        "flags": 7,
+        "error": 0,
+        "address": 64,
+        "shunt_mohm": 100,
+        "filtered_mv": 11841
+      }
+    },
+    {
+      "received_s": 814187.739266291,
+      "type": "battery",
+      "timestamp": 26243,
+      "data": {
+        "bus_mv": 11840,
+        "battery_mv": 11841,
+        "shunt_uv": 1680,
+        "current_ma": 16,
+        "power_mw": 189,
+        "soc_percent": 80,
+        "flags": 7,
+        "error": 0,
+        "address": 64,
+        "shunt_mohm": 100,
+        "filtered_mv": 11841
+      }
+    },
+    {
+      "received_s": 814188.754062416,
+      "type": "battery",
+      "timestamp": 27243,
+      "data": {
+        "bus_mv": 11840,
+        "battery_mv": 11841,
+        "shunt_uv": 1810,
+        "current_ma": 18,
+        "power_mw": 213,
+        "soc_percent": 80,
+        "flags": 7,
+        "error": 0,
+        "address": 64,
+        "shunt_mohm": 100,
+        "filtered_mv": 11841
+      }
+    },
+    {
+      "received_s": 814189.878367458,
+      "type": "battery",
+      "timestamp": 28244,
+      "data": {
+        "bus_mv": 11840,
+        "battery_mv": 11841,
+        "shunt_uv": 1890,
+        "current_ma": 18,
+        "power_mw": 213,
+        "soc_percent": 80,
+        "flags": 7,
+        "error": 0,
+        "address": 64,
+        "shunt_mohm": 100,
+        "filtered_mv": 11841
+      }
+    },
+    {
+      "received_s": 814191.024893083,
+      "type": "battery",
+      "timestamp": 29493,
+      "data": {
+        "bus_mv": 11840,
+        "battery_mv": 11841,
+        "shunt_uv": 1760,
+        "current_ma": 17,
+        "power_mw": 201,
+        "soc_percent": 80,
+        "flags": 7,
+        "error": 0,
+        "address": 64,
+        "shunt_mohm": 100,
+        "filtered_mv": 11841
+      }
+    },
+    {
+      "received_s": 814192.061009,
+      "type": "battery",
+      "timestamp": 30493,
+      "data": {
+        "bus_mv": 11840,
+        "battery_mv": 11841,
+        "shunt_uv": 1700,
+        "current_ma": 17,
+        "power_mw": 201,
+        "soc_percent": 80,
+        "flags": 7,
+        "error": 0,
+        "address": 64,
+        "shunt_mohm": 100,
+        "filtered_mv": 11841
+      }
+    },
+    {
+      "received_s": 814193.032396083,
+      "type": "battery",
+      "timestamp": 31493,
+      "data": {
+        "bus_mv": 11840,
+        "battery_mv": 11841,
+        "shunt_uv": 1820,
+        "current_ma": 18,
+        "power_mw": 213,
+        "soc_percent": 80,
+        "flags": 7,
+        "error": 0,
+        "address": 64,
+        "shunt_mohm": 100,
+        "filtered_mv": 11841
+      }
+    },
+    {
+      "received_s": 814194.056258541,
+      "type": "battery",
+      "timestamp": 32493,
+      "data": {
+        "bus_mv": 11840,
+        "battery_mv": 11841,
+        "shunt_uv": 1880,
+        "current_ma": 18,
+        "power_mw": 213,
+        "soc_percent": 80,
+        "flags": 7,
+        "error": 0,
+        "address": 64,
+        "shunt_mohm": 100,
+        "filtered_mv": 11841
+      }
+    }
+  ],
+  "power_logs": []
+}

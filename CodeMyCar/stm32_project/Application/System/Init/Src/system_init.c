@@ -14,6 +14,8 @@
 #include "safety_supervisor.h"
 #include "imu_task.h"
 #include "steering_lut.h"
+#include "power_task.h"
+#include "light_task.h"
 
 
 /**
@@ -310,6 +312,8 @@ int System_Initialize()
 
     // 5b. IMU（BNO085，I2C1）：初始化在 ImuTask 内部完成（默认任务栈太小）
     ImuTask_Init(&imuService);
+    PowerTask_Init(); /* Optional INA219 telemetry; independent low-priority I2C2. */
+    LightTask_Init(); /* Low-brightness LED bring-up only; no motion side effects. */
 
     // 6. 蜂鸣器（上电自检响 3 声，便于确认接线）
     Buzzer_Init();

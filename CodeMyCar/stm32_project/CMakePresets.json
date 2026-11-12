@@ -6,8 +6,9 @@
             "hidden": true,
             "generator": "Ninja",
             "binaryDir": "${sourceDir}/build/${presetName}",
-		    "toolchainFile": "${sourceDir}/cmake/gcc-arm-none-eabi.cmake",
+            "toolchainFile": "${sourceDir}/cmake/gcc-arm-none-eabi.cmake",
             "cacheVariables": {
+                "CMCAR_POWER_SHUNT_MILLIOHM": "100"
             }
         },
         {
@@ -31,6 +32,24 @@
                 "CMAKE_BUILD_TYPE": "Debug",
                 "CMCAR_SONAR_ENABLED": "OFF"
             }
+        },
+        {
+            "name": "NoSonarBaseline",
+            "inherits": "NoSonar",
+            "cacheVariables": {
+                "CMCAR_CPU_MHZ": "250",
+                "CMCAR_CPU_CACHE": "OFF",
+                "CMCAR_IMU_ASYNC_I2C": "OFF"
+            }
+        },
+        {
+            "name": "NoSonar500",
+            "inherits": "NoSonar",
+            "cacheVariables": {
+                "CMCAR_CPU_MHZ": "500",
+                "CMCAR_CPU_CACHE": "ON",
+                "CMCAR_IMU_ASYNC_I2C": "ON"
+            }
         }
     ],
     "buildPresets": [
@@ -45,6 +64,14 @@
         {
             "name": "NoSonar",
             "configurePreset": "NoSonar"
+        },
+        {
+            "name": "NoSonarBaseline",
+            "configurePreset": "NoSonarBaseline"
+        },
+        {
+            "name": "NoSonar500",
+            "configurePreset": "NoSonar500"
         }
     ]
 }

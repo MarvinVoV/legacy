@@ -94,12 +94,12 @@ static void LogTask_Execute(void* argument)
     osStatus_t   status;
 
     // 获取当前时间用于错误抑制 5s
-    const uint32_t current_ticks              = osKernelGetTickCount();
     const uint32_t error_suppression_interval = osKernelGetTickFreq() * 5;
 
 
     while (1)
     {
+        const uint32_t current_ticks = osKernelGetTickCount();
         // 从队列获取日志条目（100ms 超时）
         status = osMessageQueueGet(log_queue, &received_entry, NULL, 100);
         if (status == osOK)
@@ -110,7 +110,7 @@ static void LogTask_Execute(void* argument)
             // 通过 UART 协议帧发往 ESP32 → MQTT data/{id}/log
             if (received_entry != NULL)
             {
-                (void)UART_Send_Protocol_Log(received_entry);
+                LogManager_WriteOutputs(received_entry);
 
                 // 释放日志内存
                 vPortFree(received_entry);
@@ -139,9 +139,8 @@ static void LogTask_Execute(void* argument)
                 // 连续错误超过阈值时暂停任务
                 // TODO
                 // DEBUG_CONSOLE_OUTPUT(NULL, "[LogTask] Multiple errors (%u), suspending\n", error_count);
-                osThreadSuspend(osThreadGetId());
-                osDelay(1000); // 暂停1秒
-                osThreadResume(osThreadGetId());
+                /* Blocking delay resumes itself; self-suspend never reaches resume. */
+                osDelay(1000);
                 error_count = 0;
             }
 

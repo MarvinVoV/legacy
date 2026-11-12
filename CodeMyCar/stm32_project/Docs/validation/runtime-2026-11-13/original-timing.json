@@ -1,0 +1,121 @@
+{
+  "logs": [
+    {
+      "level": "INFO",
+      "tag": "system",
+      "message": "LED frames=11357 errors=0 ",
+      "timestamp": 527812
+    },
+    {
+      "level": "INFO",
+      "tag": "system",
+      "message": "RTOS motor_l n=2000 min=4ms max=6ms miss=0 budget=7ms ",
+      "timestamp": 530000
+    },
+    {
+      "level": "INFO",
+      "tag": "system",
+      "message": "RTOS motor_r n=2000 min=4ms max=6ms miss=0 budget=7ms ",
+      "timestamp": 530005
+    },
+    {
+      "level": "INFO",
+      "tag": "system",
+      "message": "RTOS motion n=2000 min=4ms max=6ms miss=0 budget=7ms ",
+      "timestamp": 530010
+    },
+    {
+      "level": "INFO",
+      "tag": "system",
+      "message": "RTOS servo n=500 min=19ms max=23ms miss=0 budget=25ms ",
+      "timestamp": 530136
+    },
+    {
+      "level": "INFO",
+      "tag": "system",
+      "message": "RTOS ctrl n=201 min=44ms max=54ms miss=0 budget=70ms ",
+      "timestamp": 530340
+    },
+    {
+      "level": "INFO",
+      "tag": "system",
+      "message": "LED frames=11464 errors=0 ",
+      "timestamp": 532826
+    },
+    {
+      "level": "INFO",
+      "tag": "system",
+      "message": "LED frames=11571 errors=0 ",
+      "timestamp": 537861
+    },
+    {
+      "level": "INFO",
+      "tag": "system",
+      "message": "RTOS motor_l n=2000 min=4ms max=6ms miss=0 budget=7ms ",
+      "timestamp": 540000
+    },
+    {
+      "level": "INFO",
+      "tag": "system",
+      "message": "RTOS motor_r n=2000 min=4ms max=6ms miss=0 budget=7ms ",
+      "timestamp": 540005
+    },
+    {
+      "level": "INFO",
+      "tag": "system",
+      "message": "RTOS motion n=2000 min=4ms max=6ms miss=0 budget=7ms ",
+      "timestamp": 540010
+    },
+    {
+      "level": "INFO",
+      "tag": "system",
+      "message": "RTOS servo n=500 min=20ms max=20ms miss=0 budget=25ms ",
+      "timestamp": 540136
+    },
+    {
+      "level": "INFO",
+      "tag": "system",
+      "message": "RTOS ctrl n=200 min=50ms max=54ms miss=0 budget=70ms ",
+      "timestamp": 540344
+    },
+    {
+      "level": "INFO",
+      "tag": "system",
+      "message": "LED frames=11680 errors=0 ",
+      "timestamp": 542879
+    },
+    {
+      "level": "INFO",
+      "tag": "system",
+      "message": "LED frames=11788 errors=0 ",
+      "timestamp": 547898
+    }
+  ],
+  "state": {
+    "ok": true,
+    "online": true,
+    "stm32_connected": true,
+    "motion_supported": true,
+    "motion": {
+      "state": "idle",
+      "mode": 0,
+      "fault": false,
+      "lease_expired": false,
+      "error": 0,
+      "heading_source": "encoder",
+      "seq": 11,
+      "age_ms": 825,
+      "stale": false
+    },
+    "pose": {
+      "x_cm": 0.0,
+      "y_cm": 0.0,
+      "heading_deg": 0.0,
+      "odometer_cm": 0.0
+    },
+    "velocity": {
+      "linear_cm_s": 0.0,
+      "angular_deg_s": 0.0
+    }
+  }
+}

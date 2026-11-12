@@ -3,6 +3,8 @@
 set -euo pipefail
 DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 CC="${CC:-clang}"
+bash "$DIR/tests/host/run_power.sh"
+bash "$DIR/tests/host/run_lighting.sh"
 
 echo "== motion kinematics =="
 "$CC" -std=c11 -Wall -Wextra -O2 \
@@ -203,3 +205,5 @@ echo "== heading delayed plant and damping lifecycle =="
   "$DIR/Application/Services/Ctrl/Src/heading_control.c" \
   -lm -o "${TMPDIR:-/tmp}/heading_transient_test"
 "${TMPDIR:-/tmp}/heading_transient_test"
+
+bash "$(dirname "$0")/run_runtime.sh"

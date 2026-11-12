@@ -6,6 +6,8 @@
 #include "stm32h7xx.h"
 #include "stm32h7xx_hal.h"
 #include "task_timing.h"
+#include "FreeRTOS.h"
+#include "task.h"
 
 #define SUPERVISOR_PERIOD_MS 50u
 #define TASK_STALE_TIMEOUT_MS 250u
@@ -93,7 +95,7 @@ int SafetySupervisor_Init(MotionContext* motionContext)
     const osThreadAttr_t attributes = {
         .name = "SafetySupervisor",
         .stack_size = 512u * 4u,
-        .priority = (osPriority_t)osPriorityHigh,
+        .priority = (osPriority_t)osPriorityHigh2,
     };
     s_taskHandle = osThreadNew(supervisor_task, NULL, &attributes);
     return s_taskHandle != NULL ? ERR_SUCCESS : ERR_HW_INIT_FAIL;
@@ -107,16 +109,29 @@ void SafetySupervisor_Heartbeat(TaskHealthId id)
         task_health_beat(&s_health, id, now);
         TaskTimingStats* timing = &s_timing[id];
         task_timing_record(timing, now);
-        if (task_timing_report_due(timing, now, 10000u))
-        {
+
+    }
+}
+
+
+void SafetySupervisor_ReportTiming(void)
+{
+    for (unsigned i=0u; i<TASK_HEALTH_COUNT; ++i) {
+        TaskTimingStats snapshot;
+        bool due;
+        const uint32_t now = HAL_GetTick();
+        taskENTER_CRITICAL();
+        due = task_timing_report_due(&s_timing[i], now, 10000u);
+        snapshot = s_timing[i];
+        if (due) task_timing_reset_window(&s_timing[i], now);
+        taskEXIT_CRITICAL();
+        if (due) {
             LOG_INFO(LOG_MODULE_SYSTEM,
                      "RTOS %s n=%lu min=%lums max=%lums miss=%lu budget=%lums",
-                     timing_name(id), (unsigned long)timing->samples,
-                     (unsigned long)timing->minIntervalMs,
-                     (unsigned long)timing->maxIntervalMs,
-                     (unsigned long)timing->deadlineMisses,
-                     (unsigned long)(timing->expectedPeriodMs + timing->toleranceMs));
-            task_timing_reset_window(timing, now);
+                     timing_name((TaskHealthId)i), (unsigned long)snapshot.samples,
+                     (unsigned long)snapshot.minIntervalMs, (unsigned long)snapshot.maxIntervalMs,
+                     (unsigned long)snapshot.deadlineMisses,
+                     (unsigned long)(snapshot.expectedPeriodMs+snapshot.toleranceMs));
         }
     }
 }

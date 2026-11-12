@@ -1,0 +1,19 @@
+{
+  "branch": "codex/ina219-battery-telemetry",
+  "base_commit": "c0fe2de",
+  "shunt_mohm": 0,
+  "current_calibration": "pending actual resistor identification",
+  "stm32_sonar_enabled": false,
+  "artifacts": [
+    {
+      "file": "stm32_project/build/NoSonar/stm32_project.bin",
+      "bytes": 111520,
+      "sha256": "4b8b4613f4043bcc6b855d1079ce369e89115dd1a69ee1b7d74ae20877fc1afb"
+    },
+    {
+      "file": "esp32_project/build-s3/esp32_project.bin",
+      "bytes": 1640080,
+      "sha256": "1fb36e158eb4af0ab71ffefd1c3ea413044d3255447411c73f179b2d2a067581"
+    }
+  ]
+}

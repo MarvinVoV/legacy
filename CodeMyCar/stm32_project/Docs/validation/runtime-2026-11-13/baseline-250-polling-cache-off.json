@@ -1,0 +1,4130 @@
+{
+  "passed": true,
+  "motion_exercised": false,
+  "initial_stop": {
+    "ms": 56.5,
+    "ok": true,
+    "stopped": true,
+    "accepted": true,
+    "confirmed": true,
+    "seq": 12
+  },
+  "stop_repeat": [
+    {
+      "ms": 188.9,
+      "ok": true,
+      "stopped": true,
+      "accepted": true,
+      "confirmed": true,
+      "seq": 13
+    },
+    {
+      "ms": 105.7,
+      "ok": true,
+      "stopped": true,
+      "accepted": true,
+      "confirmed": true,
+      "seq": 14
+    },
+    {
+      "ms": 95.0,
+      "ok": true,
+      "stopped": true,
+      "accepted": true,
+      "confirmed": true,
+      "seq": 15
+    },
+    {
+      "ms": 51.4,
+      "ok": true,
+      "stopped": true,
+      "accepted": true,
+      "confirmed": true,
+      "seq": 16
+    },
+    {
+      "ms": 81.6,
+      "ok": true,
+      "stopped": true,
+      "accepted": true,
+      "confirmed": true,
+      "seq": 17
+    },
+    {
+      "ms": 103.5,
+      "ok": true,
+      "stopped": true,
+      "accepted": true,
+      "confirmed": true,
+      "seq": 18
+    },
+    {
+      "ms": 108.6,
+      "ok": true,
+      "stopped": true,
+      "accepted": true,
+      "confirmed": true,
+      "seq": 19
+    },
+    {
+      "ms": 177.9,
+      "ok": true,
+      "stopped": true,
+      "accepted": true,
+      "confirmed": true,
+      "seq": 20
+    },
+    {
+      "ms": 110.0,
+      "ok": true,
+      "stopped": true,
+      "accepted": true,
+      "confirmed": true,
+      "seq": 21
+    },
+    {
+      "ms": 96.0,
+      "ok": true,
+      "stopped": true,
+      "accepted": true,
+      "confirmed": true,
+      "seq": 22
+    }
+  ],
+  "runtime": [
+    "PERF cpu_permille=875 heap=11264 min=10128 tasks=15 rx_drop=0 ",
+    "PERF cpu_permille=871 heap=11248 min=10128 tasks=15 rx_drop=0 ",
+    "PERF cpu_permille=872 heap=11408 min=10128 tasks=15 rx_drop=0 "
+  ],
+  "stacks": [
+    "STACK MotorTask_Right free_min=1736 priority=40 ",
+    "STACK MotionTask free_min=1536 priority=40 ",
+    "STACK ServoTask free_min=1924 priority=25 ",
+    "STACK PowerTask free_min=776 priority=16 ",
+    "STACK SafetySuperviso free_min=1948 priority=42 ",
+    "STACK RawDataReadTask free_min=2916 priority=33 ",
+    "STACK SonarTask free_min=1348 priority=16 ",
+    "STACK LightTask free_min=864 priority=8 ",
+    "STACK LogTask free_min=3772 priority=16 ",
+    "STACK MotionStatusTas free_min=1692 priority=32 ",
+    "STACK Tmr Svc free_min=908 priority=2 ",
+    "STACK Diagnostics free_min=2296 priority=8 ",
+    "STACK IDLE free_min=460 priority=0 ",
+    "STACK MotorTask_Right free_min=1736 priority=40 ",
+    "STACK MotionTask free_min=1536 priority=40 ",
+    "STACK LogTask free_min=3772 priority=16 ",
+    "STACK ImuTask free_min=3212 priority=24 ",
+    "STACK SafetySuperviso free_min=1948 priority=42 ",
+    "STACK SonarTask free_min=1348 priority=16 ",
+    "STACK ServoTask free_min=1924 priority=25 ",
+    "STACK RawDataReadTask free_min=2564 priority=33 ",
+    "STACK PowerTask free_min=776 priority=16 ",
+    "STACK LightTask free_min=864 priority=8 ",
+    "STACK MotorTask_Left free_min=1752 priority=40 ",
+    "STACK Tmr Svc free_min=908 priority=2 ",
+    "STACK MotionStatusTas free_min=1692 priority=32 ",
+    "STACK Diagnostics free_min=2296 priority=8 ",
+    "STACK IDLE free_min=460 priority=0 ",
+    "STACK ImuTask free_min=3212 priority=24 ",
+    "STACK LightTask free_min=832 priority=8 ",
+    "STACK MotorTask_Left free_min=1752 priority=40 ",
+    "STACK MotorTask_Right free_min=1736 priority=40 ",
+    "STACK MotionTask free_min=1536 priority=40 ",
+    "STACK RawDataReadTask free_min=2564 priority=33 ",
+    "STACK ServoTask free_min=1924 priority=25 ",
+    "STACK SafetySuperviso free_min=1948 priority=42 ",
+    "STACK SonarTask free_min=1348 priority=16 ",
+    "STACK LogTask free_min=3772 priority=16 ",
+    "STACK PowerTask free_min=776 priority=16 ",
+    "STACK MotionStatusTas free_min=1692 priority=32 ",
+    "STACK Tmr Svc free_min=908 priority=2 ",
+    "STACK Diagnostics free_min=2296 priority=8 ",
+    "STACK IDLE free_min=460 priority=0 ",
+    "STACK SafetySuperviso free_min=1948 priority=42 ",
+    "STACK MotorTask_Left free_min=1752 priority=40 ",
+    "STACK MotorTask_Right free_min=1736 priority=40 ",
+    "STACK MotionTask free_min=1536 priority=40 ",
+    "STACK SonarTask free_min=1348 priority=16 ",
+    "STACK LightTask free_min=832 priority=8 ",
+    "STACK ServoTask free_min=1924 priority=25 ",
+    "STACK RawDataReadTask free_min=2564 priority=33 ",
+    "STACK PowerTask free_min=776 priority=16 ",
+    "STACK LogTask free_min=3772 priority=16 ",
+    "STACK ImuTask free_min=3212 priority=24 ",
+    "STACK Tmr Svc free_min=908 priority=2 ",
+    "STACK MotionStatusTas free_min=1692 priority=32 "
+  ],
+  "timing": [
+    "RTOS motion n=2094 min=5ms max=5ms miss=0 budget=7ms ",
+    "RTOS motor_l n=2094 min=5ms max=5ms miss=0 budget=7ms ",
+    "RTOS motor_r n=2096 min=5ms max=5ms miss=0 budget=7ms ",
+    "RTOS ctrl n=210 min=15ms max=50ms miss=0 budget=70ms ",
+    "RTOS servo n=524 min=20ms max=20ms miss=0 budget=25ms ",
+    "RTOS motion n=2092 min=5ms max=5ms miss=0 budget=7ms ",
+    "RTOS motor_l n=2094 min=5ms max=5ms miss=0 budget=7ms ",
+    "RTOS motor_r n=2092 min=5ms max=5ms miss=0 budget=7ms ",
+    "RTOS ctrl n=210 min=50ms max=50ms miss=0 budget=70ms ",
+    "RTOS servo n=523 min=20ms max=20ms miss=0 budget=25ms ",
+    "RTOS motion n=2088 min=5ms max=5ms miss=0 budget=7ms ",
+    "RTOS motor_l n=2088 min=5ms max=5ms miss=0 budget=7ms ",
+    "RTOS motor_r n=2088 min=5ms max=5ms miss=0 budget=7ms ",
+    "RTOS ctrl n=209 min=50ms max=50ms miss=0 budget=70ms ",
+    "RTOS servo n=522 min=20ms max=20ms miss=0 budget=25ms "
+  ],
+  "led": [
+    "LED frames=1198 errors=0 ",
+    "LED frames=1307 errors=0 ",
+    "LED frames=1415 errors=0 ",
+    "LED frames=1523 errors=0 ",
+    "LED frames=1633 errors=0 ",
+    "LED frames=1742 errors=0 ",
+    "LED frames=1849 errors=0 "
+  ],
+  "final_stop": {
+    "ms": 99.1,
+    "ok": true,
+    "stopped": true,
+    "accepted": true,
+    "confirmed": true,
+    "seq": 23
+  },
+  "samples": [
+    {
+      "imu_age_s": 0.0,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.39,
+        "voltage_v": 11.849,
+        "bus_voltage_v": 11.848,
+        "filtered_voltage_v": 11.848,
+        "shunt_voltage_mv": 1.89,
+        "current_a": 0.018,
+        "power_w": 0.213,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      }
+    },
+    {
+      "imu_age_s": 0.0,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.33,
+        "voltage_v": 11.849,
+        "bus_voltage_v": 11.848,
+        "filtered_voltage_v": 11.848,
+        "shunt_voltage_mv": 1.76,
+        "current_a": 0.017,
+        "power_w": 0.201,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      }
+    },
+    {
+      "imu_age_s": 0.1,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.3,
+        "voltage_v": 11.849,
+        "bus_voltage_v": 11.848,
+        "filtered_voltage_v": 11.848,
+        "shunt_voltage_mv": 1.68,
+        "current_a": 0.016,
+        "power_w": 0.189,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      }
+    },
+    {
+      "imu_age_s": 0.1,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.21,
+        "voltage_v": 11.849,
+        "bus_voltage_v": 11.848,
+        "filtered_voltage_v": 11.849,
+        "shunt_voltage_mv": 1.81,
+        "current_a": 0.018,
+        "power_w": 0.213,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      }
+    },
+    {
+      "imu_age_s": 0.1,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.24,
+        "voltage_v": 11.849,
+        "bus_voltage_v": 11.848,
+        "filtered_voltage_v": 11.849,
+        "shunt_voltage_mv": 1.89,
+        "current_a": 0.018,
+        "power_w": 0.213,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      }
+    },
+    {
+      "imu_age_s": 0.2,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.29,
+        "voltage_v": 11.849,
+        "bus_voltage_v": 11.848,
+        "filtered_voltage_v": 11.849,
+        "shunt_voltage_mv": 1.76,
+        "current_a": 0.017,
+        "power_w": 0.201,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      }
+    },
+    {
+      "imu_age_s": 0.0,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.22,
+        "voltage_v": 11.849,
+        "bus_voltage_v": 11.848,
+        "filtered_voltage_v": 11.849,
+        "shunt_voltage_mv": 1.67,
+        "current_a": 0.016,
+        "power_w": 0.189,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      }
+    },
+    {
+      "imu_age_s": 0.1,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.27,
+        "voltage_v": 11.849,
+        "bus_voltage_v": 11.848,
+        "filtered_voltage_v": 11.849,
+        "shunt_voltage_mv": 1.81,
+        "current_a": 0.018,
+        "power_w": 0.213,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      }
+    },
+    {
+      "imu_age_s": 0.2,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.28,
+        "voltage_v": 11.849,
+        "bus_voltage_v": 11.848,
+        "filtered_voltage_v": 11.849,
+        "shunt_voltage_mv": 1.89,
+        "current_a": 0.018,
+        "power_w": 0.213,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      }
+    },
+    {
+      "imu_age_s": 0.0,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.23,
+        "voltage_v": 11.849,
+        "bus_voltage_v": 11.848,
+        "filtered_voltage_v": 11.849,
+        "shunt_voltage_mv": 1.75,
+        "current_a": 0.017,
+        "power_w": 0.201,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      }
+    },
+    {
+      "imu_age_s": 0.1,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.3,
+        "voltage_v": 11.849,
+        "bus_voltage_v": 11.848,
+        "filtered_voltage_v": 11.849,
+        "shunt_voltage_mv": 1.7,
+        "current_a": 0.017,
+        "power_w": 0.201,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      }
+    },
+    {
+      "imu_age_s": 0.2,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.17,
+        "voltage_v": 11.849,
+        "bus_voltage_v": 11.848,
+        "filtered_voltage_v": 11.849,
+        "shunt_voltage_mv": 1.81,
+        "current_a": 0.018,
+        "power_w": 0.213,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      }
+    },
+    {
+      "imu_age_s": 0.2,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.22,
+        "voltage_v": 11.849,
+        "bus_voltage_v": 11.848,
+        "filtered_voltage_v": 11.849,
+        "shunt_voltage_mv": 1.87,
+        "current_a": 0.018,
+        "power_w": 0.213,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      }
+    },
+    {
+      "imu_age_s": 0.1,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.25,
+        "voltage_v": 11.849,
+        "bus_voltage_v": 11.848,
+        "filtered_voltage_v": 11.849,
+        "shunt_voltage_mv": 1.75,
+        "current_a": 0.017,
+        "power_w": 0.201,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      }
+    },
+    {
+      "imu_age_s": 0.2,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.21,
+        "voltage_v": 11.849,
+        "bus_voltage_v": 11.848,
+        "filtered_voltage_v": 11.849,
+        "shunt_voltage_mv": 1.69,
+        "current_a": 0.016,
+        "power_w": 0.189,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      }
+    },
+    {
+      "imu_age_s": 0.1,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.08,
+        "voltage_v": 11.849,
+        "bus_voltage_v": 11.848,
+        "filtered_voltage_v": 11.849,
+        "shunt_voltage_mv": 1.81,
+        "current_a": 0.018,
+        "power_w": 0.213,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      }
+    },
+    {
+      "imu_age_s": 0.1,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 1.09,
+        "voltage_v": 11.849,
+        "bus_voltage_v": 11.848,
+        "filtered_voltage_v": 11.849,
+        "shunt_voltage_mv": 1.81,
+        "current_a": 0.018,
+        "power_w": 0.213,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      }
+    },
+    {
+      "imu_age_s": 0.0,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.97,
+        "voltage_v": 11.849,
+        "bus_voltage_v": 11.848,
+        "filtered_voltage_v": 11.849,
+        "shunt_voltage_mv": 1.85,
+        "current_a": 0.018,
+        "power_w": 0.213,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      }
+    },
+    {
+      "imu_age_s": 0.1,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.91,
+        "voltage_v": 11.849,
+        "bus_voltage_v": 11.848,
+        "filtered_voltage_v": 11.849,
+        "shunt_voltage_mv": 1.71,
+        "current_a": 0.017,
+        "power_w": 0.201,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      }
+    },
+    {
+      "imu_age_s": 0.1,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.97,
+        "voltage_v": 11.849,
+        "bus_voltage_v": 11.848,
+        "filtered_voltage_v": 11.849,
+        "shunt_voltage_mv": 1.73,
+        "current_a": 0.017,
+        "power_w": 0.201,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      }
+    },
+    {
+      "imu_age_s": 0.0,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.99,
+        "voltage_v": 11.849,
+        "bus_voltage_v": 11.848,
+        "filtered_voltage_v": 11.849,
+        "shunt_voltage_mv": 1.86,
+        "current_a": 0.018,
+        "power_w": 0.213,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      }
+    },
+    {
+      "imu_age_s": 0.1,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.91,
+        "voltage_v": 11.845,
+        "bus_voltage_v": 11.844,
+        "filtered_voltage_v": 11.848,
+        "shunt_voltage_mv": 1.83,
+        "current_a": 0.018,
+        "power_w": 0.213,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      }
+    },
+    {
+      "imu_age_s": 0.1,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.78,
+        "voltage_v": 11.849,
+        "bus_voltage_v": 11.848,
+        "filtered_voltage_v": 11.849,
+        "shunt_voltage_mv": 1.7,
+        "current_a": 0.017,
+        "power_w": 0.201,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      }
+    },
+    {
+      "imu_age_s": 0.2,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.84,
+        "voltage_v": 11.849,
+        "bus_voltage_v": 11.848,
+        "filtered_voltage_v": 11.849,
+        "shunt_voltage_mv": 1.75,
+        "current_a": 0.017,
+        "power_w": 0.201,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      }
+    },
+    {
+      "imu_age_s": 0.1,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.9,
+        "voltage_v": 11.849,
+        "bus_voltage_v": 11.848,
+        "filtered_voltage_v": 11.849,
+        "shunt_voltage_mv": 1.88,
+        "current_a": 0.018,
+        "power_w": 0.213,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      }
+    },
+    {
+      "imu_age_s": 0.0,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.85,
+        "voltage_v": 11.849,
+        "bus_voltage_v": 11.848,
+        "filtered_voltage_v": 11.849,
+        "shunt_voltage_mv": 1.81,
+        "current_a": 0.018,
+        "power_w": 0.213,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      }
+    },
+    {
+      "imu_age_s": 0.0,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.72,
+        "voltage_v": 11.849,
+        "bus_voltage_v": 11.848,
+        "filtered_voltage_v": 11.849,
+        "shunt_voltage_mv": 1.68,
+        "current_a": 0.016,
+        "power_w": 0.189,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      }
+    },
+    {
+      "imu_age_s": 0.0,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.79,
+        "voltage_v": 11.849,
+        "bus_voltage_v": 11.848,
+        "filtered_voltage_v": 11.849,
+        "shunt_voltage_mv": 1.76,
+        "current_a": 0.017,
+        "power_w": 0.201,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      }
+    },
+    {
+      "imu_age_s": 0.1,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.65,
+        "voltage_v": 11.849,
+        "bus_voltage_v": 11.848,
+        "filtered_voltage_v": 11.849,
+        "shunt_voltage_mv": 1.9,
+        "current_a": 0.019,
+        "power_w": 0.225,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      }
+    },
+    {
+      "imu_age_s": 0.1,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.72,
+        "voltage_v": 11.849,
+        "bus_voltage_v": 11.848,
+        "filtered_voltage_v": 11.849,
+        "shunt_voltage_mv": 1.8,
+        "current_a": 0.018,
+        "power_w": 0.213,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      }
+    },
+    {
+      "imu_age_s": 0.1,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.63,
+        "voltage_v": 11.849,
+        "bus_voltage_v": 11.848,
+        "filtered_voltage_v": 11.849,
+        "shunt_voltage_mv": 1.68,
+        "current_a": 0.016,
+        "power_w": 0.189,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      }
+    },
+    {
+      "imu_age_s": 0.0,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.35,
+        "voltage_v": 11.849,
+        "bus_voltage_v": 11.848,
+        "filtered_voltage_v": 11.849,
+        "shunt_voltage_mv": 1.79,
+        "current_a": 0.017,
+        "power_w": 0.201,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      }
+    },
+    {
+      "imu_age_s": 0.1,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.46,
+        "voltage_v": 11.849,
+        "bus_voltage_v": 11.848,
+        "filtered_voltage_v": 11.849,
+        "shunt_voltage_mv": 1.88,
+        "current_a": 0.018,
+        "power_w": 0.213,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      }
+    },
+    {
+      "imu_age_s": 0.1,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.36,
+        "voltage_v": 11.849,
+        "bus_voltage_v": 11.848,
+        "filtered_voltage_v": 11.849,
+        "shunt_voltage_mv": 1.76,
+        "current_a": 0.017,
+        "power_w": 0.201,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      }
+    },
+    {
+      "imu_age_s": 0.1,
+      "battery": {
+        "available": true,
+        "stale": false,
+        "age_s": 0.28,
+        "voltage_v": 11.849,
+        "bus_voltage_v": 11.848,
+        "filtered_voltage_v": 11.849,
+        "shunt_voltage_mv": 1.7,
+        "current_a": 0.017,
+        "power_w": 0.201,
+        "percent": 80,
+        "percent_method": "voltage_3s_estimate",
+        "current_calibrated": true,
+        "shunt_mohm": 100,
+        "sensor_address": 64,
+        "error": 0
+      }
+    }
+  ],
+  "cases": [],
+  "events": [
+    {
+      "at": 813103.657319916,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK MotorTask_Right free_min=1736 priority=40 ",
+        "timestamp": 52571
+      }
+    },
+    {
+      "at": 813103.716621166,
+      "topic": "ack",
+      "data": {
+        "seq": 12,
+        "ack": true,
+        "status": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813103.716853833,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK MotionTask free_min=1536 priority=40 ",
+        "timestamp": 52593
+      }
+    },
+    {
+      "at": 813103.716925708,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK ServoTask free_min=1924 priority=25 ",
+        "timestamp": 52626
+      }
+    },
+    {
+      "at": 813103.716956791,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813103.775761458,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK PowerTask free_min=776 priority=16 ",
+        "timestamp": 52631
+      }
+    },
+    {
+      "at": 813103.775793458,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK SafetySuperviso free_min=1948 priority=42 ",
+        "timestamp": 52658
+      }
+    },
+    {
+      "at": 813103.7758795,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK RawDataReadTask free_min=2916 priority=33 ",
+        "timestamp": 52680
+      }
+    },
+    {
+      "at": 813103.819875041,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK SonarTask free_min=1348 priority=16 ",
+        "timestamp": 52704
+      }
+    },
+    {
+      "at": 813103.825139166,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813103.825176208,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK LightTask free_min=864 priority=8 ",
+        "timestamp": 52730
+      }
+    },
+    {
+      "at": 813103.825212875,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK LogTask free_min=3772 priority=16 ",
+        "timestamp": 52763
+      }
+    },
+    {
+      "at": 813103.877599125,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK MotionStatusTas free_min=1692 priority=32 ",
+        "timestamp": 52784
+      }
+    },
+    {
+      "at": 813103.883941791,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK Tmr Svc free_min=908 priority=2 ",
+        "timestamp": 52823
+      }
+    },
+    {
+      "at": 813104.037517791,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813104.042671291,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813104.178629875,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813104.293030875,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813104.386126875,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813104.392480375,
+      "topic": "sensor",
+      "data": {
+        "type": "battery",
+        "timestamp": 53316,
+        "data": {
+          "bus_mv": 11848,
+          "battery_mv": 11849,
+          "shunt_uv": 1760,
+          "current_ma": 17,
+          "power_mw": 201,
+          "soc_percent": 80,
+          "flags": 7,
+          "error": 0,
+          "address": 64,
+          "shunt_mohm": 100,
+          "filtered_mv": 11848
+        }
+      }
+    },
+    {
+      "at": 813104.392667708,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813104.517671416,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813104.685569708,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813104.774198458,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813105.116943416,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813105.431386291,
+      "topic": "sensor",
+      "data": {
+        "type": "battery",
+        "timestamp": 54338,
+        "data": {
+          "bus_mv": 11848,
+          "battery_mv": 11849,
+          "shunt_uv": 1680,
+          "current_ma": 16,
+          "power_mw": 189,
+          "soc_percent": 80,
+          "flags": 7,
+          "error": 0,
+          "address": 64,
+          "shunt_mohm": 100,
+          "filtered_mv": 11848
+        }
+      }
+    },
+    {
+      "at": 813106.05197875,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813106.534010208,
+      "topic": "sensor",
+      "data": {
+        "type": "battery",
+        "timestamp": 55356,
+        "data": {
+          "bus_mv": 11848,
+          "battery_mv": 11849,
+          "shunt_uv": 1810,
+          "current_ma": 18,
+          "power_mw": 213,
+          "soc_percent": 80,
+          "flags": 7,
+          "error": 0,
+          "address": 64,
+          "shunt_mohm": 100,
+          "filtered_mv": 11849
+        }
+      }
+    },
+    {
+      "at": 813106.870183875,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "LED frames=1198 errors=0 ",
+        "timestamp": 55749
+      }
+    },
+    {
+      "at": 813107.003110333,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813107.510022291,
+      "topic": "sensor",
+      "data": {
+        "type": "battery",
+        "timestamp": 56361,
+        "data": {
+          "bus_mv": 11848,
+          "battery_mv": 11849,
+          "shunt_uv": 1890,
+          "current_ma": 18,
+          "power_mw": 213,
+          "soc_percent": 80,
+          "flags": 7,
+          "error": 0,
+          "address": 64,
+          "shunt_mohm": 100,
+          "filtered_mv": 11849
+        }
+      }
+    },
+    {
+      "at": 813108.279856083,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813108.478360625,
+      "topic": "sensor",
+      "data": {
+        "type": "battery",
+        "timestamp": 57385,
+        "data": {
+          "bus_mv": 11848,
+          "battery_mv": 11849,
+          "shunt_uv": 1760,
+          "current_ma": 17,
+          "power_mw": 201,
+          "soc_percent": 80,
+          "flags": 7,
+          "error": 0,
+          "address": 64,
+          "shunt_mohm": 100,
+          "filtered_mv": 11849
+        }
+      }
+    },
+    {
+      "at": 813109.083354708,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813109.55589525,
+      "topic": "sensor",
+      "data": {
+        "type": "battery",
+        "timestamp": 58412,
+        "data": {
+          "bus_mv": 11848,
+          "battery_mv": 11849,
+          "shunt_uv": 1670,
+          "current_ma": 16,
+          "power_mw": 189,
+          "soc_percent": 80,
+          "flags": 7,
+          "error": 0,
+          "address": 64,
+          "shunt_mohm": 100,
+          "filtered_mv": 11849
+        }
+      }
+    },
+    {
+      "at": 813110.033270875,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813110.508255791,
+      "topic": "sensor",
+      "data": {
+        "type": "battery",
+        "timestamp": 59439,
+        "data": {
+          "bus_mv": 11848,
+          "battery_mv": 11849,
+          "shunt_uv": 1810,
+          "current_ma": 18,
+          "power_mw": 213,
+          "soc_percent": 80,
+          "flags": 7,
+          "error": 0,
+          "address": 64,
+          "shunt_mohm": 100,
+          "filtered_mv": 11849
+        }
+      }
+    },
+    {
+      "at": 813111.020753208,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813111.506879125,
+      "topic": "sensor",
+      "data": {
+        "type": "battery",
+        "timestamp": 60458,
+        "data": {
+          "bus_mv": 11848,
+          "battery_mv": 11849,
+          "shunt_uv": 1890,
+          "current_ma": 18,
+          "power_mw": 213,
+          "soc_percent": 80,
+          "flags": 7,
+          "error": 0,
+          "address": 64,
+          "shunt_mohm": 100,
+          "filtered_mv": 11849
+        }
+      }
+    },
+    {
+      "at": 813111.82083,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "LED frames=1307 errors=0 ",
+        "timestamp": 60757
+      }
+    },
+    {
+      "at": 813112.077551208,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813112.574502583,
+      "topic": "sensor",
+      "data": {
+        "type": "battery",
+        "timestamp": 61468,
+        "data": {
+          "bus_mv": 11848,
+          "battery_mv": 11849,
+          "shunt_uv": 1750,
+          "current_ma": 17,
+          "power_mw": 201,
+          "soc_percent": 80,
+          "flags": 7,
+          "error": 0,
+          "address": 64,
+          "shunt_mohm": 100,
+          "filtered_mv": 11849
+        }
+      }
+    },
+    {
+      "at": 813113.098979083,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813113.51203925,
+      "topic": "sensor",
+      "data": {
+        "type": "battery",
+        "timestamp": 62500,
+        "data": {
+          "bus_mv": 11848,
+          "battery_mv": 11849,
+          "shunt_uv": 1700,
+          "current_ma": 17,
+          "power_mw": 201,
+          "soc_percent": 80,
+          "flags": 7,
+          "error": 0,
+          "address": 64,
+          "shunt_mohm": 100,
+          "filtered_mv": 11849
+        }
+      }
+    },
+    {
+      "at": 813113.912022791,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "RTOS motion n=2094 min=5ms max=5ms miss=0 budget=7ms ",
+        "timestamp": 62863
+      }
+    },
+    {
+      "at": 813113.920031583,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "RTOS motor_l n=2094 min=5ms max=5ms miss=0 budget=7ms ",
+        "timestamp": 62874
+      }
+    },
+    {
+      "at": 813113.920306,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "RTOS motor_r n=2096 min=5ms max=5ms miss=0 budget=7ms ",
+        "timestamp": 62903
+      }
+    },
+    {
+      "at": 813113.963187666,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "RTOS ctrl n=210 min=15ms max=50ms miss=0 budget=70ms ",
+        "timestamp": 62914
+      }
+    },
+    {
+      "at": 813113.963346791,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "RTOS servo n=524 min=20ms max=20ms miss=0 budget=25ms ",
+        "timestamp": 62933
+      }
+    },
+    {
+      "at": 813114.004854791,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "PERF cpu_permille=875 heap=11264 min=10128 tasks=15 rx_drop=0 ",
+        "timestamp": 62944
+      }
+    },
+    {
+      "at": 813114.009695708,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK Diagnostics free_min=2296 priority=8 ",
+        "timestamp": 62955
+      }
+    },
+    {
+      "at": 813114.009830375,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK IDLE free_min=460 priority=0 ",
+        "timestamp": 62984
+      }
+    },
+    {
+      "at": 813114.009917416,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813114.061822958,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK MotorTask_Right free_min=1736 priority=40 ",
+        "timestamp": 63015
+      }
+    },
+    {
+      "at": 813114.066571416,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK MotionTask free_min=1536 priority=40 ",
+        "timestamp": 63040
+      }
+    },
+    {
+      "at": 813114.133925125,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK LogTask free_min=3772 priority=16 ",
+        "timestamp": 63072
+      }
+    },
+    {
+      "at": 813114.14092025,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK ImuTask free_min=3212 priority=24 ",
+        "timestamp": 63093
+      }
+    },
+    {
+      "at": 813114.141009458,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK SafetySuperviso free_min=1948 priority=42 ",
+        "timestamp": 63112
+      }
+    },
+    {
+      "at": 813114.186140208,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK SonarTask free_min=1348 priority=16 ",
+        "timestamp": 63132
+      }
+    },
+    {
+      "at": 813114.186264416,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK ServoTask free_min=1924 priority=25 ",
+        "timestamp": 63152
+      }
+    },
+    {
+      "at": 813114.237768875,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK RawDataReadTask free_min=2564 priority=33 ",
+        "timestamp": 63182
+      }
+    },
+    {
+      "at": 813114.250749375,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK PowerTask free_min=776 priority=16 ",
+        "timestamp": 63202
+      }
+    },
+    {
+      "at": 813114.250916791,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK LightTask free_min=864 priority=8 ",
+        "timestamp": 63228
+      }
+    },
+    {
+      "at": 813114.346198166,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK MotorTask_Left free_min=1752 priority=40 ",
+        "timestamp": 63234
+      }
+    },
+    {
+      "at": 813114.346423333,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK Tmr Svc free_min=908 priority=2 ",
+        "timestamp": 63257
+      }
+    },
+    {
+      "at": 813114.346795375,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK MotionStatusTas free_min=1692 priority=32 ",
+        "timestamp": 63279
+      }
+    },
+    {
+      "at": 813114.6513765,
+      "topic": "sensor",
+      "data": {
+        "type": "battery",
+        "timestamp": 63516,
+        "data": {
+          "bus_mv": 11848,
+          "battery_mv": 11849,
+          "shunt_uv": 1810,
+          "current_ma": 18,
+          "power_mw": 213,
+          "soc_percent": 80,
+          "flags": 7,
+          "error": 0,
+          "address": 64,
+          "shunt_mohm": 100,
+          "filtered_mv": 11849
+        }
+      }
+    },
+    {
+      "at": 813115.200664541,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813115.605427208,
+      "topic": "sensor",
+      "data": {
+        "type": "battery",
+        "timestamp": 64544,
+        "data": {
+          "bus_mv": 11848,
+          "battery_mv": 11849,
+          "shunt_uv": 1870,
+          "current_ma": 18,
+          "power_mw": 213,
+          "soc_percent": 80,
+          "flags": 7,
+          "error": 0,
+          "address": 64,
+          "shunt_mohm": 100,
+          "filtered_mv": 11849
+        }
+      }
+    },
+    {
+      "at": 813116.147749833,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813116.590035833,
+      "topic": "sensor",
+      "data": {
+        "type": "battery",
+        "timestamp": 65549,
+        "data": {
+          "bus_mv": 11848,
+          "battery_mv": 11849,
+          "shunt_uv": 1750,
+          "current_ma": 17,
+          "power_mw": 201,
+          "soc_percent": 80,
+          "flags": 7,
+          "error": 0,
+          "address": 64,
+          "shunt_mohm": 100,
+          "filtered_mv": 11849
+        }
+      }
+    },
+    {
+      "at": 813116.923333208,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "LED frames=1415 errors=0 ",
+        "timestamp": 65788
+      }
+    },
+    {
+      "at": 813117.107737,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813117.641385416,
+      "topic": "sensor",
+      "data": {
+        "type": "battery",
+        "timestamp": 66571,
+        "data": {
+          "bus_mv": 11848,
+          "battery_mv": 11849,
+          "shunt_uv": 1690,
+          "current_ma": 16,
+          "power_mw": 189,
+          "soc_percent": 80,
+          "flags": 7,
+          "error": 0,
+          "address": 64,
+          "shunt_mohm": 100,
+          "filtered_mv": 11849
+        }
+      }
+    },
+    {
+      "at": 813118.028182583,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813118.776310916,
+      "topic": "sensor",
+      "data": {
+        "type": "battery",
+        "timestamp": 67588,
+        "data": {
+          "bus_mv": 11848,
+          "battery_mv": 11849,
+          "shunt_uv": 1810,
+          "current_ma": 18,
+          "power_mw": 213,
+          "soc_percent": 80,
+          "flags": 7,
+          "error": 0,
+          "address": 64,
+          "shunt_mohm": 100,
+          "filtered_mv": 11849
+        }
+      }
+    },
+    {
+      "at": 813119.100083708,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813119.906906708,
+      "topic": "sensor",
+      "data": {
+        "type": "battery",
+        "timestamp": 68837,
+        "data": {
+          "bus_mv": 11848,
+          "battery_mv": 11849,
+          "shunt_uv": 1850,
+          "current_ma": 18,
+          "power_mw": 213,
+          "soc_percent": 80,
+          "flags": 7,
+          "error": 0,
+          "address": 64,
+          "shunt_mohm": 100,
+          "filtered_mv": 11849
+        }
+      }
+    },
+    {
+      "at": 813120.226776583,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813120.980701416,
+      "topic": "sensor",
+      "data": {
+        "type": "battery",
+        "timestamp": 69847,
+        "data": {
+          "bus_mv": 11848,
+          "battery_mv": 11849,
+          "shunt_uv": 1710,
+          "current_ma": 17,
+          "power_mw": 201,
+          "soc_percent": 80,
+          "flags": 7,
+          "error": 0,
+          "address": 64,
+          "shunt_mohm": 100,
+          "filtered_mv": 11849
+        }
+      }
+    },
+    {
+      "at": 813121.159616416,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813121.923840333,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "LED frames=1523 errors=0 ",
+        "timestamp": 70796
+      }
+    },
+    {
+      "at": 813121.924007083,
+      "topic": "sensor",
+      "data": {
+        "type": "battery",
+        "timestamp": 70869,
+        "data": {
+          "bus_mv": 11848,
+          "battery_mv": 11849,
+          "shunt_uv": 1730,
+          "current_ma": 17,
+          "power_mw": 201,
+          "soc_percent": 80,
+          "flags": 7,
+          "error": 0,
+          "address": 64,
+          "shunt_mohm": 100,
+          "filtered_mv": 11849
+        }
+      }
+    },
+    {
+      "at": 813122.111401,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813122.916189458,
+      "topic": "sensor",
+      "data": {
+        "type": "battery",
+        "timestamp": 71921,
+        "data": {
+          "bus_mv": 11848,
+          "battery_mv": 11849,
+          "shunt_uv": 1860,
+          "current_ma": 18,
+          "power_mw": 213,
+          "soc_percent": 80,
+          "flags": 7,
+          "error": 0,
+          "address": 64,
+          "shunt_mohm": 100,
+          "filtered_mv": 11849
+        }
+      }
+    },
+    {
+      "at": 813123.056998541,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813124.000881916,
+      "topic": "sensor",
+      "data": {
+        "type": "battery",
+        "timestamp": 72933,
+        "data": {
+          "bus_mv": 11844,
+          "battery_mv": 11845,
+          "shunt_uv": 1830,
+          "current_ma": 18,
+          "power_mw": 213,
+          "soc_percent": 80,
+          "flags": 7,
+          "error": 0,
+          "address": 64,
+          "shunt_mohm": 100,
+          "filtered_mv": 11848
+        }
+      }
+    },
+    {
+      "at": 813124.001573625,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813124.36198925,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "RTOS motion n=2092 min=5ms max=5ms miss=0 budget=7ms ",
+        "timestamp": 73323
+      }
+    },
+    {
+      "at": 813124.368092333,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "RTOS motor_l n=2094 min=5ms max=5ms miss=0 budget=7ms ",
+        "timestamp": 73343
+      }
+    },
+    {
+      "at": 813124.368282416,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "RTOS motor_r n=2092 min=5ms max=5ms miss=0 budget=7ms ",
+        "timestamp": 73354
+      }
+    },
+    {
+      "at": 813124.435329166,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "RTOS ctrl n=210 min=50ms max=50ms miss=0 budget=70ms ",
+        "timestamp": 73373
+      }
+    },
+    {
+      "at": 813124.442133583,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "RTOS servo n=523 min=20ms max=20ms miss=0 budget=25ms ",
+        "timestamp": 73384
+      }
+    },
+    {
+      "at": 813124.477237583,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "PERF cpu_permille=871 heap=11248 min=10128 tasks=15 rx_drop=0 ",
+        "timestamp": 73403
+      }
+    },
+    {
+      "at": 813124.482696875,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK Diagnostics free_min=2296 priority=8 ",
+        "timestamp": 73424
+      }
+    },
+    {
+      "at": 813124.482844083,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK IDLE free_min=460 priority=0 ",
+        "timestamp": 73462
+      }
+    },
+    {
+      "at": 813124.482924166,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK ImuTask free_min=3212 priority=24 ",
+        "timestamp": 73474
+      }
+    },
+    {
+      "at": 813124.483011708,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK LightTask free_min=832 priority=8 ",
+        "timestamp": 73492
+      }
+    },
+    {
+      "at": 813124.550967958,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK MotorTask_Left free_min=1752 priority=40 ",
+        "timestamp": 73500
+      }
+    },
+    {
+      "at": 813124.662179208,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK MotorTask_Right free_min=1736 priority=40 ",
+        "timestamp": 73525
+      }
+    },
+    {
+      "at": 813124.66837225,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK MotionTask free_min=1536 priority=40 ",
+        "timestamp": 73531
+      }
+    },
+    {
+      "at": 813124.668507291,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK RawDataReadTask free_min=2564 priority=33 ",
+        "timestamp": 73565
+      }
+    },
+    {
+      "at": 813124.668593041,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK ServoTask free_min=1924 priority=25 ",
+        "timestamp": 73584
+      }
+    },
+    {
+      "at": 813124.668663541,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK SafetySuperviso free_min=1948 priority=42 ",
+        "timestamp": 73604
+      }
+    },
+    {
+      "at": 813124.734948291,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK SonarTask free_min=1348 priority=16 ",
+        "timestamp": 73635
+      }
+    },
+    {
+      "at": 813124.735130541,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK LogTask free_min=3772 priority=16 ",
+        "timestamp": 73661
+      }
+    },
+    {
+      "at": 813124.735216833,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK PowerTask free_min=776 priority=16 ",
+        "timestamp": 73690
+      }
+    },
+    {
+      "at": 813124.818922791,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK MotionStatusTas free_min=1692 priority=32 ",
+        "timestamp": 73714
+      }
+    },
+    {
+      "at": 813124.819095375,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK Tmr Svc free_min=908 priority=2 ",
+        "timestamp": 73727
+      }
+    },
+    {
+      "at": 813125.139434375,
+      "topic": "sensor",
+      "data": {
+        "type": "battery",
+        "timestamp": 73944,
+        "data": {
+          "bus_mv": 11848,
+          "battery_mv": 11849,
+          "shunt_uv": 1700,
+          "current_ma": 17,
+          "power_mw": 201,
+          "soc_percent": 80,
+          "flags": 7,
+          "error": 0,
+          "address": 64,
+          "shunt_mohm": 100,
+          "filtered_mv": 11849
+        }
+      }
+    },
+    {
+      "at": 813125.151608208,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813126.087748875,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813126.088062333,
+      "topic": "sensor",
+      "data": {
+        "type": "battery",
+        "timestamp": 74998,
+        "data": {
+          "bus_mv": 11848,
+          "battery_mv": 11849,
+          "shunt_uv": 1750,
+          "current_ma": 17,
+          "power_mw": 201,
+          "soc_percent": 80,
+          "flags": 7,
+          "error": 0,
+          "address": 64,
+          "shunt_mohm": 100,
+          "filtered_mv": 11849
+        }
+      }
+    },
+    {
+      "at": 813127.038915083,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "LED frames=1633 errors=0 ",
+        "timestamp": 75818
+      }
+    },
+    {
+      "at": 813127.039364416,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813127.043647208,
+      "topic": "sensor",
+      "data": {
+        "type": "battery",
+        "timestamp": 76021,
+        "data": {
+          "bus_mv": 11848,
+          "battery_mv": 11849,
+          "shunt_uv": 1880,
+          "current_ma": 18,
+          "power_mw": 213,
+          "soc_percent": 80,
+          "flags": 7,
+          "error": 0,
+          "address": 64,
+          "shunt_mohm": 100,
+          "filtered_mv": 11849
+        }
+      }
+    },
+    {
+      "at": 813128.09279875,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813128.098076166,
+      "topic": "sensor",
+      "data": {
+        "type": "battery",
+        "timestamp": 77074,
+        "data": {
+          "bus_mv": 11848,
+          "battery_mv": 11849,
+          "shunt_uv": 1810,
+          "current_ma": 18,
+          "power_mw": 213,
+          "soc_percent": 80,
+          "flags": 7,
+          "error": 0,
+          "address": 64,
+          "shunt_mohm": 100,
+          "filtered_mv": 11849
+        }
+      }
+    },
+    {
+      "at": 813129.078299916,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813129.241143833,
+      "topic": "sensor",
+      "data": {
+        "type": "battery",
+        "timestamp": 78095,
+        "data": {
+          "bus_mv": 11848,
+          "battery_mv": 11849,
+          "shunt_uv": 1680,
+          "current_ma": 16,
+          "power_mw": 189,
+          "soc_percent": 80,
+          "flags": 7,
+          "error": 0,
+          "address": 64,
+          "shunt_mohm": 100,
+          "filtered_mv": 11849
+        }
+      }
+    },
+    {
+      "at": 813130.0620085,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813130.176120375,
+      "topic": "sensor",
+      "data": {
+        "type": "battery",
+        "timestamp": 79123,
+        "data": {
+          "bus_mv": 11848,
+          "battery_mv": 11849,
+          "shunt_uv": 1760,
+          "current_ma": 17,
+          "power_mw": 201,
+          "soc_percent": 80,
+          "flags": 7,
+          "error": 0,
+          "address": 64,
+          "shunt_mohm": 100,
+          "filtered_mv": 11849
+        }
+      }
+    },
+    {
+      "at": 813130.998850875,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813131.327679541,
+      "topic": "sensor",
+      "data": {
+        "type": "battery",
+        "timestamp": 80169,
+        "data": {
+          "bus_mv": 11848,
+          "battery_mv": 11849,
+          "shunt_uv": 1900,
+          "current_ma": 19,
+          "power_mw": 225,
+          "soc_percent": 80,
+          "flags": 7,
+          "error": 0,
+          "address": 64,
+          "shunt_mohm": 100,
+          "filtered_mv": 11849
+        }
+      }
+    },
+    {
+      "at": 813132.04594025,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "LED frames=1742 errors=0 ",
+        "timestamp": 80827
+      }
+    },
+    {
+      "at": 813132.046403,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813132.264281541,
+      "topic": "sensor",
+      "data": {
+        "type": "battery",
+        "timestamp": 81180,
+        "data": {
+          "bus_mv": 11848,
+          "battery_mv": 11849,
+          "shunt_uv": 1800,
+          "current_ma": 18,
+          "power_mw": 213,
+          "soc_percent": 80,
+          "flags": 7,
+          "error": 0,
+          "address": 64,
+          "shunt_mohm": 100,
+          "filtered_mv": 11849
+        }
+      }
+    },
+    {
+      "at": 813133.184180833,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813133.36952075,
+      "topic": "sensor",
+      "data": {
+        "type": "battery",
+        "timestamp": 82208,
+        "data": {
+          "bus_mv": 11848,
+          "battery_mv": 11849,
+          "shunt_uv": 1680,
+          "current_ma": 16,
+          "power_mw": 189,
+          "soc_percent": 80,
+          "flags": 7,
+          "error": 0,
+          "address": 64,
+          "shunt_mohm": 100,
+          "filtered_mv": 11849
+        }
+      }
+    },
+    {
+      "at": 813134.035383958,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813134.653055041,
+      "topic": "sensor",
+      "data": {
+        "type": "battery",
+        "timestamp": 83443,
+        "data": {
+          "bus_mv": 11848,
+          "battery_mv": 11849,
+          "shunt_uv": 1790,
+          "current_ma": 17,
+          "power_mw": 201,
+          "soc_percent": 80,
+          "flags": 7,
+          "error": 0,
+          "address": 64,
+          "shunt_mohm": 100,
+          "filtered_mv": 11849
+        }
+      }
+    },
+    {
+      "at": 813134.813366291,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "RTOS motion n=2088 min=5ms max=5ms miss=0 budget=7ms ",
+        "timestamp": 83761
+      }
+    },
+    {
+      "at": 813134.834614625,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "RTOS motor_l n=2088 min=5ms max=5ms miss=0 budget=7ms ",
+        "timestamp": 83784
+      }
+    },
+    {
+      "at": 813134.834775541,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "RTOS motor_r n=2088 min=5ms max=5ms miss=0 budget=7ms ",
+        "timestamp": 83794
+      }
+    },
+    {
+      "at": 813134.854395875,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "RTOS ctrl n=209 min=50ms max=50ms miss=0 budget=70ms ",
+        "timestamp": 83816
+      }
+    },
+    {
+      "at": 813134.859648208,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "RTOS servo n=522 min=20ms max=20ms miss=0 budget=25ms ",
+        "timestamp": 83826
+      }
+    },
+    {
+      "at": 813134.924605041,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "PERF cpu_permille=872 heap=11408 min=10128 tasks=15 rx_drop=0 ",
+        "timestamp": 83846
+      }
+    },
+    {
+      "at": 813134.929607041,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK Diagnostics free_min=2296 priority=8 ",
+        "timestamp": 83857
+      }
+    },
+    {
+      "at": 813134.929736416,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK IDLE free_min=460 priority=0 ",
+        "timestamp": 83887
+      }
+    },
+    {
+      "at": 813134.929783375,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK SafetySuperviso free_min=1948 priority=42 ",
+        "timestamp": 83917
+      }
+    },
+    {
+      "at": 813134.978350625,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK MotorTask_Left free_min=1752 priority=40 ",
+        "timestamp": 83936
+      }
+    },
+    {
+      "at": 813134.984797583,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK MotorTask_Right free_min=1736 priority=40 ",
+        "timestamp": 83964
+      }
+    },
+    {
+      "at": 813135.078848958,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813135.084837833,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK MotionTask free_min=1536 priority=40 ",
+        "timestamp": 83993
+      }
+    },
+    {
+      "at": 813135.0848795,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK SonarTask free_min=1348 priority=16 ",
+        "timestamp": 84022
+      }
+    },
+    {
+      "at": 813135.08491325,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK LightTask free_min=832 priority=8 ",
+        "timestamp": 84041
+      }
+    },
+    {
+      "at": 813135.115813791,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK ServoTask free_min=1924 priority=25 ",
+        "timestamp": 84068
+      }
+    },
+    {
+      "at": 813135.178407416,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK RawDataReadTask free_min=2564 priority=33 ",
+        "timestamp": 84103
+      }
+    },
+    {
+      "at": 813135.187687958,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK PowerTask free_min=776 priority=16 ",
+        "timestamp": 84124
+      }
+    },
+    {
+      "at": 813135.187750833,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK LogTask free_min=3772 priority=16 ",
+        "timestamp": 84143
+      }
+    },
+    {
+      "at": 813135.26867675,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK ImuTask free_min=3212 priority=24 ",
+        "timestamp": 84168
+      }
+    },
+    {
+      "at": 813135.26871625,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK Tmr Svc free_min=908 priority=2 ",
+        "timestamp": 84200
+      }
+    },
+    {
+      "at": 813135.268737,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "STACK MotionStatusTas free_min=1692 priority=32 ",
+        "timestamp": 84231
+      }
+    },
+    {
+      "at": 813135.562345583,
+      "topic": "sensor",
+      "data": {
+        "type": "battery",
+        "timestamp": 84500,
+        "data": {
+          "bus_mv": 11848,
+          "battery_mv": 11849,
+          "shunt_uv": 1880,
+          "current_ma": 18,
+          "power_mw": 213,
+          "soc_percent": 80,
+          "flags": 7,
+          "error": 0,
+          "address": 64,
+          "shunt_mohm": 100,
+          "filtered_mv": 11849
+        }
+      }
+    },
+    {
+      "at": 813136.077972166,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813136.691130333,
+      "topic": "sensor",
+      "data": {
+        "type": "battery",
+        "timestamp": 85517,
+        "data": {
+          "bus_mv": 11848,
+          "battery_mv": 11849,
+          "shunt_uv": 1760,
+          "current_ma": 17,
+          "power_mw": 201,
+          "soc_percent": 80,
+          "flags": 7,
+          "error": 0,
+          "address": 64,
+          "shunt_mohm": 100,
+          "filtered_mv": 11849
+        }
+      }
+    },
+    {
+      "at": 813136.980855708,
+      "topic": "log",
+      "data": {
+        "level": "INFO",
+        "tag": "system",
+        "message": "LED frames=1849 errors=0 ",
+        "timestamp": 85835
+      }
+    },
+    {
+      "at": 813137.173758708,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813137.780623041,
+      "topic": "sensor",
+      "data": {
+        "type": "battery",
+        "timestamp": 86573,
+        "data": {
+          "bus_mv": 11848,
+          "battery_mv": 11849,
+          "shunt_uv": 1700,
+          "current_ma": 17,
+          "power_mw": 201,
+          "soc_percent": 80,
+          "flags": 7,
+          "error": 0,
+          "address": 64,
+          "shunt_mohm": 100,
+          "filtered_mv": 11849
+        }
+      }
+    },
+    {
+      "at": 813138.003449666,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813138.60294175,
+      "topic": "sensor",
+      "data": {
+        "type": "battery",
+        "timestamp": 87575,
+        "data": {
+          "bus_mv": 11848,
+          "battery_mv": 11849,
+          "shunt_uv": 1830,
+          "current_ma": 18,
+          "power_mw": 213,
+          "soc_percent": 80,
+          "flags": 7,
+          "error": 0,
+          "address": 64,
+          "shunt_mohm": 100,
+          "filtered_mv": 11849
+        }
+      }
+    },
+    {
+      "at": 813139.13506075,
+      "topic": "motion",
+      "data": {
+        "seq": 12,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813139.252240666,
+      "topic": "ack",
+      "data": {
+        "seq": 13,
+        "ack": true,
+        "status": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813139.252399708,
+      "topic": "motion",
+      "data": {
+        "seq": 13,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813139.253925,
+      "topic": "motion",
+      "data": {
+        "seq": 13,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813139.358198541,
+      "topic": "ack",
+      "data": {
+        "seq": 14,
+        "ack": true,
+        "status": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813139.359182083,
+      "topic": "motion",
+      "data": {
+        "seq": 14,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813139.454379,
+      "topic": "ack",
+      "data": {
+        "seq": 15,
+        "ack": true,
+        "status": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813139.454529291,
+      "topic": "motion",
+      "data": {
+        "seq": 14,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813139.454581875,
+      "topic": "motion",
+      "data": {
+        "seq": 15,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813139.507334291,
+      "topic": "ack",
+      "data": {
+        "seq": 16,
+        "ack": true,
+        "status": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813139.507424291,
+      "topic": "motion",
+      "data": {
+        "seq": 15,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813139.507450833,
+      "topic": "motion",
+      "data": {
+        "seq": 16,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813139.589536583,
+      "topic": "ack",
+      "data": {
+        "seq": 17,
+        "ack": true,
+        "status": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813139.589579458,
+      "topic": "motion",
+      "data": {
+        "seq": 17,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813139.589706833,
+      "topic": "motion",
+      "data": {
+        "seq": 17,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813139.681449083,
+      "topic": "sensor",
+      "data": {
+        "type": "battery",
+        "timestamp": 88606,
+        "data": {
+          "bus_mv": 11848,
+          "battery_mv": 11849,
+          "shunt_uv": 1860,
+          "current_ma": 18,
+          "power_mw": 213,
+          "soc_percent": 80,
+          "flags": 7,
+          "error": 0,
+          "address": 64,
+          "shunt_mohm": 100,
+          "filtered_mv": 11848
+        }
+      }
+    },
+    {
+      "at": 813139.691054375,
+      "topic": "ack",
+      "data": {
+        "seq": 18,
+        "ack": true,
+        "status": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813139.691161125,
+      "topic": "motion",
+      "data": {
+        "seq": 18,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813139.69138225,
+      "topic": "motion",
+      "data": {
+        "seq": 18,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813139.800350541,
+      "topic": "ack",
+      "data": {
+        "seq": 19,
+        "ack": true,
+        "status": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813139.800464583,
+      "topic": "motion",
+      "data": {
+        "seq": 19,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813139.800613458,
+      "topic": "motion",
+      "data": {
+        "seq": 19,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813139.977998875,
+      "topic": "ack",
+      "data": {
+        "seq": 20,
+        "ack": true,
+        "status": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813139.97811375,
+      "topic": "motion",
+      "data": {
+        "seq": 20,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813139.978312541,
+      "topic": "motion",
+      "data": {
+        "seq": 20,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813140.08582,
+      "topic": "ack",
+      "data": {
+        "seq": 21,
+        "ack": true,
+        "status": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813140.08615375,
+      "topic": "motion",
+      "data": {
+        "seq": 20,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813140.086462166,
+      "topic": "motion",
+      "data": {
+        "seq": 21,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813140.176780375,
+      "topic": "motion",
+      "data": {
+        "seq": 21,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813140.183938958,
+      "topic": "ack",
+      "data": {
+        "seq": 22,
+        "ack": true,
+        "status": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813140.18413725,
+      "topic": "motion",
+      "data": {
+        "seq": 22,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813140.277149375,
+      "topic": "motion",
+      "data": {
+        "seq": 22,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813140.283047875,
+      "topic": "ack",
+      "data": {
+        "seq": 23,
+        "ack": true,
+        "status": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813140.283344583,
+      "topic": "motion",
+      "data": {
+        "seq": 23,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    },
+    {
+      "at": 813140.283493083,
+      "topic": "motion",
+      "data": {
+        "seq": 23,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 0,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3729169571
+      }
+    }
+  ],
+  "evidence_filter": {
+    "raw_event_count": 1504,
+    "kept_event_count": 196,
+    "note": "Retained runtime/control/battery evidence; unrelated high-rate IMU samples omitted. Original complete capture in /tmp during this session."
+  }
+}

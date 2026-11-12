@@ -1,0 +1,53 @@
+{
+  "date": "2026-11-13",
+  "branch": "codex/ina219-battery-telemetry",
+  "base_commit": "c0fe2de",
+  "cpu_mhz": 250,
+  "hclk_mhz": 250,
+  "pclk_mhz": 125,
+  "timer_mhz": 250,
+  "i_cache": true,
+  "d_cache": true,
+  "dma_region": {
+    "base": "0x24000000",
+    "bytes": 8192,
+    "used_bytes": 3392,
+    "mpu_rasr": "0x130c0019",
+    "cacheable": false
+  },
+  "freertos_heap_bytes": 49152,
+  "msp_reservation_bytes": 4096,
+  "runtime_counter_hz": 1000000,
+  "build": "NoSonar (Debug/-Og, ultrasonic safety disabled: sensors not installed)",
+  "scope": "STM32 only; ESP32 protocol, motor PID and steering calibration unchanged",
+  "limitations": [
+    "No ground-tracking precision regression",
+    "No independent electrical/current/thermal measurement",
+    "No true power-off/on test",
+    "No real I2C unplug/stuck-line injection; timeout/recovery checked with host HAL mocks",
+    "Task busy ratio includes interrupt time attributed to the interrupted task; not a full ISR-inclusive CPU profiler"
+  ],
+  "bin_sha256": "7303325cb46e17e7a5338144097dfde81cb06fb5ca214ce54d0b2176037160cd",
+  "elf_sha256": "cc7685f055706fa1543633280d3cdaaee4402e01ae08cec2b72d7ee41a2d2cde",
+  "validation": [
+    "original-timing.json",
+    "baseline-250-polling-cache-off.json",
+    "candidate-500-polling-cache-on.json",
+    "candidate-500-async-cache-on.json",
+    "rejected-motion-synchronous-logging.json",
+    "accepted-motion.json",
+    "registers.json",
+    "accepted-soak-120s.json",
+    "accepted-restart-power.json",
+    "registers-after-restart.json"
+  ],
+  "soak_passed": true,
+  "build_checks": {
+    "NoSonar": "passed / flashed",
+    "Release": "passed / build only / sonar enabled",
+    "NoSonar500": "passed / final source build only; earlier 500MHz candidate HIL evidence retained"
+  },
+  "flashed_elf_sha256": "2e582556bbfdb687100a6d2a2f89189116b3105a1dd25d3e96c9cf270035d900",
+  "rebuild_note": "Header comment cleanup changed ELF debug line metadata only; rebuilt BIN SHA matches the tested/deployed image exactly.",
+  "restart_passed": true
+}
