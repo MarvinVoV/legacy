@@ -96,7 +96,10 @@ LangGraph/Deep Agents were prototyped with `ChatDeepSeek`; first token stayed ar
 - `AgentSession.stream()` yields model text chunks only.
 - `ConversationRunner` sentence-splits and sends `speak` frames as before.
 - Assistant playback drain still gates `assistant_done`; local playback is currently disabled (`CMCAR_VOICE_LOCAL_PLAYBACK=false`) so the development computer stays silent.
-- The S3 still receives PCM; its output is a no-op until the new codec/amp is implemented.
+- The S3 receives PCM on the ES7210/ES8311 board and plays it (see
+  `esp32_project/docs/voice/Audio-Board-Bring-Up-And-AEC-2026-11-12.md`);
+  the local wake ack runs on-device and the server skips its ready tone
+  when the start frame sets `local_ack`.
 
 ## 10. Configuration
 

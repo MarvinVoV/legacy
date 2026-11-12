@@ -8,6 +8,7 @@
 #include "freertos/event_groups.h"
 #include "sdkconfig.h"
 #include "task_priorities.h"
+#include "voice_output.h"
 
 struct voice_transport {
     esp_websocket_client_handle_t client;
@@ -18,6 +19,7 @@ struct voice_transport {
     size_t speak_remaining;
     int speak_rate;
     int speak_channels;
+    volatile bool speaking;
     uint8_t speak_carry;
     bool speak_have_carry;
     int16_t speak_pcm[1025];
@@ -49,6 +51,7 @@ static void feed_binary(voice_transport_t *t, const char *data, size_t len)
         t->speak_have_carry = true;
     }
     t->speak_remaining -= len;
+    if (t->speak_remaining == 0) t->speaking = false;
     if (frames > 0 && t->audio_cb != NULL) {
         esp_err_t err = t->audio_cb(t->speak_pcm, frames, t->speak_rate,
                                     t->speak_channels, t->audio_arg);
@@ -79,6 +82,7 @@ static void on_event(void *arg, esp_event_base_t base, int32_t id, void *payload
                 t->speak_channels = t->message.speak_channels;
                 t->speak_have_carry = false;
                 t->speak_carry = 0;
+                t->speaking = true;
             }
         } else if (data->op_code == 2 ||
                    (data->op_code == 0 && t->speak_remaining > 0)) {
@@ -120,7 +124,11 @@ esp_err_t voice_transport_open(voice_transport_t **out, bool continuous, bool on
     esp_websocket_client_config_t cfg = {
         .uri = CONFIG_CMCAR_VOICE_WS_URL,
         .disable_auto_reconnect = true,
-        .network_timeout_ms = 5000,
+        /* TTS playback applies TCP backpressure by blocking this task inside
+         * the audio callback. A long sentence can legitimately hold the task
+         * for many seconds; the old 5 s timeout tore the socket down in the
+         * middle of a reply. */
+        .network_timeout_ms = 60000,
         .buffer_size = 2048,
 #if CONFIG_IDF_TARGET_ESP32S3
         .task_stack = 6144,
@@ -147,7 +155,10 @@ esp_err_t voice_transport_open(voice_transport_t **out, bool continuous, bool on
         cJSON_AddStringToObject(start, "mode",
             mode == VOICE_SESSION_CONVERSATION ? "conversation" : "command") &&
         cJSON_AddBoolToObject(start, "continuous", continuous) &&
-        cJSON_AddBoolToObject(start, "one_shot", one_shot);
+        cJSON_AddBoolToObject(start, "one_shot", one_shot) &&
+        /* The device already played its local "我在"; the server must not add
+         * a second ready cue on top of it. */
+        cJSON_AddBoolToObject(start, "local_ack", voice_output_enabled());
     char *text = complete ? cJSON_PrintUnformatted(start) : NULL;
     cJSON_Delete(start);
     bool sent = text && send_text(t, text, 1000);
@@ -177,8 +188,13 @@ esp_err_t voice_transport_send_pcm(voice_transport_t *t, const int16_t *pcm, siz
 {
     if (!pcm || samples == 0 || samples > 320) return ESP_ERR_INVALID_ARG;
     int bytes = (int)(samples * sizeof(*pcm));
-    int sent = esp_websocket_client_send_bin(t->client, (const char *)pcm, bytes, pdMS_TO_TICKS(500));
+    int sent = esp_websocket_client_send_bin(t->client, (const char *)pcm, bytes, pdMS_TO_TICKS(2000));
     return sent == bytes ? ESP_OK : ESP_FAIL;
+}
+
+bool voice_transport_is_speaking(const voice_transport_t *t)
+{
+    return t != NULL && t->speaking;
 }
 
 esp_err_t voice_transport_finish(voice_transport_t *t, unsigned timeout_ms)

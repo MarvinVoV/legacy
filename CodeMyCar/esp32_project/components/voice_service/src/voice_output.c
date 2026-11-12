@@ -1,8 +1,9 @@
 /* Bounded playback queue between the WebSocket task and the board codec.
  *
- * The network task never waits for I2S; a full queue drops the remainder of
- * one TTS phrase and reports an error instead of stalling audio capture or
- * the session supervisor. */
+ * The network task never touches I2S directly. When the queue is full it
+ * waits for a frame to drain (bounded, 500 ms) so TCP backpressure paces a
+ * long TTS phrase instead of truncating it. A permanently stalled output task
+ * still turns into a bounded error rather than an unbounded session stall. */
 
 #include "voice_output.h"
 
@@ -85,6 +86,13 @@ fail:
 
 bool voice_output_enabled(void) { return s_enabled; }
 
+bool voice_output_active(void)
+{
+    if (!s_enabled) return false;
+    return atomic_load(&s_writing) ||
+           (s_queue != NULL && uxQueueMessagesWaiting(s_queue) > 0);
+}
+
 esp_err_t voice_output_write(const int16_t *pcm, size_t frames,
                              int sample_rate, int channels)
 {
@@ -99,8 +107,11 @@ esp_err_t voice_output_write(const int16_t *pcm, size_t frames,
             .sample_rate = sample_rate,
         };
         memcpy(frame.pcm, pcm, frame.frames * sizeof(int16_t));
-        if (xQueueSend(s_queue, &frame, pdMS_TO_TICKS(20)) != pdTRUE) {
-            ESP_LOGW(TAG, "playback queue full; dropping TTS tail");
+        /* Backpressure, not loss: the WebSocket task may wait while the codec
+         * drains one frame. 20 ms was too tight for a whole phrase and made
+         * the local wake ack fail on its 17th chunk. */
+        if (xQueueSend(s_queue, &frame, pdMS_TO_TICKS(500)) != pdTRUE) {
+            ESP_LOGW(TAG, "playback queue stalled; dropping TTS tail");
             return ESP_ERR_TIMEOUT;
         }
         pcm += frame.frames;

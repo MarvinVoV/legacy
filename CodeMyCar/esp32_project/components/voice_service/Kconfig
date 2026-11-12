@@ -26,11 +26,12 @@ menu "Voice Control"
 
     config CMCAR_VOICE_CODEC_BOARD
         bool "Use board-specific audio codec (new hardware)"
+        default y if IDF_TARGET_ESP32S3
         default n
         help
             关闭时使用现有 ICS43434 I2S 麦克风（输入 only）。
-            新麦克风/功放板到货后，在 voice_codec_board.c 实现
-            voice_codec_board_init() 并打开此选项；不要提前假定接线。
+            S3 目标板默认启用 ES7210/ES8311/NS4150B；旧麦克风方案在 C6 上
+            保持默认关闭。打开后使用 voice_codec_board.c 的实现。
 
     config CMCAR_VOICE_I2S_BCLK
         int "Microphone I2S BCLK GPIO"
@@ -53,6 +54,77 @@ menu "Voice Control"
     config CMCAR_VOICE_I2S_RIGHT_CHANNEL
         bool "Read right I2S slot (otherwise left)"
         default n
+
+    config CMCAR_VOICE_BOARD_I2C_SDA
+        int "Board codec I2C SDA GPIO"
+        depends on CMCAR_VOICE_CODEC_BOARD
+        default 8
+        range 0 48
+
+    config CMCAR_VOICE_BOARD_I2C_SCL
+        int "Board codec I2C SCL GPIO"
+        depends on CMCAR_VOICE_CODEC_BOARD
+        default 9
+        range 0 48
+
+    config CMCAR_VOICE_BOARD_I2S_MCK
+        int "Board codec I2S MCLK GPIO"
+        depends on CMCAR_VOICE_CODEC_BOARD
+        default 15
+        range 0 48
+
+    config CMCAR_VOICE_BOARD_I2S_BCLK
+        int "Board codec I2S BCLK GPIO"
+        depends on CMCAR_VOICE_CODEC_BOARD
+        default 16
+        range 0 48
+
+    config CMCAR_VOICE_BOARD_I2S_WS
+        int "Board codec I2S WS GPIO"
+        depends on CMCAR_VOICE_CODEC_BOARD
+        default 17
+        range 0 48
+
+    config CMCAR_VOICE_BOARD_I2S_DOUT
+        int "Board codec I2S DOUT GPIO (to board DI)"
+        depends on CMCAR_VOICE_CODEC_BOARD
+        default 18
+        range 0 48
+
+    config CMCAR_VOICE_BOARD_I2S_DIN
+        int "Board codec I2S DIN GPIO (from board DO)"
+        depends on CMCAR_VOICE_CODEC_BOARD
+        default 21
+        range 0 48
+
+    config CMCAR_VOICE_BOARD_PA_GPIO
+        int "NS4150B EN GPIO (-1 = hardwired on)"
+        depends on CMCAR_VOICE_CODEC_BOARD
+        default -1
+        range -1 48
+        help
+            功放使能脚。当前板子 EN 常接 3.3V 时保持 -1；改接 GPIO 后填
+            该 GPIO，初始化完成才拉高，关机/复位前拉低，避免爆音。
+
+    config CMCAR_VOICE_BOARD_VOLUME
+        int "Default playback volume (0-100)"
+        depends on CMCAR_VOICE_CODEC_BOARD
+        default 60
+        range 0 100
+
+    config CMCAR_VOICE_BOARD_INPUT_GAIN_DB
+        int "ES7210 input gain (dB)"
+        depends on CMCAR_VOICE_CODEC_BOARD
+        default 37
+        range 0 48
+
+    config CMCAR_VOICE_BOARD_MIC_CHANNEL
+        int "ES7210 TDM channel used as the mono pipeline input"
+        depends on CMCAR_VOICE_CODEC_BOARD
+        default 0
+        range 0 3
+        help
+            实测 ch0/ch2 为两个麦克风，ch1 为 AEC 参考，ch3 为空。
 
     config CMCAR_VOICE_ENABLED
         bool "Enable voice WebSocket upload"

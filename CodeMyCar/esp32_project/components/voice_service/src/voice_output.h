@@ -15,4 +15,6 @@ bool voice_output_enabled(void);
 esp_err_t voice_output_write(const int16_t *pcm, size_t frames,
                              int sample_rate, int channels);
 esp_err_t voice_output_wait_drained(unsigned timeout_ms);
+/* True while PCM is queued or being written to the codec. */
+bool voice_output_active(void);
 void voice_output_destroy(void);

@@ -522,3 +522,40 @@ def test_conversation_mode_streams_llm_reply_without_new_wake(client, tmp_path):
         assert end["reason"] == "idle"
     assert tts.texts
     assert local.played
+
+
+def test_local_ack_suppresses_server_ready_tone(client, tmp_path):
+    """A device that already said "我在" must not get a second prompt tone."""
+    tts = FakeTts()
+    local = FakeLocalPlayer()
+    client.app.state.voice_service = make_service(
+        tmp_path, FakeAsr("你好"), tts=tts, local_player=local
+    )
+
+    class FakeConversationLlm:
+        async def stream_chat(self, messages, *, tools=None, cancel=None):
+            yield LlmDone(content="", tool_calls=())
+
+    client.app.state.voice_llm = FakeConversationLlm()
+    client.app.state.voice_conversation_config = ConversationConfig(
+        idle_s=1.0, turn_end_ms=200
+    )
+
+    with client.websocket_connect("/api/v1/voice/stream") as ws:
+        ws.send_text(start_frame(mode="conversation", local_ack=True))
+        ready = ws.receive_json()
+        assert ready["type"] == "ready"
+        ws.send_text('{"type":"end"}')
+        end = ws.receive_json()
+        assert end["type"] == "end"
+    assert local.played == []
+    assert local.beeps == 0
+
+
+def test_ws_rejects_non_boolean_local_ack(client, tmp_path):
+    client.app.state.voice_service = make_service(tmp_path, FakeAsr("你好"))
+    with client.websocket_connect("/api/v1/voice/stream") as ws:
+        ws.send_text(start_frame(local_ack="yes"))
+        error = ws.receive_json()
+        assert error["type"] == "error"
+        assert "local_ack" in error["message"]

@@ -46,6 +46,8 @@ def _parse_start(meta: Any) -> tuple[str | None, str | None, str | None]:
         return None, None, "one_shot must be boolean"
     if not isinstance(meta.get("barge_in", False), bool):
         return None, None, "barge_in must be boolean"
+    if not isinstance(meta.get("local_ack", False), bool):
+        return None, None, "local_ack must be boolean"
     mode = meta.get("mode", "command")
     if mode not in ("command", "conversation"):
         return None, None, "invalid mode"
@@ -61,6 +63,7 @@ async def _run_conversation(
     session,
     sink: WebSocketEventSink,
     settings,
+    local_ack: bool = False,
 ) -> None:
     """Own one long-conversation socket; command mode never enters this path."""
     llm = getattr(ws.app.state, "voice_llm", None)
@@ -89,8 +92,10 @@ async def _run_conversation(
             logger.exception("Agent session failed; using legacy conversation path")
     runner.start()
     # Conversation has no wake-word prompt otherwise; the cue tells the user
-    # when to speak. It is a prompt, not TTS feedback, so it must not gate ASR.
-    service.play_ready_tone()
+    # when to speak. A device that already played its local "我在" must not get
+    # a second prompt, and the cue never gates ASR.
+    if not local_ack:
+        service.play_ready_tone()
     max_bytes = int(
         settings.voice_conversation_max_s * service.config.sample_rate * 2
     )
@@ -251,14 +256,17 @@ async def voice_stream(ws: WebSocket) -> None:
 
     sink = WebSocketEventSink(ws)
     if mode == "conversation":
-        await _run_conversation(ws, service, session, sink, settings)
+        await _run_conversation(
+            ws, service, session, sink, settings,
+            local_ack=bool(meta.get("local_ack", False)),
+        )
         return
 
     # The ready tone is an intentional one-shot cue; it may be captured by the
     # live microphone, so it is only played for one_shot sessions.
     one_shot = meta.get("one_shot", False)
     runner = VoiceSessionRunner(service, session, sink, one_shot=one_shot)
-    if one_shot:
+    if one_shot and not meta.get("local_ack", False):
         service.play_ready_tone()
 
     max_bytes = int(service.config.max_session_s * service.config.sample_rate * 2)

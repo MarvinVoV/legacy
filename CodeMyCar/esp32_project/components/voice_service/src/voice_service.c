@@ -6,6 +6,7 @@
 #include "voice_output.h"
 #include "voice_state.h"
 #include "voice_transport.h"
+#include "voice_wake_ack.h"
 #include <stdatomic.h>
 #include "driver/uart.h"
 #include "esp_heap_caps.h"
@@ -51,8 +52,30 @@ static esp_err_t on_server_audio(const int16_t *pcm, size_t frames,
     return voice_output_write(pcm, frames, sample_rate, channels);
 }
 
+/* "我在" is played locally before any network operation so a wake still gets
+ * a response when WiFi or pyserver is down. The tail is flushed afterwards:
+ * the microphone hears the prompt and must not stream it as a user turn. */
+static void play_local_ack(void)
+{
+    uint32_t duration_ms = 0;
+    TickType_t started = xTaskGetTickCount();
+    if (voice_wake_ack_play(&duration_ms) != ESP_OK) return;
+    esp_err_t drained = voice_output_wait_drained(3000);
+    if (drained != ESP_OK) {
+        ESP_LOGW(TAG, "wake ack did not drain: %s", esp_err_to_name(drained));
+    }
+    /* wait_drained only proves the queue reached the DMA, not that the speaker
+     * finished. Hold off the microphone for the rest of the prompt. */
+    uint32_t elapsed = (uint32_t)((xTaskGetTickCount() - started) * portTICK_PERIOD_MS);
+    if (elapsed < duration_ms + 50) {
+        vTaskDelay(pdMS_TO_TICKS(duration_ms + 50 - elapsed));
+    }
+    voice_audio_flush();
+}
+
 static esp_err_t run_session(void)
 {
+    play_local_ack();
     if (!set_state(VOICE_CONNECTING)) return ESP_ERR_INVALID_STATE;
     if (!wifi_service_is_connected()) return ESP_ERR_INVALID_STATE;
     const bool continuous = CONFIG_CMCAR_VOICE_CONTINUOUS || CONFIG_CMCAR_VOICE_WAKE_ENABLED;
@@ -146,6 +169,7 @@ static void perform_session(void)
 #if CONFIG_CMCAR_VOICE_MODE_CONVERSATION
 static esp_err_t run_conversation(void)
 {
+    play_local_ack();
     if (!set_state(VOICE_CONNECTING)) return ESP_ERR_INVALID_STATE;
     if (!wifi_service_is_connected()) return ESP_ERR_INVALID_STATE;
     voice_transport_t *transport = NULL;
@@ -162,6 +186,7 @@ static esp_err_t run_conversation(void)
     voice_sequence_t sequence = {0};
     voice_frame_t frame;
     TickType_t last_audio = xTaskGetTickCount();
+    bool dropping_echo = false;
     while (true) {
         uint32_t events = voice_transport_events(transport);
         /* A clean server end can race the socket close; end wins. */
@@ -183,6 +208,21 @@ static esp_err_t run_conversation(void)
             result = ESP_ERR_INVALID_STATE;
             voice_transport_abort(transport);
             break;
+        }
+        /* Half-duplex: the microphone hears the speaker. Never upload that
+         * echo as user speech, and never let mic uploads contend with the
+         * socket while TTS is being played. */
+        if (voice_transport_is_speaking(transport) || voice_output_active()) {
+            if (!dropping_echo) {
+                dropping_echo = true;
+                ESP_LOGI(TAG, "assistant speaking; microphone frames dropped");
+            }
+            continue;
+        }
+        if (dropping_echo) {
+            dropping_echo = false;
+            voice_audio_flush();
+            ESP_LOGI(TAG, "assistant done; microphone streaming resumed");
         }
         result = voice_transport_send_pcm(transport, frame.pcm, frame.frames);
         if (result != ESP_OK) {
