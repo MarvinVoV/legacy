@@ -151,6 +151,10 @@ class VoiceSession:
     def segments(self) -> int:
         return self._index
 
+    @property
+    def in_speech(self) -> bool:
+        return self._vad.in_speech
+
     def discard(self) -> None:
         self._vad.discard()
 

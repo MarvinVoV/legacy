@@ -176,11 +176,24 @@ menu "Voice Control"
             运行时在串口输入 s + 回车，录一段音频并上传 pyserver。
 
     config CMCAR_VOICE_WAKE_ENABLED
-        bool "Local nihaoxiaozhi wake, one utterance per wake"
+        bool "Local wake word detection"
         default y
         help
             Detect locally; no audio upload before wake. Use the board profile
             to select one compatible model. Missing model fails closed.
+
+    config CMCAR_VOICE_S3_WAKE_MODEL
+        string "S3 WakeNet model keyword"
+        depends on IDF_TARGET_ESP32S3
+        default "xiaoyaxiaoya"
+        help
+            Must match an installed WakeNet model selected in ESP Speech
+            Recognition. This selects a pretrained model, not arbitrary text.
+
+    config CMCAR_VOICE_S3_WAKE_LABEL
+        string "S3 wake phrase for diagnostics"
+        depends on IDF_TARGET_ESP32S3
+        default "小鸭小鸭"
 
     config CMCAR_VOICE_WAKE_THRESHOLD
         int "WakeNet detection threshold (milli, 0 = model default)"

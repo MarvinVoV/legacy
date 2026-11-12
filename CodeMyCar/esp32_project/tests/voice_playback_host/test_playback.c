@@ -74,11 +74,11 @@ static void *ws_arg;
 static bool enable_barge=true;
 static char last_sent[2048];
 static void text_event(const char *text) {
- esp_websocket_event_data_t e={.data_ptr=text,.data_len=(int)strlen(text),.op_code=1,.payload_len=(int)strlen(text)};
+ esp_websocket_event_data_t e={.data_ptr=text,.data_len=(int)strlen(text),.op_code=1,.payload_len=(int)strlen(text),.fin=true};
  ws_callback(ws_arg,NULL,WEBSOCKET_EVENT_DATA,&e);
 }
 static void binary_event(const char *data,int n) {
- esp_websocket_event_data_t e={.data_ptr=data,.data_len=n,.op_code=2,.payload_len=n};
+ esp_websocket_event_data_t e={.data_ptr=data,.data_len=n,.op_code=2,.payload_len=n,.fin=true};
  ws_callback(ws_arg,NULL,WEBSOCKET_EVENT_DATA,&e);
 }
 esp_websocket_client_handle_t esp_websocket_client_init(const esp_websocket_client_config_t *c) {(void)c;return (void*)1;}

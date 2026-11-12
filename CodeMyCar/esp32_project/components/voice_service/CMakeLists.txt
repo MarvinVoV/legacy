@@ -6,6 +6,7 @@ set(voice_sources
     "src/voice_codec_board.c"
     "src/voice_output.c"
     "src/voice_dtd.c"
+    "src/voice_preroll.c"
     "src/voice_transport.c"
     "src/voice_protocol.c"
     "src/voice_state.c"

@@ -6,7 +6,7 @@ The command pipeline is intentionally untouched. This module owns:
 
 The device gates playback echo and negotiates completion/cancellation ACKs.
 This owner joins every turn task before cancellation and listening resume;
-same-utterance full-duplex interruption audio is not yet implemented.
+negotiated interruption pre-roll preserves the user's triggering utterance.
 """
 
 from __future__ import annotations
@@ -24,6 +24,7 @@ from typing import Any, Protocol
 
 from app.services.audio_metrics import measure_pcm16
 from app.services.llm import LlmClient, LlmDone, LlmTextDelta
+from app.services.voice_diagnostics import InterruptionCapture
 from app.services.voice_intent import VoiceIntent
 from app.services.voice_service import VoiceService, VoiceSession
 
@@ -73,6 +74,9 @@ class ConversationConfig:
     # fallback for boards without a reference channel.
     barge_in_device_events: bool = True
     playback_ack: bool = False
+    barge_audio: bool = False
+    barge_buffer_ms: int = 4000
+    barge_tail_timeout_s: float = 5.0
     playback_timeout_s: float = 60.0
     settle_timeout_s: float = 4.0
     system_prompt: str = SYSTEM_PROMPT
@@ -98,6 +102,22 @@ def _pcm_rms(pcm: bytes) -> float:
 
 def normalize_text(text: str) -> str:
     return text.strip().strip("。！？，,.!?；;：: \t\r\n")
+
+
+def strip_stop_prefix(text: str) -> str:
+    """Keep a new request attached to a stop, without substring false stops."""
+    candidate = text.casefold().removeprefix("请")
+    for phrase in sorted(STOP_TALKING_PHRASES, key=len, reverse=True):
+        if not candidate.startswith(phrase):
+            continue
+        suffix = candidate[len(phrase):]
+        if not suffix:
+            return ""
+        cleaned = suffix.lstrip("。！？，,.!?；;：: \t\r\n")
+        if cleaned != suffix or cleaned.startswith(("换", "请", "讲", "我想", "帮我", "继续", "重新", "给我")):
+            # Return original casing for English names in the new question.
+            return text[len(text) - len(cleaned):]
+    return text
 
 
 class SentenceChunker:
@@ -340,6 +360,14 @@ class ConversationRunner:
         self._post_stop = False
         self._post_silence_ms = 0
         self._barge_cooldown_until = 0.0
+        self._barge_audio = bytearray()
+        self._barge_started = 0.0
+        self._last_interrupted_turn: int | None = None
+        self._diagnostic_capture: InterruptionCapture | None = None
+        self._barge_input_open = False
+        self._input_changed = asyncio.Event()
+        self._continuations: list[bytes] = []
+        self._continuation_bytes = 0
 
     def start(self) -> None:
         self._worker = asyncio.create_task(self._work(), name="voice-conversation-worker")
@@ -359,6 +387,20 @@ class ConversationRunner:
 
     def feed(self, pcm: bytes) -> None:
         if self.ended.is_set():
+            return
+        if self._diagnostic_capture is not None:
+            self._diagnostic_capture.feed(pcm, self.state)
+        self._consume_pcm(pcm)
+
+    def _consume_pcm(self, pcm: bytes) -> None:
+        if self._barging and self.config.barge_audio:
+            # The receive owner keeps consuming while cancellation waits for
+            # stop_ack. Bound this temporary audio and account it only once,
+            # when replaying through VAD after the old worker has joined.
+            if len(self._barge_audio) + len(pcm) > self.config.barge_buffer_ms * 32:
+                self.request_end("barge_audio_overflow")
+                return
+            self._barge_audio.extend(pcm)
             return
         if self._post_stop:
             # The words that triggered the stop are not a new question. Drop
@@ -380,6 +422,15 @@ class ConversationRunner:
                 self.request_end("settle_timeout")
             return
         if self.state != "listening":
+            if self.state == "thinking" and self._barge_input_open:
+                # A comma/pause can close the stop phrase before cloud ASR
+                # returns. Retain the rest of THIS interrupting user turn;
+                # do not queue a new turn or advance its response ID yet.
+                for segment in self.session.feed(pcm):
+                    if not self._retain_continuation(segment.pcm):
+                        return
+                self._input_changed.set()
+                return
             # Never transcribe the assistant's own audio; with barge-in the
             # raw level still decides whether the user is interrupting.
             self.session.feed(pcm, detect=False)
@@ -391,6 +442,12 @@ class ConversationRunner:
             self.session.feed(pcm, detect=False)
             return
         for segment in self.session.feed(pcm):
+            if self.state == "thinking" and self._barge_input_open:
+                if not self._retain_continuation(segment.pcm):
+                    return
+                continue
+            if self.state != "listening":
+                break
             if self.turn >= self.config.max_turns:
                 self.request_end("max_turns")
                 return
@@ -400,6 +457,15 @@ class ConversationRunner:
             self.turn += 1
             self.state = "thinking"
             self._queue.put_nowait(segment)
+
+    def _retain_continuation(self, pcm: bytes) -> bool:
+        if self._continuation_bytes + len(pcm) > self.service.config.max_segment_s * 32000:
+            self.request_end("barge_input_overflow")
+            return False
+        self._continuation_bytes += len(pcm)
+        self._continuations.append(pcm)
+        self._input_changed.set()
+        return True
 
     def _maybe_barge_in(self, pcm: bytes) -> None:
         if self.config.barge_in_device_events:
@@ -436,9 +502,24 @@ class ConversationRunner:
         if (self.ended.is_set() or not self.config.barge_in or self._barging
                 or self.state != "speaking"
                 or (turn is not None and turn != self.turn)
-                or time.monotonic() < self._barge_cooldown_until):
+                or self.turn == self._last_interrupted_turn
+                or (turn is None and time.monotonic() < self._barge_cooldown_until)):
             return
+        # A valid event for a NEW reply means the device already stopped it.
+        # Ignoring that event on a server-only cooldown would strand the peer
+        # waiting for STOP while we keep sending cancelled audio.
+        self._last_interrupted_turn = self.turn
         self._barging = True
+        self._barge_audio.clear()
+        self._barge_started = time.monotonic()
+        self._barge_input_open = self.config.barge_audio
+        self._continuations.clear()
+        self._continuation_bytes = 0
+        if self.service.config.archive_continuous_segments and self.service.reserve_archive():
+            if self._diagnostic_capture is not None:
+                self._diagnostic_capture.close()
+            path = self.session.artifact_dir / f"{self.session.stem}-barge{self.turn:02d}-uplink.wav"
+            self._diagnostic_capture = InterruptionCapture(path)
         self._interrupt_task = asyncio.create_task(
             self._begin_barge_in(), name="voice-conversation-interrupt")
 
@@ -448,6 +529,11 @@ class ConversationRunner:
             if (event.get("turn") == self.turn and self._stop_ack is not None
                     and not self._stop_ack.done()):
                 self._stop_ack.set_result(None)
+                logger.info("voice_metric %s", json.dumps({
+                    "name": "barge_stop_ack", "turn": self.turn,
+                    "server_ack_ms": round((time.monotonic() - self._barge_started) * 1000, 1),
+                    "local_dma_drain_ms": event.get("local_dma_drain_ms"),
+                }))
             return
         key = (event.get("turn"), event.get("seq"))
         if (key == self._playback_key and self._playback_done is not None
@@ -503,10 +589,10 @@ class ConversationRunner:
         self.session.discard()
         self.state = "listening"
         self._barge_cooldown_until = time.monotonic() + self.config.barge_in_cooldown_s
-        self._post_stop = True
+        self._post_stop = not self.config.barge_audio
         self._settle_started = time.monotonic()
         self._post_silence_ms = 0
-        self._ignore_until = time.monotonic() + 0.35
+        self._ignore_until = 0 if self.config.barge_audio else time.monotonic() + 0.35
         self._last_activity = time.monotonic()
         self._barge_ms = 0
         self._barge_log_at = 0.0
@@ -519,6 +605,10 @@ class ConversationRunner:
             self._worker = asyncio.create_task(
                 self._work(), name="voice-conversation-worker"
             )
+        if self.config.barge_audio and not self.ended.is_set():
+            pending = bytes(self._barge_audio)
+            self._barge_audio.clear()
+            self._consume_pcm(pending)
 
     async def finish(self) -> None:
         for segment in self.session.finish():
@@ -553,12 +643,21 @@ class ConversationRunner:
                 task.cancel()
                 await asyncio.gather(task, return_exceptions=True)
         self._worker = self._watchdog = self._interrupt_task = self._warmup_task = None
+        self._barge_audio.clear()
+        if self._diagnostic_capture is not None:
+            self._diagnostic_capture.close()
+            self._diagnostic_capture = None
+        self._continuations.clear()
+        self._barge_input_open = False
 
     async def _watch(self) -> None:
         try:
             while not self.ended.is_set():
                 await asyncio.sleep(0.5)
                 now = time.monotonic()
+                if (self._diagnostic_capture is not None and
+                        now - self._diagnostic_capture.started >= self._diagnostic_capture.seconds):
+                    self._diagnostic_capture.close()
                 if now - self._started > self.config.max_s:
                     self.request_end("max_duration")
                     return
@@ -593,23 +692,73 @@ class ConversationRunner:
         except asyncio.CancelledError:
             return
 
-    async def _handle_turn(self, segment) -> None:
-        text = None
-        started = time.monotonic()
-        if self.service.asr is not None:
-            try:
-                text = await self.service.asr.recognize(segment.pcm)
+    async def _recognize_turn(self, segment) -> str | None:
+        pcm = segment.pcm
+        try:
+            # Bounded extensions, no detached ASR tasks and no concurrent LLM
+            # admission while the user is still finishing the interruption.
+            for _ in range(3):
+                started = time.monotonic()
+                text = await self.service.asr.recognize(pcm)
                 logger.info("voice timing turn=%d asr_ms=%.0f", self.turn,
                             (time.monotonic() - started) * 1000)
+                if not self._barge_input_open:
+                    return text
+                deadline = time.monotonic() + self.config.barge_tail_timeout_s
+                while self.session.in_speech and not self.ended.is_set():
+                    self._input_changed.clear()
+                    remaining = deadline - time.monotonic()
+                    if remaining <= 0:
+                        self.request_end("barge_input_timeout")
+                        return None
+                    try:
+                        await asyncio.wait_for(self._input_changed.wait(),
+                                               remaining)
+                    except TimeoutError:
+                        self.request_end("barge_input_timeout")
+                        return None
+                if self.ended.is_set():
+                    return None
+                if not self._continuations:
+                    return text
+                extension = b"".join(self._continuations)
+                self._continuations.clear()
+                self._continuation_bytes = 0
+                # A recognized stand-alone stop was already executed locally.
+                # Re-recognize the following request alone, avoiding a long
+                # internal silence or replaying that stop to the LLM.
+                if not strip_stop_prefix(normalize_text(text or "")):
+                    pcm = extension
+                else:
+                    pcm += extension
+                if len(pcm) > self.service.config.max_segment_s * 32000:
+                    self.request_end("barge_input_overflow")
+                    return None
+                logger.info("barge input continued during ASR; retaining %d bytes", len(extension))
+            self.request_end("barge_input_extensions")
+            return None
+        finally:
+            self._barge_input_open = False
+            self._continuations.clear()
+            self._continuation_bytes = 0
+
+    async def _handle_turn(self, segment) -> None:
+        text = None
+        if self.service.asr is not None:
+            try:
+                text = await self._recognize_turn(segment)
             except Exception as exc:  # noqa: BLE001
                 logger.warning("conversation ASR failed: %s", exc)
         if not text:
             await self._safe_send({"type": "error", "message": "没有听清，请再说一次"})
             return
 
+        if self.service.config.archive_continuous_segments and segment.path.exists():
+            logger.info("voice diagnostic transcript turn=%d text=%r", self.turn, text)
+
         await self._safe_send({"type": "user_text", "turn": self.turn, "text": text[:400], "intent": None})
-        normalized = normalize_text(text)
-        if normalized.casefold().removeprefix("请") in STOP_TALKING_PHRASES:
+        normalized = strip_stop_prefix(normalize_text(text))
+        if not normalized:
             await self._safe_send(
                 {"type": "assistant_done", "turn": self.turn, "text": "",
                  "interrupted": True}
@@ -634,7 +783,7 @@ class ConversationRunner:
             await self._answer_with_agent(normalized)
             return
 
-        self.history.add_user(text)
+        self.history.add_user(normalized)
         final_text = await self._answer()
         if final_text is not None:
             # A v2 device confirms its DMA tail drained before listening resumes.

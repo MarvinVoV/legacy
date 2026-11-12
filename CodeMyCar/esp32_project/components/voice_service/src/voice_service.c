@@ -7,6 +7,7 @@
 #include "voice_state.h"
 #include "voice_transport.h"
 #include "voice_wake_ack.h"
+#include "voice_preroll.h"
 #if CONFIG_IDF_TARGET_ESP32S3
 #include "voice_frontend.h"
 #endif
@@ -194,6 +195,15 @@ static esp_err_t run_conversation(void)
     voice_frame_t frame;
     TickType_t last_audio = xTaskGetTickCount();
     bool dropping_echo = false;
+    bool barge_capture = false;
+    /* 600ms (~19KB PSRAM), including the 200ms DTD confirmation. Only AFE
+     * residual is retained, never the raw microphone/reference channels. */
+    voice_preroll_t preroll = {.capacity = 9600};
+    if (voice_transport_barge_audio_enabled(transport)) {
+        preroll.pcm = heap_caps_malloc(preroll.capacity * sizeof(int16_t),
+                                      MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+        if (!preroll.pcm) { voice_transport_close(transport); return ESP_ERR_NO_MEM; }
+    }
     while (true) {
         if (voice_transport_poll(transport) != ESP_OK) { result = ESP_FAIL; break; }
         uint32_t events = voice_transport_events(transport);
@@ -203,8 +213,10 @@ static esp_err_t run_conversation(void)
         if (events & VOICE_PEER_DISCONNECTED) { result = ESP_FAIL; break; }
         if (events & VOICE_PEER_STOP) {
             voice_transport_clear_events(transport, VOICE_PEER_STOP);
-            voice_audio_flush(); /* drop mic frames that already contain the tail */
-            sequence = (voice_sequence_t){0};
+            if (!barge_capture) {
+                voice_audio_flush(); /* legacy: discard the trigger utterance */
+                sequence = (voice_sequence_t){0};
+            }
             dropping_echo = false;
             ESP_LOGI(TAG, "server stop: playback flushed");
         }
@@ -217,6 +229,11 @@ static esp_err_t run_conversation(void)
             continue;
         }
         last_audio = xTaskGetTickCount();
+        if (barge_capture && voice_transport_is_speaking(transport)) {
+            /* A later reply owns the speaker now. Start a fresh window. */
+            barge_capture = false;
+            voice_preroll_reset(&preroll);
+        }
         if (!frame.frames || frame.frames > VOICE_CHUNK_FRAMES) {
             ESP_LOGE(TAG, "Conversation audio discontinuity");
             result = ESP_ERR_INVALID_STATE;
@@ -249,17 +266,35 @@ static esp_err_t run_conversation(void)
             }
         }
 #if CONFIG_CMCAR_VOICE_AEC
+        if (preroll.pcm && voice_transport_is_speaking(transport))
+            (void)voice_preroll_push(&preroll, frame.pcm, frame.frames, frame.sequence);
         voice_frontend_set_playback(voice_transport_barge_enabled(transport) &&
             (voice_transport_is_speaking(transport) || voice_output_active()));
         if (voice_frontend_take_barge_in()) {
-            if (voice_transport_barge_in(transport) != ESP_OK) {
+            esp_err_t interrupted = voice_transport_barge_in(transport);
+            if (interrupted != ESP_OK && interrupted != ESP_ERR_INVALID_STATE) {
                 result = ESP_FAIL;
                 break;
             }
-            ESP_LOGI(TAG, "local barge-in from fresh AFE residual/VAD windows");
+            if (interrupted == ESP_OK) {
+                ESP_LOGI(TAG, "local barge-in from fresh AFE residual/VAD windows");
+                if (preroll.pcm) {
+                    barge_capture = true;
+                    dropping_echo = false;
+                    while (preroll.used) {
+                        const int16_t *saved;
+                        size_t n = voice_preroll_peek(&preroll, &saved, VOICE_CHUNK_FRAMES);
+                        result = voice_transport_send_pcm(transport, saved, n);
+                        if (result != ESP_OK) break;
+                        voice_preroll_consume(&preroll, n);
+                    }
+                    if (result != ESP_OK) break;
+                    continue; /* this frame was already included in pre-roll */
+                }
+            }
         }
 #endif
-        if (voice_transport_is_speaking(transport) || voice_output_active()) {
+        if (!barge_capture && (voice_transport_is_speaking(transport) || voice_output_active())) {
             if (!dropping_echo) {
                 dropping_echo = true;
                 ESP_LOGI(TAG, "assistant speaking; microphone frames dropped");
@@ -286,6 +321,7 @@ static esp_err_t run_conversation(void)
 #if CONFIG_CMCAR_VOICE_AEC
     voice_frontend_set_playback(false);
 #endif
+    heap_caps_free(preroll.pcm);
     voice_transport_close(transport);
     return result;
 }
@@ -313,10 +349,15 @@ static void voice_task(void *arg)
 #if CONFIG_CMCAR_VOICE_WAKE_ENABLED
     voice_frame_t frame;
     unsigned received = 0;
-#if CONFIG_CMCAR_VOICE_MODE_CONVERSATION
-    ESP_LOGI(TAG, "Say nihaoxiaozhi, then speak naturally; pause 700 ms to end a turn");
+#if CONFIG_IDF_TARGET_ESP32S3
+    const char *wake_label = CONFIG_CMCAR_VOICE_S3_WAKE_LABEL;
 #else
-    ESP_LOGI(TAG, "Say nihaoxiaozhi; wait for the local tone before speaking");
+    const char *wake_label = "你好小智";
+#endif
+#if CONFIG_CMCAR_VOICE_MODE_CONVERSATION
+    ESP_LOGI(TAG, "Say %s, then speak naturally; pause 700 ms to end a turn", wake_label);
+#else
+    ESP_LOGI(TAG, "Say %s; wait for the local tone before speaking", wake_label);
 #endif
     while (true) {
         if (!voice_audio_receive(&frame, 500)) continue;

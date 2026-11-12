@@ -13,6 +13,8 @@ static bool read_id(cJSON *root, const char *name, uint32_t *out)
     return item->valuedouble == (double)*out;
 }
 
+static uint32_t parse_message(voice_message_t *m);
+
 uint32_t voice_message_feed(voice_message_t *m, const char *data,
                             int size, int offset, int total)
 {
@@ -26,6 +28,11 @@ uint32_t voice_message_feed(voice_message_t *m, const char *data,
     memcpy(m->text + m->used, data, (size_t)size);
     m->used += (size_t)size;
     if (m->used < m->total) return 0;
+    return parse_message(m);
+}
+
+static uint32_t parse_message(voice_message_t *m)
+{
     m->text[m->used] = '\0';
     cJSON *root = cJSON_ParseWithLengthOpts(m->text, m->used + 1, NULL, true);
     cJSON *type = cJSON_GetObjectItemCaseSensitive(root, "type");
@@ -39,6 +46,7 @@ uint32_t voice_message_feed(voice_message_t *m, const char *data,
     else if (!strcmp(type->valuestring, "ready")) {
         m->barge_in = cJSON_IsTrue(cJSON_GetObjectItemCaseSensitive(root, "barge_in"));
         m->playback_ack = cJSON_IsTrue(cJSON_GetObjectItemCaseSensitive(root, "playback_ack"));
+        m->barge_audio = cJSON_IsTrue(cJSON_GetObjectItemCaseSensitive(root, "barge_audio"));
         event = VOICE_PEER_READY;
     }
     else if (!strcmp(type->valuestring, "final")) event = VOICE_PEER_FINAL;
@@ -74,6 +82,57 @@ uint32_t voice_message_feed(voice_message_t *m, const char *data,
     cJSON_Delete(root);
     m->used = m->total = 0;
     return event;
+}
+
+uint32_t voice_ws_receive(voice_ws_receiver_t *s, voice_message_t *m,
+                          uint8_t opcode, bool fin, const char *data,
+                          int size, int offset, int total, bool *binary)
+{
+    *binary = false;
+    /* Control frames may interleave with a fragmented data message. */
+    if (opcode == 8 || opcode == 9 || opcode == 10) return 0;
+    if (size < 0 || offset < 0 || total < 0 || offset > total ||
+        size > total - offset || (size && !data)) goto invalid;
+    if (!s->in_frame) {
+        if (offset != 0) goto invalid;
+        if (opcode == 1 || opcode == 2) {
+            if (s->active) goto invalid;
+            s->active = true;
+            s->opcode = opcode;
+            s->text_size = 0;
+        } else if (opcode != 0 || !s->active) goto invalid;
+        s->frame_opcode = opcode;
+        s->frame_fin = fin;
+        s->frame_size = (size_t)total;
+        s->received = 0;
+        s->in_frame = true;
+    }
+    if (opcode != s->frame_opcode || fin != s->frame_fin ||
+        (size_t)total != s->frame_size || (size_t)offset != s->received)
+        goto invalid;
+    if (s->opcode == 1) {
+        if ((size_t)size >= sizeof(m->text) - s->text_size) goto invalid;
+        if (size) memcpy(m->text + s->text_size, data, (size_t)size);
+        s->text_size += (size_t)size;
+    } else {
+        *binary = size > 0;
+    }
+    s->received += (size_t)size;
+    if (s->received == s->frame_size) {
+        s->in_frame = false;
+        if (fin) {
+            s->active = false;
+            if (s->opcode == 1) {
+                m->used = s->text_size;
+                return parse_message(m);
+            }
+        }
+    }
+    return 0;
+invalid:
+    *s = (voice_ws_receiver_t){0};
+    m->used = m->total = 0;
+    return VOICE_PEER_FAILED;
 }
 
 bool voice_sequence_accept(voice_sequence_t *s, uint32_t number)

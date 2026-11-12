@@ -5,6 +5,7 @@
 #include <string.h>
 #include "cJSON.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 #include "esp_websocket_client.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
@@ -17,12 +18,16 @@ struct voice_transport {
     esp_websocket_client_handle_t client;
     EventGroupHandle_t events;
     voice_message_t message;
+    voice_ws_receiver_t receiver;
     voice_transport_audio_cb_t audio_cb;
     void *audio_arg;
     SemaphoreHandle_t guard;
     voice_pcm_decoder_t decoder;
     int speak_rate, speak_channels;
-    atomic_bool speaking, barge_enabled;
+    atomic_bool speaking, barge_enabled, barge_audio;
+    int64_t barge_started;
+    int local_stop_ms;
+    bool barge_tail_pending;
     uint32_t turn, seq, cancelled_turn, epoch;
     bool dropping, reply_active, ack_enabled, finish_pending, stop_pending;
     int16_t speak_pcm[1025];
@@ -68,14 +73,17 @@ static void on_event(void *arg, esp_event_base_t base, int32_t id, void *payload
         events = id == WEBSOCKET_EVENT_DISCONNECTED ? VOICE_PEER_DISCONNECTED : VOICE_PEER_FAILED;
     } else if (id == WEBSOCKET_EVENT_DATA) {
         const esp_websocket_event_data_t *data = payload;
-        if (data->data_len <= 0) return;
-        if (data->op_code == 1 || (data->op_code == 0 && t->message.total)) {
-            events = voice_message_feed(&t->message, data->data_ptr,
-                data->data_len, data->payload_offset, data->payload_len);
+        bool binary = false;
+        events = voice_ws_receive(&t->receiver, &t->message, data->op_code,
+            data->fin, data->data_ptr, data->data_len,
+            data->payload_offset, data->payload_len, &binary);
+        if (events) {
             xSemaphoreTake(t->guard, portMAX_DELAY);
             if (events & VOICE_PEER_READY) {
                 atomic_store(&t->barge_enabled, t->message.barge_in);
                 t->ack_enabled = t->message.playback_ack;
+                atomic_store(&t->barge_audio, t->message.barge_audio &&
+                    t->message.barge_in && t->message.playback_ack);
             }
             if (events & VOICE_PEER_SPEAK) {
                 bool invalid = (t->ack_enabled && (!t->message.turn || !t->message.seq)) ||
@@ -114,8 +122,7 @@ static void on_event(void *arg, esp_event_base_t base, int32_t id, void *payload
                 events &= ~VOICE_PEER_STOP; /* stale response: no mic reset either */
             }
             xSemaphoreGive(t->guard);
-        } else if (data->op_code == 2 ||
-                   (data->op_code == 0 && !t->message.total)) {
+        } else if (binary) {
             feed_binary(t, data->data_ptr, (size_t)data->data_len);
         }
     }
@@ -199,7 +206,9 @@ esp_err_t voice_transport_open(voice_transport_t **out, bool continuous, bool on
         /* The device already played its local "我在"; the server must not add
          * a second ready cue on top of it. */
         cJSON_AddBoolToObject(start, "local_ack", voice_output_enabled()) &&
-        cJSON_AddBoolToObject(start, "barge_in", barge_capable);
+        cJSON_AddBoolToObject(start, "barge_in", barge_capable) &&
+        cJSON_AddBoolToObject(start, "barge_audio", barge_capable &&
+            mode == VOICE_SESSION_CONVERSATION);
     char *text = complete ? cJSON_PrintUnformatted(start) : NULL;
     cJSON_Delete(start);
     bool sent = text && send_text(t, text, 1000);
@@ -250,6 +259,11 @@ bool voice_transport_barge_enabled(const voice_transport_t *t)
     return t && atomic_load(&t->barge_enabled);
 }
 
+bool voice_transport_barge_audio_enabled(const voice_transport_t *t)
+{
+    return t && atomic_load(&t->barge_audio);
+}
+
 esp_err_t voice_transport_barge_in(voice_transport_t *t)
 {
     if (!voice_transport_barge_enabled(t)) return ESP_ERR_INVALID_STATE;
@@ -258,6 +272,9 @@ esp_err_t voice_transport_barge_in(voice_transport_t *t)
         xSemaphoreGive(t->guard);
         return ESP_ERR_INVALID_STATE;
     }
+    t->barge_started = esp_timer_get_time();
+    t->barge_tail_pending = true;
+    t->local_stop_ms = -1;
     t->cancelled_turn = t->turn;
     t->dropping = true;
     t->reply_active = t->finish_pending = false;
@@ -273,13 +290,18 @@ esp_err_t voice_transport_barge_in(voice_transport_t *t)
 esp_err_t voice_transport_poll(voice_transport_t *t)
 {
     if (voice_output_failed()) return ESP_FAIL;
-    char message[112] = {0};
+    char message[160] = {0};
     xSemaphoreTake(t->guard, portMAX_DELAY);
     if (!voice_output_active()) {
+        if (t->barge_tail_pending) {
+            t->local_stop_ms = (int)((esp_timer_get_time() - t->barge_started) / 1000);
+            t->barge_tail_pending = false;
+            ESP_LOGI(TAG, "barge local_dma_drain_ms=%d", t->local_stop_ms);
+        }
         if (t->stop_pending) {
             t->stop_pending = false;
-            snprintf(message, sizeof(message), "{\"type\":\"stop_ack\",\"turn\":%lu,\"seq\":%lu}",
-                     (unsigned long)t->turn, (unsigned long)t->seq);
+            snprintf(message, sizeof(message), "{\"type\":\"stop_ack\",\"turn\":%lu,\"seq\":%lu,\"local_dma_drain_ms\":%d}",
+                     (unsigned long)t->turn, (unsigned long)t->seq, t->local_stop_ms);
         } else if (t->finish_pending) {
             t->finish_pending = t->reply_active = false;
             atomic_store(&t->speaking, false);

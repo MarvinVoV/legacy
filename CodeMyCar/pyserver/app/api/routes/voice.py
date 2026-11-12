@@ -51,6 +51,8 @@ def _parse_start(meta: Any) -> tuple[str | None, str | None, str | None]:
         return None, None, "local_ack must be boolean"
     if not isinstance(meta.get("playback_ack", False), bool):
         return None, None, "playback_ack must be boolean"
+    if not isinstance(meta.get("barge_audio", False), bool):
+        return None, None, "barge_audio must be boolean"
     if type(meta.get("protocol", 1)) is not int or meta.get("protocol", 1) not in (1, 2):
         return None, None, "unsupported protocol"
     mode = meta.get("mode", "command")
@@ -71,13 +73,15 @@ async def _run_conversation(
     local_ack: bool = False,
     barge_in: bool = False,
     playback_ack: bool = False,
+    barge_audio: bool = False,
 ) -> None:
     """Own one long-conversation socket; command mode never enters this path."""
     llm = getattr(ws.app.state, "voice_llm", None)
     config = getattr(
         ws.app.state, "voice_conversation_config", ConversationConfig()
     )
-    config = replace(config, barge_in=barge_in, playback_ack=playback_ack)
+    config = replace(config, barge_in=barge_in, playback_ack=playback_ack,
+                     barge_audio=barge_audio)
     if llm is None:
         await _send_json(ws, {"type": "error", "message": "LLM is not configured"})
         session.close()
@@ -260,6 +264,12 @@ async def voice_stream(ws: WebSocket) -> None:
         session.id,
         mode,
     )
+    v2 = meta.get("protocol") == 2
+    barge_enabled = bool(mode == "conversation" and v2 and meta.get("barge_in", False)
+                         and getattr(settings, "voice_barge_in", False))
+    ack_enabled = bool(mode == "conversation" and v2 and meta.get("playback_ack", False))
+    capture_enabled = bool(barge_enabled and ack_enabled and meta.get("barge_audio", False)
+                           and getattr(settings, "voice_barge_audio", False))
     await _send_json(
         ws,
         {
@@ -269,11 +279,9 @@ async def voice_stream(ws: WebSocket) -> None:
             "rate": service.config.sample_rate,
             "mode": mode,
             "protocol": meta.get("protocol", 1),
-            "barge_in": bool(mode == "conversation" and meta.get("protocol") == 2
-                             and meta.get("barge_in", False)
-                             and getattr(settings, "voice_barge_in", False)),
-            "playback_ack": bool(mode == "conversation" and meta.get("protocol") == 2
-                                 and meta.get("playback_ack", False)),
+            "barge_in": barge_enabled,
+            "playback_ack": ack_enabled,
+            "barge_audio": capture_enabled,
         },
     )
 
@@ -282,12 +290,9 @@ async def voice_stream(ws: WebSocket) -> None:
         await _run_conversation(
             ws, service, session, sink, settings,
             local_ack=bool(meta.get("local_ack", False)),
-            barge_in=(
-                bool(meta.get("barge_in", False))
-                and bool(getattr(settings, "voice_barge_in", False))
-                and meta.get("protocol") == 2
-            ),
-            playback_ack=bool(meta.get("protocol") == 2 and meta.get("playback_ack", False)),
+            barge_in=barge_enabled,
+            playback_ack=ack_enabled,
+            barge_audio=capture_enabled,
         )
         return
 

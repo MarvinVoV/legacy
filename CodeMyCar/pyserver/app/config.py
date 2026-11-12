@@ -107,6 +107,7 @@ class Settings(BaseSettings):
     llm_max_tokens: int = 2048
     llm_temperature: float = 0.7
     voice_barge_in: bool = False  # requires device AEC (ch1 reference)
+    voice_barge_audio: bool = True  # only after v2 device explicitly negotiates pre-roll
     voice_barge_in_rms: int = 700
     voice_barge_in_ms: int = 140
 

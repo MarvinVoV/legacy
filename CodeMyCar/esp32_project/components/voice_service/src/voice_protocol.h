@@ -25,11 +25,22 @@ typedef struct {
     int speak_channels;
     size_t speak_bytes;
     uint32_t turn, seq;
-    bool barge_in, playback_ack;
+    bool barge_in, playback_ack, barge_audio;
 } voice_message_t;
 
 uint32_t voice_message_feed(voice_message_t *message, const char *data,
                             int size, int offset, int total);
+
+/* RFC6455 message fragments and SDK chunks of one frame have different
+ * boundaries. Text is bounded by message.text; binary stays streaming. */
+typedef struct {
+    size_t received, frame_size, text_size;
+    uint8_t opcode, frame_opcode;
+    bool active, in_frame, frame_fin;
+} voice_ws_receiver_t;
+uint32_t voice_ws_receive(voice_ws_receiver_t *receiver, voice_message_t *message,
+                          uint8_t opcode, bool fin, const char *data,
+                          int size, int offset, int total, bool *binary);
 
 typedef struct { uint32_t next; bool initialized; } voice_sequence_t;
 bool voice_sequence_accept(voice_sequence_t *sequence, uint32_t number);

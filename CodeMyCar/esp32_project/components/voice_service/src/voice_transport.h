@@ -29,6 +29,7 @@ esp_err_t voice_transport_send_pcm(voice_transport_t *transport, const int16_t *
  * microphone frames during this window (half-duplex, no self-echo). */
 bool voice_transport_is_speaking(const voice_transport_t *transport);
 bool voice_transport_barge_enabled(const voice_transport_t *transport);
+bool voice_transport_barge_audio_enabled(const voice_transport_t *transport);
 esp_err_t voice_transport_poll(voice_transport_t *transport);
 /* Device-side barge-in: discard remaining TTS PCM and tell the server to
  * cancel the current turn. Only a later response ID may resume playback. */

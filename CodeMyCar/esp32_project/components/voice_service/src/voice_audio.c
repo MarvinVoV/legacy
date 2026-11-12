@@ -74,7 +74,7 @@ static void frontend_task(void *arg)
         }
         if (wake && CONFIG_CMCAR_VOICE_WAKE_ENABLED && !atomic_load(&s_active)) {
             pending_wake = true;
-            ESP_LOGI(TAG, "DETECTED nihaoxiaozhi");
+            ESP_LOGI(TAG, "DETECTED %s", CONFIG_CMCAR_VOICE_S3_WAKE_LABEL);
         }
         while (samples) {
             size_t n = VOICE_CHUNK_FRAMES - frame.frames;

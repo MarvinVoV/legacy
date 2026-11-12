@@ -21,7 +21,7 @@ char *esp_srmodel_filter(srmodel_list_t *m, const char *prefix, const char *word
 {
  assert(m==&models);
  if (!strcmp(prefix,"wn9l_")) return NULL;
- if (!strcmp(prefix,"wn9_")) { assert(!strcmp(word,"nihaoxiaozhi")); return missing_wake ? NULL : "wn9_nihaoxiaozhi_tts"; }
+ if (!strcmp(prefix,"wn9_")) { assert(!strcmp(word,"xiaoyaxiaoya")); return missing_wake ? NULL : "wn9_xiaoyaxiaoya_tts2"; }
  if (!strcmp(prefix,"nsnet")) return "nsnet2";
  if (!strcmp(prefix,"vadnet")) return "vadnet1_medium";
  assert(false); return NULL;

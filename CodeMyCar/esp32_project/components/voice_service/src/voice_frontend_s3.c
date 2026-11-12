@@ -57,11 +57,10 @@ bool voice_frontend_init(void)
 {
     if (afe) return true;
     models = esp_srmodel_init("model");
-    /* WakeNet9l is the fast-speech variant (tts3); WakeNet9 often misses a
-     * quickly spoken "你好小智". Keep the fallback so a stale sdkconfig fails
-     * loudly here instead of silently loading an unrelated model. */
-    char *wake = models ? esp_srmodel_filter(models, "wn9l_", "nihaoxiaozhi") : NULL;
-    if (!wake && models) wake = esp_srmodel_filter(models, "wn9_", "nihaoxiaozhi");
+    /* Match the configured pretrained phrase exactly. Never fall back to an
+     * unrelated model if the model partition and application disagree. */
+    char *wake = models ? esp_srmodel_filter(models, "wn9l_", CONFIG_CMCAR_VOICE_S3_WAKE_MODEL) : NULL;
+    if (!wake && models) wake = esp_srmodel_filter(models, "wn9_", CONFIG_CMCAR_VOICE_S3_WAKE_MODEL);
     if (!wake) goto fail;
 #if CONFIG_CMCAR_VOICE_AEC
     const char *input_format = "MR"; /* microphone, playback reference */
@@ -134,7 +133,7 @@ bool voice_frontend_init(void)
     if (iface->set_wakenet_threshold != NULL) {
         const float threshold = (float)CONFIG_CMCAR_VOICE_WAKE_THRESHOLD / 1000.0f;
         int set = iface->set_wakenet_threshold(afe, 1, threshold);
-        ESP_LOGI(TAG, "wake threshold %.3f set=%d (model default ~0.597)", threshold, set);
+        ESP_LOGI(TAG, "wake threshold %.3f set=%d", threshold, set);
     }
 #endif
     iface->print_pipeline(afe);

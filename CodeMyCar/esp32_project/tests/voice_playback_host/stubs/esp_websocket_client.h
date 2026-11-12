@@ -5,7 +5,7 @@ typedef const char *esp_event_base_t;
 typedef void (*ws_callback_t)(void*,esp_event_base_t,int32_t,void*);
 enum {WEBSOCKET_EVENT_ANY,WEBSOCKET_EVENT_CONNECTED,WEBSOCKET_EVENT_DISCONNECTED,
       WEBSOCKET_EVENT_ERROR,WEBSOCKET_EVENT_DATA};
-typedef struct { const char *data_ptr; int data_len,op_code,payload_offset,payload_len; } esp_websocket_event_data_t;
+typedef struct { const char *data_ptr; int data_len,op_code,payload_offset,payload_len; bool fin; } esp_websocket_event_data_t;
 typedef struct { const char *uri; bool disable_auto_reconnect; int network_timeout_ms,buffer_size,task_stack,task_prio; } esp_websocket_client_config_t;
 esp_websocket_client_handle_t esp_websocket_client_init(const esp_websocket_client_config_t*);
 esp_err_t esp_websocket_register_events(esp_websocket_client_handle_t,int,ws_callback_t,void*);
