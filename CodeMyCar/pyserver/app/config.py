@@ -59,8 +59,8 @@ class Settings(BaseSettings):
     baidu_speech_timeout_s: float = 10.0
 
     # 百度短文本语音合成（TTS）
-    baidu_tts_per: int = 5  # 5=度小娇（精品音库，已实测）
-    baidu_tts_spd: int = 5
+    baidu_tts_per: int = 103  # 度米朵；与S3本地唤醒提示音保持一致
+    baidu_tts_spd: int = 6
     baidu_tts_pit: int = 5
     baidu_tts_vol: int = 5
     baidu_tts_aue: int = 4  # 4=16k PCM，直接给 I2S 功放
