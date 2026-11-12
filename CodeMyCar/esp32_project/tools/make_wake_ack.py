@@ -28,20 +28,16 @@ OUT = (
 sys.path.insert(0, str(PYSERVER))
 
 from app.config import Settings
-from app.services.baidu_tts import BaiduTtsClient
+from app.providers.config import BaiduProvider, load_provider_config
+from app.providers.factory import build_tts
 
 
 async def main() -> None:
     settings = Settings(_env_file=(PYSERVER / ".env", PYSERVER / "voice.local.env"))
-    client = BaiduTtsClient(
-        settings.baidu_speech_api_key,
-        settings.baidu_speech_secret_key,
-        per=settings.baidu_tts_per,
-        spd=settings.baidu_tts_spd,
-        pit=settings.baidu_tts_pit,
-        vol=settings.baidu_tts_vol,
-        aue=4,
-    )
+    config = load_provider_config(settings)
+    client = build_tts(config)
+    if client is None:
+        raise SystemExit("Selected TTS provider credentials are missing")
     try:
         audio = await client.synthesize("我在", aue=4)
     finally:
@@ -53,12 +49,35 @@ async def main() -> None:
         raise SystemExit(f"unexpected PCM length: {len(data)} bytes")
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_bytes(data)
-    metadata = {"text": "我在", "per": settings.baidu_tts_per,
-                "spd": settings.baidu_tts_spd, "pit": settings.baidu_tts_pit,
-                "vol": settings.baidu_tts_vol, "sample_rate": 16000, "channels": 1,
-                "bits": 16, "bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()}
-    OUT.with_suffix(".json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2) + "\n")
-    print(f"voice={metadata['per']} speed={metadata['spd']} pitch={metadata['pit']}")
+    provider = config.selected("tts")
+    preset = (
+        {
+            "per": provider.per,
+            "spd": provider.spd,
+            "pit": provider.pit,
+            "vol": provider.vol,
+        }
+        if isinstance(provider, BaiduProvider)
+        else {
+            "model": config.tts.model,
+            "voice": config.tts.voice,
+            "speed": config.tts.speed,
+        }
+    )
+    metadata = {
+        "text": "我在",
+        "provider": config.tts.provider,
+        **preset,
+        "sample_rate": 16000,
+        "channels": 1,
+        "bits": 16,
+        "bytes": len(data),
+        "sha256": hashlib.sha256(data).hexdigest(),
+    }
+    OUT.with_suffix(".json").write_text(
+        json.dumps(metadata, ensure_ascii=False, indent=2) + "\n"
+    )
+    print(f"provider={config.tts.provider} preset={preset}")
     print(f"wrote {OUT} ({len(data)} bytes, {len(data) / 32000:.2f} s)")
 
 

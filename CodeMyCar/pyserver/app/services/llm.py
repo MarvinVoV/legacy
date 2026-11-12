@@ -6,10 +6,9 @@ and tool binding; the runner still owns turn-taking, cancellation and TTS.
 
 Why ChatDeepSeek rather than raw HTTP: the DeepSeek OpenAI-compatible endpoint
 is already covered by LangChain's native integration, including streaming and
-tool-call chunks. LangGraph/Deep Agents are intentionally not introduced here:
-the voice session is short-lived, in-memory and already has an explicit state
-machine; persistence/subagents would add latency and operational surface
-without helping the first voice conversation.
+tool-call chunks. The primary companion graph lives in app.agent.runtime;
+this adapter remains the explicitly limited legacy fallback, not another owner
+of durable memory, skills or checkpoints.
 """
 
 from __future__ import annotations
@@ -20,8 +19,7 @@ from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from typing import Any, Protocol
 
-from langchain_deepseek import ChatDeepSeek
-from pydantic import SecretStr
+from app.agent.model import build_chat_model
 
 logger = logging.getLogger(__name__)
 
@@ -81,30 +79,40 @@ class DeepSeekLlmClient:
         self,
         *,
         api_key: str,
-        base_url: str = "https://api.deepseek.com",
+        base_url: str | None = None,
+        provider: str = "deepseek",
         model: str = "deepseek-flash",
         thinking: bool = False,
         max_tokens: int = 512,
         temperature: float = 0.7,
         timeout_s: float = 60.0,
+        chat_model=None,
     ) -> None:
         self.api_key = api_key
+        if base_url is None:
+            from app.config import get_settings
+            from app.providers.config import load_provider_config
+
+            base_url = str(load_provider_config(get_settings()).selected("llm").base_url)
         self.base_url = base_url.rstrip("/")
         self.model = model
         self.thinking = thinking
         self.max_tokens = max_tokens
         self.temperature = temperature
         self.timeout_s = timeout_s
-        self._llm = ChatDeepSeek(
-            model=model,
-            api_key=SecretStr(api_key),
-            base_url=self.base_url,
-            streaming=True,
-            max_tokens=max_tokens,
-            temperature=temperature,
-            timeout=timeout_s,
-            max_retries=1,
-            extra_body={"thinking": {"type": "enabled" if thinking else "disabled"}},
+        self._llm = (
+            chat_model
+            if chat_model is not None
+            else build_chat_model(
+                model=model,
+                api_key=api_key,
+                provider=provider,
+                base_url=self.base_url,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                timeout_s=timeout_s,
+                thinking=thinking,
+            )
         )
 
     async def stream_chat(

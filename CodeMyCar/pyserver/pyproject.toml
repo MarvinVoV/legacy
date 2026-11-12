@@ -13,9 +13,12 @@ dependencies = [
     "paho-mqtt>=2.0.0",
     "structlog>=25.1.0",
     "python-dotenv>=1.0.0",
-    "langchain[mcp]>=1.4.0",
-    "langchain-deepseek>=1.1.0",
-    "deepagents>=0.7.35",
+    "langchain[mcp]>=1.4.10,<1.5",
+    "langchain-deepseek>=1.1.1,<1.2",
+    "langchain-openai>=1.1,<2",
+    "numpy>=1.26,<3",
+    "soxr>=0.5,<1",
+    "deepagents>=0.7.35,<0.8",
     "langgraph-checkpoint-sqlite>=3.1.0",
     "aiosqlite>=0.22.0",
 ]
@@ -35,3 +38,6 @@ line-length = 100
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+
+[tool.setuptools.packages.find]
+include = ["app*"]

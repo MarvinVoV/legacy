@@ -1,82 +1,80 @@
-"""Persistent memory/skills layout for the voice agent.
-
-Development skills are read-only. The agent may update its own AGENTS.md
-preferences through the explicit remember_preference tool (memory-only
-self-evolution, approved 2026-11-11).
-"""
+"""Automatic, evidence-grounded preference learning; no writable prompt files."""
 
 from __future__ import annotations
 
+import asyncio
 import logging
-from pathlib import Path
+import re
 
-from deepagents import FilesystemPermission
-from deepagents.backends import FilesystemBackend
+from pydantic import BaseModel, Field
 
 from app.agent.config import AgentConfig
+from app.agent.context import AgentContext
+from app.agent.persona import load_profile
+from app.agent.preferences import Preference, PreferenceStore
 
 logger = logging.getLogger(__name__)
+_HINT = re.compile(
+    r"记住|记下来|记一下|我叫|叫我|喜欢|喜爱|最爱|以后|平时|习惯|偏好|不爱|不想每次|我家.{0,12}叫"
+)
+_FORGET = re.compile(r"忘记|删除.*记忆|不要.*记住|别.*记")
 
-_MEMORY_SEED = """# CodeMyCar Agent Memory
 
-## Stable user preferences
+class LearnedPreference(Preference):
+    evidence: str = Field(min_length=1, max_length=200)
 
-- Default spoken language: concise Chinese unless the user uses another language.
-- Keep voice answers short: usually 1-3 sentences.
 
-## Rules
+class MemoryCandidates(BaseModel):
+    preferences: list[LearnedPreference] = Field(default_factory=list, max_length=3)
 
-- Store only stable preferences (name, response style, frequently used places,
-  vehicle habits). Never store transient requests, secrets, or raw sensor data.
-- Use the remember_preference tool when the user asks you to remember a
-  preference, or when a stable preference is clearly stated.
-"""
 
-_CAR_SKILL = """---
-name: car-control
-description: Use when the user asks to move, stop, inspect, or safely control the car.
----
+class MemoryLearner:
+    """Opt-in per-runtime, eligible turns only, awaited and bounded (no orphan jobs)."""
 
-# Car control
+    def __init__(
+        self, store: PreferenceStore, model, *, timeout_s: float = 5, prompt: str | None = None
+    ) -> None:
+        self.store, self.model, self.timeout_s = store, model, timeout_s
+        self.prompt = prompt or load_profile().memory_learning
 
-- Use the native car_move, car_turn, and car_stop tools. Never claim a motion
-  succeeded without a tool result that says executed=true.
-- Voice motion execution may be disabled; say so plainly and do not pretend.
-- Ask for confirmation before a potentially surprising movement when the
-  request is ambiguous.
-- One motion request at a time. Stop is always allowed.
-"""
+    async def learn(self, text: str, context: AgentContext) -> None:
+        if not _HINT.search(text) or _FORGET.search(text):
+            return
+        try:
+            extractor = self.model.with_structured_output(
+                MemoryCandidates, method="function_calling"
+            )
+            result = await asyncio.wait_for(
+                extractor.ainvoke(
+                    [
+                        (
+                            "system",
+                            self.prompt,
+                        ),
+                        ("human", text[:2000]),
+                    ],
+                    config={"metadata": {"lc_source": "memory_learning"}},
+                ),
+                self.timeout_s,
+            )
+            scope = self.store.scope(context.device_id, context.user_id)
+            for preference in result.preferences:
+                if preference.evidence not in text:
+                    continue
+                # AgentSession skips learning if a memory tool handled this turn.
+                await asyncio.to_thread(
+                    self.store.remember,
+                    scope,
+                    Preference(**preference.model_dump(exclude={"evidence"})),
+                )
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:  # noqa: BLE001 - optional learning cannot break a voice turn
+            logger.warning("preference learning skipped: %s", type(exc).__name__)
 
 
 def ensure_agent_data(config: AgentConfig) -> None:
     config.data_dir.mkdir(parents=True, exist_ok=True)
-    config.memory_path.parent.mkdir(parents=True, exist_ok=True)
-    if not config.memory_path.exists():
-        config.memory_path.write_text(_MEMORY_SEED, encoding="utf-8")
-    skill_dir = config.skills_path / "car-control"
-    skill_dir.mkdir(parents=True, exist_ok=True)
-    skill_file = skill_dir / "SKILL.md"
-    if not skill_file.exists():
-        skill_file.write_text(_CAR_SKILL, encoding="utf-8")
-    logger.info("agent data ready: memory=%s skills=%s", config.memory_path, config.skills_path)
-
-
-def build_backend(config: AgentConfig) -> FilesystemBackend:
-    """Agent data lives under data_dir; only AGENTS.md is writable.
-
-    The explicit remember_preference tool handles memory writes. Denying writes
-    to skills prevents accidental self-modification of approved procedures.
-    """
-    return FilesystemBackend(root_dir=str(config.data_dir), virtual_mode=True)
-
-
-def memory_permissions() -> list[FilesystemPermission]:
-    return [
-        FilesystemPermission(operations=["write"], paths=["/skills/**"], mode="deny"),
-        FilesystemPermission(operations=["write"], paths=["/AGENTS.md"], mode="allow"),
-        FilesystemPermission(operations=["write"], paths=["/**"], mode="deny"),
-    ]
-
-
-def memory_path(config: AgentConfig) -> Path:
-    return config.memory_path
+    config.skills_path.mkdir(parents=True, exist_ok=True)
+    # Existing AGENTS.md/skills remain untouched for operator migration. They
+    # are NOT injected as policy or automatically imported across identities.

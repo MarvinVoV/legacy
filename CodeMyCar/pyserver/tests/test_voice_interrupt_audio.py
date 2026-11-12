@@ -15,7 +15,7 @@ from tests.test_voice_ws import pcm
 @pytest.mark.parametrize("device", [False, True])
 @pytest.mark.parametrize("server", [False, True])
 @pytest.mark.parametrize("ack", [False, True])
-def test_audio_capability_requires_both_peers_and_completion_ack(
+def test_device_selects_audio_capability_with_ack_independent_of_old_server_toggle(
     client, tmp_path, monkeypatch, device, server, ack
 ):
     from app.api.routes import voice
@@ -37,7 +37,7 @@ def test_audio_capability_requires_both_peers_and_completion_ack(
                 local_ack=True,
             )
         )
-        assert ws.receive_json()["barge_audio"] is (device and server and ack)
+        assert ws.receive_json()["barge_audio"] is (device and ack)
 
 
 @pytest.mark.parametrize(

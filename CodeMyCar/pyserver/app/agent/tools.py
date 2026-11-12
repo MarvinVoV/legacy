@@ -1,111 +1,119 @@
-"""Native tools for the voice agent.
-
-Car tools are closures over the VoiceService and resolve the current device
-from ToolRuntime.context. The remember_preference tool is the only memory write
-path exposed to the model (memory-only self-evolution).
-"""
+"""Typed tools; identity/permissions come from injected context, never model args."""
 
 from __future__ import annotations
 
-import json
-import logging
-import threading
-from pathlib import Path
-from typing import Literal
+import asyncio
 
 from langchain.tools import ToolRuntime, tool
+from pydantic import ConfigDict
 
 from app.agent.context import AgentContext
-from app.services.voice_intent import VoiceIntent
-from app.services.voice_service import VoiceService
-
-logger = logging.getLogger(__name__)
-_memory_lock = threading.Lock()
+from app.agent.preferences import MemoryCategory, Preference, PreferenceStore
+from app.agent.vehicle import DriveArguments, MoveArguments, TurnArguments, VehicleGateway
 
 
-def _result(payload: dict) -> str:
-    return json.dumps(payload, ensure_ascii=False)
+class DriveToolArguments(DriveArguments):
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
+    runtime: ToolRuntime[AgentContext]
 
 
-def build_car_tools(service: VoiceService) -> list:
-    @tool
-    async def car_move(
-        direction: Literal["forward", "backward"],
-        distance_m: float,
-        runtime: ToolRuntime[AgentContext],
-    ) -> str:
-        """Move the car forward or backward by a short distance in metres.
+class MoveToolArguments(MoveArguments):
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
+    runtime: ToolRuntime[AgentContext]
 
-        Returns an execution result; voice motion may be disabled by the server.
-        """
-        if not service.config.execute_commands:
-            return _result({"executed": False, "reason": "voice execution disabled"})
-        if direction not in ("forward", "backward"):
-            return _result({"executed": False, "reason": "invalid direction"})
-        try:
-            distance_mm = round(float(distance_m) * 1000)
-        except (TypeError, ValueError):
-            return _result({"executed": False, "reason": "invalid distance"})
-        if distance_mm <= 0:
-            return _result({"executed": False, "reason": "invalid distance"})
-        intent = VoiceIntent(direction, distance_mm=distance_mm)
-        result = await service.execute_intent(runtime.context.device_id, intent)
-        return _result(dict(result))
+
+class TurnToolArguments(TurnArguments):
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
+    runtime: ToolRuntime[AgentContext]
+
+
+def build_car_tools(service, *, include_motion: bool = True) -> list:
+    gateway = VehicleGateway(service)
 
     @tool
-    async def car_turn(
-        direction: Literal["left", "right"],
-        angle_deg: float,
-        runtime: ToolRuntime[AgentContext],
-    ) -> str:
-        """Turn the car left or right by an angle in degrees.
+    async def car_get_state(runtime: ToolRuntime[AgentContext]) -> dict:
+        """Read current connection, telemetry freshness, local pose and motion limits; no movement."""
+        return gateway.state(runtime.context.device_id)
 
-        Returns an execution result; voice motion may be disabled by the server.
+    @tool
+    async def car_stop(runtime: ToolRuntime[AgentContext]) -> dict:
+        """Request reliable STOP; success requires accepted, confirmed and stopped, not just an ACK."""
+        return await gateway.stop(runtime.context.device_id)
+
+    @tool(args_schema=DriveToolArguments)
+    async def car_drive(
+        distance_cm: int,
+        runtime: ToolRuntime[AgentContext],
+        turn_deg: int = 0,
+        speed_cm_s: int = 10,
+    ) -> dict:
+        """Drive a signed path in cm with simultaneous BODY heading change in degrees.
+
+        Positive distance=forward, negative=reverse; positive turn=body turns right,
+        negative=left (same convention in reverse). Speed is always positive.
+        Not a front-wheel angle; no pivot. Use car_get_state to check limits first.
+        To retrace an arc, negate BOTH the measured distance and body heading change.
         """
-        if not service.config.execute_commands:
-            return _result({"executed": False, "reason": "voice execution disabled"})
-        if direction not in ("left", "right"):
-            return _result({"executed": False, "reason": "invalid direction"})
-        try:
-            angle = round(float(angle_deg))
-        except (TypeError, ValueError):
-            return _result({"executed": False, "reason": "invalid angle"})
-        if angle <= 0:
-            return _result({"executed": False, "reason": "invalid angle"})
-        intent = VoiceIntent(
-            "turn_left" if direction == "left" else "turn_right", angle_deg=angle
+        return await gateway.drive(
+            runtime.context.device_id,
+            distance_cm=distance_cm,
+            turn_deg=turn_deg,
+            speed_cm_s=speed_cm_s,
         )
-        result = await service.execute_intent(runtime.context.device_id, intent)
-        return _result(dict(result))
 
-    @tool
-    async def car_stop(runtime: ToolRuntime[AgentContext]) -> str:
-        """Immediately request the car to stop. Stop is always allowed."""
-        try:
-            await service.stop_action(runtime.context.device_id)
-        except Exception:  # noqa: BLE001 - a failed STOP must not kill the turn
-            logger.exception("car_stop failed")
-            return _result({"executed": False, "reason": "stop failed"})
-        return _result({"executed": True, "action": "stop"})
+    @tool(args_schema=MoveToolArguments)
+    async def car_move(
+        direction: str, distance_m: float, runtime: ToolRuntime[AgentContext]
+    ) -> dict:
+        """Move straight by metres at the configured low speed; forward or backward."""
+        return await gateway.invoke(
+            runtime.context.device_id,
+            "car_move",
+            {"direction": direction, "distance_m": distance_m},
+        )
 
-    return [car_move, car_turn, car_stop]
+    @tool(args_schema=TurnToolArguments)
+    async def car_turn(
+        direction: str, angle_deg: float, runtime: ToolRuntime[AgentContext]
+    ) -> dict:
+        """Turn BODY left/right on a default short FORWARD arc, not stationary steering or a pivot.
 
-
-def build_memory_tool(memory_file: Path):
-    @tool
-    def remember_preference(preference: str) -> str:
-        """Remember a stable user preference for future conversations.
-
-        Only use for durable preferences (name, response style, favourite
-        places, vehicle habits). Never store transient requests, secrets,
-        credentials, raw audio, or sensor values.
+        If user specifies path length, reverse, or speed, use car_drive instead.
         """
-        clean = " ".join(str(preference).split())[:300]
-        if not clean:
-            return "not stored: empty preference"
-        memory_file.parent.mkdir(parents=True, exist_ok=True)
-        with _memory_lock, memory_file.open("a", encoding="utf-8") as handle:
-            handle.write(f"- {clean}\n")
-        return "saved to persistent memory"
+        return await gateway.invoke(
+            runtime.context.device_id, "car_turn", {"direction": direction, "angle_deg": angle_deg}
+        )
 
-    return remember_preference
+    return [car_get_state, car_stop] + ([car_drive, car_move, car_turn] if include_motion else [])
+
+
+def build_memory_tools(store: PreferenceStore) -> list:
+    @tool
+    async def remember_preference(
+        category: MemoryCategory, key: str, value: str, runtime: ToolRuntime[AgentContext]
+    ) -> dict:
+        """Save a durable nickname, preference, fact or confirmed experience to MEMORY.md.
+
+        Stable English key (e.g. favorite_animal); same category/key replaces old value.
+        Never store secrets, location, sensor data or temporary tasks. Identity is injected.
+        """
+        preference = Preference(category=category, key=key, value=value)
+        return await asyncio.to_thread(
+            store.remember,
+            store.scope(runtime.context.device_id, runtime.context.user_id),
+            preference,
+        )
+
+    @tool
+    async def forget_preference(
+        category: MemoryCategory, key: str, runtime: ToolRuntime[AgentContext]
+    ) -> dict:
+        """Delete a saved memory from MEMORY.md by category/key when asked to forget it."""
+        return await asyncio.to_thread(
+            store.forget,
+            store.scope(runtime.context.device_id, runtime.context.user_id),
+            category,
+            key,
+        )
+
+    return [remember_preference, forget_preference]

@@ -23,6 +23,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.config import get_settings
+from app.providers.config import BaiduProvider, load_provider_config
 from app.services.baidu_asr import BaiduAsrClient, BaiduAsrError
 
 
@@ -41,7 +42,11 @@ def load_pcm(path: Path) -> bytes:
 
 async def _run(wav_path: Path, dev_pid: int | None) -> int:
     settings = get_settings()
-    if not settings.baidu_speech_api_key or not settings.baidu_speech_secret_key:
+    config = load_provider_config(settings)
+    provider = config.providers.get("baidu")
+    if not isinstance(provider, BaiduProvider):
+        raise SystemExit("This diagnostic requires a named baidu provider")
+    if not provider.api_key.get_secret_value() or not provider.secret_key.get_secret_value():
         print(
             "未配置密钥：请设置 CMCAR_BAIDU_SPEECH_API_KEY / "
             "CMCAR_BAIDU_SPEECH_SECRET_KEY（或写入 pyserver/.env）",
@@ -51,10 +56,11 @@ async def _run(wav_path: Path, dev_pid: int | None) -> int:
 
     pcm = load_pcm(wav_path)
     client = BaiduAsrClient(
-        settings.baidu_speech_api_key,
-        settings.baidu_speech_secret_key,
-        dev_pid=settings.baidu_speech_dev_pid,
-        timeout_s=settings.baidu_speech_timeout_s,
+        provider.api_key.get_secret_value(),
+        provider.secret_key.get_secret_value(),
+        dev_pid=provider.dev_pid,
+        timeout_s=config.asr.timeout_s,
+        token_url=str(provider.token_url), asr_url=str(provider.asr_url),
     )
     started = time.monotonic()
     try:

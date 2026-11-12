@@ -19,9 +19,7 @@ from collections.abc import Callable
 import httpx
 
 from app.models.audio import TtsAudio  # re-export for existing clients
-
-TOKEN_URL = "https://aip.baidubce.com/oauth/2.0/token"
-TTS_URL = "https://tsn.baidu.com/text2audio"
+from app.providers.config import bundled_provider
 
 _REQUIRED_SCOPE = "audio_tts_post"
 _TOKEN_REFRESH_MARGIN_S = 300.0
@@ -63,12 +61,17 @@ class BaiduTtsClient:
         timeout_s: float = 10.0,
         client: httpx.AsyncClient | None = None,
         clock: Callable[[], float] = time.monotonic,
+        token_url: str | None = None,
+        tts_url: str | None = None,
     ) -> None:
         if not api_key or not secret_key:
             raise ValueError("缺少百度语音 API Key / Secret Key")
         if aue not in (3, 4, 5, 6):
             raise ValueError("aue 只能是 3(mp3)/4(pcm16k)/5(pcm8k)/6(wav)")
         self._api_key = api_key
+        defaults = bundled_provider("baidu")
+        self._token_url = token_url or defaults["token_url"]
+        self._tts_url = tts_url or defaults["tts_url"]
         self._secret_key = secret_key
         self._per = per
         self._spd = spd
@@ -96,7 +99,7 @@ class BaiduTtsClient:
                 return self._token
             try:
                 resp = await self._client.post(
-                    TOKEN_URL,
+                    self._token_url,
                     data={
                         "grant_type": "client_credentials",
                         "client_id": self._api_key,
@@ -157,7 +160,7 @@ class BaiduTtsClient:
             form["audio_ctrl"] = json.dumps({"sampling_rate": 16000})
 
         try:
-            resp = await self._client.post(TTS_URL, data=form)
+            resp = await self._client.post(self._tts_url, data=form)
             resp.raise_for_status()
         except httpx.HTTPError as exc:
             raise BaiduTtsError(f"语音合成请求失败: {exc}") from exc

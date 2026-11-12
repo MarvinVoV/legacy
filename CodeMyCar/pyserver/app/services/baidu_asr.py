@@ -18,8 +18,7 @@ from collections.abc import Callable
 
 import httpx
 
-TOKEN_URL = "https://aip.baidubce.com/oauth/2.0/token"
-ASR_URL = "https://vop.baidu.com/server_api"
+from app.providers.config import bundled_provider
 
 SUPPORTED_RATE = 16000
 DEFAULT_DEV_PID = 1537  # 普通话（纯中文识别）
@@ -48,10 +47,15 @@ class BaiduAsrClient:
         timeout_s: float = 10.0,
         client: httpx.AsyncClient | None = None,
         clock: Callable[[], float] = time.monotonic,
+        token_url: str | None = None,
+        asr_url: str | None = None,
     ) -> None:
         if not api_key or not secret_key:
             raise ValueError("缺少百度语音 API Key / Secret Key")
         self._api_key = api_key
+        defaults = bundled_provider("baidu")
+        self._token_url = token_url or defaults["token_url"]
+        self._asr_url = asr_url or defaults["asr_url"]
         self._secret_key = secret_key
         self._dev_pid = dev_pid
         self._cuid = cuid
@@ -78,7 +82,7 @@ class BaiduAsrClient:
                 # 官方 demo 把 client_secret 放在 POST form body 里；不要放 query，
                 # 否则密钥可能进入代理/访问日志。
                 resp = await self._client.post(
-                    TOKEN_URL,
+                    self._token_url,
                     data={
                         "grant_type": "client_credentials",
                         "client_id": self._api_key,
@@ -130,7 +134,7 @@ class BaiduAsrClient:
         }
         try:
             resp = await self._client.post(
-                ASR_URL,
+                self._asr_url,
                 json=body,
                 headers={"Content-Type": "application/json"},
             )

@@ -22,8 +22,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.config import get_settings
-from app.services.baidu_asr import BaiduAsrClient, BaiduAsrError
-from app.services.baidu_tts import BaiduTtsClient, BaiduTtsError
+from app.providers.config import load_provider_config
+from app.providers.factory import build_asr, build_tts
+from app.providers.openai_speech import SpeechProviderError
+from app.services.baidu_asr import BaiduAsrError
+from app.services.baidu_tts import BaiduTtsError
 from app.services.local_audio import LocalAudioPlayer
 
 
@@ -72,8 +75,9 @@ def load_pcm(path: Path) -> bytes:
 
 async def run(args: argparse.Namespace) -> int:
     settings = get_settings()
-    if not settings.baidu_speech_api_key or not settings.baidu_speech_secret_key:
-        print("未配置百度密钥", file=sys.stderr)
+    config = load_provider_config(settings)
+    if not config.available("asr") or not config.available("tts"):
+        print("所选语音厂商未配置密钥", file=sys.stderr)
         return 2
 
     wav_path = Path(args.wav) if args.wav else Path("/tmp/cmcar_voice/loop-test.wav")
@@ -85,24 +89,12 @@ async def run(args: argparse.Namespace) -> int:
         print("录音为空", file=sys.stderr)
         return 1
 
-    asr = BaiduAsrClient(
-        settings.baidu_speech_api_key,
-        settings.baidu_speech_secret_key,
-        dev_pid=settings.baidu_speech_dev_pid,
-        timeout_s=settings.baidu_speech_timeout_s,
-    )
-    tts = BaiduTtsClient(
-        settings.baidu_speech_api_key,
-        settings.baidu_speech_secret_key,
-        per=settings.baidu_tts_per,
-        aue=4,
-        timeout_s=settings.baidu_tts_timeout_s,
-    )
+    asr, tts = build_asr(config), build_tts(config)
     player = LocalAudioPlayer()
     try:
         try:
             text = await asr.recognize(pcm)
-        except BaiduAsrError as exc:
+        except (BaiduAsrError, SpeechProviderError) as exc:
             print(f"ASR 失败: {exc}", file=sys.stderr)
             return 1
         print(f"ASR: {text!r}")
@@ -112,7 +104,7 @@ async def run(args: argparse.Namespace) -> int:
 
         try:
             audio = await tts.synthesize(text)
-        except BaiduTtsError as exc:
+        except (BaiduTtsError, SpeechProviderError) as exc:
             print(f"TTS 失败: {exc}", file=sys.stderr)
             return 1
         print(f"TTS: {audio.duration_ms} ms @ {audio.sample_rate} Hz")

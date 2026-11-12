@@ -20,12 +20,14 @@ import sys
 import time
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Protocol
 
+from app.agent.persona import DEFAULT_PROFILE_DIR, load_profile
+from app.agent.vehicle import DriveArguments, MoveArguments, TurnArguments, VehicleGateway
 from app.services.audio_metrics import measure_pcm16
 from app.services.llm import LlmClient, LlmDone, LlmTextDelta
 from app.services.voice_diagnostics import InterruptionCapture
-from app.services.voice_intent import VoiceIntent
 from app.services.voice_service import VoiceService, VoiceSession
 
 logger = logging.getLogger(__name__)
@@ -36,14 +38,6 @@ STOP_TALKING_PHRASES = {"停一下", "停下来", "别说了", "不要说了", "
 _SENTENCE_END = "。！？；…!?;.\n"
 _MIN_SENTENCE = 2
 _MAX_SENTENCE = 80
-
-SYSTEM_PROMPT = """你是 CodeMyCar 车载语音助手，正在和车主进行免提对话。
-用简洁、自然的口语回答，通常 1 到 3 句话；不要输出 Markdown、代码块或列表。
-默认用中文回答，用户说英文时可以用英文。
-车辆动作必须通过工具完成，不要声称已经移动，除非工具结果明确表示执行成功。
-如果语音运动执行被关闭，直接说明当前不能控制车辆，不要假装动作完成。
-危险动作要先询问确认；不要提供危险驾驶建议。
-用户说“结束”“再见”“退出”“不聊了”表示结束本次对话。"""
 
 
 class ConversationSink(Protocol):
@@ -79,7 +73,8 @@ class ConversationConfig:
     barge_tail_timeout_s: float = 5.0
     playback_timeout_s: float = 60.0
     settle_timeout_s: float = 4.0
-    system_prompt: str = SYSTEM_PROMPT
+    system_prompt: str | None = None
+    profile_dir: str = str(DEFAULT_PROFILE_DIR)
 
     @property
     def turn_end_s(self) -> float:
@@ -110,13 +105,15 @@ def strip_stop_prefix(text: str) -> str:
     for phrase in sorted(STOP_TALKING_PHRASES, key=len, reverse=True):
         if not candidate.startswith(phrase):
             continue
-        suffix = candidate[len(phrase):]
+        suffix = candidate[len(phrase) :]
         if not suffix:
             return ""
         cleaned = suffix.lstrip("。！？，,.!?；;：: \t\r\n")
-        if cleaned != suffix or cleaned.startswith(("换", "请", "讲", "我想", "帮我", "继续", "重新", "给我")):
+        if cleaned != suffix or cleaned.startswith(
+            ("换", "请", "讲", "我想", "帮我", "继续", "重新", "给我")
+        ):
             # Return original casing for English names in the new question.
-            return text[len(text) - len(cleaned):]
+            return text[len(text) - len(cleaned) :]
     return text
 
 
@@ -187,9 +184,7 @@ class ConversationHistory:
         self._trim()
 
     def add_tool(self, tool_call_id: str, content: str) -> None:
-        self.messages.append(
-            {"role": "tool", "tool_call_id": tool_call_id, "content": content}
-        )
+        self.messages.append({"role": "tool", "tool_call_id": tool_call_id, "content": content})
         self._trim()
 
     def request_messages(self) -> list[dict[str, Any]]:
@@ -208,98 +203,60 @@ class ConversationHistory:
             return
         # Remove the oldest user and everything up to the next user message,
         # keeping the system prompt at index 0.
-        end = next((i for i in range(2, len(self.messages))
-                    if self.messages[i].get("role") == "user"), len(self.messages))
+        end = next(
+            (i for i in range(2, len(self.messages)) if self.messages[i].get("role") == "user"),
+            len(self.messages),
+        )
         del self.messages[1:end]
 
     def _estimate_tokens(self) -> int:
         return sum(max(1, len(str(message.get("content", ""))) // 2) for message in self.messages)
 
 
+# Built from the same validated argument models as the production graph.
+
 CAR_TOOLS: list[dict[str, Any]] = [
     {
         "type": "function",
         "function": {
-            "name": "car_move",
-            "description": "Move the car forward or backward by a short distance. "
-            "Motion execution may be disabled by the server.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "direction": {"type": "string", "enum": ["forward", "backward"]},
-                    "distance_m": {"type": "number", "minimum": 0.05, "maximum": 1.0},
-                },
-                "required": ["direction", "distance_m"],
-            },
+            "name": name,
+            "description": description,
+            "parameters": schema.model_json_schema()
+            if schema
+            else {"type": "object", "properties": {}},
         },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "car_turn",
-            "description": "Turn the car left or right by an angle. "
-            "Motion execution may be disabled by the server.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "direction": {"type": "string", "enum": ["left", "right"]},
-                    "angle_deg": {"type": "number", "minimum": 1, "maximum": 90},
-                },
-                "required": ["direction", "angle_deg"],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "car_stop",
-            "description": "Immediately request the car to stop.",
-            "parameters": {"type": "object", "properties": {}},
-        },
-    },
+    }
+    for name, description, schema in [
+        ("car_get_state", "Read fresh connection, body pose, capabilities; no movement", None),
+        (
+            "car_drive",
+            "Signed cm path; body turn degrees positive right, negative left even in reverse",
+            DriveArguments,
+        ),
+        ("car_move", "Straight forward/backward motion in metres", MoveArguments),
+        (
+            "car_turn",
+            "Body turn on default short forward arc, not stationary steering",
+            TurnArguments,
+        ),
+        ("car_stop", "Reliable STOP; requires confirmed stopped result", None),
+    ]
 ]
 
 
 class CarToolExecutor:
     def __init__(self, service: VoiceService) -> None:
         self.service = service
+        self.gateway = VehicleGateway(service)
 
     async def execute(self, device_id: str, call: Any) -> dict[str, Any]:
-        if not self.service.config.execute_commands:
-            return {"executed": False, "reason": "voice execution disabled"}
         try:
             args = json.loads(call.arguments or "{}")
-        except json.JSONDecodeError:
-            return {"executed": False, "reason": "invalid tool arguments"}
-        try:
-            if call.name == "car_move":
-                direction = str(args.get("direction", "")).lower()
-                distance_m = float(args.get("distance_m", 0))
-                if direction not in ("forward", "backward"):
-                    return {"executed": False, "reason": "invalid direction"}
-                intent = VoiceIntent(
-                    direction,
-                    distance_mm=round(distance_m * 1000),
-                )
-                return await self.service.execute_intent(device_id, intent)
-            if call.name == "car_turn":
-                direction = str(args.get("direction", "")).lower()
-                angle = round(float(args.get("angle_deg", 0)))
-                if direction not in ("left", "right") or angle <= 0:
-                    return {"executed": False, "reason": "invalid turn"}
-                return await self.service.execute_intent(
-                    device_id,
-                    VoiceIntent(
-                        "turn_left" if direction == "left" else "turn_right",
-                        angle_deg=angle,
-                    ),
-                )
-            if call.name == "car_stop":
-                await self.service.stop_action(device_id)
-                return {"executed": True, "action": "stop"}
-            return {"executed": False, "reason": f"unknown tool {call.name}"}
-        except Exception as exc:  # noqa: BLE001 - tool errors must not kill the session
-            logger.warning("conversation tool %s failed: %s", call.name, exc)
+            if not isinstance(args, dict):
+                return {"executed": False, "reason": "invalid tool arguments"}
+            return await self.gateway.invoke(device_id, call.name, args)
+        except Exception as exc:  # noqa: BLE001 - tool failures must not kill a voice turn
+            logger.warning("conversation tool failed: %s", type(exc).__name__)
             return {"executed": False, "reason": "tool failed"}
 
 
@@ -329,7 +286,7 @@ class ConversationRunner:
         self.config = config or ConversationConfig()
         self.device_id = device_id or session.device_id
         self.history = ConversationHistory(
-            self.config.system_prompt,
+            self.config.system_prompt or load_profile(Path(self.config.profile_dir)).system_prompt,
             max_turns=self.config.history_turns,
             max_tokens=self.config.history_tokens,
         )
@@ -380,6 +337,7 @@ class ConversationRunner:
                 await asyncio.wait_for(provider.warmup(), timeout=5)
             except Exception:  # noqa: BLE001 - optional preparation never kills a conversation
                 logger.warning("voice auth warmup unavailable; request will retry")
+
         async with asyncio.TaskGroup() as group:
             for provider in (self.service.asr, self.service.tts):
                 if callable(getattr(provider, "warmup", None)):
@@ -406,7 +364,7 @@ class ConversationRunner:
             # The words that triggered the stop are not a new question. Drop
             # the rest of that utterance and only start listening again after
             # the user goes quiet, so "停一下" cannot become an LLM turn.
-            if measure_pcm16(pcm[:len(pcm) // 2 * 2]).ac_rms < 250:
+            if measure_pcm16(pcm[: len(pcm) // 2 * 2]).ac_rms < 250:
                 self._post_silence_ms += max(1, len(pcm) // 32)
             else:
                 self._post_silence_ms = 0
@@ -485,8 +443,12 @@ class ConversationRunner:
         now = time.monotonic()
         if now - self._barge_log_at >= 0.5:
             self._barge_log_at = now
-            logger.info("barge level rms=%.0f threshold=%d held_ms=%d",
-                        rms, self.config.barge_in_rms, self._barge_ms)
+            logger.info(
+                "barge level rms=%.0f threshold=%d held_ms=%d",
+                rms,
+                self.config.barge_in_rms,
+                self._barge_ms,
+            )
         # Speech between Chinese syllables dips below any single threshold;
         # accumulate above-threshold frames and decay on quiet frames instead
         # of resetting, otherwise a real interruption never reaches 180 ms.
@@ -499,11 +461,15 @@ class ConversationRunner:
 
     def device_barge_in(self, turn: int | None = None) -> None:
         """Called when the device itself detected near-end speech."""
-        if (self.ended.is_set() or not self.config.barge_in or self._barging
-                or self.state != "speaking"
-                or (turn is not None and turn != self.turn)
-                or self.turn == self._last_interrupted_turn
-                or (turn is None and time.monotonic() < self._barge_cooldown_until)):
+        if (
+            self.ended.is_set()
+            or not self.config.barge_in
+            or self._barging
+            or self.state != "speaking"
+            or (turn is not None and turn != self.turn)
+            or self.turn == self._last_interrupted_turn
+            or (turn is None and time.monotonic() < self._barge_cooldown_until)
+        ):
             return
         # A valid event for a NEW reply means the device already stopped it.
         # Ignoring that event on a server-only cooldown would strand the peer
@@ -518,37 +484,56 @@ class ConversationRunner:
         if self.service.config.archive_continuous_segments and self.service.reserve_archive():
             if self._diagnostic_capture is not None:
                 self._diagnostic_capture.close()
-            path = self.session.artifact_dir / f"{self.session.stem}-barge{self.turn:02d}-uplink.wav"
+            path = (
+                self.session.artifact_dir / f"{self.session.stem}-barge{self.turn:02d}-uplink.wav"
+            )
             self._diagnostic_capture = InterruptionCapture(path)
         self._interrupt_task = asyncio.create_task(
-            self._begin_barge_in(), name="voice-conversation-interrupt")
+            self._begin_barge_in(), name="voice-conversation-interrupt"
+        )
 
     def playback_event(self, event: dict) -> None:
         """Only the current response's matching device completion can release a waiter."""
         if event.get("type") == "stop_ack":
-            if (event.get("turn") == self.turn and self._stop_ack is not None
-                    and not self._stop_ack.done()):
+            if (
+                event.get("turn") == self.turn
+                and self._stop_ack is not None
+                and not self._stop_ack.done()
+            ):
                 self._stop_ack.set_result(None)
-                logger.info("voice_metric %s", json.dumps({
-                    "name": "barge_stop_ack", "turn": self.turn,
-                    "server_ack_ms": round((time.monotonic() - self._barge_started) * 1000, 1),
-                    "local_dma_drain_ms": event.get("local_dma_drain_ms"),
-                }))
+                logger.info(
+                    "voice_metric %s",
+                    json.dumps(
+                        {
+                            "name": "barge_stop_ack",
+                            "turn": self.turn,
+                            "server_ack_ms": round(
+                                (time.monotonic() - self._barge_started) * 1000, 1
+                            ),
+                            "local_dma_drain_ms": event.get("local_dma_drain_ms"),
+                        }
+                    ),
+                )
             return
         key = (event.get("turn"), event.get("seq"))
-        if (key == self._playback_key and self._playback_done is not None
-                and not self._playback_done.done()):
+        if (
+            key == self._playback_key
+            and self._playback_done is not None
+            and not self._playback_done.done()
+        ):
             self._playback_done.set_result(None)
 
     async def _wait_playback(self) -> None:
         if not self.config.playback_ack or self._playback_key is None:
             await self.service.wait_playback()
             return
-        await self._safe_send({"type": "playback_end", "turn": self._playback_key[0],
-                               "seq": self._playback_key[1]})
+        await self._safe_send(
+            {"type": "playback_end", "turn": self._playback_key[0], "seq": self._playback_key[1]}
+        )
         try:
-            await asyncio.wait_for(asyncio.shield(self._playback_done),
-                                   timeout=self.config.playback_timeout_s)
+            await asyncio.wait_for(
+                asyncio.shield(self._playback_done), timeout=self.config.playback_timeout_s
+            )
         except TimeoutError:
             self.request_end("playback_timeout")
             raise
@@ -602,9 +587,7 @@ class ConversationRunner:
         self._stop_ack = None
         self._barging = False
         if not self.ended.is_set() and self._worker is None:
-            self._worker = asyncio.create_task(
-                self._work(), name="voice-conversation-worker"
-            )
+            self._worker = asyncio.create_task(self._work(), name="voice-conversation-worker")
         if self.config.barge_audio and not self.ended.is_set():
             pending = bytes(self._barge_audio)
             self._barge_audio.clear()
@@ -655,16 +638,15 @@ class ConversationRunner:
             while not self.ended.is_set():
                 await asyncio.sleep(0.5)
                 now = time.monotonic()
-                if (self._diagnostic_capture is not None and
-                        now - self._diagnostic_capture.started >= self._diagnostic_capture.seconds):
+                if (
+                    self._diagnostic_capture is not None
+                    and now - self._diagnostic_capture.started >= self._diagnostic_capture.seconds
+                ):
                     self._diagnostic_capture.close()
                 if now - self._started > self.config.max_s:
                     self.request_end("max_duration")
                     return
-                if (
-                    self.state == "listening"
-                    and now - self._last_activity >= self.config.idle_s
-                ):
+                if self.state == "listening" and now - self._last_activity >= self.config.idle_s:
                     self.request_end("idle")
                     return
         except asyncio.CancelledError:
@@ -700,8 +682,11 @@ class ConversationRunner:
             for _ in range(3):
                 started = time.monotonic()
                 text = await self.service.asr.recognize(pcm)
-                logger.info("voice timing turn=%d asr_ms=%.0f", self.turn,
-                            (time.monotonic() - started) * 1000)
+                logger.info(
+                    "voice timing turn=%d asr_ms=%.0f",
+                    self.turn,
+                    (time.monotonic() - started) * 1000,
+                )
                 if not self._barge_input_open:
                     return text
                 deadline = time.monotonic() + self.config.barge_tail_timeout_s
@@ -712,8 +697,7 @@ class ConversationRunner:
                         self.request_end("barge_input_timeout")
                         return None
                     try:
-                        await asyncio.wait_for(self._input_changed.wait(),
-                                               remaining)
+                        await asyncio.wait_for(self._input_changed.wait(), remaining)
                     except TimeoutError:
                         self.request_end("barge_input_timeout")
                         return None
@@ -756,12 +740,13 @@ class ConversationRunner:
         if self.service.config.archive_continuous_segments and segment.path.exists():
             logger.info("voice diagnostic transcript turn=%d text=%r", self.turn, text)
 
-        await self._safe_send({"type": "user_text", "turn": self.turn, "text": text[:400], "intent": None})
+        await self._safe_send(
+            {"type": "user_text", "turn": self.turn, "text": text[:400], "intent": None}
+        )
         normalized = strip_stop_prefix(normalize_text(text))
         if not normalized:
             await self._safe_send(
-                {"type": "assistant_done", "turn": self.turn, "text": "",
-                 "interrupted": True}
+                {"type": "assistant_done", "turn": self.turn, "text": "", "interrupted": True}
             )
             self.state = "listening"
             self._last_activity = time.monotonic()
@@ -770,11 +755,18 @@ class ConversationRunner:
             await self._speak_text("好，再见")
             if self.service.tts is not None:
                 try:
-                    await asyncio.wait_for(self._wait_playback(), timeout=self.config.playback_timeout_s)
+                    await asyncio.wait_for(
+                        self._wait_playback(), timeout=self.config.playback_timeout_s
+                    )
                 except TimeoutError:
                     logger.warning("conversation closing playback did not drain")
             await self._safe_send(
-                {"type": "assistant_done", "turn": self.turn, "text": "好，再见", "interrupted": False}
+                {
+                    "type": "assistant_done",
+                    "turn": self.turn,
+                    "text": "好，再见",
+                    "interrupted": False,
+                }
             )
             self.request_end("user_end")
             return
@@ -810,9 +802,12 @@ class ConversationRunner:
         if self._interrupted_reply:
             # Do not claim that generated or transmitted audio was heard. The
             # adapter receives an explicit interruption note on the next turn.
-            text = ("[上一条回复被用户打断；以下是已下发但不保证已听完的片段："
-                    + self._interrupted_reply[:600] + "。若用户要求继续，请从合适边界重述。]\n"
-                    + text)
+            text = (
+                "[上一条回复被用户打断；以下是已下发但不保证已听完的片段："
+                + self._interrupted_reply[:600]
+                + "。若用户要求继续，请从合适边界重述。]\n"
+                + text
+            )
             self._interrupted_reply = ""
         sentences: asyncio.Queue[str | None] = asyncio.Queue(maxsize=2)
         prepared: asyncio.Queue = asyncio.Queue(maxsize=2)
@@ -867,7 +862,14 @@ class ConversationRunner:
             chunker = SentenceChunker()
             async for event in self.llm.stream_chat(
                 self.history.request_messages(),
-                tools=CAR_TOOLS,
+                tools=(
+                    [
+                        t
+                        for t in CAR_TOOLS
+                        if self.service.config.execute_commands
+                        or t["function"]["name"] in {"car_get_state", "car_stop"}
+                    ]
+                ),
             ):
                 if isinstance(event, LlmTextDelta):
                     for sentence in chunker.feed(event.text):
@@ -914,23 +916,25 @@ class ConversationRunner:
         try:
             started = time.monotonic()
             audio = await self.service.tts.synthesize(sentence, aue=4)
-            logger.info("voice timing turn=%d tts_ms=%.0f audio_ms=%.0f", self.turn,
-                        (time.monotonic() - started) * 1000,
-                        len(audio.data) / (audio.sample_rate * audio.channels * 2) * 1000)
+            logger.info(
+                "voice timing turn=%d tts_ms=%.0f audio_ms=%.0f",
+                self.turn,
+                (time.monotonic() - started) * 1000,
+                len(audio.data) / (audio.sample_rate * audio.channels * 2) * 1000,
+            )
             return audio
         except Exception as exc:  # noqa: BLE001 - injected synthesis backends may vary
             logger.warning("conversation TTS failed: %s", exc)
             await self._safe_send({"type": "error", "message": "语音合成失败"})
             return None
 
-    async def _speak_sentence(self, sentence: str, spoken: list[str], *,
-                              audio=None, prepared: bool = False) -> None:
+    async def _speak_sentence(
+        self, sentence: str, spoken: list[str], *, audio=None, prepared: bool = False
+    ) -> None:
         sentence = sentence.strip()
         if not sentence:
             return
-        await self._safe_send(
-            {"type": "assistant_delta", "turn": self.turn, "text": sentence}
-        )
+        await self._safe_send({"type": "assistant_delta", "turn": self.turn, "text": sentence})
         if self.service.tts is None:
             spoken.append(sentence)
             return

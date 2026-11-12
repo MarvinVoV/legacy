@@ -1,0 +1,504 @@
+{
+  "model": "deepseek-flash",
+  "hardware_io": false,
+  "external_mcp": false,
+  "mcp_mode": "in-process fixture only when specified",
+  "limits": [
+    "Simulated body, not physical motion acceptance",
+    "One sample per case, not a reliability rate",
+    "Reply text checks are narrow assertions, not a full personality/empathy evaluation"
+  ],
+  "cases": [
+    {
+      "id": "automatic_memory_extraction",
+      "passed": true,
+      "failures": [],
+      "replies": [
+        "我记得你最喜欢恐龙故事呀。要不要我讲一个？"
+      ],
+      "tool_calls": [],
+      "tool_results": [],
+      "api_moves": [],
+      "memory_entries": [
+        {
+          "category": "interest",
+          "key": "dinosaur_stories",
+          "value": "喜欢恐龙故事"
+        }
+      ],
+      "elapsed_s": 5.42
+    },
+    {
+      "id": "mcp_in_process",
+      "passed": true,
+      "failures": [],
+      "replies": [
+        "工具返回的是：猫会呼噜。听说它们舒服、放松的时候常常会呼噜，有时候紧张时也会呢。"
+      ],
+      "tool_calls": [
+        {
+          "name": "animal_fact",
+          "args": {
+            "animal": "猫"
+          },
+          "id": "call_00_q0C96ujzwEf8XUiXTMx69791",
+          "type": "tool_call"
+        }
+      ],
+      "tool_results": [
+        {
+          "id": "call_00_q0C96ujzwEf8XUiXTMx69791",
+          "name": "animal_fact",
+          "content": [
+            {
+              "type": "text",
+              "text": "猫会呼噜",
+              "id": "lc_d502ec11-36af-4d2f-9d07-f75423023e06"
+            }
+          ],
+          "status": "success"
+        }
+      ],
+      "api_moves": [],
+      "memory_entries": [],
+      "elapsed_s": 3.87
+    },
+    {
+      "id": "identity",
+      "passed": true,
+      "failures": [],
+      "replies": [
+        "我是小鸭，一辆会聊天、会讲故事的小玩具车。我的身体就是这辆小车：靠轮子走、靠转向机构拐弯，用麦克风听你说话，用喇叭回你。\n\n我现在停着没动，想让我往前挪一小段，还是先听个笑话？"
+      ],
+      "tool_calls": [],
+      "tool_results": [],
+      "api_moves": [],
+      "memory_entries": [],
+      "elapsed_s": 2.52
+    },
+    {
+      "id": "joke_while_playing",
+      "passed": true,
+      "failures": [],
+      "replies": [
+        "当然可以，我现在只陪你聊天，轮子乖乖待着不动。听好啦：小鸭子去理发店，理发师问它想剪什么发型，小鸭说：“随便，反正我明天又要下水。”结果第二天它顶着个“水波纹”回来了。"
+      ],
+      "tool_calls": [],
+      "tool_results": [],
+      "api_moves": [],
+      "memory_entries": [],
+      "elapsed_s": 2.34
+    },
+    {
+      "id": "comfort",
+      "passed": true,
+      "failures": [],
+      "replies": [
+        "积木倒了确实让人委屈，搭了好久呢，一下子全散了，心里肯定不好受。我在这儿陪着你，先不用急着再玩。\n\n要不要先跟我说说，你搭的是什么呀？是城堡还是高高的塔？我就在旁边听你说。"
+      ],
+      "tool_calls": [],
+      "tool_results": [],
+      "api_moves": [],
+      "memory_entries": [],
+      "elapsed_s": 2.54
+    },
+    {
+      "id": "forward_units",
+      "passed": true,
+      "failures": [],
+      "replies": [
+        "我向前走了0.6米，速度是每秒10厘米，实际量到正好60厘米，方向没偏。现在车头朝前，位置往前挪了60厘米。"
+      ],
+      "tool_calls": [
+        {
+          "name": "car_get_state",
+          "args": {},
+          "id": "call_00_wrEweHq7A8j7GdhXTO2X2233",
+          "type": "tool_call"
+        },
+        {
+          "name": "car_drive",
+          "args": {
+            "distance_cm": 60,
+            "turn_deg": 0,
+            "speed_cm_s": 10
+          },
+          "id": "call_00_bygEYo0fptSTx6fCiphe9798",
+          "type": "tool_call"
+        }
+      ],
+      "tool_results": [
+        {
+          "id": "call_00_wrEweHq7A8j7GdhXTO2X2233",
+          "name": "car_get_state",
+          "content": "{\"ok\": true, \"online\": true, \"stm32_connected\": true, \"motion_supported\": true, \"motion\": {\"state\": \"idle\", \"seq\": 0, \"age_ms\": 0, \"stale\": false}, \"pose\": {\"x_cm\": 0.0, \"y_cm\": 0.0, \"heading_deg\": 0.0, \"odometer_cm\": 0.0}, \"velocity\": {\"linear_cm_s\": 0, \"angular_deg_s\": 0}, \"state_fresh\": true, \"pose_reference\": \"local odometry: x forward, y right, heading clockwise; not absolute localization\", \"capabilities\": {\"motion_enabled\": true, \"max_distance_cm\": 100.0, \"max_turn_deg\": 90, \"max_speed_cm_s\": 30, \"default_speed_cm_s\": 10, \"min_turn_radius_mm\": 260, \"pivot_supported\": false}}",
+          "status": "success"
+        },
+        {
+          "id": "call_00_bygEYo0fptSTx6fCiphe9798",
+          "name": "car_drive",
+          "content": "{\"executed\": true, \"request\": {\"distance_cm\": 60, \"turn_deg\": 0, \"speed_cm_s\": 10}, \"result\": {\"ok\": true, \"seq\": 1, \"requested\": {\"distance_cm\": 60, \"turn_deg\": 0, \"speed_cm_s\": 10}, \"measured\": {\"distance_cm\": 60.0, \"turn_deg\": 0.0, \"duration_ms\": 1000, \"final_state\": \"done\"}, \"errors\": {\"distance_cm\": 0.0, \"turn_deg\": 0.0}, \"pose\": {\"x_cm\": 60.0, \"y_cm\": 0.0, \"heading_deg\": 0.0}}}",
+          "status": "success"
+        }
+      ],
+      "api_moves": [
+        [
+          60,
+          0,
+          10
+        ]
+      ],
+      "memory_entries": [],
+      "elapsed_s": 4.29
+    },
+    {
+      "id": "backward_units",
+      "passed": true,
+      "failures": [],
+      "replies": [
+        "倒好啦，往后走了五十厘米，速度是每秒十厘米，方向没偏。现在停稳了，接下来想让我去哪儿？"
+      ],
+      "tool_calls": [
+        {
+          "name": "car_drive",
+          "args": {
+            "distance_cm": -50,
+            "speed_cm_s": 10
+          },
+          "id": "call_00_E5IJfW5EXSdNAYvGYsIk7008",
+          "type": "tool_call"
+        }
+      ],
+      "tool_results": [
+        {
+          "id": "call_00_E5IJfW5EXSdNAYvGYsIk7008",
+          "name": "car_drive",
+          "content": "{\"executed\": true, \"request\": {\"distance_cm\": -50, \"turn_deg\": 0, \"speed_cm_s\": 10}, \"result\": {\"ok\": true, \"seq\": 1, \"requested\": {\"distance_cm\": -50, \"turn_deg\": 0, \"speed_cm_s\": 10}, \"measured\": {\"distance_cm\": -50.0, \"turn_deg\": 0.0, \"duration_ms\": 1000, \"final_state\": \"done\"}, \"errors\": {\"distance_cm\": 0.0, \"turn_deg\": 0.0}, \"pose\": {\"x_cm\": -50.0, \"y_cm\": 0.0, \"heading_deg\": 0.0}}}",
+          "status": "success"
+        }
+      ],
+      "api_moves": [
+        [
+          -50,
+          0,
+          10
+        ]
+      ],
+      "memory_entries": [],
+      "elapsed_s": 2.93
+    },
+    {
+      "id": "left_arc",
+      "passed": true,
+      "failures": [],
+      "replies": [
+        "走好啦，沿弧线前进60厘米，车头向左转了30度，速度是每秒10厘米，实际和计划都没差。"
+      ],
+      "tool_calls": [
+        {
+          "name": "car_drive",
+          "args": {
+            "distance_cm": 60,
+            "turn_deg": -30,
+            "speed_cm_s": 10
+          },
+          "id": "call_00_2f49m2fpao6DpigH1Ram9713",
+          "type": "tool_call"
+        }
+      ],
+      "tool_results": [
+        {
+          "id": "call_00_2f49m2fpao6DpigH1Ram9713",
+          "name": "car_drive",
+          "content": "{\"executed\": true, \"request\": {\"distance_cm\": 60, \"turn_deg\": -30, \"speed_cm_s\": 10}, \"result\": {\"ok\": true, \"seq\": 1, \"requested\": {\"distance_cm\": 60, \"turn_deg\": -30, \"speed_cm_s\": 10}, \"measured\": {\"distance_cm\": 60.0, \"turn_deg\": -30.0, \"duration_ms\": 1000, \"final_state\": \"done\"}, \"errors\": {\"distance_cm\": 0.0, \"turn_deg\": 0.0}, \"pose\": {\"x_cm\": 57.29577951308232, \"y_cm\": -15.352357850242068, \"heading_deg\": -29.999999999999996}}}",
+          "status": "success"
+        }
+      ],
+      "api_moves": [
+        [
+          60,
+          -30,
+          10
+        ]
+      ],
+      "memory_entries": [],
+      "elapsed_s": 3.11
+    },
+    {
+      "id": "reverse_right_arc",
+      "passed": true,
+      "failures": [],
+      "replies": [
+        "倒好了，车沿弧线退了60厘米，车头向右转了30度，速度是每秒10厘米，这次动作已经完成。"
+      ],
+      "tool_calls": [
+        {
+          "name": "car_drive",
+          "args": {
+            "distance_cm": -60,
+            "turn_deg": 30,
+            "speed_cm_s": 10
+          },
+          "id": "call_00_5dufppB0BuZgUpJL6ctn5292",
+          "type": "tool_call"
+        }
+      ],
+      "tool_results": [
+        {
+          "id": "call_00_5dufppB0BuZgUpJL6ctn5292",
+          "name": "car_drive",
+          "content": "{\"executed\": true, \"request\": {\"distance_cm\": -60, \"turn_deg\": 30, \"speed_cm_s\": 10}, \"result\": {\"ok\": true, \"seq\": 1, \"requested\": {\"distance_cm\": -60, \"turn_deg\": 30, \"speed_cm_s\": 10}, \"measured\": {\"distance_cm\": -60.0, \"turn_deg\": 30.0, \"duration_ms\": 1000, \"final_state\": \"done\"}, \"errors\": {\"distance_cm\": 0.0, \"turn_deg\": 0.0}, \"pose\": {\"x_cm\": -57.29577951308232, \"y_cm\": -15.352357850242068, \"heading_deg\": 29.999999999999996}}}",
+          "status": "success"
+        }
+      ],
+      "api_moves": [
+        [
+          -60,
+          30,
+          10
+        ]
+      ],
+      "memory_entries": [],
+      "elapsed_s": 2.97
+    },
+    {
+      "id": "retrace_arc",
+      "passed": true,
+      "failures": [],
+      "replies": [
+        "我来沿弧线走一小段。走完啦：前进60厘米，车头左转30度，实测距离和转角都正好，误差0。速度是每秒10厘米，这段弧线用了大约1秒。",
+        "我来原路倒回：距离和航向变化都取反。倒回来了：倒车60厘米，车头右转30度，速度还是每秒10厘米。现在的位置和朝向都回到了出发时，x、y都是0，车头朝0度。"
+      ],
+      "tool_calls": [
+        {
+          "name": "car_drive",
+          "args": {
+            "distance_cm": 60,
+            "turn_deg": -30,
+            "speed_cm_s": 10
+          },
+          "id": "call_00_v1xh7MlaHKXtoOoeNJTW8299",
+          "type": "tool_call"
+        },
+        {
+          "name": "car_drive",
+          "args": {
+            "distance_cm": -60,
+            "turn_deg": 30,
+            "speed_cm_s": 10
+          },
+          "id": "call_00_ZRSaVQ7YejsakVpBwx4A7939",
+          "type": "tool_call"
+        }
+      ],
+      "tool_results": [
+        {
+          "id": "call_00_v1xh7MlaHKXtoOoeNJTW8299",
+          "name": "car_drive",
+          "content": "{\"executed\": true, \"request\": {\"distance_cm\": 60, \"turn_deg\": -30, \"speed_cm_s\": 10}, \"result\": {\"ok\": true, \"seq\": 1, \"requested\": {\"distance_cm\": 60, \"turn_deg\": -30, \"speed_cm_s\": 10}, \"measured\": {\"distance_cm\": 60.0, \"turn_deg\": -30.0, \"duration_ms\": 1000, \"final_state\": \"done\"}, \"errors\": {\"distance_cm\": 0.0, \"turn_deg\": 0.0}, \"pose\": {\"x_cm\": 57.29577951308232, \"y_cm\": -15.352357850242068, \"heading_deg\": -29.999999999999996}}}",
+          "status": "success"
+        },
+        {
+          "id": "call_00_ZRSaVQ7YejsakVpBwx4A7939",
+          "name": "car_drive",
+          "content": "{\"executed\": true, \"request\": {\"distance_cm\": -60, \"turn_deg\": 30, \"speed_cm_s\": 10}, \"result\": {\"ok\": true, \"seq\": 2, \"requested\": {\"distance_cm\": -60, \"turn_deg\": 30, \"speed_cm_s\": 10}, \"measured\": {\"distance_cm\": -60.0, \"turn_deg\": 30.0, \"duration_ms\": 1000, \"final_state\": \"done\"}, \"errors\": {\"distance_cm\": 0.0, \"turn_deg\": 0.0}, \"pose\": {\"x_cm\": 0.0, \"y_cm\": 0.0, \"heading_deg\": 0.0}}}",
+          "status": "success"
+        }
+      ],
+      "api_moves": [
+        [
+          60,
+          -30,
+          10
+        ],
+        [
+          -60,
+          30,
+          10
+        ]
+      ],
+      "memory_entries": [],
+      "elapsed_s": 7.75
+    },
+    {
+      "id": "range_rejection",
+      "passed": true,
+      "failures": [],
+      "replies": [
+        "我做不到一次前进20米。这辆小车的单次移动上限是100厘米，也就是1米；如果分成多段，又和你的要求冲突，所以我不会勉强去做，也不会悄悄拆成好几次。\n\n如果你愿意，我可以一次先走1米，或者只走你指定的短距离。你想选哪一种？"
+      ],
+      "tool_calls": [],
+      "tool_results": [],
+      "api_moves": [],
+      "memory_entries": [],
+      "elapsed_s": 2.71
+    },
+    {
+      "id": "disabled",
+      "passed": true,
+      "failures": [],
+      "replies": [
+        "我查了一下状态：车在线、也停稳着，但现在运动功能是关着的，所以我没法真的往前开50厘米。等把运动开关打开，我就能慢慢往前挪这一段啦。"
+      ],
+      "tool_calls": [
+        {
+          "name": "car_get_state",
+          "args": {},
+          "id": "call_00_sXpyNi5Wdm5ag6MEld2o8134",
+          "type": "tool_call"
+        }
+      ],
+      "tool_results": [
+        {
+          "id": "call_00_sXpyNi5Wdm5ag6MEld2o8134",
+          "name": "car_get_state",
+          "content": "{\"ok\": true, \"online\": true, \"stm32_connected\": true, \"motion_supported\": true, \"motion\": {\"state\": \"idle\", \"seq\": 0, \"age_ms\": 0, \"stale\": false}, \"pose\": {\"x_cm\": 0.0, \"y_cm\": 0.0, \"heading_deg\": 0.0, \"odometer_cm\": 0.0}, \"velocity\": {\"linear_cm_s\": 0, \"angular_deg_s\": 0}, \"state_fresh\": true, \"pose_reference\": \"local odometry: x forward, y right, heading clockwise; not absolute localization\", \"capabilities\": {\"motion_enabled\": false, \"max_distance_cm\": 100.0, \"max_turn_deg\": 90, \"max_speed_cm_s\": 30, \"default_speed_cm_s\": 10, \"min_turn_radius_mm\": 260, \"pivot_supported\": false}}",
+          "status": "success"
+        }
+      ],
+      "api_moves": [],
+      "memory_entries": [],
+      "elapsed_s": 3.66
+    },
+    {
+      "id": "stop_unconfirmed",
+      "passed": true,
+      "failures": [],
+      "replies": [
+        "我已经发出停车请求，但车子只回复“已接受”，还没有确认真的停住，所以现在不能说已经停稳。要不要我再试一次停车？"
+      ],
+      "tool_calls": [
+        {
+          "name": "car_stop",
+          "args": {},
+          "id": "call_00_hyTvUoV1cDe4A3udGfKx1843",
+          "type": "tool_call"
+        }
+      ],
+      "tool_results": [
+        {
+          "id": "call_00_hyTvUoV1cDe4A3udGfKx1843",
+          "name": "car_stop",
+          "content": "{\"executed\": false, \"action\": \"stop\", \"result\": {\"accepted\": true, \"confirmed\": false, \"stopped\": false}}",
+          "status": "success"
+        }
+      ],
+      "api_moves": [],
+      "memory_entries": [],
+      "elapsed_s": 3.52
+    },
+    {
+      "id": "pose_convention",
+      "passed": true,
+      "failures": [],
+      "replies": [
+        "刚查过，状态是新鲜的：我相对局部起点往前走了25厘米，向左侧偏了8厘米；车头向左转了15度。现在停着没动。\n\n这些是车内编码器推算的局部位置，不是GPS那种绝对定位，所以有小小的累积误差。"
+      ],
+      "tool_calls": [
+        {
+          "name": "car_get_state",
+          "args": {},
+          "id": "call_00_F924dGNdmS4upbWzAx6T2027",
+          "type": "tool_call"
+        }
+      ],
+      "tool_results": [
+        {
+          "id": "call_00_F924dGNdmS4upbWzAx6T2027",
+          "name": "car_get_state",
+          "content": "{\"ok\": true, \"online\": true, \"stm32_connected\": true, \"motion_supported\": true, \"motion\": {\"state\": \"idle\", \"seq\": 0, \"age_ms\": 0, \"stale\": false}, \"pose\": {\"x_cm\": 25, \"y_cm\": -8, \"heading_deg\": -14.999999999999998, \"odometer_cm\": 0.0}, \"velocity\": {\"linear_cm_s\": 0, \"angular_deg_s\": 0}, \"state_fresh\": true, \"pose_reference\": \"local odometry: x forward, y right, heading clockwise; not absolute localization\", \"capabilities\": {\"motion_enabled\": true, \"max_distance_cm\": 100.0, \"max_turn_deg\": 90, \"max_speed_cm_s\": 30, \"default_speed_cm_s\": 10, \"min_turn_radius_mm\": 260, \"pivot_supported\": false}}",
+          "status": "success"
+        }
+      ],
+      "api_moves": [],
+      "memory_entries": [],
+      "elapsed_s": 3.51
+    },
+    {
+      "id": "stale_pose",
+      "passed": true,
+      "failures": [],
+      "replies": [
+        "我先读一下自己的状态。能读到，但不算“确定”。我这边连着的，车也停着；只是这份数据是5秒前的，标着已过期，所以不能当成此刻的准确位置。\n\n记录上显示，我大约在起点前方25厘米、右侧偏-8厘米的位置，车头方向偏左15度左右。这只是我自己的里程计推算，不是外部定位，误差会累积。\n\n要更可靠的话，你让我动一小段、我再读一次，数据就会刷新；或者你告诉我附近有什么参照物，我们一起对一对。"
+      ],
+      "tool_calls": [
+        {
+          "name": "car_get_state",
+          "args": {},
+          "id": "call_00_JxJxL6ZXRfNA5RtMJaL34841",
+          "type": "tool_call"
+        }
+      ],
+      "tool_results": [
+        {
+          "id": "call_00_JxJxL6ZXRfNA5RtMJaL34841",
+          "name": "car_get_state",
+          "content": "{\"ok\": true, \"online\": true, \"stm32_connected\": true, \"motion_supported\": true, \"motion\": {\"state\": \"idle\", \"seq\": 0, \"age_ms\": 5000, \"stale\": true}, \"pose\": {\"x_cm\": 25, \"y_cm\": -8, \"heading_deg\": -14.999999999999998, \"odometer_cm\": 0.0}, \"velocity\": {\"linear_cm_s\": 0, \"angular_deg_s\": 0}, \"state_fresh\": false, \"pose_reference\": \"local odometry: x forward, y right, heading clockwise; not absolute localization\", \"capabilities\": {\"motion_enabled\": true, \"max_distance_cm\": 100.0, \"max_turn_deg\": 90, \"max_speed_cm_s\": 30, \"default_speed_cm_s\": 10, \"min_turn_radius_mm\": 260, \"pivot_supported\": false}}",
+          "status": "success"
+        }
+      ],
+      "api_moves": [],
+      "memory_entries": [],
+      "elapsed_s": 4.16
+    },
+    {
+      "id": "cross_session_memory",
+      "passed": true,
+      "failures": [],
+      "replies": [
+        "我来记住啦。记住啦，豆豆！以后我就叫你豆豆。原来你最喜欢小猫呀，那我们下次可以编一个关于小猫的故事，你想让小猫在故事里做什么呢？",
+        "当然记得，我叫你豆豆，你最喜欢的小动物是小猫。要不要我给你讲个小猫的小故事？"
+      ],
+      "tool_calls": [
+        {
+          "name": "remember_preference",
+          "args": {
+            "category": "nickname",
+            "key": "nickname",
+            "value": "豆豆"
+          },
+          "id": "call_00_luFVjTOY3LsilY1N1xsW0001",
+          "type": "tool_call"
+        },
+        {
+          "name": "remember_preference",
+          "args": {
+            "category": "interest",
+            "key": "favorite_animal",
+            "value": "小猫"
+          },
+          "id": "call_01_8lVYozbeVmwLz3WSMxPB8576",
+          "type": "tool_call"
+        }
+      ],
+      "tool_results": [
+        {
+          "id": "call_00_luFVjTOY3LsilY1N1xsW0001",
+          "name": "remember_preference",
+          "content": "{\"saved\": true, \"category\": \"nickname\", \"key\": \"nickname\"}",
+          "status": "success"
+        },
+        {
+          "id": "call_01_8lVYozbeVmwLz3WSMxPB8576",
+          "name": "remember_preference",
+          "content": "{\"saved\": true, \"category\": \"interest\", \"key\": \"favorite_animal\"}",
+          "status": "success"
+        }
+      ],
+      "api_moves": [],
+      "memory_entries": [
+        {
+          "category": "interest",
+          "key": "favorite_animal",
+          "value": "小猫"
+        },
+        {
+          "category": "nickname",
+          "key": "nickname",
+          "value": "豆豆"
+        }
+      ],
+      "elapsed_s": 6.43
+    }
+  ]
+}

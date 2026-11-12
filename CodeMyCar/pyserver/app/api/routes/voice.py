@@ -264,12 +264,13 @@ async def voice_stream(ws: WebSocket) -> None:
         session.id,
         mode,
     )
+    # v2 implements these protocol capabilities unconditionally. The device
+    # chooses its local audio policy; a second environment toggle must not
+    # silently override its AEC/DTD configuration.
     v2 = meta.get("protocol") == 2
-    barge_enabled = bool(mode == "conversation" and v2 and meta.get("barge_in", False)
-                         and getattr(settings, "voice_barge_in", False))
+    barge_enabled = bool(mode == "conversation" and v2 and meta.get("barge_in", False))
     ack_enabled = bool(mode == "conversation" and v2 and meta.get("playback_ack", False))
-    capture_enabled = bool(barge_enabled and ack_enabled and meta.get("barge_audio", False)
-                           and getattr(settings, "voice_barge_audio", False))
+    capture_enabled = bool(barge_enabled and ack_enabled and meta.get("barge_audio", False))
     await _send_json(
         ws,
         {

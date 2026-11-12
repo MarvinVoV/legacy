@@ -1,1 +1,1 @@
-"""Agent runtime package: LangChain/Deep Agents, memory, sessions and MCP."""
+"""Toy companion runtime: persona, scoped memory, skills, tools and checkpoints."""
