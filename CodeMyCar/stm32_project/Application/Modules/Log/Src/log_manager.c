@@ -6,10 +6,11 @@
 #include "freertos_os2.h"
 #include "log_task.h"
 #include "queue_manager.h"
+#include "uart_handle.h"
 
 
-/// @brief 入队超时配置 2ms
-#define LOG_QUEUE_WAIT_TICKS (2)
+/* Runtime log producers never wait for a UART or a full queue. */
+static uint32_t s_dropped;
 
 /// @brief 日志队列句柄（存储log_entry_t指针）
 static osMessageQueueId_t log_queue = NULL;
@@ -196,78 +197,49 @@ void log_record(const log_level_t level, const log_module_t module, const char* 
  *
  * @param entry 待分发的日志条目
  */
+static bool channel_accepts(const log_output_channel_t *channel, const log_entry_t *entry)
+{
+    return channel && channel->huart && (channel->level_mask & entry->level) != 0u &&
+           (channel->module_mask & entry->module) != 0u;
+}
+
+void LogManager_WriteOutputs(log_entry_t *entry)
+{
+    bool sentProtocol = false;
+    for (unsigned i=0u; i<LOG_MAX_CHANNELS; ++i) {
+        const log_output_channel_t *channel = registered_channels[i];
+        if (!channel_accepts(channel, entry)) continue;
+        if (channel->direct_output) {
+            DEBUG_CONSOLE_OUTPUT(channel->huart, "%s\n", entry->message);
+        } else if (!sentProtocol) {
+            (void)UART_Send_Protocol_Log(entry);
+            sentProtocol = true;
+        }
+    }
+}
+
+uint32_t LogManager_DroppedCount(void) { return s_dropped; }
+
 static void dispatch_log_entry(log_entry_t* entry)
 {
-    bool entry_queued           = false;
-    bool direct_output_occurred = false;
-
-    for (int i = 0; i < LOG_MAX_CHANNELS; i++)
-    {
-        if (registered_channels[i] == NULL)
-        {
-            continue;
-        }
-        const log_output_channel_t* channel = registered_channels[i];
-
-        // 检查通道是否对该日志感兴趣
-        if ((channel->level_mask & entry->level) == 0 || (channel->module_mask & entry->module) == 0)
-        {
-            continue; // 通道不关心此日志
-        }
-
-        if (channel->direct_output)
-        {
-            // 直接输出通道：立即输出
-            if (channel->huart != NULL)
-            {
+    if (osKernelGetState() != osKernelRunning) {
+        /* Boot only: scheduler cannot drain the queue yet. */
+        for (unsigned i=0u; i<LOG_MAX_CHANNELS; ++i) {
+            const log_output_channel_t *channel = registered_channels[i];
+            if (channel_accepts(channel,entry) && channel->direct_output)
                 DEBUG_CONSOLE_OUTPUT(channel->huart, "%s\n", entry->message);
-                direct_output_occurred = true;
-            }
         }
-        else
-        {
-            /* 内核未启动时不能向队列投递（osMessageQueuePut 会尝试阻塞，
-               而 RTOS 调度器尚未运行）。启动阶段只走 direct 通道。 */
-            if (osKernelGetState() != osKernelRunning)
-            {
-                continue;
-            }
-
-            // 异步输出通道：入队处理
-            const osStatus_t status = osMessageQueuePut(log_queue, &entry, osPriorityNone,
-                                                        LOG_QUEUE_WAIT_TICKS);
-            if (status == osOK)
-            {
-                entry_queued = true;
-            }
-            else if (status == osErrorResource)
-            {
-                // 队列满 - 实现可选的丢弃策略
-                #ifdef LOG_DROP_ON_QUEUE_FULL
-                // 可添加丢弃计数统计
-                #endif
-            }
-            else
-            {
-                // 其他错误（如队列无效）
-                DEBUG_CONSOLE_OUTPUT(NULL, "[LOG] Queue error: %d\n", status);
+    } else {
+        for (unsigned i=0u; i<LOG_MAX_CHANNELS; ++i) {
+            if (channel_accepts(registered_channels[i],entry)) {
+                /* One queue entry, one owner, even with multiple outputs. */
+                if (osMessageQueuePut(log_queue,&entry,0u,0u) == osOK) return;
+                taskENTER_CRITICAL();
+                ++s_dropped;
+                taskEXIT_CRITICAL();
+                break;
             }
         }
     }
-    // 资源清理策略
-    if (entry_queued)
-    {
-        // 条目已成功入队 - 将由日志任务释放
-        return;
-    }
-    if (direct_output_occurred)
-    {
-        // 仅直接输出发生 - 立即释放
-        vPortFree(entry);
-    }
-    else
-    {
-        // 无通道处理此日志 - 立即释放
-        vPortFree(entry);
-    }
+    vPortFree(entry);
 }

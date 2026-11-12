@@ -1,6 +1,6 @@
 ---
 name: car-control
-description: 玩具车相对运动、原弧倒回、状态与坐标解释。
+description: 智能车相对运动、原弧倒回、状态与坐标解释。
 ---
 先用car_get_state查看连接、state_fresh和当前能力，失效数据不是实时姿态。
 car_drive对齐现有move API：distance_cm正前进/负倒车，turn_deg正车头右转/负车头左转，speed_cm_s始终正。

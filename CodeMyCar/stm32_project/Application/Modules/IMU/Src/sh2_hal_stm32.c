@@ -1,3 +1,4 @@
+#include "imu_i2c_transport.h"
 /*
  * sh2_hal_stm32.c
  *
@@ -18,6 +19,20 @@
 #include "stm32h7xx_hal.h"
 
 extern I2C_HandleTypeDef hi2c1;
+
+#ifndef CMCAR_IMU_ASYNC_I2C
+#define CMCAR_IMU_ASYNC_I2C 1
+#endif
+static HAL_StatusTypeDef transfer(bool receive, uint16_t address,
+                                  uint8_t *buffer, uint16_t size, uint32_t timeout)
+{
+#if CMCAR_IMU_ASYNC_I2C
+    return ImuI2c_Transfer(receive, address, buffer, size, timeout);
+#else
+    return receive ? HAL_I2C_Master_Receive(&hi2c1,address,buffer,size,timeout)
+                   : HAL_I2C_Master_Transmit(&hi2c1,address,buffer,size,timeout);
+#endif
+}
 
 static uint16_t s_i2c_addr8 = (0x4Au << 1); /* 打开时自动探测 0x4A/0x4B */
 #define SH2_RST_PORT GPIOB
@@ -81,7 +96,7 @@ static int hal_open(sh2_Hal_t* self)
     uint8_t softreset_pkt[5] = {5u, 0u, 1u, 0u, 1u};
     for (uint8_t attempt = 0u; attempt < 5u; attempt++)
     {
-        if (HAL_I2C_Master_Transmit(&hi2c1, s_i2c_addr8, softreset_pkt, 5u,
+        if (transfer(false, s_i2c_addr8, softreset_pkt, 5u,
                                     SH2_I2C_TIMEOUT_MS) == HAL_OK)
         {
             HAL_Delay(300);
@@ -104,7 +119,7 @@ static int hal_read(sh2_Hal_t* self, uint8_t* pBuffer, unsigned len, uint32_t* t
     uint8_t header[4];
     sh2_diag_reads++;
 
-    if (HAL_I2C_Master_Receive(&hi2c1, s_i2c_addr8, header, 4u,
+    if (transfer(true, s_i2c_addr8, header, 4u,
                                SH2_I2C_TIMEOUT_MS) != HAL_OK)
     {
         return 0;
@@ -144,7 +159,7 @@ static int hal_read(sh2_Hal_t* self, uint8_t* pBuffer, unsigned len, uint32_t* t
             read_size = (want > sizeof(chunk)) ? (uint16_t)sizeof(chunk) : want;
         }
 
-        if (HAL_I2C_Master_Receive(&hi2c1, s_i2c_addr8, chunk, read_size, 50u) != HAL_OK)
+        if (transfer(true, s_i2c_addr8, chunk, read_size, 50u) != HAL_OK)
         {
             return 0;
         }
@@ -188,7 +203,7 @@ static int hal_write(sh2_Hal_t* self, uint8_t* pBuffer, unsigned len)
     {
         return -1;
     }
-    if (HAL_I2C_Master_Transmit(&hi2c1, s_i2c_addr8, pBuffer, (uint16_t)len, 50u) != HAL_OK)
+    if (transfer(false, s_i2c_addr8, pBuffer, (uint16_t)len, 50u) != HAL_OK)
     {
         return -1;
     }

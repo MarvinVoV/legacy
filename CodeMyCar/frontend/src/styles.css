@@ -218,3 +218,6 @@ svg { fill: none; stroke: currentColor; stroke-width: 1.65; stroke-linecap: roun
 }
 
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; } }
+.battery-rail { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 24px; padding: 12px 18px; margin: 0 0 18px; border: 1px solid #ffffff14; border-radius: 14px; color: #b8c5d7; background: #ffffff04; font-size: 13px; }
+.battery-rail strong { margin-left: 8px; color: #9cf0ca; font-variant-numeric: tabular-nums; }
+.battery-rail small { margin-left: auto; opacity: .7; }

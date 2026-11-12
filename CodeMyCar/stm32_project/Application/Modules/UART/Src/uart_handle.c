@@ -34,28 +34,29 @@ static StaticStreamBuffer_t s_rx_stream_struct;
 static uint8_t s_rx_stream_storage[UART_RX_STREAM_SIZE];
 static StreamBufferHandle_t s_rx_stream;
 static volatile uint32_t s_rx_dropped_bytes;
+static volatile uint32_t s_uart_errors;
+static volatile uint32_t s_rx_start_failures;
 
-static uint32_t cache_span(uint16_t length)
-{
-    return ((uint32_t)length + 31u) & ~31u;
-}
-
+/* All UART DMA memory is in MPU non-cacheable DMA_RAM. Barriers publish
+ * CPU writes before DMA starts and order DMA completion before CPU reads. */
 static void dma_rx_prepare(uint8_t* buffer)
 {
-    SCB_CleanInvalidateDCache_by_Addr((uint32_t*)buffer, UART_RX_BUFFER_SIZE);
+    (void)buffer;
+    __DMB();
 }
 
 static void dma_rx_complete(uint8_t* buffer, uint16_t length)
 {
-    if (length > 0u)
-    {
-        SCB_InvalidateDCache_by_Addr((uint32_t*)buffer, (int32_t)cache_span(length));
-    }
+    (void)buffer;
+    (void)length;
+    __DMB();
 }
 
 static void dma_tx_prepare(uint8_t* buffer, uint16_t length)
 {
-    SCB_CleanDCache_by_Addr((uint32_t*)buffer, (int32_t)cache_span(length));
+    (void)buffer;
+    (void)length;
+    __DMB();
 }
 
 
@@ -74,11 +75,13 @@ static void start_reception(uint8_t buffer_index)
     dma_rx_prepare(uart_dma_buffer.rx_buffer[buffer_index]);
     HAL_StatusTypeDef status = HAL_UARTEx_ReceiveToIdle_DMA(&huart4, uart_dma_buffer.rx_buffer[buffer_index],
                                                             UART_RX_BUFFER_SIZE);
+    if (status == HAL_OK)
+    {
+        __HAL_DMA_DISABLE_IT(huart4.hdmarx, DMA_IT_HT);
+    }
     if (status != HAL_OK)
     {
-        char err_msg[64];
-        sprintf(err_msg, "HAL_UARTEx_ReceiveToIdle_DMA Error");
-        DEBUG_CONSOLE_OUTPUT(&huart1, "UART Error: %s", err_msg);
+        ++s_rx_start_failures;
     }
 }
 
@@ -137,16 +140,7 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef* huart)
 {
     if (huart == &huart4)
     {
-        const uint32_t err = huart->ErrorCode;
-        char err_msg[64] = {0};
-
-        if (err & HAL_UART_ERROR_PE) strcat(err_msg, "ParityError ");
-        if (err & HAL_UART_ERROR_NE) strcat(err_msg, "NoiseError ");
-        if (err & HAL_UART_ERROR_FE) strcat(err_msg, "FramingError ");
-        if (err & HAL_UART_ERROR_ORE) strcat(err_msg, "OverrunError ");
-        if (err & HAL_UART_ERROR_DMA) strcat(err_msg, "DMAError ");
-
-        DEBUG_CONSOLE_OUTPUT(&huart1, "UART Error: %s", err_msg);
+        ++s_uart_errors;
         // 清除错误标志
         __HAL_UART_CLEAR_FLAG(huart, UART_CLEAR_PEF | UART_CLEAR_NEF | UART_CLEAR_FEF | UART_CLEAR_OREF);
         // 重置错误码
@@ -237,3 +231,6 @@ static bool UART_Send_To_Esp(const uint8_t* data, const uint16_t length, const p
     // seq=0, flags=0 的普通帧（兼容旧 TX 路径）
     return UART_Send_Frame(type, 0, 0, data, length);
 }
+
+uint32_t UART_GetErrorCount(void) { return s_uart_errors; }
+uint32_t UART_GetRxStartFailureCount(void) { return s_rx_start_failures; }

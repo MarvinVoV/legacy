@@ -4,6 +4,7 @@ import time
 
 from app.config import Settings
 from app.models.device import DeviceState, DeviceStatus
+from app.services.battery_status import battery_status
 
 
 class DeviceManager:
@@ -40,7 +41,7 @@ class DeviceManager:
         front_cm = None
         rear_cm = None
         sensor_age = None
-        sensor = state.latest_sensor
+        sensor = state.latest_ultrasonic or state.latest_sensor
         if sensor is not None and sensor.type == "ultrasonic":
             data = sensor.data or {}
             front = data.get("distance")
@@ -48,8 +49,9 @@ class DeviceManager:
             # 防御异常 payload：只有整数才透出，避免状态接口 500
             front_cm = front if isinstance(front, int) else None
             rear_cm = rear if isinstance(rear, int) else None
-            if state.last_sensor > 0:
-                sensor_age = round(time.time() - state.last_sensor, 1)
+            last_ultrasonic = state.last_ultrasonic or state.last_sensor
+            if last_ultrasonic > 0:
+                sensor_age = round(time.time() - last_ultrasonic, 1)
 
         # IMU 航向
         yaw_deg = None
@@ -108,6 +110,11 @@ class DeviceManager:
             uptime_s=state.heartbeat_data.uptime_s if state.heartbeat_data else None,
             heap_free=state.heartbeat_data.heap if state.heartbeat_data else None,
             stm32_connected=state.heartbeat_data.stm32_connected if state.heartbeat_data else None,
+            battery=battery_status(
+                state.latest_battery,
+                time.monotonic() - state.last_battery if state.last_battery > 0 else None,
+                online,
+            ),
             front_distance_cm=front_cm,
             rear_distance_cm=rear_cm,
             sensor_age_s=sensor_age,

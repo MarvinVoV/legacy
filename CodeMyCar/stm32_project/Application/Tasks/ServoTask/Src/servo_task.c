@@ -20,7 +20,7 @@ void ServoTask_init(SteerInstance* instance)
     const osThreadAttr_t servoTaskAttributes = {
         .name = "ServoTask",
         .stack_size = 512 * 4,
-        .priority = (osPriority_t)osPriorityNormal,
+        .priority = (osPriority_t)osPriorityNormal1,
     };
     servoTaskHandle = osThreadNew(ServoTask_doTask, instance, &servoTaskAttributes);
     if (servoTaskHandle == NULL)

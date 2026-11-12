@@ -5,6 +5,7 @@ import time
 from dataclasses import dataclass
 
 from app.models.device import DeviceState
+from app.models.battery import BatteryTelemetry
 from app.models.telemetry import (
     AckEvent,
     HeartbeatData,
@@ -82,8 +83,20 @@ def create_handlers(
         if device_id not in devices:
             devices[device_id] = DeviceState(device_id=device_id)
         state = devices[device_id]
+        if data.type == "battery":
+            try:
+                battery = BatteryTelemetry.model_validate(data.data)
+            except ValueError:
+                logger.warning("Invalid battery telemetry from %s", device_id)
+                return
+            state.latest_battery = battery
+            state.last_battery = time.monotonic()
+            return
         state.last_sensor = time.time()
         state.latest_sensor = data
+        if data.type == "ultrasonic":
+            state.latest_ultrasonic = data
+            state.last_ultrasonic = state.last_sensor
         if getattr(data, "type", None) == "heading":
             state.latest_heading = data
             state.last_heading = time.time()

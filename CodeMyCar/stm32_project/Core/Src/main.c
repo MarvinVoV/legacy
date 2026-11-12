@@ -33,6 +33,8 @@
 #include "ctrl_task.h"
 #include "motor_driver.h"
 #include "system_init.h"
+#include "platform_config.h"
+#include "runtime_stats.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -112,6 +114,10 @@ int main(void)
 
   /* MPU Configuration--------------------------------------------------------*/
   MPU_Config();
+#if CMCAR_CPU_CACHE
+  SCB_EnableICache();
+  SCB_EnableDCache();
+#endif
 
   /* MCU Configuration--------------------------------------------------------*/
 
@@ -252,7 +258,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = 2;
-  RCC_OscInitStruct.PLL.PLLN = 20;
+  RCC_OscInitStruct.PLL.PLLN = (CMCAR_CPU_MHZ * 2u) / 25u;
   RCC_OscInitStruct.PLL.PLLP = 1;
   RCC_OscInitStruct.PLL.PLLQ = 2;
   RCC_OscInitStruct.PLL.PLLR = 2;
@@ -271,7 +277,11 @@ void SystemClock_Config(void)
                               |RCC_CLOCKTYPE_D3PCLK1|RCC_CLOCKTYPE_D1PCLK1;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.SYSCLKDivider = RCC_SYSCLK_DIV1;
+  #if CMCAR_CPU_MHZ == 500
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_HCLK_DIV2;
+#else
   RCC_ClkInitStruct.AHBCLKDivider = RCC_HCLK_DIV1;
+#endif
   RCC_ClkInitStruct.APB3CLKDivider = RCC_APB3_DIV2;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_APB1_DIV2;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_APB2_DIV2;
@@ -721,11 +731,9 @@ void StartDefaultTask(void *argument)
     };
     LogManager_AddOutputChannel(&uart4_log_channel);
 
-    /* Infinite loop */
-    for (;;)
-    {
-        osDelay(1);
-    }
+    RuntimeStats_TaskInit();
+    /* Startup registration is complete: do not wake an empty task at 1kHz. */
+    osThreadExit();
   /* USER CODE END 5 */
 }
 
@@ -752,6 +760,20 @@ void MPU_Config(void)
   MPU_InitStruct.IsCacheable = MPU_ACCESS_NOT_CACHEABLE;
   MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
 
+  HAL_MPU_ConfigRegion(&MPU_InitStruct);
+
+  /* Normal, shareable, non-cacheable RAM for every DMA1/2 buffer. Higher
+     region number overrides the default map. No executable DMA memory. */
+  MPU_InitStruct.Number = MPU_REGION_NUMBER1;
+  MPU_InitStruct.BaseAddress = PLATFORM_DMA_BASE;
+  MPU_InitStruct.Size = MPU_REGION_SIZE_8KB;
+  MPU_InitStruct.SubRegionDisable = 0u;
+  MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL1;
+  MPU_InitStruct.AccessPermission = MPU_REGION_FULL_ACCESS;
+  MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
+  MPU_InitStruct.IsShareable = MPU_ACCESS_SHAREABLE;
+  MPU_InitStruct.IsCacheable = MPU_ACCESS_NOT_CACHEABLE;
+  MPU_InitStruct.IsBufferable = MPU_ACCESS_NOT_BUFFERABLE;
   HAL_MPU_ConfigRegion(&MPU_InitStruct);
   /* Enables the MPU */
   HAL_MPU_Enable(MPU_PRIVILEGED_DEFAULT);

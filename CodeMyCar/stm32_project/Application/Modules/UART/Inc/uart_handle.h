@@ -49,6 +49,8 @@ size_t UART_Receive(uint8_t* out, size_t capacity, uint32_t timeout_ms);
 
 /** 因 RX stream buffer 空间不足而丢弃的字节数。 */
 uint32_t UART_GetRxDropCount(void);
+uint32_t UART_GetErrorCount(void);
+uint32_t UART_GetRxStartFailureCount(void);
 
 
 /**

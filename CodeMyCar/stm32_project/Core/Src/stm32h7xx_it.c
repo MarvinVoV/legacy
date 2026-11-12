@@ -23,6 +23,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "uart_handle.h"
+#include "led_strip.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -52,6 +53,11 @@
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+void DMA2_Stream0_IRQHandler(void)
+{
+  LedStrip_DmaIRQHandler();
+}
 
 /* USER CODE END 0 */
 

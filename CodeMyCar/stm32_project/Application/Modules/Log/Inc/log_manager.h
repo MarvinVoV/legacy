@@ -62,29 +62,17 @@
  *
  * 异步日志的缓冲队列容量：
  * - 队列满时新日志将被丢弃（非阻塞策略）
- * - 默认值16基于典型嵌入式内存配置
+ * - 32条指针队列；日志条目按实际长度从FreeRTOS堆分配
  *
  * @note 内存占用 ≈ (sizeof(log_entry_t) + 32) × 本值
  */
-#define LOG_QUEUE_SIZE (16)
-
-/**
- * @brief 日志内存池区块数
- *
- * 静态预分配的内存块数量：
- * - 每个区块存储一个log_entry_t
- * - 避免动态内存分配，提高实时性
- *
- * @warning 推荐：LOG_POOL_BLOCKS ≥ LOG_QUEUE_SIZE × 1.5
- */
-#define LOG_POOL_BLOCKS  (16)
+#define LOG_QUEUE_SIZE (32)
 
 //------------------------------------------------------------------------------
 // 日志系统核心API
 //------------------------------------------------------------------------------
 
 
-extern osMemoryPoolId_t log_pool; ///< 日志内存池句柄
 
 /**
  * @brief 日志记录实现函数
@@ -157,7 +145,7 @@ typedef struct
     UART_HandleTypeDef* huart;         ///< 物理UART接口（设为NULL则禁用）
     log_level_t         level_mask;    ///< 通道接收的级别掩码（位或组合）
     log_module_t        module_mask;   ///< 通道接收的模块掩码（位或组合）
-    bool                direct_output; ///< 是否直出（true：忽略队列）
+    bool                direct_output; ///< 本地文本输出；运行期仅由LogTask执行
 } log_output_channel_t;
 
 /**
@@ -172,9 +160,9 @@ typedef struct
 /**
  * @brief 初始化日志管理器
  *
- * 创建日志任务、队列和内存池
+ * 创建日志任务和指针队列
  *
- * @note 必须在RTOS启动后调用
+ * @note 在osKernelInitialize之后调用，可早于调度器启动
  * @note 调用前应注册所有输出通道
  */
 void LogManager_Init(void);
@@ -207,5 +195,9 @@ bool LogManager_AddOutputChannel(log_output_channel_t* channel);
  */
 bool LogManager_Config(log_manager_config_t* config);
 
+
+/* Worker-only output; ownership remains with LogTask until it frees the entry. */
+void LogManager_WriteOutputs(log_entry_t *entry);
+uint32_t LogManager_DroppedCount(void);
 
 #endif /* MODULES_LOG_INC_LOG_MANAGER_H_ */

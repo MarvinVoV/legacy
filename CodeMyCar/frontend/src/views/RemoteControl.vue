@@ -40,6 +40,7 @@ const heading = computed(() => motion.value?.pose.heading_deg ?? 0)
 const speedNow = computed(() => motion.value?.velocity.linear_cm_s ?? 0)
 const frontDistance = computed(() => status.value?.front_distance_cm ?? null)
 const rearDistance = computed(() => status.value?.rear_distance_cm ?? null)
+const battery = computed(() => status.value?.online && status.value.battery?.available && !status.value.battery.stale ? status.value.battery : null)
 const dangerFront = computed(() => frontDistance.value !== null && frontDistance.value < 30)
 const selectedProfile = computed(() => profiles[profile.value])
 const directionText = computed(() => vector.value.throttle > 0 ? '前进' : vector.value.throttle < 0 ? '倒车' : '待命')
@@ -62,6 +63,12 @@ function updateMockTelemetry() {
     heap_free: 281344, stm32_connected: true,
     front_distance_cm: Math.round(118 + Math.sin(now * 0.7) * 24),
     rear_distance_cm: Math.round(186 + Math.cos(now * 0.5) * 30), sensor_age_s: 0.1,
+    battery: {
+      available: true, stale: false, age_s: 0.2, voltage_v: 11.8,
+      bus_voltage_v: 11.78, filtered_voltage_v: 11.8, shunt_voltage_mv: 20,
+      current_a: 0.2, power_w: 2.36, percent: 78, percent_method: 'voltage_3s_estimate',
+      current_calibrated: true, shunt_mohm: 100, sensor_address: 64, error: 0,
+    },
   }
   motion.value = {
     ok: true, online: true, stm32_connected: true, motion_supported: true,
@@ -195,6 +202,13 @@ onBeforeUnmount(() => {
       <article class="telemetry-card"><div class="stat-icon"><svg viewBox="0 0 24 24"><path d="M12 3l4 8-4 10-4-10 4-8Zm0 8h4" /></svg></div><div><span>航向</span><strong>{{ heading.toFixed(0) }}°</strong><small>{{ stateLabel }}</small></div></article>
       <article class="telemetry-card" :class="{ warning: dangerFront }"><div class="stat-icon"><svg viewBox="0 0 24 24"><path d="M4 8v8m4-6v4m4-2h8M3 5c5 3 5 11 0 14" /></svg></div><div><span>前方距离</span><strong>{{ frontDistance ?? '—' }}</strong><small>cm</small></div></article>
       <article class="telemetry-card"><div class="stat-icon"><svg viewBox="0 0 24 24"><path d="M20 8v8m-4-6v4m-4-2H4m17-7c-5 3-5 11 0 14" /></svg></div><div><span>后方距离</span><strong>{{ rearDistance ?? '—' }}</strong><small>cm</small></div></article>
+    </section>
+
+    <section class="battery-rail" aria-label="电池状态">
+      <span>电池 <strong>{{ battery?.percent != null ? `≈${battery.percent}%` : '—' }}</strong></span>
+      <span>{{ battery ? `${battery.voltage_v?.toFixed(2)} V` : '暂无有效电池数据' }}</span>
+      <span v-if="battery">{{ battery.current_calibrated && battery.current_a != null ? `${battery.current_a.toFixed(3)} A · ${battery.power_w?.toFixed(2)} W` : '电流待标定' }}</span>
+      <small v-if="battery">电压估算 · 负载变化会影响电量</small>
     </section>
 
     <div v-if="lastError" class="error-strip"><svg viewBox="0 0 24 24"><path d="M12 3 2.5 20h19L12 3Zm0 6v5m0 3v.1" /></svg><span>{{ lastError }}</span><button @click="lastError = ''">×</button></div>

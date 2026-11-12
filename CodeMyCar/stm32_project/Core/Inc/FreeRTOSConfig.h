@@ -43,7 +43,7 @@
  *----------------------------------------------------------*/
 
 /* USER CODE BEGIN Includes */
-/* Section where include file can be added */
+#include "runtime_stats.h"
 /* USER CODE END Includes */
 
 /* Ensure definitions are only used by the compiler, and not by the assembler. */
@@ -69,10 +69,15 @@ extern uint32_t SystemCoreClock;
 #define configUSE_SB_COMPLETED_CALLBACK          ( 0 )
 #define configUSE_MINI_LIST_ITEM                ( 1 )
 #define configMINIMAL_STACK_SIZE                 ((uint16_t)128)
-#define configTOTAL_HEAP_SIZE                    ((size_t)40960)
+#define configTOTAL_HEAP_SIZE                    ((size_t)49152)
 #define configMAX_TASK_NAME_LEN                  ( 16 )
 #define configHEAP_CLEAR_MEMORY_ON_FREE          0
 #define configUSE_TRACE_FACILITY                 1
+#define configCHECK_FOR_STACK_OVERFLOW          2
+#define configGENERATE_RUN_TIME_STATS           1
+#define configRUN_TIME_COUNTER_TYPE             uint64_t
+#define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS() RuntimeStats_Start()
+#define portGET_RUN_TIME_COUNTER_VALUE()         RuntimeStats_Counter()
 #define configUSE_16_BIT_TICKS                   0
 #define configIDLE_SHOULD_YIELD                  0
 #define configUSE_MUTEXES                        1
@@ -121,6 +126,7 @@ to exclude the API function. */
 #define INCLUDE_xQueueGetMutexHolder         1
 #define INCLUDE_uxTaskGetStackHighWaterMark  1
 #define INCLUDE_xTaskGetCurrentTaskHandle    1
+#define INCLUDE_xTaskGetIdleTaskHandle       1
 #define INCLUDE_eTaskGetState                1
 
 /*
@@ -158,7 +164,7 @@ See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
 /* Normal assert() semantics without relying on the provision of an assert.h
 header file. */
 /* USER CODE BEGIN 1 */
-#define configASSERT( x ) if ((x) == 0) {taskDISABLE_INTERRUPTS(); for( ;; );}
+#define configASSERT(x) do { if ((x) == 0) RuntimeStats_Fatal(4u); } while (0)
 /* USER CODE END 1 */
 
 /* Definitions that map the FreeRTOS port interrupt handlers to their CMSIS

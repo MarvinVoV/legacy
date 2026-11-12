@@ -15,7 +15,8 @@ typedef enum
     SENSOR_IMU = 0x01,
     SENSOR_INFRARED,
     SENSOR_ULTRASONIC,
-    SENSOR_HEADING /* IMU 航向：yaw(0.1°) + yaw_rate(0.01°/s) + status */
+    SENSOR_HEADING, /* IMU 航向：yaw(0.1°) + yaw_rate(0.01°/s) + status */
+    SENSOR_BATTERY = 0x05 /* Explicit 29-byte layout: battery_service.h / docs. */
 } sensor_type_t;
 
 typedef struct

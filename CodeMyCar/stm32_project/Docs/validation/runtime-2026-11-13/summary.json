@@ -1,0 +1,163 @@
+{
+  "motion_passed": true,
+  "cases": [
+    "forward",
+    "reverse",
+    "left",
+    "right",
+    "lease_expiry",
+    "goal_5cm"
+  ],
+  "cpu_permille": [
+    103,
+    102,
+    103,
+    113,
+    110
+  ],
+  "min_free_stack_bytes": {
+    "Diagnostics": 2252,
+    "IDLE": 460,
+    "MotorTask_Left": 1144,
+    "MotorTask_Right": 1144,
+    "MotionTask": 992,
+    "ServoTask": 1788,
+    "ImuTask": 3272,
+    "LightTask": 940,
+    "SonarTask": 1380,
+    "RawDataReadTask": 2580,
+    "SafetySuperviso": 1948,
+    "PowerTask": 936,
+    "LogTask": 3476,
+    "MotionStatusTas": 1692,
+    "Tmr Svc": 908
+  },
+  "stop_repeat_ms": [
+    168.9,
+    102.9,
+    101.8,
+    100.5,
+    103.2,
+    202.8,
+    105.5,
+    104.3,
+    101.2,
+    100.9
+  ],
+  "final_stop": {
+    "ms": 208.1,
+    "ok": true,
+    "stopped": true,
+    "accepted": true,
+    "confirmed": true,
+    "seq": 85
+  },
+  "timing": [
+    "RTOS motion n=2015 min=5ms max=5ms miss=0 budget=7ms ",
+    "RTOS motor_l n=2015 min=5ms max=5ms miss=0 budget=7ms ",
+    "RTOS motor_r n=2016 min=5ms max=5ms miss=0 budget=7ms ",
+    "RTOS ctrl n=202 min=48ms max=50ms miss=0 budget=70ms ",
+    "RTOS servo n=504 min=20ms max=20ms miss=0 budget=25ms ",
+    "RTOS motion n=2015 min=5ms max=5ms miss=0 budget=7ms ",
+    "RTOS motor_l n=2015 min=5ms max=5ms miss=0 budget=7ms ",
+    "RTOS motor_r n=2015 min=5ms max=5ms miss=0 budget=7ms ",
+    "RTOS ctrl n=201 min=50ms max=50ms miss=0 budget=70ms ",
+    "RTOS servo n=503 min=20ms max=20ms miss=0 budget=25ms ",
+    "RTOS motion n=2017 min=5ms max=5ms miss=0 budget=7ms ",
+    "RTOS motor_l n=2017 min=5ms max=5ms miss=0 budget=7ms ",
+    "RTOS motor_r n=2017 min=5ms max=5ms miss=0 budget=7ms ",
+    "RTOS ctrl n=202 min=50ms max=50ms miss=0 budget=70ms ",
+    "RTOS servo n=505 min=20ms max=20ms miss=0 budget=25ms ",
+    "RTOS motion n=2017 min=5ms max=5ms miss=0 budget=7ms ",
+    "RTOS motor_l n=2017 min=5ms max=5ms miss=0 budget=7ms ",
+    "RTOS motor_r n=2017 min=5ms max=5ms miss=0 budget=7ms ",
+    "RTOS ctrl n=213 min=1ms max=51ms miss=0 budget=70ms ",
+    "RTOS servo n=504 min=20ms max=20ms miss=0 budget=25ms ",
+    "RTOS motion n=2015 min=5ms max=5ms miss=0 budget=7ms ",
+    "RTOS motor_l n=2015 min=5ms max=5ms miss=0 budget=7ms ",
+    "RTOS motor_r n=2015 min=5ms max=5ms miss=0 budget=7ms ",
+    "RTOS ctrl n=204 min=6ms max=50ms miss=0 budget=70ms ",
+    "RTOS servo n=504 min=20ms max=20ms miss=0 budget=25ms "
+  ],
+  "soak": {
+    "passed": true,
+    "duration_s": 120,
+    "runtime": [
+      "PERF cpu_permille=104 heap=11056 min=10120 tasks=15 rx_drop=0 log_drop=0 ",
+      "PERF cpu_permille=103 heap=10888 min=10120 tasks=15 rx_drop=0 log_drop=0 ",
+      "PERF cpu_permille=105 heap=11056 min=10120 tasks=15 rx_drop=0 log_drop=0 ",
+      "PERF cpu_permille=104 heap=11056 min=10120 tasks=15 rx_drop=0 log_drop=0 ",
+      "PERF cpu_permille=104 heap=11056 min=10120 tasks=15 rx_drop=0 log_drop=0 ",
+      "PERF cpu_permille=104 heap=11056 min=10120 tasks=15 rx_drop=0 log_drop=0 ",
+      "PERF cpu_permille=104 heap=11056 min=10120 tasks=15 rx_drop=0 log_drop=0 ",
+      "PERF cpu_permille=104 heap=11056 min=10120 tasks=15 rx_drop=0 log_drop=0 ",
+      "PERF cpu_permille=104 heap=11056 min=10120 tasks=15 rx_drop=0 log_drop=0 ",
+      "PERF cpu_permille=105 heap=11056 min=10120 tasks=15 rx_drop=0 log_drop=0 ",
+      "PERF cpu_permille=104 heap=11056 min=10120 tasks=15 rx_drop=0 log_drop=0 ",
+      "PERF cpu_permille=104 heap=11056 min=10120 tasks=15 rx_drop=0 log_drop=0 "
+    ],
+    "led": [
+      "LED frames=3374 errors=0 ",
+      "LED frames=3499 errors=0 ",
+      "LED frames=3624 errors=0 ",
+      "LED frames=3749 errors=0 ",
+      "LED frames=3874 errors=0 ",
+      "LED frames=3999 errors=0 ",
+      "LED frames=4124 errors=0 ",
+      "LED frames=4249 errors=0 ",
+      "LED frames=4373 errors=0 ",
+      "LED frames=4498 errors=0 ",
+      "LED frames=4623 errors=0 ",
+      "LED frames=4747 errors=0 ",
+      "LED frames=4872 errors=0 ",
+      "LED frames=4997 errors=0 ",
+      "LED frames=5121 errors=0 ",
+      "LED frames=5246 errors=0 ",
+      "LED frames=5371 errors=0 ",
+      "LED frames=5496 errors=0 ",
+      "LED frames=5621 errors=0 ",
+      "LED frames=5746 errors=0 ",
+      "LED frames=5871 errors=0 ",
+      "LED frames=5996 errors=0 ",
+      "LED frames=6121 errors=0 ",
+      "LED frames=6246 errors=0 "
+    ],
+    "final_stop": {
+      "ms": 95.0,
+      "ok": true,
+      "stopped": true,
+      "accepted": true,
+      "confirmed": true,
+      "seq": 97
+    }
+  },
+  "restart": {
+    "passed": true,
+    "power": {
+      "mqtt_frames": 30,
+      "max_gap_s": 1.147,
+      "voltage_v_range": [
+        11.841,
+        11.841
+      ],
+      "percent_range": [
+        80,
+        80
+      ],
+      "current_calibrated": true,
+      "current_a_range": [
+        0.016,
+        0.019
+      ],
+      "shunt_mohm": 100
+    },
+    "final_stop": {
+      "ok": true,
+      "stopped": true,
+      "accepted": true,
+      "confirmed": true,
+      "seq": 99
+    },
+    "registers": "registers-after-restart.json"
+  }
+}

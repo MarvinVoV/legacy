@@ -1,0 +1,44 @@
+{
+  "online": true,
+  "stm32_connected": true,
+  "imu_age_s": 0.0,
+  "battery": {
+    "available": true,
+    "stale": false,
+    "age_s": 0.4,
+    "voltage_v": 11.869,
+    "bus_voltage_v": 11.868,
+    "filtered_voltage_v": 11.869,
+    "shunt_voltage_mv": 1.48,
+    "current_a": null,
+    "power_w": null,
+    "percent": 81,
+    "percent_method": "voltage_3s_estimate",
+    "current_calibrated": false,
+    "shunt_mohm": null,
+    "sensor_address": 64,
+    "error": 0
+  },
+  "stop": {
+    "ok": true,
+    "stopped": true,
+    "accepted": true,
+    "confirmed": true,
+    "seq": 0
+  },
+  "motion": {
+    "state": "idle",
+    "mode": 0,
+    "fault": false,
+    "lease_expired": false,
+    "error": 0,
+    "heading_source": "encoder",
+    "seq": 0,
+    "age_ms": 1,
+    "stale": false
+  },
+  "velocity": {
+    "linear_cm_s": 0.0,
+    "angular_deg_s": 0.0
+  }
+}

@@ -1,0 +1,114 @@
+power: trigger/config/error/signed conversion, uncalibrated null contract, SOC and wire golden passed
+power task: PCLK1 init, all-address probe, BE transport, real wire frame, absent device and bounded stuck-bus recovery passed
+power task: PCLK1 init, all-address probe, BE transport, real wire frame, absent device and bounded stuck-bus recovery passed
+WS2812: GRB/MSB, first/last bit, reset margin, capacity, RGB sequence and brightness cap passed
+== motion kinematics ==
+motion_kinematics: all tests passed
+== motion goal ==
+motion_goal: all tests passed
+== seq dedup ==
+seq_dedup: all tests passed
+== motor emergency stop ==
+/Users/sunyameng/github/legacy/CodeMyCar/stm32_project/Application/Modules/Motor/Src/motor_driver.c:511:21: warning: unused function 'radps_to_rpm' [-Wunused-function]
+  511 | static inline float radps_to_rpm(const float radps)
+      |                     ^~~~~~~~~~~~
+/Users/sunyameng/github/legacy/CodeMyCar/stm32_project/Application/Modules/Motor/Src/motor_driver.c:553:21: warning: unused function 'pulses_to_rad' [-Wunused-function]
+  553 | static inline float pulses_to_rad(const int32_t pulses, const uint16_t encoder_ppr, const uint16_t gear_ratio)
+      |                     ^~~~~~~~~~~~~
+2 warnings generated.
+motor_estop: all tests passed
+== runtime safety ==
+runtime_safety: all tests passed
+== task timing ==
+task_timing: all tests passed
+== encoder fault monitor ==
+encoder_fault_monitor: all tests passed
+== servo service ==
+heading servo target=91.380 submitted=91.188 error=0.192 raw deg
+heading servo target=84.030 submitted=84.204 error=0.174 raw deg
+heading servo target=84.530 submitted=84.420 error=0.110 raw deg
+servo_service: all tests passed
+== steering LUT ==
+steering_lut: all tests passed
+== heading control ==
+biased straight sign=-1 peak=0.759deg final=0.054deg lateral=0.0102m
+biased straight sign=1 peak=0.759deg final=-0.054deg lateral=0.0102m
+heading_control: all tests passed
+== PID simulation ==
+PID sim (plant: gain=1, tau=0.15s, friction/feedforward copied)
+dt=0.005s sp=100RPM: rise=2.180s settle=none/-1.000s overshoot=-6.1% final_err=6.13RPM out=0.31 v=0.313
+dt=0.030s sp=100RPM: rise=2.160s settle=none/-1.000s overshoot=-6.0% final_err=6.03RPM out=0.31 v=0.313
+dt=0.005s sp=300RPM: rise=2.495s settle=none/-1.000s overshoot=-7.4% final_err=22.23RPM out=0.93 v=0.926
+dt=0.030s sp=300RPM: rise=2.520s settle=none/-1.000s overshoot=-7.5% final_err=22.60RPM out=0.93 v=0.925
+== ultrasonic safety ==
+ultrasonic_safety_test: ALL PASS
+== motor inhibit ==
+/Users/sunyameng/github/legacy/CodeMyCar/stm32_project/Application/Modules/Motor/Src/motor_hal.c:263:15: warning: comparison of integers of different signs: 'int32_t' (aka 'int') and 'const uint32_t' (aka 'const unsigned int') [-Wsign-compare]
+  263 |     if (delta > halfMax)
+      |         ~~~~~ ^ ~~~~~~~
+1 warning generated.
+motor_inhibit: all tests passed
+== imu service ==
+Euler yaw-rate quaternion derivative grid: max error 0.000551 rad/s
+imu_service: all tests passed
+Euler yaw-rate quaternion derivative grid: max error 0.000551 rad/s
+imu_service: all tests passed
+== motion transaction ==
+motion_transaction: all tests passed
+motion_transaction: all tests passed
+motion_transaction: all tests passed
+== local straight path ==
+path sim en=0 direction=-1 speed=0.1 end_mm=-2.511 peak_mm=2.511
+path sim en=1 direction=-1 speed=0.1 end_mm=-0.396 peak_mm=0.539
+path sim en=0 direction=-1 speed=0.3 end_mm=-3.902 peak_mm=3.902
+path sim en=1 direction=-1 speed=0.3 end_mm=-0.823 peak_mm=0.981
+path sim en=0 direction=1 speed=0.1 end_mm=-2.511 peak_mm=2.511
+path sim en=1 direction=1 speed=0.1 end_mm=-0.396 peak_mm=0.539
+path sim en=0 direction=1 speed=0.3 end_mm=-3.902 peak_mm=3.902
+path sim en=1 direction=1 speed=0.3 end_mm=-0.823 peak_mm=0.981
+straight_path: all tests passed
+== motion task asynchronous telemetry ==
+motion_task: stalled TX coalesces states; control never calls UART; reporter failure counted
+== steering full PWM pipeline ==
+k=-0.060 expected=1555.09us actual=1554us settle<=3us=80ms
+k=-0.120 expected=1564.18us actual=1562us settle<=3us=80ms
+k=-0.170 expected=1571.75us actual=1570us settle<=3us=80ms
+k=+0.060 expected=1538.73us actual=1539us settle<=3us=180ms
+k=+0.120 expected=1531.46us actual=1532us settle<=3us=60ms
+k=+0.170 expected=1525.40us actual=1528us settle<=3us=60ms
+k=-0.020 expected=1549.03us actual=1549us settle<=3us=160ms
+k=+0.020 expected=1543.58us actual=1543us settle<=3us=40ms
+k=+0.000 expected=1546.00us actual=1544us settle<=3us=5ms
+steering_pipeline: real driver and smoothing passed; no mechanical accuracy claim
+== motor PID small-load tracking ==
+target=-30.0 RPM load=-0.27 RPM tail mean=-0.2700 RPM rms=0.2700 RPM
+target=-30.0 RPM load=+0.27 RPM tail mean=+0.2700 RPM rms=0.2700 RPM
+target=+30.0 RPM load=-0.27 RPM tail mean=-0.2700 RPM rms=0.2700 RPM
+target=+30.0 RPM load=+0.27 RPM tail mean=+0.2700 RPM rms=0.2700 RPM
+target=-90.0 RPM load=-0.27 RPM tail mean=-0.2699 RPM rms=0.2699 RPM
+target=-90.0 RPM load=+0.27 RPM tail mean=+0.2699 RPM rms=0.2699 RPM
+target=+90.0 RPM load=-0.27 RPM tail mean=-0.2699 RPM rms=0.2699 RPM
+target=+90.0 RPM load=+0.27 RPM tail mean=+0.2699 RPM rms=0.2699 RPM
+baseline motor PID known tracking floor: reproduced
+target=-30.0 RPM load=-0.27 RPM tail mean=+0.0300 RPM rms=0.0300 RPM
+target=-30.0 RPM load=+0.27 RPM tail mean=-0.0300 RPM rms=0.0300 RPM
+target=+30.0 RPM load=-0.27 RPM tail mean=+0.0300 RPM rms=0.0300 RPM
+target=+30.0 RPM load=+0.27 RPM tail mean=-0.0300 RPM rms=0.0300 RPM
+target=-90.0 RPM load=-0.27 RPM tail mean=+0.0299 RPM rms=0.0299 RPM
+target=-90.0 RPM load=+0.27 RPM tail mean=-0.0299 RPM rms=0.0299 RPM
+target=+90.0 RPM load=-0.27 RPM tail mean=+0.0299 RPM rms=0.0299 RPM
+target=+90.0 RPM load=+0.27 RPM tail mean=-0.0299 RPM rms=0.0299 RPM
+experimental motor PID plant tracking: PASS
+== heading delayed plant and damping lifecycle ==
+v=-0.1 lag=0.15 old/new peakYaw=0.2374/0.1253 peakYmm=2.5240/2.1156 finalYmm=-2.5240/-2.1156
+v=-0.1 lag=0.25 old/new peakYaw=0.2616/0.1411 peakYmm=2.5297/2.1168 finalYmm=-2.5297/-2.1168
+v=-0.3 lag=0.15 old/new peakYaw=0.3391/0.1706 peakYmm=4.4326/3.1357 finalYmm=-4.4326/-3.1357
+v=-0.3 lag=0.25 old/new peakYaw=0.4009/0.2093 peakYmm=4.4693/3.1712 finalYmm=-4.4693/-3.1712
+v=+0.1 lag=0.15 old/new peakYaw=0.2374/0.1253 peakYmm=2.5240/2.1156 finalYmm=-2.5240/-2.1156
+v=+0.1 lag=0.25 old/new peakYaw=0.2616/0.1411 peakYmm=2.5297/2.1168 finalYmm=-2.5297/-2.1168
+v=+0.3 lag=0.15 old/new peakYaw=0.3391/0.1706 peakYmm=4.4326/3.1357 finalYmm=-4.4326/-3.1357
+v=+0.3 lag=0.25 old/new peakYaw=0.4009/0.2093 peakYmm=4.4693/3.1712 finalYmm=-4.4693/-3.1712
+heading delayed-plant and derivative lifecycle: PASS
+cycle clock: wrap, carry, long runtime and 250/500MHz PASS
+IMU I2C: RX/TX, ISR completion, error, timeout quiescence, late IRQ and recovery PASS
+logging: boot output, deferred dual output, single ownership, filtering and nonblocking full queue PASS
