@@ -1,11 +1,12 @@
-"""One-wake, multi-turn voice conversation (phase 1: half-duplex).
+"""One-wake conversation with bounded TTS and device-side interruption.
 
 The command pipeline is intentionally untouched. This module owns:
 
     VAD turn -> ASR -> context -> DeepSeek stream -> sentence TTS -> sink
 
-It drains microphone audio while a turn is thinking/speaking, so the assistant
-never transcribes its own TTS. Barge-in is phase 2.
+The device gates playback echo and negotiates completion/cancellation ACKs.
+This owner joins every turn task before cancellation and listening resume;
+same-utterance full-duplex interruption audio is not yet implemented.
 """
 
 from __future__ import annotations
@@ -17,11 +18,11 @@ import logging
 import math
 import sys
 import time
-from collections import deque
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
+from app.services.audio_metrics import measure_pcm16
 from app.services.llm import LlmClient, LlmDone, LlmTextDelta
 from app.services.voice_intent import VoiceIntent
 from app.services.voice_service import VoiceService, VoiceSession
@@ -71,6 +72,9 @@ class ConversationConfig:
     # Prefer the device's double-talk detector; the energy detector is only a
     # fallback for boards without a reference channel.
     barge_in_device_events: bool = True
+    playback_ack: bool = False
+    playback_timeout_s: float = 60.0
+    settle_timeout_s: float = 4.0
     system_prompt: str = SYSTEM_PROMPT
 
     @property
@@ -184,9 +188,9 @@ class ConversationHistory:
             return
         # Remove the oldest user and everything up to the next user message,
         # keeping the system prompt at index 0.
-        del self.messages[1]
-        while len(self.messages) > 1 and self.messages[1].get("role") == "tool":
-            del self.messages[1]
+        end = next((i for i in range(2, len(self.messages))
+                    if self.messages[i].get("role") == "user"), len(self.messages))
+        del self.messages[1:end]
 
     def _estimate_tokens(self) -> int:
         return sum(max(1, len(str(message.get("content", ""))) // 2) for message in self.messages)
@@ -317,6 +321,14 @@ class ConversationRunner:
         self._queue: asyncio.Queue = asyncio.Queue(maxsize=2)
         self._worker: asyncio.Task | None = None
         self._watchdog: asyncio.Task | None = None
+        self._interrupt_task: asyncio.Task | None = None
+        self._warmup_task: asyncio.Task | None = None
+        self._playback_done: asyncio.Future | None = None
+        self._playback_key: tuple[int, int] | None = None
+        self._stop_ack: asyncio.Future | None = None
+        self._settle_started = 0.0
+        self._interrupted_reply = ""
+        self._turn_spoken: list[str] = []
         self._last_activity = time.monotonic()
         self._started = time.monotonic()
         self._send_seq = 0
@@ -327,12 +339,23 @@ class ConversationRunner:
         self._ignore_until = 0.0
         self._post_stop = False
         self._post_silence_ms = 0
-        self._rms_hist = deque(maxlen=100)
         self._barge_cooldown_until = 0.0
 
     def start(self) -> None:
         self._worker = asyncio.create_task(self._work(), name="voice-conversation-worker")
         self._watchdog = asyncio.create_task(self._watch(), name="voice-conversation-watchdog")
+        self._warmup_task = asyncio.create_task(self._warmup(), name="voice-auth-warmup")
+
+    async def _warmup(self) -> None:
+        async def prepare(provider) -> None:
+            try:
+                await asyncio.wait_for(provider.warmup(), timeout=5)
+            except Exception:  # noqa: BLE001 - optional preparation never kills a conversation
+                logger.warning("voice auth warmup unavailable; request will retry")
+        async with asyncio.TaskGroup() as group:
+            for provider in (self.service.asr, self.service.tts):
+                if callable(getattr(provider, "warmup", None)):
+                    group.create_task(prepare(provider))
 
     def feed(self, pcm: bytes) -> None:
         if self.ended.is_set():
@@ -341,7 +364,7 @@ class ConversationRunner:
             # The words that triggered the stop are not a new question. Drop
             # the rest of that utterance and only start listening again after
             # the user goes quiet, so "停一下" cannot become an LLM turn.
-            if _pcm_rms(pcm) < 250:
+            if measure_pcm16(pcm[:len(pcm) // 2 * 2]).ac_rms < 250:
                 self._post_silence_ms += max(1, len(pcm) // 32)
             else:
                 self._post_silence_ms = 0
@@ -353,6 +376,8 @@ class ConversationRunner:
                 self.state = "listening"
                 self._last_activity = time.monotonic()
                 logger.info("barge-in settled; listening for a new question")
+            elif time.monotonic() - self._settle_started > self.config.settle_timeout_s:
+                self.request_end("settle_timeout")
             return
         if self.state != "listening":
             # Never transcribe the assistant's own audio; with barge-in the
@@ -404,20 +429,50 @@ class ConversationRunner:
         else:
             self._barge_ms = max(0, self._barge_ms - 25)
         if self._barge_ms >= self.config.barge_in_ms:
-            self._barging = True
-            asyncio.create_task(self._begin_barge_in())
+            self.device_barge_in()
 
-    def device_barge_in(self) -> None:
+    def device_barge_in(self, turn: int | None = None) -> None:
         """Called when the device itself detected near-end speech."""
-        if self.ended.is_set() or not self.config.barge_in or self._barging:
+        if (self.ended.is_set() or not self.config.barge_in or self._barging
+                or self.state != "speaking"
+                or (turn is not None and turn != self.turn)
+                or time.monotonic() < self._barge_cooldown_until):
             return
         self._barging = True
-        asyncio.create_task(self._begin_barge_in())
+        self._interrupt_task = asyncio.create_task(
+            self._begin_barge_in(), name="voice-conversation-interrupt")
+
+    def playback_event(self, event: dict) -> None:
+        """Only the current response's matching device completion can release a waiter."""
+        if event.get("type") == "stop_ack":
+            if (event.get("turn") == self.turn and self._stop_ack is not None
+                    and not self._stop_ack.done()):
+                self._stop_ack.set_result(None)
+            return
+        key = (event.get("turn"), event.get("seq"))
+        if (key == self._playback_key and self._playback_done is not None
+                and not self._playback_done.done()):
+            self._playback_done.set_result(None)
+
+    async def _wait_playback(self) -> None:
+        if not self.config.playback_ack or self._playback_key is None:
+            await self.service.wait_playback()
+            return
+        await self._safe_send({"type": "playback_end", "turn": self._playback_key[0],
+                               "seq": self._playback_key[1]})
+        try:
+            await asyncio.wait_for(asyncio.shield(self._playback_done),
+                                   timeout=self.config.playback_timeout_s)
+        except TimeoutError:
+            self.request_end("playback_timeout")
+            raise
 
     async def _begin_barge_in(self) -> None:
         """Stop the reply now, drop queued turns, and listen to the user."""
         if self.ended.is_set():
             return
+        interrupted_turn = self.turn
+        self.state = "interrupting"
         logger.info("barge-in: interrupting assistant")
         # Cancel first: the worker may be inside a paced audio send holding
         # the sink lock, and `stop` must not queue behind the rest of a
@@ -426,7 +481,18 @@ class ConversationRunner:
         if worker is not None and worker is not asyncio.current_task():
             worker.cancel()
             await asyncio.gather(worker, return_exceptions=True)
-        await self._safe_send({"type": "stop"})
+        self._interrupted_reply = "".join(self._turn_spoken) or "（回复尚未完整下发）"
+        try:
+            if self.config.playback_ack:
+                self._stop_ack = asyncio.get_running_loop().create_future()
+            await asyncio.wait_for(self._safe_send({"type": "stop", "turn": interrupted_turn}), 2)
+            if self._stop_ack is not None:
+                await asyncio.wait_for(self._stop_ack, 2)
+        except TimeoutError:
+            self.request_end("stop_timeout")
+            return
+        if self.ended.is_set():
+            return
         while True:
             try:
                 self._queue.get_nowait()
@@ -438,18 +504,17 @@ class ConversationRunner:
         self.state = "listening"
         self._barge_cooldown_until = time.monotonic() + self.config.barge_in_cooldown_s
         self._post_stop = True
+        self._settle_started = time.monotonic()
         self._post_silence_ms = 0
         self._ignore_until = time.monotonic() + 0.35
         self._last_activity = time.monotonic()
         self._barge_ms = 0
-        self._barging = False
         self._barge_log_at = 0.0
         self._speaking_since = 0.0
-        self._ignore_until = 0.0
-        self._post_stop = False
-        self._post_silence_ms = 0
-        self._rms_hist = deque(maxlen=100)
-        self._barge_cooldown_until = 0.0
+        self._playback_key = None
+        self._playback_done = None
+        self._stop_ack = None
+        self._barging = False
         if not self.ended.is_set() and self._worker is None:
             self._worker = asyncio.create_task(
                 self._work(), name="voice-conversation-worker"
@@ -476,14 +541,18 @@ class ConversationRunner:
             self._worker.cancel()
         if self._watchdog is not None and self._watchdog is not asyncio.current_task():
             self._watchdog.cancel()
+        if self._interrupt_task is not None and self._interrupt_task is not asyncio.current_task():
+            self._interrupt_task.cancel()
+        if self._warmup_task is not None and self._warmup_task is not asyncio.current_task():
+            self._warmup_task.cancel()
 
     async def close(self, abort: bool = False) -> None:
         self.request_end("abort" if abort else (self.end_reason or "close"))
-        for task in (self._worker, self._watchdog):
+        for task in (self._interrupt_task, self._worker, self._watchdog, self._warmup_task):
             if task is not None and task is not asyncio.current_task():
                 task.cancel()
                 await asyncio.gather(task, return_exceptions=True)
-        self._worker = self._watchdog = None
+        self._worker = self._watchdog = self._interrupt_task = self._warmup_task = None
 
     async def _watch(self) -> None:
         try:
@@ -506,6 +575,9 @@ class ConversationRunner:
         try:
             while not self.ended.is_set():
                 segment = await self._queue.get()
+                self._turn_spoken = []
+                self._playback_key = None
+                self._playback_done = None
                 try:
                     await self._handle_turn(segment)
                 except asyncio.CancelledError:
@@ -523,9 +595,12 @@ class ConversationRunner:
 
     async def _handle_turn(self, segment) -> None:
         text = None
+        started = time.monotonic()
         if self.service.asr is not None:
             try:
                 text = await self.service.asr.recognize(segment.pcm)
+                logger.info("voice timing turn=%d asr_ms=%.0f", self.turn,
+                            (time.monotonic() - started) * 1000)
             except Exception as exc:  # noqa: BLE001
                 logger.warning("conversation ASR failed: %s", exc)
         if not text:
@@ -534,7 +609,7 @@ class ConversationRunner:
 
         await self._safe_send({"type": "user_text", "turn": self.turn, "text": text[:400], "intent": None})
         normalized = normalize_text(text)
-        if any(phrase in normalized for phrase in STOP_TALKING_PHRASES):
+        if normalized.casefold().removeprefix("请") in STOP_TALKING_PHRASES:
             await self._safe_send(
                 {"type": "assistant_done", "turn": self.turn, "text": "",
                  "interrupted": True}
@@ -546,7 +621,7 @@ class ConversationRunner:
             await self._speak_text("好，再见")
             if self.service.tts is not None:
                 try:
-                    await asyncio.wait_for(self.service.wait_playback(), timeout=10.0)
+                    await asyncio.wait_for(self._wait_playback(), timeout=self.config.playback_timeout_s)
                 except TimeoutError:
                     logger.warning("conversation closing playback did not drain")
             await self._safe_send(
@@ -562,12 +637,10 @@ class ConversationRunner:
         self.history.add_user(text)
         final_text = await self._answer()
         if final_text is not None:
-            # Phase 1 uses the Mac player; do not return to LISTENING while the
-            # assistant's tail is still audible or the next VAD segment can
-            # transcribe it as a user turn.
+            # A v2 device confirms its DMA tail drained before listening resumes.
             if self.service.tts is not None:
                 try:
-                    await asyncio.wait_for(self.service.wait_playback(), timeout=60.0)
+                    await self._wait_playback()
                 except TimeoutError:
                     logger.warning("conversation playback did not drain")
             await self._safe_send(
@@ -585,24 +658,49 @@ class ConversationRunner:
             return
         spoken: list[str] = []
         chunker = SentenceChunker()
-        async for delta in self.agent_session.stream(text):
-            for sentence in chunker.feed(delta):
+        if self._interrupted_reply:
+            # Do not claim that generated or transmitted audio was heard. The
+            # adapter receives an explicit interruption note on the next turn.
+            text = ("[上一条回复被用户打断；以下是已下发但不保证已听完的片段："
+                    + self._interrupted_reply[:600] + "。若用户要求继续，请从合适边界重述。]\n"
+                    + text)
+            self._interrupted_reply = ""
+        sentences: asyncio.Queue[str | None] = asyncio.Queue(maxsize=2)
+        prepared: asyncio.Queue = asyncio.Queue(maxsize=2)
+
+        async def generate() -> None:
+            async for delta in self.agent_session.stream(text):
+                for sentence in chunker.feed(delta):
+                    await sentences.put(sentence)
+            for sentence in chunker.flush():
+                await sentences.put(sentence)
+            await sentences.put(None)
+
+        async def synthesize() -> None:
+            while (sentence := await sentences.get()) is not None:
+                audio = await self._synthesize(sentence)
+                await prepared.put((sentence, audio))
+            await prepared.put(None)
+
+        # Bounded prefetch overlaps model, cloud synthesis and paced playback.
+        # Cancellation of this turn joins BOTH children before stop is sent.
+        async with asyncio.TaskGroup() as group:
+            group.create_task(generate(), name="voice-model-producer")
+            group.create_task(synthesize(), name="voice-tts-producer")
+            while (item := await prepared.get()) is not None:
+                if self.ended.is_set():
+                    raise asyncio.CancelledError
                 if self.state != "speaking":
                     self._speaking_since = time.monotonic()
                 self.state = "speaking"
-                await self._speak_sentence(sentence, spoken)
-        for sentence in chunker.flush():
-            if self.state != "speaking":
-                self._speaking_since = time.monotonic()
-            self.state = "speaking"
-            await self._speak_sentence(sentence, spoken)
+                await self._speak_sentence(item[0], spoken, audio=item[1], prepared=True)
         if self.service.tts is not None:
             try:
-                await asyncio.wait_for(self.service.wait_playback(), timeout=60.0)
+                await self._wait_playback()
             except TimeoutError:
                 logger.warning("conversation playback did not drain")
         final_text = "".join(spoken)
-        if final_text:
+        if final_text and not self.ended.is_set():
             await self._safe_send(
                 {
                     "type": "assistant_done",
@@ -661,23 +759,38 @@ class ConversationRunner:
             self.history.add_assistant(final_text)
         return final_text or None
 
-    async def _speak_sentence(self, sentence: str, spoken: list[str]) -> None:
+    async def _synthesize(self, sentence: str):
+        if self.service.tts is None:
+            return None
+        try:
+            started = time.monotonic()
+            audio = await self.service.tts.synthesize(sentence, aue=4)
+            logger.info("voice timing turn=%d tts_ms=%.0f audio_ms=%.0f", self.turn,
+                        (time.monotonic() - started) * 1000,
+                        len(audio.data) / (audio.sample_rate * audio.channels * 2) * 1000)
+            return audio
+        except Exception as exc:  # noqa: BLE001 - injected synthesis backends may vary
+            logger.warning("conversation TTS failed: %s", exc)
+            await self._safe_send({"type": "error", "message": "语音合成失败"})
+            return None
+
+    async def _speak_sentence(self, sentence: str, spoken: list[str], *,
+                              audio=None, prepared: bool = False) -> None:
         sentence = sentence.strip()
         if not sentence:
             return
-        spoken.append(sentence)
         await self._safe_send(
             {"type": "assistant_delta", "turn": self.turn, "text": sentence}
         )
         if self.service.tts is None:
+            spoken.append(sentence)
             return
-        try:
-            audio = await self.service.tts.synthesize(sentence, aue=4)
-        except Exception as exc:  # noqa: BLE001
-            logger.warning("conversation TTS failed: %s", exc)
-            await self._safe_send({"type": "error", "message": "语音合成失败"})
+        if not prepared:
+            audio = await self._synthesize(sentence)
+        if audio is None:
             return
         self._send_seq += 1
+        self._expect_playback()
         header = {
             "type": "speak",
             "turn": self.turn,
@@ -692,6 +805,10 @@ class ConversationRunner:
             await self.sink.send_audio(header, audio.data)
         except Exception:
             logger.debug("conversation speak send failed", exc_info=True)
+            self.request_end("playback_send_failed")
+            return
+        spoken.append(sentence)
+        self._turn_spoken.append(sentence)
         self.service.play_local(audio)
 
     async def _speak_text(self, text: str) -> None:
@@ -703,6 +820,7 @@ class ConversationRunner:
             logger.warning("conversation closing TTS failed: %s", exc)
             return
         self._send_seq += 1
+        self._expect_playback()
         header = {
             "type": "speak",
             "turn": self.turn,
@@ -718,6 +836,10 @@ class ConversationRunner:
         except Exception:
             logger.debug("conversation closing speak send failed", exc_info=True)
         self.service.play_local(audio)
+
+    def _expect_playback(self) -> None:
+        self._playback_key = (self.turn, self._send_seq)
+        self._playback_done = asyncio.get_running_loop().create_future()
 
     async def _safe_send(self, payload: dict[str, Any]) -> None:
         try:

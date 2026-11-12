@@ -87,6 +87,9 @@ class BaiduTtsClient:
         if self._owns_client:
             await self._client.aclose()
 
+    async def warmup(self) -> None:
+        await self._access_token()
+
     async def _access_token(self) -> str:
         async with self._token_lock:
             if self._token and self._clock() < self._token_expires_at - _TOKEN_REFRESH_MARGIN_S:

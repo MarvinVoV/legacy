@@ -118,6 +118,23 @@ menu "Voice Control"
         default 37
         range 0 48
 
+    config CMCAR_VOICE_BOARD_REFERENCE_GAIN_DB
+        int "ES7210 reference input gain (dB)"
+        depends on CMCAR_VOICE_CODEC_BOARD
+        default 12
+        range 0 48
+        help
+            ch1 是模拟参考，可独立标定增益；37dB 已实测大量削顶。
+            默认 12dB，并应在目标音量下复核，不能套用麦克风增益。
+
+    config CMCAR_VOICE_BOARD_REFERENCE_ADC_CHANNEL
+        int "Physical ES7210 ADC used for reference (zero-based)"
+        depends on CMCAR_VOICE_CODEC_BOARD
+        default 2
+        range 0 3
+        help
+            物理 ADC 编号不一定等于 TDM slot；用串口 g 的增益探测实测确认。
+
     config CMCAR_VOICE_BOARD_MIC_CHANNEL
         int "ES7210 TDM channel used as the mono pipeline input"
         depends on CMCAR_VOICE_CODEC_BOARD

@@ -29,9 +29,9 @@ int main(void)
     assert(message(&a, "{\"type\":\"recognizing\"}") == VOICE_PEER_RECOGNIZING);
     assert(message(&a, "{\"type\":\"error\"}") == VOICE_PEER_FAILED);
     assert(message(&a, "{\"type\":\"final\"}") == VOICE_PEER_FINAL);
-    assert(message(&a, "{\"type\":\"speak\"}") == VOICE_PEER_SPEAK);
-    assert(a.speak_rate == 16000);
-    assert(a.speak_channels == 1);
+    assert(message(&a, "{\"type\":\"speak\"}") == VOICE_PEER_FAILED);
+    assert(a.speak_rate == 0);
+    assert(a.speak_channels == 0);
     assert(a.speak_bytes == 0);
     assert(message(&a, "{\"type\":\"speak\",\"text\":\"收到\",\"rate\":16000,"
                        "\"channels\":1,\"bytes\":640}") == VOICE_PEER_SPEAK);
@@ -41,6 +41,18 @@ int main(void)
     assert(message(&a, "{\"type\":\"speak\",\"bytes\":-2}") == VOICE_PEER_FAILED);
     assert(message(&a, ready) == VOICE_PEER_READY);
 
+    assert(message(&a, "{\"type\":\"playback_end\",\"turn\":2,\"seq\":3}") == VOICE_PEER_PLAYBACK_END);
+    assert(a.turn == 2 && a.seq == 3);
+    assert(message(&a, "{\"type\":\"playback_end\"}") == VOICE_PEER_FAILED);
+    for (unsigned split = 1; split < 8; ++split) {
+        const uint8_t raw[] = {1,0,2,0,255,255,0,128};
+        voice_pcm_decoder_t d = {.remaining = sizeof(raw)};
+        int16_t pcm[8]; size_t n, used=0;
+        assert(voice_pcm_decode(&d,raw,split,pcm,8,&n)); used += n;
+        assert(voice_pcm_decode(&d,raw+split,sizeof(raw)-split,pcm+used,8-used,&n)); used += n;
+        assert(used == 4 && d.remaining == 0 && !d.have_carry);
+        assert(pcm[0]==1 && pcm[1]==2 && pcm[2]==-1 && pcm[3]==-32768);
+    }
     voice_sequence_t seq = {0};
     assert(voice_sequence_accept(&seq, UINT32_MAX));
     assert(voice_sequence_accept(&seq, 0));

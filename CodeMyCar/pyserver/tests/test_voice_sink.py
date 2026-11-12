@@ -34,3 +34,18 @@ async def test_send_bytes_also_bounds_each_frame():
     sink = WebSocketEventSink(ws)
     await sink.send_bytes(b"y" * 1500)
     assert [len(frame) for kind, frame in ws.frames if kind == "bytes"] == [1024, 476]
+
+
+@pytest.mark.asyncio
+async def test_lookahead_budget_spans_sentence_boundaries_and_resets_on_stop():
+    import asyncio
+    ws = FakeWebSocket()
+    sink = WebSocketEventSink(ws)
+    started = asyncio.get_running_loop().time()
+    # Two 200ms phrases must share one 200ms lead, not get 200ms each.
+    for _ in range(2):
+        await sink.send_audio({"type": "speak", "bytes": 6400}, b"\0" * 6400)
+    elapsed = asyncio.get_running_loop().time() - started
+    assert elapsed >= 0.15
+    await sink.send_json({"type": "stop", "turn": 1})
+    assert sink._audio_until == 0

@@ -13,6 +13,7 @@ enum {
     VOICE_PEER_DISCONNECTED = 1u << 6,
     VOICE_PEER_SPEAK = 1u << 7,
     VOICE_PEER_STOP = 1u << 8,
+    VOICE_PEER_PLAYBACK_END = 1u << 9,
 };
 
 /* One parser per connection; no shared/global callback buffer. */
@@ -23,6 +24,8 @@ typedef struct {
     int speak_rate;
     int speak_channels;
     size_t speak_bytes;
+    uint32_t turn, seq;
+    bool barge_in, playback_ack;
 } voice_message_t;
 
 uint32_t voice_message_feed(voice_message_t *message, const char *data,
@@ -31,3 +34,9 @@ uint32_t voice_message_feed(voice_message_t *message, const char *data,
 typedef struct { uint32_t next; bool initialized; } voice_sequence_t;
 bool voice_sequence_accept(voice_sequence_t *sequence, uint32_t number);
 void voice_sequence_sync(voice_sequence_t *sequence, uint32_t number);
+
+typedef struct { size_t remaining; uint8_t carry; bool have_carry; } voice_pcm_decoder_t;
+/* Consumes a byte slice, including a previous odd-byte carry. No partial
+ * success on overflow: the caller must fail the stream instead of losing PCM. */
+bool voice_pcm_decode(voice_pcm_decoder_t *decoder, const uint8_t *bytes, size_t len,
+                       int16_t *pcm, size_t capacity, size_t *frames);

@@ -14,9 +14,10 @@
  * A codec implementation owns the bus, slot selection, gain/volume and, when
  * present, the playback reference channel.
  *
- * read() always delivers 16 kHz mono frames to the caller; a board codec that
- * captures at another rate/channel count converts internally. output_channels
- * is 0 when the board has no playback path yet.
+ * read() delivers 16 kHz PCM with caps.input_channels samples per frame;
+ * the AEC board path is MR-interleaved, while the legacy mic path is mono.
+ * write() accepts mono PCM; the board converts it to its physical TX slots.
+ * output_channels is 0 when the board has no playback path.
  */
 typedef struct {
     int input_sample_rate;
@@ -29,7 +30,7 @@ typedef struct {
 typedef struct voice_codec voice_codec_t;
 
 typedef struct {
-    /* Fill exactly `frames` mono samples; return an error on short/timeout. */
+    /* Fill frames * caps.input_channels samples; caller owns that capacity. */
     esp_err_t (*read)(voice_codec_t *codec, int16_t *dst, size_t frames);
     /* Play `frames` mono samples at `sample_rate`; optional. */
     esp_err_t (*write)(voice_codec_t *codec, const int16_t *src, size_t frames,
@@ -59,3 +60,6 @@ void voice_codec_set_volume(voice_codec_t *codec, int volume);
 /* Implemented by the selected board profile. */
 esp_err_t voice_codec_i2s_init(voice_codec_t **out);
 esp_err_t voice_codec_board_init(voice_codec_t **out);
+/* Idle diagnostic only: changes one physical ADC's gain at a time, then
+ * restores the configured gains. Never call during a live conversation. */
+esp_err_t voice_codec_board_probe_gains(voice_codec_t *codec);

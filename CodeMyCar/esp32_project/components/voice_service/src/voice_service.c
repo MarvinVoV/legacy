@@ -34,6 +34,9 @@
 static const char *TAG = "voice";
 static atomic_int s_state = VOICE_STARTING;
 static atomic_bool s_manual_trigger;
+#if CONFIG_CMCAR_VOICE_CODEC_BOARD
+static atomic_bool s_gain_probe;
+#endif
 
 static bool set_state(voice_state_t next)
 {
@@ -50,10 +53,10 @@ static bool set_state(voice_state_t next)
 }
 
 static esp_err_t on_server_audio(const int16_t *pcm, size_t frames,
-                                 int sample_rate, int channels, void *arg)
+                                 int sample_rate, int channels, uint32_t epoch, void *arg)
 {
     (void)arg;
-    return voice_output_write(pcm, frames, sample_rate, channels);
+    return voice_output_write_epoch(pcm, frames, sample_rate, channels, epoch);
 }
 
 /* "我在" is played locally before any network operation so a wake still gets
@@ -79,8 +82,8 @@ static void play_local_ack(void)
 
 static esp_err_t run_session(void)
 {
-    play_local_ack();
     if (!set_state(VOICE_CONNECTING)) return ESP_ERR_INVALID_STATE;
+    play_local_ack(); /* leave wake detection before the local speaker starts */
     if (!wifi_service_is_connected()) return ESP_ERR_INVALID_STATE;
     const bool continuous = CONFIG_CMCAR_VOICE_CONTINUOUS || CONFIG_CMCAR_VOICE_WAKE_ENABLED;
     voice_transport_t *transport = NULL;
@@ -173,8 +176,8 @@ static void perform_session(void)
 #if CONFIG_CMCAR_VOICE_MODE_CONVERSATION
 static esp_err_t run_conversation(void)
 {
-    play_local_ack();
     if (!set_state(VOICE_CONNECTING)) return ESP_ERR_INVALID_STATE;
+    play_local_ack();
     if (!wifi_service_is_connected()) return ESP_ERR_INVALID_STATE;
     voice_transport_t *transport = NULL;
     esp_err_t result = voice_transport_open(&transport, true, false,
@@ -191,11 +194,8 @@ static esp_err_t run_conversation(void)
     voice_frame_t frame;
     TickType_t last_audio = xTaskGetTickCount();
     bool dropping_echo = false;
-#if CONFIG_CMCAR_VOICE_AEC
-    unsigned near_ms = 0;
-    TickType_t barge_cooldown = 0;
-#endif
     while (true) {
+        if (voice_transport_poll(transport) != ESP_OK) { result = ESP_FAIL; break; }
         uint32_t events = voice_transport_events(transport);
         /* A clean server end can race the socket close; end wins. */
         if (events & VOICE_PEER_END) { result = ESP_OK; break; }
@@ -203,8 +203,8 @@ static esp_err_t run_conversation(void)
         if (events & VOICE_PEER_DISCONNECTED) { result = ESP_FAIL; break; }
         if (events & VOICE_PEER_STOP) {
             voice_transport_clear_events(transport, VOICE_PEER_STOP);
-            voice_output_flush();
             voice_audio_flush(); /* drop mic frames that already contain the tail */
+            sequence = (voice_sequence_t){0};
             dropping_echo = false;
             ESP_LOGI(TAG, "server stop: playback flushed");
         }
@@ -223,6 +223,16 @@ static esp_err_t run_conversation(void)
             voice_transport_abort(transport);
             break;
         }
+        /* A playback transition is an intentional stream boundary, including
+         * any queue replacements that happened before this iteration. Apply
+         * it BEFORE sequence validation of a stale frame already in hand. */
+        if (dropping_echo && !voice_transport_is_speaking(transport) &&
+            !voice_output_active()) {
+            dropping_echo = false;
+            voice_audio_flush();
+            sequence = (voice_sequence_t){0};
+            continue;
+        }
         if (!voice_sequence_accept(&sequence, frame.sequence)) {
             /* While the assistant speaks the network path is shared with TTS;
              * a replaced capture frame must not kill the session or the user
@@ -239,43 +249,16 @@ static esp_err_t run_conversation(void)
             }
         }
 #if CONFIG_CMCAR_VOICE_AEC
-        /* Double-talk detector: echo correlates with the playback reference;
-         * near-end speech does not. This runs on the device because only here
-         * are both signals available sample-aligned. */
-        if (voice_transport_is_speaking(transport) || voice_output_active()) {
-            int out = voice_frontend_out_rms();
-            int corr = voice_frontend_echo_corr();
-            int ref = voice_frontend_ref_rms();
-            bool near_end = ref > 2000 && out > 300 && corr < 350;
-            if (near_end) {
-                near_ms += 20;
-            } else if (near_ms >= 20) {
-                near_ms -= 20;
+        voice_frontend_set_playback(voice_transport_barge_enabled(transport) &&
+            (voice_transport_is_speaking(transport) || voice_output_active()));
+        if (voice_frontend_take_barge_in()) {
+            if (voice_transport_barge_in(transport) != ESP_OK) {
+                result = ESP_FAIL;
+                break;
             }
-            static unsigned dtd_log_div;
-            if ((++dtd_log_div % 25u) == 0u) {
-                ESP_LOGI(TAG, "dtd out=%d corr=%d ref=%d near_ms=%u",
-                         out, corr, ref, near_ms);
-            }
-            TickType_t now = xTaskGetTickCount();
-            if (near_ms >= 200 && now >= barge_cooldown) {
-                near_ms = 0;
-                barge_cooldown = now + pdMS_TO_TICKS(2500);
-                voice_output_flush();
-                (void)voice_transport_barge_in(transport);
-                ESP_LOGI(TAG, "local barge-in corr=%d out=%d ref=%d", corr, out, ref);
-            }
-        } else {
-            near_ms = 0;
+            ESP_LOGI(TAG, "local barge-in from fresh AFE residual/VAD windows");
         }
 #endif
-        /* Half-duplex fallback: without a reference the microphone hears the
-         * speaker, so never upload echo as user speech. With AEC enabled the
-         * echo is suppressed in the AFE and the stream must stay alive so the
-         * server can detect a barge-in. */
-        /* Half-duplex uploads: never let the speaker reach ASR. Barge-in is
-         * detected locally from mic/reference correlation, so the upload can
-         * stay muted until the device has actually finished playing. */
         if (voice_transport_is_speaking(transport) || voice_output_active()) {
             if (!dropping_echo) {
                 dropping_echo = true;
@@ -286,7 +269,9 @@ static esp_err_t run_conversation(void)
         if (dropping_echo) {
             dropping_echo = false;
             voice_audio_flush();
+            sequence = (voice_sequence_t){0};
             ESP_LOGI(TAG, "assistant done; microphone streaming resumed");
+            continue; /* the frame already in hand still belongs to playback */
         }
         result = voice_transport_send_pcm(transport, frame.pcm, frame.frames);
         if (result != ESP_OK) {
@@ -298,6 +283,9 @@ static esp_err_t run_conversation(void)
             break;
         }
     }
+#if CONFIG_CMCAR_VOICE_AEC
+    voice_frontend_set_playback(false);
+#endif
     voice_transport_close(transport);
     return result;
 }
@@ -332,6 +320,16 @@ static void voice_task(void *arg)
 #endif
     while (true) {
         if (!voice_audio_receive(&frame, 500)) continue;
+#if CONFIG_CMCAR_VOICE_CODEC_BOARD
+        if (atomic_exchange(&s_gain_probe, false)) {
+            voice_audio_set_active(true); /* suppress wake during temporary gain steps */
+            esp_err_t probe = voice_codec_board_probe_gains(voice_audio_codec());
+            ESP_LOGI(TAG, "gain probe completed: %s", esp_err_to_name(probe));
+            voice_audio_flush();
+            voice_audio_set_active(false);
+            continue;
+        }
+#endif
         bool wake = voice_audio_detect_wake(&frame);
         bool manual = atomic_exchange(&s_manual_trigger, false);
         if (++received % 500 == 0)
@@ -424,6 +422,8 @@ static void console_task(void *arg)
                 atomic_store(&s_manual_trigger, true);
             }
 #if CONFIG_CMCAR_VOICE_AEC
+            if ((c == 'g' || c == 'G') && atomic_load(&s_state) == VOICE_IDLE)
+                atomic_store(&s_gain_probe, true);
             if ((c == 'a' || c == 'A') && atomic_load(&s_state) == VOICE_IDLE) {
                 play_aec_test_noise();
             }

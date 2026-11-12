@@ -49,6 +49,10 @@ def _parse_start(meta: Any) -> tuple[str | None, str | None, str | None]:
         return None, None, "barge_in must be boolean"
     if not isinstance(meta.get("local_ack", False), bool):
         return None, None, "local_ack must be boolean"
+    if not isinstance(meta.get("playback_ack", False), bool):
+        return None, None, "playback_ack must be boolean"
+    if type(meta.get("protocol", 1)) is not int or meta.get("protocol", 1) not in (1, 2):
+        return None, None, "unsupported protocol"
     mode = meta.get("mode", "command")
     if mode not in ("command", "conversation"):
         return None, None, "invalid mode"
@@ -66,14 +70,14 @@ async def _run_conversation(
     settings,
     local_ack: bool = False,
     barge_in: bool = False,
+    playback_ack: bool = False,
 ) -> None:
     """Own one long-conversation socket; command mode never enters this path."""
     llm = getattr(ws.app.state, "voice_llm", None)
     config = getattr(
         ws.app.state, "voice_conversation_config", ConversationConfig()
     )
-    if barge_in:
-        config = replace(config, barge_in=True)
+    config = replace(config, barge_in=barge_in, playback_ack=playback_ack)
     if llm is None:
         await _send_json(ws, {"type": "error", "message": "LLM is not configured"})
         session.close()
@@ -132,7 +136,13 @@ async def _run_conversation(
                 continue
             event_type = event.get("type") if isinstance(event, dict) else None
             if event_type == "barge_in":
-                runner.device_barge_in()
+                turn = event.get("turn")
+                if type(turn) is int and turn > 0:
+                    runner.device_barge_in(turn)
+                continue
+            if event_type in ("playback_finished", "stop_ack"):
+                if type(event.get("turn")) is int and type(event.get("seq", 0)) is int:
+                    runner.playback_event(event)
                 continue
             if event_type in ("end", "abort", "gap"):
                 runner.request_end(
@@ -258,6 +268,12 @@ async def voice_stream(ws: WebSocket) -> None:
             "device": device_id,
             "rate": service.config.sample_rate,
             "mode": mode,
+            "protocol": meta.get("protocol", 1),
+            "barge_in": bool(mode == "conversation" and meta.get("protocol") == 2
+                             and meta.get("barge_in", False)
+                             and getattr(settings, "voice_barge_in", False)),
+            "playback_ack": bool(mode == "conversation" and meta.get("protocol") == 2
+                                 and meta.get("playback_ack", False)),
         },
     )
 
@@ -269,7 +285,9 @@ async def voice_stream(ws: WebSocket) -> None:
             barge_in=(
                 bool(meta.get("barge_in", False))
                 and bool(getattr(settings, "voice_barge_in", False))
+                and meta.get("protocol") == 2
             ),
+            playback_ack=bool(meta.get("protocol") == 2 and meta.get("playback_ack", False)),
         )
         return
 

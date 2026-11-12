@@ -1,4 +1,5 @@
 #include "voice_frontend.h"
+#include "voice_dtd.h"
 #include <math.h>
 #include <stdatomic.h>
 #include <string.h>
@@ -18,10 +19,13 @@ static size_t feed_samples, feed_used;
 static int feed_nch = 1;
 static atomic_int s_in_rms;
 static atomic_int s_ref_rms;
-static atomic_int s_corr_permille;
 static atomic_int s_out_rms;
+static atomic_int s_mic_peak, s_ref_peak;
+static atomic_uint s_mic_clips, s_ref_clips;
 static unsigned s_fetch_count;
 static bool wake_enabled;
+static atomic_bool s_playback, s_barge, s_discontinuous;
+static voice_dtd_t s_dtd;
 #if CONFIG_CMCAR_VOICE_DENOISE
 #define DENOISE_ENABLED true
 #else
@@ -30,6 +34,14 @@ static bool wake_enabled;
 
 void voice_frontend_destroy(void)
 {
+    atomic_store(&s_playback, false);
+    atomic_store(&s_barge, false);
+    atomic_store(&s_discontinuous, false);
+    atomic_store(&s_out_rms, 0);
+    atomic_store(&s_mic_clips, 0);
+    atomic_store(&s_ref_clips, 0);
+    s_dtd = (voice_dtd_t){0};
+    s_fetch_count = 0;
     if (afe) iface->destroy(afe);
     afe = NULL;
     iface = NULL;
@@ -70,8 +82,8 @@ bool voice_frontend_init(void)
     afe_config_t *cfg = afe_config_init(input_format, models, AFE_TYPE_FD, mode);
     if (!cfg) goto fail;
 #if CONFIG_CMCAR_VOICE_AEC
-    /* ch1 is the pre-amplifier reference measured on this board. AEC needs at
-     * least a few hundred ms of filter to cover the speaker path. */
+    /* ch1 is the measured pre-amplifier reference. Keep the profile's filter
+     * budget; the library's filter_length is not a duration in milliseconds. */
     cfg->aec_init = true;
     cfg->aec_mode = aec_mode;
     cfg->aec_filter_length = CONFIG_CMCAR_VOICE_AEC_FILTER_LENGTH;
@@ -146,52 +158,47 @@ bool voice_frontend_feed(const int16_t *pcm, size_t samples)
         memcpy(feed_buffer + feed_used, pcm, n * sizeof(int16_t));
         feed_used += n; pcm += n; samples -= n;
         if (feed_used == chunk) {
-            /* Microphone/reference levels and their best correlation over a
-             * small lag window. Echo frames correlate strongly with the
-             * reference; near-end speech lowers that correlation. */
+            /* Input diagnostics only. Do not mix these feed-time statistics
+             * with delayed AFE output to make a double-talk decision. */
             int64_t sum_mic = 0, sum_ref = 0;
+            int mic_peak = 0, ref_peak = 0;
+            unsigned mic_clips = 0, ref_clips = 0;
             for (size_t i = 0; i < feed_samples; ++i) {
                 int32_t m = feed_buffer[i * feed_nch];
                 int32_t v = feed_nch > 1 ? feed_buffer[i * feed_nch + 1] : 0;
                 sum_mic += (int64_t)m * m;
                 sum_ref += (int64_t)v * v;
+                int ma = m < 0 ? -m : m, ra = v < 0 ? -v : v;
+                if (ma > mic_peak) mic_peak = ma;
+                if (ra > ref_peak) ref_peak = ra;
+                mic_clips += ma >= 32760;
+                ref_clips += ra >= 32760;
             }
             int mic_rms = (int)sqrt((double)sum_mic / (double)feed_samples);
             int ref_rms = (int)sqrt((double)sum_ref / (double)feed_samples);
-            int best = 0;
-            if (feed_nch > 1 && ref_rms > 2000) {
-                for (int lag = -256; lag <= 256; ++lag) {
-                    int64_t cross = 0, e_mic = 0, e_ref = 0;
-                    for (size_t i = 0; i < feed_samples; ++i) {
-                        int j = (int)i + lag;
-                        if (j < 0 || j >= (int)feed_samples) continue;
-                        int32_t m = feed_buffer[i * feed_nch];
-                        int32_t v = feed_buffer[j * feed_nch + 1];
-                        cross += (int64_t)m * v;
-                        e_mic += (int64_t)m * m;
-                        e_ref += (int64_t)v * v;
-                    }
-                    double denom = sqrt((double)e_mic * (double)e_ref);
-                    if (denom > 0) {
-                        int c = (int)(1000.0 * fabs((double)cross / denom));
-                        if (c > best) best = c;
-                    }
-                }
-            }
             atomic_store(&s_in_rms, mic_rms);
             atomic_store(&s_ref_rms, ref_rms);
-            atomic_store(&s_corr_permille, best);
+            atomic_store(&s_mic_peak, mic_peak);
+            atomic_store(&s_ref_peak, ref_peak);
+            atomic_fetch_add(&s_mic_clips, mic_clips);
+            atomic_fetch_add(&s_ref_clips, ref_clips);
+
             int result = iface->feed(afe, feed_buffer);
             feed_used = 0;
-            if (result < 0) return false;
+            if (result < 0) { voice_frontend_discontinuity(); return false; }
         }
     }
     return true;
 }
 
 int voice_frontend_out_rms(void) { return atomic_load(&s_out_rms); }
-int voice_frontend_echo_corr(void) { return atomic_load(&s_corr_permille); }
 int voice_frontend_ref_rms(void) { return atomic_load(&s_ref_rms); }
+
+void voice_frontend_discontinuity(void)
+{
+    feed_used = 0;
+    atomic_store(&s_discontinuous, true);
+}
 
 bool voice_frontend_fetch(const int16_t **pcm, size_t *samples,
                           bool *wake, bool *speech, bool allow_wake)
@@ -211,32 +218,40 @@ bool voice_frontend_fetch(const int16_t **pcm, size_t *samples,
         wake_enabled = allow_wake;
     }
     afe_fetch_result_t *r = iface->fetch_with_delay(afe, pdMS_TO_TICKS(100));
-    if (!r || r->ret_value < 0 || !r->data || r->data_size <= 0 || r->data_size % 2) return false;
+    bool gap = atomic_exchange(&s_discontinuous, false);
+    if (gap || !r || r->ret_value < 0 || !r->data || r->data_size <= 0 || r->data_size % 2) {
+        s_dtd.held = s_dtd.gap = 0;
+        s_dtd.playing = false;
+        atomic_store(&s_barge, false);
+        return false;
+    }
     *pcm = r->data;
     *samples = (size_t)r->data_size / sizeof(int16_t);
     *wake = allow_wake && r->wakeup_state == WAKENET_DETECTED;
     *speech = r->vad_state == VAD_SPEECH;
 #if CONFIG_CMCAR_VOICE_AEC
-    /* ERLE (echo return loss enhancement): how much the AEC removed from the
-     * microphone signal. Only meaningful without near-end speech. */
-    if ((++s_fetch_count % 25u) == 0u) {
-        int64_t sum = 0;
-        const size_t n = *samples;
-        for (size_t i = 0; i < n; ++i) {
-            int32_t v = r->data[i];
-            sum += (int64_t)v * v;
-        }
-        int out_rms = n ? (int)sqrt((double)sum / (double)n) : 0;
-        atomic_store(&s_out_rms, out_rms);
-        int in_rms = atomic_load(&s_in_rms);
-        int ref_rms = atomic_load(&s_ref_rms);
-        int corr = atomic_load(&s_corr_permille);
-        double erle = (in_rms > 0 && out_rms > 0)
-                          ? 20.0 * log10((double)in_rms / (double)out_rms)
-                          : 0.0;
-        ESP_LOGI(TAG, "aec in=%d out=%d ref=%d corr=%.2f erle=%.1f dB vad=%d",
-                 in_rms, out_rms, ref_rms, corr / 1000.0, erle, *speech);
+    double sum = 0, square = 0;
+    for (size_t i = 0; i < *samples; ++i) {
+        double v = r->data[i]; sum += v; square += v * v;
     }
+    double mean = sum / *samples;
+    int out = (int)sqrt(fmax(0, square / *samples - mean * mean));
+    atomic_store(&s_out_rms, out);
+    if (voice_dtd_update(&s_dtd, atomic_load(&s_playback), *speech, out, *samples))
+        atomic_store(&s_barge, true);
+    if ((++s_fetch_count % 25u) == 0u)
+        ESP_LOGI(TAG, "afe out_ac=%d vad=%d; raw mic/ref rms=%d/%d peak=%d/%d clips=%u/%u (unaligned diagnostics)",
+                 out, *speech, atomic_load(&s_in_rms), atomic_load(&s_ref_rms),
+                 atomic_load(&s_mic_peak), atomic_load(&s_ref_peak),
+                 atomic_load(&s_mic_clips), atomic_load(&s_ref_clips));
 #endif
+
     return true;
 }
+
+void voice_frontend_set_playback(bool enabled)
+{
+    atomic_store(&s_playback, enabled);
+    if (!enabled) atomic_store(&s_barge, false);
+}
+bool voice_frontend_take_barge_in(void) { return atomic_exchange(&s_barge, false); }

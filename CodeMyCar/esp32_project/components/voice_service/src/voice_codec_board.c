@@ -34,6 +34,7 @@
 #include "es7210_adc.h"
 #include "es8311_codec.h"
 #include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 #define BOARD_RATE 16000
 #define BOARD_FRAMES 320
@@ -65,6 +66,7 @@ typedef struct {
     const audio_codec_ctrl_if_t *in_ctrl;
     const audio_codec_if_t *out_codec;
     const audio_codec_if_t *in_codec;
+    const audio_codec_gpio_if_t *gpio_if;
     int16_t *in_buf;
     int32_t *out_buf;
     int volume;
@@ -77,7 +79,7 @@ static esp_err_t board_read(voice_codec_t *codec, int16_t *dst, size_t frames)
         return ESP_ERR_INVALID_ARG;
     }
     board_impl_t *impl = codec->impl;
-    const size_t want = BOARD_FRAMES * BOARD_IN_CHANNELS * sizeof(int16_t);
+    const size_t want = frames * BOARD_IN_CHANNELS * sizeof(int16_t);
     int ret = esp_codec_dev_read(impl->in, impl->in_buf, want);
     if (ret != ESP_CODEC_DEV_OK) {
         ESP_LOGE(TAG, "ES7210 read failed: %d", ret);
@@ -111,15 +113,16 @@ static esp_err_t board_write(voice_codec_t *codec, const int16_t *src,
     while (frames > 0) {
         size_t n = frames > BOARD_FRAMES ? BOARD_FRAMES : frames;
         for (size_t i = 0; i < n; ++i) {
-            int32_t v = (int32_t)src[i] << 16;
+            int32_t v = (int32_t)src[i] * 65536;
             impl->out_buf[2 * i] = v;
             impl->out_buf[2 * i + 1] = v;
         }
-        int ret = esp_codec_dev_write(impl->out, impl->out_buf,
-                                      n * BOARD_OUT_CHANNELS * sizeof(int32_t));
-        if (ret != ESP_CODEC_DEV_OK) {
-            ESP_LOGE(TAG, "ES8311 write failed: %d", ret);
-            return ESP_FAIL;
+        size_t written = 0;
+        size_t bytes = n * BOARD_OUT_CHANNELS * sizeof(int32_t);
+        esp_err_t ret = i2s_channel_write(impl->tx, impl->out_buf, bytes, &written, 100);
+        if (ret != ESP_OK || written != bytes) {
+            ESP_LOGE(TAG, "ES8311 bounded write failed: %d", ret);
+            return ret == ESP_OK ? ESP_ERR_TIMEOUT : ret;
         }
         src += n;
         frames -= n;
@@ -162,9 +165,12 @@ static void board_destroy(voice_codec_t *codec)
         if (impl->in != NULL) {
             esp_codec_dev_delete(impl->in);
         }
-        /* The codec/ctrl/data interface objects are static singletons owned by
-         * esp_codec_dev; the API exposes no destructor for them. Only the
-         * I2S channels, the I2C bus and this allocation belong to us. */
+        if (impl->out_codec) audio_codec_delete_codec_if(impl->out_codec);
+        if (impl->in_codec) audio_codec_delete_codec_if(impl->in_codec);
+        if (impl->out_ctrl) audio_codec_delete_ctrl_if(impl->out_ctrl);
+        if (impl->in_ctrl) audio_codec_delete_ctrl_if(impl->in_ctrl);
+        if (impl->data_if) audio_codec_delete_data_if(impl->data_if);
+        if (impl->gpio_if) audio_codec_delete_gpio_if(impl->gpio_if);
         if (impl->rx != NULL) {
             (void)i2s_channel_disable(impl->rx);
             (void)i2s_del_channel(impl->rx);
@@ -205,6 +211,8 @@ static bool board_pins_valid(void)
     }
 #if PIN_PA >= 0
     if (!GPIO_IS_VALID_OUTPUT_GPIO(PIN_PA)) return false;
+    if (PIN_PA == CONFIG_CMCAR_UART_TX_PIN || PIN_PA == CONFIG_CMCAR_UART_RX_PIN ||
+        (PIN_PA >= 26 && PIN_PA <= 37)) return false;
     for (size_t i = 0; i < sizeof(pins) / sizeof(pins[0]); ++i) {
         if (PIN_PA == pins[i]) return false;
     }
@@ -282,9 +290,11 @@ static esp_err_t board_init_codecs(board_impl_t *impl)
     };
     impl->out_ctrl = audio_codec_new_i2c_ctrl(&out_i2c);
     if (impl->out_ctrl == NULL) return ESP_ERR_NO_MEM;
+    impl->gpio_if = audio_codec_new_gpio();
+    if (!impl->gpio_if) return ESP_ERR_NO_MEM;
     es8311_codec_cfg_t out_cfg = {
         .ctrl_if = impl->out_ctrl,
-        .gpio_if = audio_codec_new_gpio(),
+        .gpio_if = impl->gpio_if,
         .codec_mode = ESP_CODEC_DEV_WORK_MODE_DAC,
         .pa_pin = -1,
         .master_mode = false,
@@ -365,12 +375,42 @@ static esp_err_t board_open_streams(board_impl_t *impl)
         ESP_LOGE(TAG, "ES7210 open failed: %d", ret);
         return ESP_FAIL;
     }
-    ret = esp_codec_dev_set_in_gain(impl->in,
+    ret = impl->in_codec->set_mic_gain(impl->in_codec,
                                     (float)CONFIG_CMCAR_VOICE_BOARD_INPUT_GAIN_DB);
     if (ret != ESP_CODEC_DEV_OK) {
-        ESP_LOGW(TAG, "ES7210 gain failed: %d", ret);
+        ESP_LOGE(TAG, "ES7210 gain failed: %d", ret);
+        return ESP_FAIL;
     }
+#if CONFIG_CMCAR_VOICE_AEC
+    ret = impl->in_codec->set_mic_channel_gain(impl->in_codec,
+        1u << CONFIG_CMCAR_VOICE_BOARD_REFERENCE_ADC_CHANNEL,
+        (float)CONFIG_CMCAR_VOICE_BOARD_REFERENCE_GAIN_DB);
+    if (ret != ESP_CODEC_DEV_OK) return ESP_FAIL;
+#endif
     return err;
+}
+
+esp_err_t voice_codec_board_probe_gains(voice_codec_t *codec)
+{
+    if (!codec || codec->ops != &s_board_ops) return ESP_ERR_INVALID_ARG;
+    board_impl_t *impl = codec->impl;
+    int ret = 0;
+    for (int adc = 0; adc < 4 && !ret; ++adc) {
+        ret = impl->in_codec->set_mic_gain(impl->in_codec,
+                     CONFIG_CMCAR_VOICE_BOARD_INPUT_GAIN_DB);
+        ret |= impl->in_codec->set_mic_channel_gain(impl->in_codec, 1u << adc, 12);
+        uint8_t gain[4] = {0};
+        for (int i = 0; i < 4; ++i)
+            ret |= impl->in_ctrl->read_reg(impl->in_ctrl, 0x43 + i, 1, &gain[i], 1);
+        ESP_LOGI(TAG, "GAIN_PROBE adc=%d db=12 regs=%02x/%02x/%02x/%02x status=%d",
+                 adc, gain[0], gain[1], gain[2], gain[3], ret);
+        vTaskDelay(pdMS_TO_TICKS(1600));
+    }
+    ret |= impl->in_codec->set_mic_gain(impl->in_codec, CONFIG_CMCAR_VOICE_BOARD_INPUT_GAIN_DB);
+    ret |= impl->in_codec->set_mic_channel_gain(impl->in_codec,
+        1u << CONFIG_CMCAR_VOICE_BOARD_REFERENCE_ADC_CHANNEL,
+        CONFIG_CMCAR_VOICE_BOARD_REFERENCE_GAIN_DB);
+    return ret ? ESP_FAIL : ESP_OK;
 }
 
 esp_err_t voice_codec_board_init(voice_codec_t **out)
@@ -381,6 +421,8 @@ esp_err_t voice_codec_board_init(voice_codec_t **out)
         ESP_LOGE(TAG, "Invalid board pins or collision with control UART");
         return ESP_ERR_INVALID_ARG;
     }
+    if (CONFIG_CMCAR_VOICE_BOARD_MIC_CHANNEL != 0 &&
+        CONFIG_CMCAR_VOICE_BOARD_MIC_CHANNEL != 2) return ESP_ERR_INVALID_ARG;
 
     voice_codec_t *codec = calloc(1, sizeof(*codec));
     board_impl_t *impl = calloc(1, sizeof(*impl));
@@ -461,6 +503,11 @@ esp_err_t voice_codec_board_init(voice_codec_t **out)
              CONFIG_CMCAR_VOICE_BOARD_MIC_CHANNEL,
              CONFIG_CMCAR_VOICE_BOARD_VOLUME,
              CONFIG_CMCAR_VOICE_BOARD_PA_GPIO >= 0 ? "gpio" : "hardwired");
+#if CONFIG_CMCAR_VOICE_AEC
+    ESP_LOGI(TAG, "reference TDM slot=1 physical_adc=%d gain=%ddB",
+             CONFIG_CMCAR_VOICE_BOARD_REFERENCE_ADC_CHANNEL,
+             CONFIG_CMCAR_VOICE_BOARD_REFERENCE_GAIN_DB);
+#endif
     *out = codec;
     return ESP_OK;
 

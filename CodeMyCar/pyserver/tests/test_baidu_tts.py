@@ -151,6 +151,8 @@ async def test_missing_scope_raises(calls):
 async def test_token_is_cached(calls):
     client, http = _make_client(calls)
     try:
+        await client.warmup()
+        assert not calls["tts"]
         await client.synthesize("一")
         await client.synthesize("二")
     finally:

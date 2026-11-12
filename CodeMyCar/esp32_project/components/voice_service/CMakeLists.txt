@@ -5,6 +5,7 @@ set(voice_sources
     "src/voice_codec_i2s.c"
     "src/voice_codec_board.c"
     "src/voice_output.c"
+    "src/voice_dtd.c"
     "src/voice_transport.c"
     "src/voice_protocol.c"
     "src/voice_state.c"
@@ -19,6 +20,7 @@ idf_component_register(
     INCLUDE_DIRS "include"
     EMBED_FILES "assets/wake_ack.pcm"
     REQUIRES
+        esp_timer
         esp_driver_i2s
         esp_driver_i2c
         esp_driver_gpio

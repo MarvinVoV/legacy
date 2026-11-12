@@ -1,11 +1,14 @@
 #include "voice_transport.h"
 #include <stdlib.h>
+#include <stdatomic.h>
+#include <stdio.h>
 #include <string.h>
 #include "cJSON.h"
 #include "esp_log.h"
 #include "esp_websocket_client.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
+#include "freertos/semphr.h"
 #include "sdkconfig.h"
 #include "task_priorities.h"
 #include "voice_output.h"
@@ -16,57 +19,42 @@ struct voice_transport {
     voice_message_t message;
     voice_transport_audio_cb_t audio_cb;
     void *audio_arg;
-    size_t speak_remaining;
-    int speak_rate;
-    int speak_channels;
-    volatile bool speaking;
-    volatile bool local_barge;
-    uint8_t speak_carry;
-    bool speak_have_carry;
+    SemaphoreHandle_t guard;
+    voice_pcm_decoder_t decoder;
+    int speak_rate, speak_channels;
+    atomic_bool speaking, barge_enabled;
+    uint32_t turn, seq, cancelled_turn, epoch;
+    bool dropping, reply_active, ack_enabled, finish_pending, stop_pending;
     int16_t speak_pcm[1025];
 };
 static const char *TAG = "voice_transport";
 
 static void feed_binary(voice_transport_t *t, const char *data, size_t len)
 {
-    if (t->speak_remaining == 0 || len == 0) return;
-    if (len > t->speak_remaining) {
-        ESP_LOGW(TAG, "speak frame exceeds declared bytes; truncating");
-        len = t->speak_remaining;
-    }
-    if (t->local_barge) {
-        /* Between the local stop and the server's cancel, drop any PCM still
-         * in flight so the assistant cannot resume mid-sentence. */
-        t->speak_remaining -= len;
-        if (t->speak_remaining == 0) t->speaking = false;
+    xSemaphoreTake(t->guard, portMAX_DELAY);
+    if (t->dropping) {
+        t->decoder.remaining = len < t->decoder.remaining ? t->decoder.remaining - len : 0;
+        xSemaphoreGive(t->guard);
         return;
     }
-    const uint8_t *src = (const uint8_t *)data;
     size_t frames = 0;
-    if (t->speak_have_carry) {
-        t->speak_pcm[frames++] = (int16_t)(t->speak_carry | ((uint16_t)src[0] << 8));
-        src++;
-        len--;
-        t->speak_have_carry = false;
-    }
-    size_t pairs = len / 2;
-    if (pairs > 1024 - frames) pairs = 1024 - frames;
-    for (size_t i = 0; i < pairs; ++i) {
-        t->speak_pcm[frames++] = (int16_t)(src[2 * i] | ((uint16_t)src[2 * i + 1] << 8));
-    }
-    if ((len & 1u) && pairs * 2 < len) {
-        t->speak_carry = src[pairs * 2];
-        t->speak_have_carry = true;
-    }
-    t->speak_remaining -= len;
-    if (t->speak_remaining == 0) t->speaking = false;
-    if (frames > 0 && t->audio_cb != NULL) {
-        esp_err_t err = t->audio_cb(t->speak_pcm, frames, t->speak_rate,
-                                    t->speak_channels, t->audio_arg);
-        if (err != ESP_OK) {
-            ESP_LOGW(TAG, "speak sink rejected PCM: %s", esp_err_to_name(err));
-        }
-    }
+    bool valid = voice_pcm_decode(&t->decoder, (const uint8_t *)data, len,
+                                  t->speak_pcm, 1025, &frames);
+    uint32_t epoch = t->epoch;
+    int rate = t->speak_rate, channels = t->speak_channels;
+    voice_transport_audio_cb_t cb = t->audio_cb;
+    void *cb_arg = t->audio_arg;
+    xSemaphoreGive(t->guard);
+    if (!valid) { xEventGroupSetBits(t->events, VOICE_PEER_FAILED); return; }
+    esp_err_t err = ESP_OK;
+    if (frames && cb)
+        err = cb(t->speak_pcm, frames, rate, channels, epoch, cb_arg);
+    xSemaphoreTake(t->guard, portMAX_DELAY);
+    if (err != ESP_OK && !t->dropping && epoch == t->epoch)
+        xEventGroupSetBits(t->events, VOICE_PEER_FAILED);
+    /* Keep a v2 reply active across sentence gaps, until playback_end + drain. */
+    if (!t->ack_enabled && !t->decoder.remaining) atomic_store(&t->speaking, false);
+    xSemaphoreGive(t->guard);
 }
 
 static void on_event(void *arg, esp_event_base_t base, int32_t id, void *payload)
@@ -84,21 +72,53 @@ static void on_event(void *arg, esp_event_base_t base, int32_t id, void *payload
         if (data->op_code == 1 || (data->op_code == 0 && t->message.total)) {
             events = voice_message_feed(&t->message, data->data_ptr,
                 data->data_len, data->payload_offset, data->payload_len);
-            if (events & VOICE_PEER_SPEAK) {
-                t->speak_remaining = t->message.speak_bytes;
-                t->speak_rate = t->message.speak_rate;
-                t->speak_channels = t->message.speak_channels;
-                t->speak_have_carry = false;
-                t->speak_carry = 0;
-                t->local_barge = false;
-                t->speaking = true;
+            xSemaphoreTake(t->guard, portMAX_DELAY);
+            if (events & VOICE_PEER_READY) {
+                atomic_store(&t->barge_enabled, t->message.barge_in);
+                t->ack_enabled = t->message.playback_ack;
             }
+            if (events & VOICE_PEER_SPEAK) {
+                bool invalid = (t->ack_enabled && (!t->message.turn || !t->message.seq)) ||
+                    (t->decoder.remaining && !t->dropping) ||
+                    (t->message.turn < t->turn) ||
+                    (t->message.seq && t->message.seq <= t->seq);
+                if (invalid) events |= VOICE_PEER_FAILED;
+                else {
+                    t->turn = t->message.turn;
+                    t->seq = t->message.seq;
+                    t->decoder = (voice_pcm_decoder_t){.remaining = t->message.speak_bytes};
+                    t->speak_rate = t->message.speak_rate;
+                    t->speak_channels = t->message.speak_channels;
+                    t->dropping = t->turn && t->turn <= t->cancelled_turn;
+                    t->epoch = voice_output_epoch();
+                    if (!t->dropping) {
+                        t->reply_active = true;
+                        atomic_store(&t->speaking, true);
+                    }
+                }
+            }
+            if ((events & VOICE_PEER_PLAYBACK_END) && !t->dropping &&
+                t->message.turn == t->turn && t->message.seq == t->seq) {
+                if (t->decoder.remaining) events |= VOICE_PEER_FAILED;
+                else t->finish_pending = true;
+            }
+            if ((events & VOICE_PEER_STOP) &&
+                (t->message.turn == t->turn || (!t->ack_enabled && !t->message.turn))) {
+                t->cancelled_turn = t->turn;
+                t->dropping = true;
+                t->reply_active = t->finish_pending = false;
+                atomic_store(&t->speaking, false);
+                voice_output_flush();
+                t->stop_pending = t->ack_enabled;
+            } else if (events & VOICE_PEER_STOP) {
+                events &= ~VOICE_PEER_STOP; /* stale response: no mic reset either */
+            }
+            xSemaphoreGive(t->guard);
         } else if (data->op_code == 2 ||
-                   (data->op_code == 0 && t->speak_remaining > 0)) {
+                   (data->op_code == 0 && !t->message.total)) {
             feed_binary(t, data->data_ptr, (size_t)data->data_len);
         }
     }
-    if (events & VOICE_PEER_STOP) t->local_barge = false;
     if (events) {
         xEventGroupSetBits(t->events, events);
         ESP_LOGI(TAG, "peer_event=0x%02lx", (unsigned long)events);
@@ -113,6 +133,8 @@ void voice_transport_close(voice_transport_t *t)
         esp_websocket_client_stop(t->client);
         esp_websocket_client_destroy(t->client);
     }
+    voice_output_flush();
+    if (t->guard) vSemaphoreDelete(t->guard);
     if (t->events) vEventGroupDelete(t->events);
     free(t);
 }
@@ -146,6 +168,8 @@ esp_err_t voice_transport_open(voice_transport_t **out, bool continuous, bool on
 #endif
         .task_prio = TASK_PRIO_VOICE_NETWORK,
     };
+    t->guard = xSemaphoreCreateMutex();
+    if (!t->guard) { voice_transport_close(t); return ESP_ERR_NO_MEM; }
     t->client = esp_websocket_client_init(&cfg);
     if (!t->client) { voice_transport_close(t); return ESP_ERR_NO_MEM; }
     esp_err_t err = esp_websocket_register_events(t->client, WEBSOCKET_EVENT_ANY, on_event, t);
@@ -164,6 +188,8 @@ esp_err_t voice_transport_open(voice_transport_t **out, bool continuous, bool on
     bool complete = cJSON_AddStringToObject(start, "type", "start") &&
         cJSON_AddStringToObject(start, "device", CONFIG_CMCAR_DEVICE_ID) &&
         cJSON_AddNumberToObject(start, "rate", 16000) &&
+        cJSON_AddNumberToObject(start, "protocol", 2) &&
+        cJSON_AddBoolToObject(start, "playback_ack", voice_output_enabled()) &&
         cJSON_AddNumberToObject(start, "ch", 1) &&
         cJSON_AddNumberToObject(start, "bits", 16) &&
         cJSON_AddStringToObject(start, "mode",
@@ -200,8 +226,10 @@ void voice_transport_set_audio_callback(voice_transport_t *t,
                                         voice_transport_audio_cb_t cb, void *arg)
 {
     if (!t) return;
+    xSemaphoreTake(t->guard, portMAX_DELAY);
     t->audio_cb = cb;
     t->audio_arg = arg;
+    xSemaphoreGive(t->guard);
 }
 
 esp_err_t voice_transport_send_pcm(voice_transport_t *t, const int16_t *pcm, size_t samples)
@@ -214,15 +242,53 @@ esp_err_t voice_transport_send_pcm(voice_transport_t *t, const int16_t *pcm, siz
 
 bool voice_transport_is_speaking(const voice_transport_t *t)
 {
-    return t != NULL && t->speaking;
+    return t != NULL && atomic_load(&t->speaking);
+}
+
+bool voice_transport_barge_enabled(const voice_transport_t *t)
+{
+    return t && atomic_load(&t->barge_enabled);
 }
 
 esp_err_t voice_transport_barge_in(voice_transport_t *t)
 {
-    if (t == NULL) return ESP_ERR_INVALID_ARG;
-    t->local_barge = true;
-    t->speaking = false;
-    return send_text(t, "{\"type\":\"barge_in\"}", 500) ? ESP_OK : ESP_FAIL;
+    if (!voice_transport_barge_enabled(t)) return ESP_ERR_INVALID_STATE;
+    xSemaphoreTake(t->guard, portMAX_DELAY);
+    if (!t->reply_active || t->dropping) {
+        xSemaphoreGive(t->guard);
+        return ESP_ERR_INVALID_STATE;
+    }
+    t->cancelled_turn = t->turn;
+    t->dropping = true;
+    t->reply_active = t->finish_pending = false;
+    atomic_store(&t->speaking, false);
+    voice_output_flush();
+    uint32_t turn = t->turn;
+    xSemaphoreGive(t->guard);
+    char message[96];
+    snprintf(message, sizeof(message), "{\"type\":\"barge_in\",\"turn\":%lu}", (unsigned long)turn);
+    return send_text(t, message, 500) ? ESP_OK : ESP_FAIL;
+}
+
+esp_err_t voice_transport_poll(voice_transport_t *t)
+{
+    if (voice_output_failed()) return ESP_FAIL;
+    char message[112] = {0};
+    xSemaphoreTake(t->guard, portMAX_DELAY);
+    if (!voice_output_active()) {
+        if (t->stop_pending) {
+            t->stop_pending = false;
+            snprintf(message, sizeof(message), "{\"type\":\"stop_ack\",\"turn\":%lu,\"seq\":%lu}",
+                     (unsigned long)t->turn, (unsigned long)t->seq);
+        } else if (t->finish_pending) {
+            t->finish_pending = t->reply_active = false;
+            atomic_store(&t->speaking, false);
+            snprintf(message, sizeof(message), "{\"type\":\"playback_finished\",\"turn\":%lu,\"seq\":%lu}",
+                     (unsigned long)t->turn, (unsigned long)t->seq);
+        }
+    }
+    xSemaphoreGive(t->guard);
+    return !message[0] || send_text(t, message, 500) ? ESP_OK : ESP_FAIL;
 }
 
 esp_err_t voice_transport_finish(voice_transport_t *t, unsigned timeout_ms)

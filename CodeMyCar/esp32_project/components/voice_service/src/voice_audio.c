@@ -108,6 +108,9 @@ static void capture_task(void *arg)
         esp_err_t err = voice_codec_read(s_codec, pcm, VOICE_CHUNK_FRAMES);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "codec read failed: %s", esp_err_to_name(err));
+#if CONFIG_IDF_TARGET_ESP32S3
+            voice_frontend_discontinuity();
+#endif
             vTaskDelay(pdMS_TO_TICKS(100));
             continue;
         }

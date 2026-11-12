@@ -11,22 +11,25 @@ from typing import Any
 
 from fastapi import WebSocket
 
-
 _CHUNK_BYTES = 1024
 # 16 kHz / 16-bit / mono: 32 bytes per millisecond. Pacing the downlink at
 # real time keeps the device's small playback queue from filling, so the
 # WebSocket task stays responsive and barge-in uploads are not starved.
 _BYTES_PER_MS = 32
+_LOOKAHEAD_S = 0.2
 
 
 class WebSocketEventSink:
     def __init__(self, ws: WebSocket) -> None:
         self._ws = ws
         self._lock = asyncio.Lock()
+        self._audio_until = 0.0
 
     async def send_json(self, payload: dict[str, Any]) -> None:
         async with self._lock:
             await self._ws.send_json(payload)
+            if payload.get("type") == "stop":
+                self._audio_until = 0.0
 
     async def send_bytes(self, data: bytes) -> None:
         async with self._lock:
@@ -41,8 +44,14 @@ class WebSocketEventSink:
         # for the reply to finish.
         for offset in range(0, len(data), _CHUNK_BYTES):
             chunk = data[offset : offset + _CHUNK_BYTES]
+            loop = asyncio.get_running_loop()
+            # A fixed lead window absorbs WiFi jitter without the old 1.25x
+            # unbounded buildup. Absolute deadlines avoid per-sleep drift and
+            # the same timeline spans sentence boundaries.
+            deadline = max(self._audio_until, loop.time())
+            delay = deadline - loop.time() - _LOOKAHEAD_S
+            if delay > 0:
+                await asyncio.sleep(delay)
             async with self._lock:
                 await self._ws.send_bytes(chunk)
-            # Pre-send slightly faster than playback so the device builds a
-            # jitter buffer instead of running dry at exactly real time.
-            await asyncio.sleep(len(chunk) / 1000 / _BYTES_PER_MS * 0.8)
+            self._audio_until = max(deadline, loop.time()) + len(chunk) / 1000 / _BYTES_PER_MS

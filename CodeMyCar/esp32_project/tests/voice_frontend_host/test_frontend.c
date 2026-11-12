@@ -10,7 +10,7 @@ static srmodel_list_t models = {3};
 static esp_afe_sr_data_t instance;
 static afe_config_t cfg;
 static bool missing_models, missing_wake, timeout;
-static int channels = 1, created, destroyed, deinit, fed;
+static int channels = CONFIG_CMCAR_VOICE_AEC ? 2 : 1, created, destroyed, deinit, fed;
 static int enabled, disabled, ns_enabled, ns_disabled;
 static int16_t output[512];
 static afe_fetch_result_t result = {.data=output, .data_size=sizeof(output),
@@ -20,6 +20,7 @@ srmodel_list_t *esp_srmodel_init(const char *p)
 char *esp_srmodel_filter(srmodel_list_t *m, const char *prefix, const char *word)
 {
  assert(m==&models);
+ if (!strcmp(prefix,"wn9l_")) return NULL;
  if (!strcmp(prefix,"wn9_")) { assert(!strcmp(word,"nihaoxiaozhi")); return missing_wake ? NULL : "wn9_nihaoxiaozhi_tts"; }
  if (!strcmp(prefix,"nsnet")) return "nsnet2";
  if (!strcmp(prefix,"vadnet")) return "vadnet1_medium";
@@ -27,11 +28,11 @@ char *esp_srmodel_filter(srmodel_list_t *m, const char *prefix, const char *word
 }
 void esp_srmodel_deinit(srmodel_list_t *m) { assert(m==&models); deinit++; }
 afe_config_t *afe_config_init(const char *input, srmodel_list_t *m, int type, int mode)
-{ assert(!strcmp(input,"M") && m==&models && type==AFE_TYPE_FD && mode==AFE_MODE_LOW_COST); memset(&cfg,0,sizeof(cfg)); return &cfg; }
+{ assert(!strcmp(input,CONFIG_CMCAR_VOICE_AEC ? "MR" : "M") && m==&models && type==AFE_TYPE_FD); assert(mode == (CONFIG_CMCAR_VOICE_AEC && CONFIG_CMCAR_VOICE_AEC_HIGH_PERF ? AFE_MODE_HIGH_PERF : AFE_MODE_LOW_COST)); memset(&cfg,0,sizeof(cfg)); return &cfg; }
 void afe_config_free(afe_config_t *c) { assert(c==&cfg); }
 static esp_afe_sr_data_t *create(afe_config_t *c)
 {
- assert(!c->aec_init && !c->se_init && !c->agc_init);
+ assert(c->aec_init == (bool)CONFIG_CMCAR_VOICE_AEC && !c->se_init && !c->agc_init);
  assert(c->wakenet_init && c->vad_init);
  assert(c->ns_init == (bool)CONFIG_CMCAR_VOICE_DENOISE);
  assert(c->memory_alloc_mode==AFE_MEMORY_ALLOC_MORE_PSRAM && c->afe_perferred_core==1);
@@ -39,7 +40,7 @@ static esp_afe_sr_data_t *create(afe_config_t *c)
 }
 static void destroy(esp_afe_sr_data_t *p) { assert(p==&instance); destroyed++; }
 static int feed(esp_afe_sr_data_t *p, const int16_t *data)
-{ assert(p==&instance); for(int i=0;i<512;i++) assert(data[i]==fed*512+i); fed++; return 512; }
+{ assert(p==&instance); for(int i=0;i<512*channels;i++) assert(data[i]==fed*512*channels+i); fed++; return 512; }
 static afe_fetch_result_t *fetch(esp_afe_sr_data_t *p, int ticks)
 { assert(p==&instance && ticks==100); return timeout ? NULL : &result; }
 static int channel_count(esp_afe_sr_data_t *p) { (void)p; return channels; }
@@ -62,17 +63,32 @@ int main(void)
  const int16_t *pcm; size_t samples; bool wake, speech;
  missing_models=true; assert(!voice_frontend_init()); assert(deinit==0);
  missing_models=false; missing_wake=true; assert(!voice_frontend_init()); assert(deinit==1);
- missing_wake=false; channels=2; assert(!voice_frontend_init()); assert(destroyed==1);
- channels=1; assert(voice_frontend_init()); assert(voice_frontend_init()); assert(created==2);
- int16_t input[1024]; for(int i=0;i<1024;i++) input[i]=i;
- assert(voice_frontend_feed(input,320)); assert(fed==0);
- assert(voice_frontend_feed(input+320,320)); assert(fed==1);
- assert(voice_frontend_feed(input+640,384)); assert(fed==2);
+ missing_wake=false; channels=CONFIG_CMCAR_VOICE_AEC ? 1 : 2; assert(!voice_frontend_init()); assert(destroyed==1);
+ channels=CONFIG_CMCAR_VOICE_AEC ? 2 : 1; assert(voice_frontend_init()); assert(voice_frontend_init()); assert(created==2);
+ int16_t input[2048]; for(int i=0;i<1024*channels;i++) input[i]=i;
+ assert(voice_frontend_feed(input,320*channels)); assert(fed==0);
+ assert(voice_frontend_feed(input+320*channels,320*channels)); assert(fed==1);
+ assert(voice_frontend_feed(input+640*channels,384*channels)); assert(fed==2);
  assert(!voice_frontend_feed(NULL,10));
+ /* A hardware read gap must abandon partial input and break output sequence. */
+ assert(voice_frontend_feed(input,100*channels));
+ voice_frontend_discontinuity();
+ fed=0;
+ assert(voice_frontend_feed(input,512*channels)); assert(fed==1);
+ assert(!voice_frontend_fetch(&pcm,&samples,&wake,&speech,true));
  assert(voice_frontend_fetch(&pcm,&samples,&wake,&speech,true)); assert(samples==512 && wake && speech);
  assert(voice_frontend_fetch(&pcm,&samples,&wake,&speech,false)); assert(!wake && disabled==1 && ns_enabled==CONFIG_CMCAR_VOICE_DENOISE);
  assert(voice_frontend_fetch(&pcm,&samples,&wake,&speech,false)); assert(disabled==1);
  assert(voice_frontend_fetch(&pcm,&samples,&wake,&speech,true)); assert(enabled==1 && ns_disabled==2*CONFIG_CMCAR_VOICE_DENOISE);
+#if CONFIG_CMCAR_VOICE_AEC
+ /* Fresh output measurements must not wait for the 25th diagnostic log. */
+ for (int i=0;i<512;i++) output[i] = i%2 ? 1000 : -1000;
+ assert(voice_frontend_fetch(&pcm,&samples,&wake,&speech,false));
+ assert(voice_frontend_out_rms()==1000);
+ for (int i=0;i<512;i++) output[i] = 3000; /* DC is not speech energy */
+ assert(voice_frontend_fetch(&pcm,&samples,&wake,&speech,false));
+ assert(voice_frontend_out_rms()==0);
+#endif
  timeout=true; assert(!voice_frontend_fetch(&pcm,&samples,&wake,&speech,true)); assert(!pcm && !samples && !wake);
  timeout=false; result.data_size=3; assert(!voice_frontend_fetch(&pcm,&samples,&wake,&speech,true));
  voice_frontend_destroy(); voice_frontend_destroy(); assert(destroyed==2);
