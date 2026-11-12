@@ -114,6 +114,7 @@ async def lifespan(app: FastAPI):
             max_distance_mm=settings.voice_max_distance_mm,
             max_turn_deg=settings.voice_max_turn_deg,
             speed_cm_s=settings.voice_speed_cm_s,
+            max_speed_cm_s=settings.voice_max_speed_cm_s,
             min_turn_distance_cm=settings.voice_min_turn_distance_cm,
         ),
         voice_asr,
@@ -121,6 +122,7 @@ async def lifespan(app: FastAPI):
         agent_motion=app.state.agent_motion,
         tts=voice_tts,
         local_player=local_player,
+        state_provider=lambda device_id: device_manager.get_status(device_id).model_dump(),
     )
     app.state.voice_llm = (
         DeepSeekLlmClient(
@@ -146,7 +148,7 @@ async def lifespan(app: FastAPI):
         barge_in_ms=settings.voice_barge_in_ms,
     )
     app.state.agent_runtime = None
-    if settings.agent_enabled and settings.agent_runtime == "deepagents":
+    if settings.agent_enabled and settings.agent_runtime in {"companion", "deepagents"}:
         try:
             app.state.agent_runtime = await AgentRuntime.create(
                 settings, app.state.voice_service

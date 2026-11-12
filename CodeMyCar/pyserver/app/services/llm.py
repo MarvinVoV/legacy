@@ -6,10 +6,9 @@ and tool binding; the runner still owns turn-taking, cancellation and TTS.
 
 Why ChatDeepSeek rather than raw HTTP: the DeepSeek OpenAI-compatible endpoint
 is already covered by LangChain's native integration, including streaming and
-tool-call chunks. LangGraph/Deep Agents are intentionally not introduced here:
-the voice session is short-lived, in-memory and already has an explicit state
-machine; persistence/subagents would add latency and operational surface
-without helping the first voice conversation.
+tool-call chunks. The primary companion graph lives in app.agent.runtime;
+this adapter remains the explicitly limited legacy fallback, not another owner
+of durable memory, skills or checkpoints.
 """
 
 from __future__ import annotations

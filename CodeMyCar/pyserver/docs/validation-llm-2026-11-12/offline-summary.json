@@ -1,0 +1,15 @@
+{
+  "pytest": {
+    "passed": 303,
+    "warnings": 1,
+    "warning_kind": "LangChain MCP beta API",
+    "elapsed_s": 10.84
+  },
+  "ruff": "passed on changed Python modules",
+  "hardware_motion": false,
+  "live_model_cases": 16,
+  "limits": [
+    "No physical motion validation in this change",
+    "Live model evaluation has one sample per case, not a reliability claim"
+  ]
+}

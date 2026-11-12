@@ -13,6 +13,7 @@ import struct
 import time
 import uuid
 import wave
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Protocol
@@ -77,6 +78,7 @@ class VoiceConfig:
     max_distance_mm: int = 1000
     max_turn_deg: int = 90
     speed_cm_s: int = 10
+    max_speed_cm_s: int = 30
     min_turn_distance_cm: int = 30
     min_turn_radius_mm: int = 260
 
@@ -220,10 +222,12 @@ class VoiceService:
         tts: TtsProtocol | None = None,
         local_player: AudioSinkProtocol | None = None,
         actions: VoiceActionExecutor | None = None,
+        state_provider: Callable[[str], dict] | None = None,
     ) -> None:
         self._archived_segments = 0
         self._archive_limit_reported = False
         self.config = config
+        self.state_provider = state_provider
         self.asr = asr
         self.tts = tts
         self.local_player = local_player

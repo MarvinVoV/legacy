@@ -1,0 +1,67 @@
+{
+  "model": "deepseek-flash",
+  "hardware_io": false,
+  "external_mcp": false,
+  "mcp_mode": "in-process fixture only when specified",
+  "limits": [
+    "Simulated body, not physical motion acceptance",
+    "One sample per case, not a reliability rate",
+    "Reply text checks are narrow assertions, not a full personality/empathy evaluation"
+  ],
+  "cases": [
+    {
+      "id": "automatic_memory_extraction",
+      "passed": true,
+      "failures": [],
+      "replies": [
+        "记得呀，你最喜欢恐龙故事！要不要我给你讲一个？"
+      ],
+      "tool_calls": [],
+      "tool_results": [],
+      "api_moves": [],
+      "memory_entries": [
+        {
+          "category": "interest",
+          "key": "dinosaur_stories",
+          "value": "喜欢恐龙故事"
+        }
+      ],
+      "elapsed_s": 4.47
+    },
+    {
+      "id": "mcp_in_process",
+      "passed": true,
+      "failures": [],
+      "replies": [
+        "查到啦，它返回的知识是：猫会呼噜。小鸭觉得这条有点太简短了，不过呼噜声确实是猫咪很特别的本领——开心、放松的时候常常会打呼噜。"
+      ],
+      "tool_calls": [
+        {
+          "name": "animal_fact",
+          "args": {
+            "animal": "猫"
+          },
+          "id": "call_00_1V7oYpflIPmSsl47iumM5089",
+          "type": "tool_call"
+        }
+      ],
+      "tool_results": [
+        {
+          "id": "call_00_1V7oYpflIPmSsl47iumM5089",
+          "name": "animal_fact",
+          "content": [
+            {
+              "type": "text",
+              "text": "猫会呼噜",
+              "id": "lc_2616e68b-c412-4a15-b319-9a2ccfb94573"
+            }
+          ],
+          "status": "success"
+        }
+      ],
+      "api_moves": [],
+      "memory_entries": [],
+      "elapsed_s": 4.24
+    }
+  ]
+}

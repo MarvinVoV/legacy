@@ -4,6 +4,8 @@
 
 **接手先读：[今日语音优化、基线与接手清单](Voice-Baseline-And-Agent-Handoff-2026-11-12.md)**。它汇总今天的修复、代码位置、最终参数、验证证据、未修复项及复测入口；阶段性文档保留作为证据，状态冲突时以此交接和最新声学报告为准。
 
+后续LLM层优化见：[小鸭人格与Agent架构、真实模型模拟车验证](../../../pyserver/docs/LLM-Companion-Architecture-And-Validation-2026-11-12.md)，位于`codex/toy-character-agent`。该批独立于上面的已合并声学基线，不修改S3固件和运动执行开关。
+
 最新音色变更及听感记录：[103／语速6／音调5同步与喇叭对照](Voice-Preset-103-And-Speaker-Comparison-2026-11-12.md)。
 
 最新开发与验收：[小鸭唤醒、分片修复、打断预滚动与后续计划](Voice-Wake-And-Conversation-Hardening-2026-11-12.md)。新唤醒词已可用；同句换问题的续句丢失已修复，用户确认连续两次均能停播并切换正确故事。基础噪声实测已完成并暴露缺陷，更广泛的声学统计、严格已听文本同步及重连恢复仍未完成。

@@ -10,4 +10,6 @@ class AgentContext:
     """Dependency-injected data available through ToolRuntime.context."""
 
     device_id: str
-    user_id: str = "driver"
+    # No speaker identification yet. Shared household memory must not pretend
+    # to distinguish children; a future authenticated identity can override it.
+    user_id: str = "household"

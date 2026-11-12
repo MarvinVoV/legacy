@@ -22,10 +22,11 @@ from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
+from app.agent.persona import SYSTEM_PROMPT
+from app.agent.vehicle import DriveArguments, MoveArguments, TurnArguments, VehicleGateway
 from app.services.audio_metrics import measure_pcm16
 from app.services.llm import LlmClient, LlmDone, LlmTextDelta
 from app.services.voice_diagnostics import InterruptionCapture
-from app.services.voice_intent import VoiceIntent
 from app.services.voice_service import VoiceService, VoiceSession
 
 logger = logging.getLogger(__name__)
@@ -37,13 +38,6 @@ _SENTENCE_END = "。！？；…!?;.\n"
 _MIN_SENTENCE = 2
 _MAX_SENTENCE = 80
 
-SYSTEM_PROMPT = """你是 CodeMyCar 车载语音助手，正在和车主进行免提对话。
-用简洁、自然的口语回答，通常 1 到 3 句话；不要输出 Markdown、代码块或列表。
-默认用中文回答，用户说英文时可以用英文。
-车辆动作必须通过工具完成，不要声称已经移动，除非工具结果明确表示执行成功。
-如果语音运动执行被关闭，直接说明当前不能控制车辆，不要假装动作完成。
-危险动作要先询问确认；不要提供危险驾驶建议。
-用户说“结束”“再见”“退出”“不聊了”表示结束本次对话。"""
 
 
 class ConversationSink(Protocol):
@@ -216,90 +210,34 @@ class ConversationHistory:
         return sum(max(1, len(str(message.get("content", ""))) // 2) for message in self.messages)
 
 
+# Built from the same validated argument models as the production graph.
+
 CAR_TOOLS: list[dict[str, Any]] = [
-    {
-        "type": "function",
-        "function": {
-            "name": "car_move",
-            "description": "Move the car forward or backward by a short distance. "
-            "Motion execution may be disabled by the server.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "direction": {"type": "string", "enum": ["forward", "backward"]},
-                    "distance_m": {"type": "number", "minimum": 0.05, "maximum": 1.0},
-                },
-                "required": ["direction", "distance_m"],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "car_turn",
-            "description": "Turn the car left or right by an angle. "
-            "Motion execution may be disabled by the server.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "direction": {"type": "string", "enum": ["left", "right"]},
-                    "angle_deg": {"type": "number", "minimum": 1, "maximum": 90},
-                },
-                "required": ["direction", "angle_deg"],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "car_stop",
-            "description": "Immediately request the car to stop.",
-            "parameters": {"type": "object", "properties": {}},
-        },
-    },
+    {"type": "function", "function": {"name": name, "description": description,
+        "parameters": schema.model_json_schema() if schema else {"type": "object", "properties": {}}}}
+    for name, description, schema in [
+        ("car_get_state", "Read fresh connection, body pose, capabilities; no movement", None),
+        ("car_drive", "Signed cm path; body turn degrees positive right, negative left even in reverse", DriveArguments),
+        ("car_move", "Straight forward/backward motion in metres", MoveArguments),
+        ("car_turn", "Body turn on default short forward arc, not stationary steering", TurnArguments),
+        ("car_stop", "Reliable STOP; requires confirmed stopped result", None),
+    ]
 ]
 
 
 class CarToolExecutor:
     def __init__(self, service: VoiceService) -> None:
         self.service = service
+        self.gateway = VehicleGateway(service)
 
     async def execute(self, device_id: str, call: Any) -> dict[str, Any]:
-        if not self.service.config.execute_commands:
-            return {"executed": False, "reason": "voice execution disabled"}
         try:
             args = json.loads(call.arguments or "{}")
-        except json.JSONDecodeError:
-            return {"executed": False, "reason": "invalid tool arguments"}
-        try:
-            if call.name == "car_move":
-                direction = str(args.get("direction", "")).lower()
-                distance_m = float(args.get("distance_m", 0))
-                if direction not in ("forward", "backward"):
-                    return {"executed": False, "reason": "invalid direction"}
-                intent = VoiceIntent(
-                    direction,
-                    distance_mm=round(distance_m * 1000),
-                )
-                return await self.service.execute_intent(device_id, intent)
-            if call.name == "car_turn":
-                direction = str(args.get("direction", "")).lower()
-                angle = round(float(args.get("angle_deg", 0)))
-                if direction not in ("left", "right") or angle <= 0:
-                    return {"executed": False, "reason": "invalid turn"}
-                return await self.service.execute_intent(
-                    device_id,
-                    VoiceIntent(
-                        "turn_left" if direction == "left" else "turn_right",
-                        angle_deg=angle,
-                    ),
-                )
-            if call.name == "car_stop":
-                await self.service.stop_action(device_id)
-                return {"executed": True, "action": "stop"}
-            return {"executed": False, "reason": f"unknown tool {call.name}"}
-        except Exception as exc:  # noqa: BLE001 - tool errors must not kill the session
-            logger.warning("conversation tool %s failed: %s", call.name, exc)
+            if not isinstance(args, dict):
+                return {"executed": False, "reason": "invalid tool arguments"}
+            return await self.gateway.invoke(device_id, call.name, args)
+        except Exception as exc:  # noqa: BLE001 - tool failures must not kill a voice turn
+            logger.warning("conversation tool failed: %s", type(exc).__name__)
             return {"executed": False, "reason": "tool failed"}
 
 
@@ -867,7 +805,8 @@ class ConversationRunner:
             chunker = SentenceChunker()
             async for event in self.llm.stream_chat(
                 self.history.request_messages(),
-                tools=CAR_TOOLS,
+                tools=([t for t in CAR_TOOLS if self.service.config.execute_commands
+                        or t["function"]["name"] in {"car_get_state", "car_stop"}]),
             ):
                 if isinstance(event, LlmTextDelta):
                     for sentence in chunker.feed(event.text):

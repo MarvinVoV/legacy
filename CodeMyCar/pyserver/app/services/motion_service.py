@@ -203,6 +203,11 @@ class AgentMotionService:
             "motion_supported": state.motion_supported,
             "motion": {
                 "state": motion.state if motion else "idle",
+                "mode": motion.mode if motion else None,
+                "fault": motion.fault if motion else None,
+                "lease_expired": motion.lease_expired if motion else None,
+                "error": motion.error if motion else None,
+                "heading_source": motion.goal_heading_source if motion else None,
                 "seq": motion.seq if motion else None,
                 "age_ms": age_ms,
                 "stale": stale,
