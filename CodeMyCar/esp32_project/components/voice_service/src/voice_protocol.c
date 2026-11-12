@@ -27,6 +27,7 @@ uint32_t voice_message_feed(voice_message_t *m, const char *data,
     else if (!strcmp(type->valuestring, "final")) event = VOICE_PEER_FINAL;
     else if (!strcmp(type->valuestring, "recognizing")) event = VOICE_PEER_RECOGNIZING;
     else if (!strcmp(type->valuestring, "end")) event = VOICE_PEER_END;
+    else if (!strcmp(type->valuestring, "stop")) event = VOICE_PEER_STOP;
     else if (!strcmp(type->valuestring, "error")) event = VOICE_PEER_FAILED;
     else if (!strcmp(type->valuestring, "speak")) {
         cJSON *rate = cJSON_GetObjectItemCaseSensitive(root, "rate");
@@ -60,4 +61,10 @@ bool voice_sequence_accept(voice_sequence_t *s, uint32_t number)
     s->initialized = true;
     s->next = number + 1; /* uint32 wraparound is intentional. */
     return true;
+}
+
+void voice_sequence_sync(voice_sequence_t *s, uint32_t number)
+{
+    s->initialized = true;
+    s->next = number + 1;
 }

@@ -10,10 +10,14 @@ never transcribes its own TTS. Barge-in is phase 2.
 
 from __future__ import annotations
 
+import array
 import asyncio
 import json
 import logging
+import math
+import sys
 import time
+from collections import deque
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 from typing import Any, Protocol
@@ -25,6 +29,8 @@ from app.services.voice_service import VoiceService, VoiceSession
 logger = logging.getLogger(__name__)
 
 END_PHRASES = {"结束", "再见", "退出", "不聊了"}
+# "Stop talking", not "stop the car". Handled without the LLM and without TTS.
+STOP_TALKING_PHRASES = {"停一下", "停下来", "别说了", "不要说了", "安静", "stop"}
 _SENTENCE_END = "。！？；…!?;.\n"
 _MIN_SENTENCE = 2
 _MAX_SENTENCE = 80
@@ -54,11 +60,36 @@ class ConversationConfig:
     history_tokens: int = 8000
     max_tool_rounds: int = 3
     max_tokens: int = 512
+    # Barge-in: while the assistant speaks, a sustained near-end level above
+    # the AEC residual interrupts the reply. Disabled unless both the device
+    # and the server opt in.
+    barge_in: bool = False
+    barge_in_rms: int = 700
+    barge_in_ms: int = 160
+    barge_in_warmup_s: float = 1.5
+    barge_in_cooldown_s: float = 2.5
+    # Prefer the device's double-talk detector; the energy detector is only a
+    # fallback for boards without a reference channel.
+    barge_in_device_events: bool = True
     system_prompt: str = SYSTEM_PROMPT
 
     @property
     def turn_end_s(self) -> float:
         return self.turn_end_ms / 1000.0
+
+
+def _pcm_rms(pcm: bytes) -> float:
+    """RMS of 16 kHz / 16-bit / mono PCM. Used only for barge-in gating."""
+    usable = len(pcm) // 2 * 2
+    if usable == 0:
+        return 0.0
+    samples = array.array("h")
+    samples.frombytes(pcm[:usable])
+    if sys.byteorder != "little":
+        samples.byteswap()
+    if not samples:
+        return 0.0
+    return math.sqrt(sum(value * value for value in samples) / len(samples))
 
 
 def normalize_text(text: str) -> str:
@@ -289,6 +320,15 @@ class ConversationRunner:
         self._last_activity = time.monotonic()
         self._started = time.monotonic()
         self._send_seq = 0
+        self._barge_ms = 0
+        self._barging = False
+        self._barge_log_at = 0.0
+        self._speaking_since = 0.0
+        self._ignore_until = 0.0
+        self._post_stop = False
+        self._post_silence_ms = 0
+        self._rms_hist = deque(maxlen=100)
+        self._barge_cooldown_until = 0.0
 
     def start(self) -> None:
         self._worker = asyncio.create_task(self._work(), name="voice-conversation-worker")
@@ -297,8 +337,32 @@ class ConversationRunner:
     def feed(self, pcm: bytes) -> None:
         if self.ended.is_set():
             return
+        if self._post_stop:
+            # The words that triggered the stop are not a new question. Drop
+            # the rest of that utterance and only start listening again after
+            # the user goes quiet, so "停一下" cannot become an LLM turn.
+            if _pcm_rms(pcm) < 250:
+                self._post_silence_ms += max(1, len(pcm) // 32)
+            else:
+                self._post_silence_ms = 0
+            self.session.feed(pcm, detect=False)
+            self._last_activity = time.monotonic()
+            if self._post_silence_ms >= 800:
+                self._post_stop = False
+                self.session.discard()
+                self.state = "listening"
+                self._last_activity = time.monotonic()
+                logger.info("barge-in settled; listening for a new question")
+            return
         if self.state != "listening":
-            # Half-duplex: drain user audio while thinking/speaking.
+            # Never transcribe the assistant's own audio; with barge-in the
+            # raw level still decides whether the user is interrupting.
+            self.session.feed(pcm, detect=False)
+            self._maybe_barge_in(pcm)
+            return
+        if time.monotonic() < self._ignore_until:
+            # Speaker tail right after the barge-in stop; do not let it join
+            # the user's first words.
             self.session.feed(pcm, detect=False)
             return
         for segment in self.session.feed(pcm):
@@ -311,6 +375,85 @@ class ConversationRunner:
             self.turn += 1
             self.state = "thinking"
             self._queue.put_nowait(segment)
+
+    def _maybe_barge_in(self, pcm: bytes) -> None:
+        if self.config.barge_in_device_events:
+            return
+        if not self.config.barge_in or self.state != "speaking":
+            self._barge_ms = 0
+            return
+        # AEC needs a moment to converge at the start of a reply; residual
+        # echo spikes there look exactly like near-end speech.
+        if time.monotonic() - self._speaking_since < self.config.barge_in_warmup_s:
+            self._barge_ms = 0
+            return
+        if self.ended.is_set() or self._barging:
+            return
+        # 16 kHz mono -> 32 bytes per millisecond.
+        rms = _pcm_rms(pcm)
+        now = time.monotonic()
+        if now - self._barge_log_at >= 0.5:
+            self._barge_log_at = now
+            logger.info("barge level rms=%.0f threshold=%d held_ms=%d",
+                        rms, self.config.barge_in_rms, self._barge_ms)
+        # Speech between Chinese syllables dips below any single threshold;
+        # accumulate above-threshold frames and decay on quiet frames instead
+        # of resetting, otherwise a real interruption never reaches 180 ms.
+        if rms >= self.config.barge_in_rms:
+            self._barge_ms += max(1, len(pcm) // 32)
+        else:
+            self._barge_ms = max(0, self._barge_ms - 25)
+        if self._barge_ms >= self.config.barge_in_ms:
+            self._barging = True
+            asyncio.create_task(self._begin_barge_in())
+
+    def device_barge_in(self) -> None:
+        """Called when the device itself detected near-end speech."""
+        if self.ended.is_set() or not self.config.barge_in or self._barging:
+            return
+        self._barging = True
+        asyncio.create_task(self._begin_barge_in())
+
+    async def _begin_barge_in(self) -> None:
+        """Stop the reply now, drop queued turns, and listen to the user."""
+        if self.ended.is_set():
+            return
+        logger.info("barge-in: interrupting assistant")
+        # Cancel first: the worker may be inside a paced audio send holding
+        # the sink lock, and `stop` must not queue behind the rest of a
+        # sentence. Cancellation unwinds that send and releases the lock.
+        worker, self._worker = self._worker, None
+        if worker is not None and worker is not asyncio.current_task():
+            worker.cancel()
+            await asyncio.gather(worker, return_exceptions=True)
+        await self._safe_send({"type": "stop"})
+        while True:
+            try:
+                self._queue.get_nowait()
+            except asyncio.QueueEmpty:
+                break
+            else:
+                self._queue.task_done()
+        self.session.discard()
+        self.state = "listening"
+        self._barge_cooldown_until = time.monotonic() + self.config.barge_in_cooldown_s
+        self._post_stop = True
+        self._post_silence_ms = 0
+        self._ignore_until = time.monotonic() + 0.35
+        self._last_activity = time.monotonic()
+        self._barge_ms = 0
+        self._barging = False
+        self._barge_log_at = 0.0
+        self._speaking_since = 0.0
+        self._ignore_until = 0.0
+        self._post_stop = False
+        self._post_silence_ms = 0
+        self._rms_hist = deque(maxlen=100)
+        self._barge_cooldown_until = 0.0
+        if not self.ended.is_set() and self._worker is None:
+            self._worker = asyncio.create_task(
+                self._work(), name="voice-conversation-worker"
+            )
 
     async def finish(self) -> None:
         for segment in self.session.finish():
@@ -391,6 +534,14 @@ class ConversationRunner:
 
         await self._safe_send({"type": "user_text", "turn": self.turn, "text": text[:400], "intent": None})
         normalized = normalize_text(text)
+        if any(phrase in normalized for phrase in STOP_TALKING_PHRASES):
+            await self._safe_send(
+                {"type": "assistant_done", "turn": self.turn, "text": "",
+                 "interrupted": True}
+            )
+            self.state = "listening"
+            self._last_activity = time.monotonic()
+            return
         if normalized in END_PHRASES:
             await self._speak_text("好，再见")
             if self.service.tts is not None:
@@ -436,9 +587,13 @@ class ConversationRunner:
         chunker = SentenceChunker()
         async for delta in self.agent_session.stream(text):
             for sentence in chunker.feed(delta):
+                if self.state != "speaking":
+                    self._speaking_since = time.monotonic()
                 self.state = "speaking"
                 await self._speak_sentence(sentence, spoken)
         for sentence in chunker.flush():
+            if self.state != "speaking":
+                self._speaking_since = time.monotonic()
             self.state = "speaking"
             await self._speak_sentence(sentence, spoken)
         if self.service.tts is not None:

@@ -23,10 +23,14 @@ esp_err_t voice_transport_open(voice_transport_t **out, bool continuous, bool on
 void voice_transport_set_audio_callback(voice_transport_t *transport,
                                         voice_transport_audio_cb_t cb, void *arg);
 uint32_t voice_transport_events(voice_transport_t *transport);
+void voice_transport_clear_events(voice_transport_t *transport, uint32_t mask);
 esp_err_t voice_transport_send_pcm(voice_transport_t *transport, const int16_t *pcm, size_t samples);
 /* True while TTS PCM is still arriving/being played. The session loop drops
  * microphone frames during this window (half-duplex, no self-echo). */
 bool voice_transport_is_speaking(const voice_transport_t *transport);
+/* Device-side barge-in: discard remaining TTS PCM and tell the server to
+ * cancel the current turn. The next `speak` header resumes playback. */
+esp_err_t voice_transport_barge_in(voice_transport_t *transport);
 esp_err_t voice_transport_finish(voice_transport_t *transport, unsigned timeout_ms);
 void voice_transport_abort(voice_transport_t *transport);
 void voice_transport_close(voice_transport_t *transport);

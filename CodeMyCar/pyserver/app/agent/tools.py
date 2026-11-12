@@ -81,7 +81,11 @@ def build_car_tools(service: VoiceService) -> list:
     @tool
     async def car_stop(runtime: ToolRuntime[AgentContext]) -> str:
         """Immediately request the car to stop. Stop is always allowed."""
-        await service.stop_action(runtime.context.device_id)
+        try:
+            await service.stop_action(runtime.context.device_id)
+        except Exception:  # noqa: BLE001 - a failed STOP must not kill the turn
+            logger.exception("car_stop failed")
+            return _result({"executed": False, "reason": "stop failed"})
         return _result({"executed": True, "action": "stop"})
 
     return [car_move, car_turn, car_stop]

@@ -12,6 +12,7 @@ enum {
     VOICE_PEER_RECOGNIZING = 1u << 5,
     VOICE_PEER_DISCONNECTED = 1u << 6,
     VOICE_PEER_SPEAK = 1u << 7,
+    VOICE_PEER_STOP = 1u << 8,
 };
 
 /* One parser per connection; no shared/global callback buffer. */
@@ -29,3 +30,4 @@ uint32_t voice_message_feed(voice_message_t *message, const char *data,
 
 typedef struct { uint32_t next; bool initialized; } voice_sequence_t;
 bool voice_sequence_accept(voice_sequence_t *sequence, uint32_t number);
+void voice_sequence_sync(voice_sequence_t *sequence, uint32_t number);

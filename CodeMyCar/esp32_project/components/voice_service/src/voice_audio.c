@@ -25,6 +25,7 @@ static QueueHandle_t s_ring;
 static StaticQueue_t s_ring_control;
 static uint8_t *s_ring_storage;
 static int16_t *s_pcm_buffer;
+static int s_in_channels = 1;
 static atomic_bool s_active;
 static atomic_bool s_energy_trigger;
 static atomic_uint s_replaced_frames;
@@ -111,11 +112,12 @@ static void capture_task(void *arg)
             continue;
         }
         const int frames = VOICE_CHUNK_FRAMES;
+        const int ch = s_in_channels;
 
         int64_t sum_sq = 0;
         int peak = 0;
         for (int i = 0; i < frames; i++) {
-            int16_t v = pcm[i];
+            int16_t v = pcm[i * ch];
             sum_sq += (int64_t)v * v;
             int a = v < 0 ? -v : v;
             if (a > peak) {
@@ -123,7 +125,7 @@ static void capture_task(void *arg)
             }
         }
 #if CONFIG_IDF_TARGET_ESP32S3
-        if (!voice_frontend_feed(pcm, (size_t)frames)) {
+        if (!voice_frontend_feed(pcm, (size_t)frames * ch)) {
             ESP_LOGE(TAG, "AFE feed failed");
             vTaskDelay(pdMS_TO_TICKS(20));
         }
@@ -196,14 +198,22 @@ esp_err_t voice_audio_init(void)
     esp_err_t err = voice_codec_init(&s_codec);
     if (err != ESP_OK) return err;
     if (s_codec->caps.input_sample_rate != VOICE_SAMPLE_RATE ||
-        s_codec->caps.input_channels != 1) {
+        (s_codec->caps.input_channels != 1 && s_codec->caps.input_channels != 2)) {
         ESP_LOGE(TAG, "unsupported codec input %d Hz / %d ch",
                  s_codec->caps.input_sample_rate, s_codec->caps.input_channels);
         voice_audio_destroy();
         return ESP_ERR_NOT_SUPPORTED;
     }
+#if !CONFIG_IDF_TARGET_ESP32S3
+    if (s_codec->caps.input_channels != 1) {
+        ESP_LOGE(TAG, "reference input requires the S3 AFE");
+        voice_audio_destroy();
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+#endif
+    s_in_channels = s_codec->caps.input_channels;
     s_gate = xEventGroupCreateStatic(&s_gate_control);
-    s_pcm_buffer = heap_caps_malloc(sizeof(int16_t) * VOICE_CHUNK_FRAMES,
+    s_pcm_buffer = heap_caps_malloc(sizeof(int16_t) * VOICE_CHUNK_FRAMES * s_in_channels,
                                     MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     size_t queue_bytes = CONFIG_CMCAR_VOICE_QUEUE_FRAMES * sizeof(voice_frame_t);
 #if CONFIG_IDF_TARGET_ESP32S3

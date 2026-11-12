@@ -14,6 +14,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+from dataclasses import replace
 from typing import Any
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
@@ -64,12 +65,15 @@ async def _run_conversation(
     sink: WebSocketEventSink,
     settings,
     local_ack: bool = False,
+    barge_in: bool = False,
 ) -> None:
     """Own one long-conversation socket; command mode never enters this path."""
     llm = getattr(ws.app.state, "voice_llm", None)
     config = getattr(
         ws.app.state, "voice_conversation_config", ConversationConfig()
     )
+    if barge_in:
+        config = replace(config, barge_in=True)
     if llm is None:
         await _send_json(ws, {"type": "error", "message": "LLM is not configured"})
         session.close()
@@ -127,6 +131,9 @@ async def _run_conversation(
                 await _send_json(sink, {"type": "error", "message": "invalid json frame"})
                 continue
             event_type = event.get("type") if isinstance(event, dict) else None
+            if event_type == "barge_in":
+                runner.device_barge_in()
+                continue
             if event_type in ("end", "abort", "gap"):
                 runner.request_end(
                     "client_end" if event_type == "end" else event_type
@@ -259,6 +266,10 @@ async def voice_stream(ws: WebSocket) -> None:
         await _run_conversation(
             ws, service, session, sink, settings,
             local_ack=bool(meta.get("local_ack", False)),
+            barge_in=(
+                bool(meta.get("barge_in", False))
+                and bool(getattr(settings, "voice_barge_in", False))
+            ),
         )
         return
 

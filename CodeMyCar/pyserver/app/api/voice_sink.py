@@ -12,6 +12,13 @@ from typing import Any
 from fastapi import WebSocket
 
 
+_CHUNK_BYTES = 1024
+# 16 kHz / 16-bit / mono: 32 bytes per millisecond. Pacing the downlink at
+# real time keeps the device's small playback queue from filling, so the
+# WebSocket task stays responsive and barge-in uploads are not starved.
+_BYTES_PER_MS = 32
+
+
 class WebSocketEventSink:
     def __init__(self, ws: WebSocket) -> None:
         self._ws = ws
@@ -23,14 +30,19 @@ class WebSocketEventSink:
 
     async def send_bytes(self, data: bytes) -> None:
         async with self._lock:
-            for offset in range(0, len(data), 1024):
-                await self._ws.send_bytes(data[offset : offset + 1024])
+            for offset in range(0, len(data), _CHUNK_BYTES):
+                await self._ws.send_bytes(data[offset : offset + _CHUNK_BYTES])
 
     async def send_audio(self, header: dict[str, Any], data: bytes) -> None:
         async with self._lock:
             await self._ws.send_json(header)
-            # The ESP32 WebSocket client has a small fixed receive buffer.
-            # A 9-second TTS sentence must not arrive as one huge frame or the
-            # S3 disconnects mid-answer.
-            for offset in range(0, len(data), 1024):
-                await self._ws.send_bytes(data[offset : offset + 1024])
+        # Do not hold the lock across the whole sentence: a barge-in `stop`
+        # must be able to interleave between audio chunks instead of waiting
+        # for the reply to finish.
+        for offset in range(0, len(data), _CHUNK_BYTES):
+            chunk = data[offset : offset + _CHUNK_BYTES]
+            async with self._lock:
+                await self._ws.send_bytes(chunk)
+            # Pre-send slightly faster than playback so the device builds a
+            # jitter buffer instead of running dry at exactly real time.
+            await asyncio.sleep(len(chunk) / 1000 / _BYTES_PER_MS * 0.8)

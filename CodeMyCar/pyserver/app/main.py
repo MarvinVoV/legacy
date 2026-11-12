@@ -142,6 +142,8 @@ async def lifespan(app: FastAPI):
         history_turns=settings.voice_conversation_history_turns,
         history_tokens=settings.voice_conversation_history_tokens,
         max_tokens=settings.llm_max_tokens,
+        barge_in_rms=settings.voice_barge_in_rms,
+        barge_in_ms=settings.voice_barge_in_ms,
     )
     app.state.agent_runtime = None
     if settings.agent_enabled and settings.agent_runtime == "deepagents":

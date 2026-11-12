@@ -104,9 +104,11 @@ class Settings(BaseSettings):
     llm_model: str = "deepseek-flash"
     llm_model_pro: str = "deepseek-v4-pro"
     llm_thinking: bool = False
-    llm_max_tokens: int = 512
+    llm_max_tokens: int = 2048
     llm_temperature: float = 0.7
-    voice_barge_in: bool = False  # Phase 2; Phase 1 is half-duplex
+    voice_barge_in: bool = False  # requires device AEC (ch1 reference)
+    voice_barge_in_rms: int = 700
+    voice_barge_in_ms: int = 140
 
     # LangChain / Deep Agents runtime
     agent_enabled: bool = True

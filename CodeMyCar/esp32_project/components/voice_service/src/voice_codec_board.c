@@ -84,9 +84,18 @@ static esp_err_t board_read(voice_codec_t *codec, int16_t *dst, size_t frames)
         return ESP_FAIL;
     }
     const int ch = CONFIG_CMCAR_VOICE_BOARD_MIC_CHANNEL;
+#if CONFIG_CMCAR_VOICE_AEC
+    /* "MR" interleaved: microphone first, playback reference second. The
+     * reference is the pre-amplifier tap measured on TDM channel 1. */
+    for (size_t i = 0; i < frames; ++i) {
+        dst[2 * i] = impl->in_buf[i * BOARD_IN_CHANNELS + ch];
+        dst[2 * i + 1] = impl->in_buf[i * BOARD_IN_CHANNELS + 1];
+    }
+#else
     for (size_t i = 0; i < frames; ++i) {
         dst[i] = impl->in_buf[i * BOARD_IN_CHANNELS + ch];
     }
+#endif
     return ESP_OK;
 }
 
@@ -436,7 +445,11 @@ esp_err_t voice_codec_board_init(voice_codec_t **out)
     codec->caps = (voice_codec_caps_t){
         .input_sample_rate = BOARD_RATE,
         .output_sample_rate = BOARD_RATE,
+#if CONFIG_CMCAR_VOICE_AEC
+        .input_channels = 2,
+#else
         .input_channels = 1,
+#endif
         .output_channels = BOARD_OUT_CHANNELS,
         .input_reference = true,
     };

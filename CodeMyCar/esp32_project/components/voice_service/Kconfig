@@ -126,6 +126,31 @@ menu "Voice Control"
         help
             实测 ch0/ch2 为两个麦克风，ch1 为 AEC 参考，ch3 为空。
 
+    config CMCAR_VOICE_AEC
+        bool "Enable AFE acoustic echo cancellation with the board reference"
+        depends on CMCAR_VOICE_CODEC_BOARD && IDF_TARGET_ESP32S3
+        default y if IDF_TARGET_ESP32S3
+        default n
+        help
+            把 ch0（麦克风）与 ch1（功放前参考）按 "MR" 交织送进 AFE 并开启
+            AEC。开启后 codec 的 read() 返回 2 通道交织数据。打断（barge-in）
+            依赖这个能力，但还需要服务端配合。
+
+    config CMCAR_VOICE_AEC_HIGH_PERF
+        bool "Use AFE high-performance mode with AEC"
+        depends on CMCAR_VOICE_AEC
+        default n
+        help
+            HIGH_PERF 回声抑制更好，CPU/内存开销更高。
+
+    config CMCAR_VOICE_AEC_FILTER_LENGTH
+        int "AEC adaptive filter length"
+        depends on CMCAR_VOICE_AEC
+        default 8
+        range 1 8
+        help
+            ESP-SR 对 S3 推荐 4；越大收敛越慢但能覆盖更长延迟。
+
     config CMCAR_VOICE_ENABLED
         bool "Enable voice WebSocket upload"
         default y
@@ -139,6 +164,15 @@ menu "Voice Control"
         help
             Detect locally; no audio upload before wake. Use the board profile
             to select one compatible model. Missing model fails closed.
+
+    config CMCAR_VOICE_WAKE_THRESHOLD
+        int "WakeNet detection threshold (milli, 0 = model default)"
+        default 500
+        range 0 999
+        depends on CMCAR_VOICE_WAKE_ENABLED
+        help
+            模型默认阈值写在 _MODEL_INFO_ 里（当前 wn9l 约 0.597）。调低会提高
+            召回率（包括说得很快的情况），同时增加误唤醒；0 表示不改。
 
     config CMCAR_VOICE_CONTINUOUS
         bool "Continuous PCM upload; server VAD owns utterance boundaries"

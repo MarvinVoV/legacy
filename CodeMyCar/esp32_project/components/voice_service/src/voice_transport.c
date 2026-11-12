@@ -20,6 +20,7 @@ struct voice_transport {
     int speak_rate;
     int speak_channels;
     volatile bool speaking;
+    volatile bool local_barge;
     uint8_t speak_carry;
     bool speak_have_carry;
     int16_t speak_pcm[1025];
@@ -32,6 +33,13 @@ static void feed_binary(voice_transport_t *t, const char *data, size_t len)
     if (len > t->speak_remaining) {
         ESP_LOGW(TAG, "speak frame exceeds declared bytes; truncating");
         len = t->speak_remaining;
+    }
+    if (t->local_barge) {
+        /* Between the local stop and the server's cancel, drop any PCM still
+         * in flight so the assistant cannot resume mid-sentence. */
+        t->speak_remaining -= len;
+        if (t->speak_remaining == 0) t->speaking = false;
+        return;
     }
     const uint8_t *src = (const uint8_t *)data;
     size_t frames = 0;
@@ -82,6 +90,7 @@ static void on_event(void *arg, esp_event_base_t base, int32_t id, void *payload
                 t->speak_channels = t->message.speak_channels;
                 t->speak_have_carry = false;
                 t->speak_carry = 0;
+                t->local_barge = false;
                 t->speaking = true;
             }
         } else if (data->op_code == 2 ||
@@ -89,6 +98,7 @@ static void on_event(void *arg, esp_event_base_t base, int32_t id, void *payload
             feed_binary(t, data->data_ptr, (size_t)data->data_len);
         }
     }
+    if (events & VOICE_PEER_STOP) t->local_barge = false;
     if (events) {
         xEventGroupSetBits(t->events, events);
         ESP_LOGI(TAG, "peer_event=0x%02lx", (unsigned long)events);
@@ -124,11 +134,10 @@ esp_err_t voice_transport_open(voice_transport_t **out, bool continuous, bool on
     esp_websocket_client_config_t cfg = {
         .uri = CONFIG_CMCAR_VOICE_WS_URL,
         .disable_auto_reconnect = true,
-        /* TTS playback applies TCP backpressure by blocking this task inside
-         * the audio callback. A long sentence can legitimately hold the task
-         * for many seconds; the old 5 s timeout tore the socket down in the
-         * middle of a reply. */
-        .network_timeout_ms = 60000,
+        /* The audio callback returns between 20 ms frames, so the client
+         * task is never blocked for long; 15 s detects a dead socket (server
+         * restart) without tearing down a long TTS reply the way 5 s did. */
+        .network_timeout_ms = 15000,
         .buffer_size = 2048,
 #if CONFIG_IDF_TARGET_ESP32S3
         .task_stack = 6144,
@@ -147,6 +156,11 @@ esp_err_t voice_transport_open(voice_transport_t **out, bool continuous, bool on
     if (!(bits & VOICE_PEER_CONNECTED) || (bits & VOICE_PEER_FAILED)) goto timeout;
     cJSON *start = cJSON_CreateObject();
     if (!start) { voice_transport_close(t); return ESP_ERR_NO_MEM; }
+#if CONFIG_CMCAR_VOICE_AEC
+    const bool barge_capable = true;
+#else
+    const bool barge_capable = false;
+#endif
     bool complete = cJSON_AddStringToObject(start, "type", "start") &&
         cJSON_AddStringToObject(start, "device", CONFIG_CMCAR_DEVICE_ID) &&
         cJSON_AddNumberToObject(start, "rate", 16000) &&
@@ -158,7 +172,8 @@ esp_err_t voice_transport_open(voice_transport_t **out, bool continuous, bool on
         cJSON_AddBoolToObject(start, "one_shot", one_shot) &&
         /* The device already played its local "我在"; the server must not add
          * a second ready cue on top of it. */
-        cJSON_AddBoolToObject(start, "local_ack", voice_output_enabled());
+        cJSON_AddBoolToObject(start, "local_ack", voice_output_enabled()) &&
+        cJSON_AddBoolToObject(start, "barge_in", barge_capable);
     char *text = complete ? cJSON_PrintUnformatted(start) : NULL;
     cJSON_Delete(start);
     bool sent = text && send_text(t, text, 1000);
@@ -175,6 +190,11 @@ timeout:
 }
 
 uint32_t voice_transport_events(voice_transport_t *t) { return xEventGroupGetBits(t->events); }
+
+void voice_transport_clear_events(voice_transport_t *t, uint32_t mask)
+{
+    if (t != NULL) xEventGroupClearBits(t->events, mask);
+}
 
 void voice_transport_set_audio_callback(voice_transport_t *t,
                                         voice_transport_audio_cb_t cb, void *arg)
@@ -195,6 +215,14 @@ esp_err_t voice_transport_send_pcm(voice_transport_t *t, const int16_t *pcm, siz
 bool voice_transport_is_speaking(const voice_transport_t *t)
 {
     return t != NULL && t->speaking;
+}
+
+esp_err_t voice_transport_barge_in(voice_transport_t *t)
+{
+    if (t == NULL) return ESP_ERR_INVALID_ARG;
+    t->local_barge = true;
+    t->speaking = false;
+    return send_text(t, "{\"type\":\"barge_in\"}", 500) ? ESP_OK : ESP_FAIL;
 }
 
 esp_err_t voice_transport_finish(voice_transport_t *t, unsigned timeout_ms)

@@ -20,7 +20,7 @@
 #include "task_priorities.h"
 
 #define OUTPUT_CHUNK_FRAMES 320
-#define OUTPUT_QUEUE_DEPTH 16
+#define OUTPUT_QUEUE_DEPTH 64
 #define OUTPUT_DRAINED_BIT BIT0
 
 static const char *TAG = "voice_output";
@@ -70,6 +70,11 @@ esp_err_t voice_output_init(voice_codec_t *codec)
 
     s_events = xEventGroupCreate();
     size_t bytes = OUTPUT_QUEUE_DEPTH * sizeof(output_frame_t);
+#if CONFIG_IDF_TARGET_ESP32S3
+    /* ~41 KB of jitter buffer; PSRAM keeps internal RAM for the AFE. */
+    s_queue_storage = heap_caps_malloc(bytes, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    if (s_queue_storage == NULL)
+#endif
     s_queue_storage = heap_caps_malloc(bytes, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     if (s_events == NULL || s_queue_storage == NULL) goto fail;
     s_queue = xQueueCreateStatic(OUTPUT_QUEUE_DEPTH, sizeof(output_frame_t),
@@ -91,6 +96,14 @@ bool voice_output_active(void)
     if (!s_enabled) return false;
     return atomic_load(&s_writing) ||
            (s_queue != NULL && uxQueueMessagesWaiting(s_queue) > 0);
+}
+
+void voice_output_flush(void)
+{
+    if (!s_enabled || s_queue == NULL) return;
+    xQueueReset(s_queue);
+    xEventGroupSetBits(s_events, OUTPUT_DRAINED_BIT);
+    ESP_LOGI(TAG, "playback flushed (barge-in)");
 }
 
 esp_err_t voice_output_write(const int16_t *pcm, size_t frames,

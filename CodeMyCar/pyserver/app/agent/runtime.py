@@ -120,7 +120,10 @@ class AgentRuntime:
             deny=config.mcp_deny,
         )
         await mcp.start()
-        tools = build_car_tools(service) + list(mcp.tools)
+        # Never expose car tools while voice execution is disabled: the model
+        # otherwise announces "the car has stopped" with no motion path.
+        car_tools = build_car_tools(service) if service.config.execute_commands else []
+        tools = car_tools + list(mcp.tools)
         if config.memory_tool_enabled:
             tools.append(build_memory_tool(config.memory_path))
 

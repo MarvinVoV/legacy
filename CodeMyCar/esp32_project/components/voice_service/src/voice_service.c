@@ -7,6 +7,10 @@
 #include "voice_state.h"
 #include "voice_transport.h"
 #include "voice_wake_ack.h"
+#if CONFIG_IDF_TARGET_ESP32S3
+#include "voice_frontend.h"
+#endif
+#include <math.h>
 #include <stdatomic.h>
 #include "driver/uart.h"
 #include "esp_heap_caps.h"
@@ -187,12 +191,23 @@ static esp_err_t run_conversation(void)
     voice_frame_t frame;
     TickType_t last_audio = xTaskGetTickCount();
     bool dropping_echo = false;
+#if CONFIG_CMCAR_VOICE_AEC
+    unsigned near_ms = 0;
+    TickType_t barge_cooldown = 0;
+#endif
     while (true) {
         uint32_t events = voice_transport_events(transport);
         /* A clean server end can race the socket close; end wins. */
         if (events & VOICE_PEER_END) { result = ESP_OK; break; }
         if (events & VOICE_PEER_FAILED) { result = ESP_FAIL; break; }
         if (events & VOICE_PEER_DISCONNECTED) { result = ESP_FAIL; break; }
+        if (events & VOICE_PEER_STOP) {
+            voice_transport_clear_events(transport, VOICE_PEER_STOP);
+            voice_output_flush();
+            voice_audio_flush(); /* drop mic frames that already contain the tail */
+            dropping_echo = false;
+            ESP_LOGI(TAG, "server stop: playback flushed");
+        }
         if (!voice_audio_receive(&frame, 100)) {
             if (xTaskGetTickCount() - last_audio > pdMS_TO_TICKS(5000)) {
                 ESP_LOGE(TAG, "Conversation audio producer stalled");
@@ -202,16 +217,65 @@ static esp_err_t run_conversation(void)
             continue;
         }
         last_audio = xTaskGetTickCount();
-        if (!frame.frames || frame.frames > VOICE_CHUNK_FRAMES ||
-            !voice_sequence_accept(&sequence, frame.sequence)) {
+        if (!frame.frames || frame.frames > VOICE_CHUNK_FRAMES) {
             ESP_LOGE(TAG, "Conversation audio discontinuity");
             result = ESP_ERR_INVALID_STATE;
             voice_transport_abort(transport);
             break;
         }
-        /* Half-duplex: the microphone hears the speaker. Never upload that
-         * echo as user speech, and never let mic uploads contend with the
-         * socket while TTS is being played. */
+        if (!voice_sequence_accept(&sequence, frame.sequence)) {
+            /* While the assistant speaks the network path is shared with TTS;
+             * a replaced capture frame must not kill the session or the user
+             * loses the ability to interrupt. Resync and keep the newest
+             * audio. */
+            if (voice_transport_is_speaking(transport) || voice_output_active()) {
+                ESP_LOGW(TAG, "audio gap during playback; resyncing");
+                voice_sequence_sync(&sequence, frame.sequence);
+            } else {
+                ESP_LOGE(TAG, "Conversation audio discontinuity");
+                result = ESP_ERR_INVALID_STATE;
+                voice_transport_abort(transport);
+                break;
+            }
+        }
+#if CONFIG_CMCAR_VOICE_AEC
+        /* Double-talk detector: echo correlates with the playback reference;
+         * near-end speech does not. This runs on the device because only here
+         * are both signals available sample-aligned. */
+        if (voice_transport_is_speaking(transport) || voice_output_active()) {
+            int out = voice_frontend_out_rms();
+            int corr = voice_frontend_echo_corr();
+            int ref = voice_frontend_ref_rms();
+            bool near_end = ref > 2000 && out > 300 && corr < 350;
+            if (near_end) {
+                near_ms += 20;
+            } else if (near_ms >= 20) {
+                near_ms -= 20;
+            }
+            static unsigned dtd_log_div;
+            if ((++dtd_log_div % 25u) == 0u) {
+                ESP_LOGI(TAG, "dtd out=%d corr=%d ref=%d near_ms=%u",
+                         out, corr, ref, near_ms);
+            }
+            TickType_t now = xTaskGetTickCount();
+            if (near_ms >= 200 && now >= barge_cooldown) {
+                near_ms = 0;
+                barge_cooldown = now + pdMS_TO_TICKS(2500);
+                voice_output_flush();
+                (void)voice_transport_barge_in(transport);
+                ESP_LOGI(TAG, "local barge-in corr=%d out=%d ref=%d", corr, out, ref);
+            }
+        } else {
+            near_ms = 0;
+        }
+#endif
+        /* Half-duplex fallback: without a reference the microphone hears the
+         * speaker, so never upload echo as user speech. With AEC enabled the
+         * echo is suppressed in the AFE and the stream must stay alive so the
+         * server can detect a barge-in. */
+        /* Half-duplex uploads: never let the speaker reach ASR. Barge-in is
+         * detected locally from mic/reference correlation, so the upload can
+         * stay muted until the device has actually finished playing. */
         if (voice_transport_is_speaking(transport) || voice_output_active()) {
             if (!dropping_echo) {
                 dropping_echo = true;
@@ -303,6 +367,46 @@ static void voice_task(void *arg)
 #endif
 }
 
+#if CONFIG_CMCAR_VOICE_AEC
+/* Diagnostic-only: a deterministic noise burst lets AEC/ERLE be measured
+ * without a server or a human speaker. Triggered by 'a' on the console. */
+static void play_aec_test_noise(void)
+{
+    int16_t pcm[VOICE_CHUNK_FRAMES];
+    uint32_t seed = 0x12345678u;
+    for (int w = 0; w < 250; ++w) { /* 5 s at 20 ms per chunk */
+        for (int i = 0; i < VOICE_CHUNK_FRAMES; ++i) {
+            seed = seed * 1664525u + 1013904223u;
+            pcm[i] = (int16_t)((int32_t)(seed >> 16) % 2400 - 1200);
+        }
+        if (voice_output_write(pcm, VOICE_CHUNK_FRAMES, VOICE_SAMPLE_RATE, 1) != ESP_OK) {
+            break;
+        }
+    }
+    (void)voice_output_wait_drained(6000);
+    ESP_LOGI(TAG, "AEC test noise done");
+}
+
+/* Diagnostic-only 1 kHz tone: a periodic reference makes alignment visible
+ * even when the acoustic delay is unknown. Triggered by 't'. */
+static void play_aec_test_tone(void)
+{
+    int16_t pcm[VOICE_CHUNK_FRAMES];
+    double phase = 0;
+    for (int w = 0; w < 250; ++w) {
+        for (int i = 0; i < VOICE_CHUNK_FRAMES; ++i) {
+            pcm[i] = (int16_t)(2400.0 * sin(2.0 * M_PI * 1000.0 * phase / VOICE_SAMPLE_RATE));
+            phase += 1.0;
+        }
+        if (voice_output_write(pcm, VOICE_CHUNK_FRAMES, VOICE_SAMPLE_RATE, 1) != ESP_OK) {
+            break;
+        }
+    }
+    (void)voice_output_wait_drained(6000);
+    ESP_LOGI(TAG, "AEC test tone done");
+}
+#endif
+
 static void console_task(void *arg)
 {
     (void)arg;
@@ -315,9 +419,19 @@ static void console_task(void *arg)
     ESP_LOGI(TAG, "Serial s is a diagnostic wake bypass");
     while (true) {
         uint8_t c;
-        if (uart_read_bytes(UART_NUM_0, &c, 1, pdMS_TO_TICKS(100)) > 0 &&
-            (c == 's' || c == 'S') && atomic_load(&s_state) == VOICE_IDLE)
-            atomic_store(&s_manual_trigger, true);
+        if (uart_read_bytes(UART_NUM_0, &c, 1, pdMS_TO_TICKS(100)) > 0) {
+            if ((c == 's' || c == 'S') && atomic_load(&s_state) == VOICE_IDLE) {
+                atomic_store(&s_manual_trigger, true);
+            }
+#if CONFIG_CMCAR_VOICE_AEC
+            if ((c == 'a' || c == 'A') && atomic_load(&s_state) == VOICE_IDLE) {
+                play_aec_test_noise();
+            }
+            if ((c == 't' || c == 'T') && atomic_load(&s_state) == VOICE_IDLE) {
+                play_aec_test_tone();
+            }
+#endif
+        }
         vTaskDelay(pdMS_TO_TICKS(10));
     }
 }
