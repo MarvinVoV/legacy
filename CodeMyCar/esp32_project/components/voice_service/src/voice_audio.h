@@ -22,6 +22,7 @@ esp_err_t voice_audio_start(void);
 void voice_audio_destroy(void);
 bool voice_audio_receive(voice_frame_t *frame, unsigned timeout_ms);
 void voice_audio_flush(void);
+uint32_t voice_audio_replaced_frames(void);
 void voice_audio_set_active(bool active);
 bool voice_audio_detect_wake(const voice_frame_t *frame);
 bool voice_audio_take_energy_trigger(void);

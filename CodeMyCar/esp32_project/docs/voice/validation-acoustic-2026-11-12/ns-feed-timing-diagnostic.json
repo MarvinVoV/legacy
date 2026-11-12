@@ -1,0 +1,355 @@
+{
+  "phases": [
+    {
+      "index": 1,
+      "stage": "quiet",
+      "start_utc": "2026-11-12T10:54:32.080892+00:00",
+      "complete": true,
+      "end_utc": "2026-11-12T10:55:02.423246+00:00",
+      "result": {
+        "stage": "quiet",
+        "planned_s": 30.0,
+        "elapsed_s": 30.342,
+        "complete_audio_bytes": 966828,
+        "complete_audio_s": 30.213,
+        "interruptions": 0
+      },
+      "annotation": null,
+      "barge_events": 0,
+      "human_speech_events": 0,
+      "confirmed_false_events": 0,
+      "unclassified_events": 0,
+      "zero_barge_events": true,
+      "server_ack": {
+        "samples": 0,
+        "p50_ms": null,
+        "p95_ms": null,
+        "max_ms": null
+      },
+      "device_dma_drain": {
+        "samples": 0,
+        "p50_ms": null,
+        "p95_ms": null,
+        "max_ms": null
+      }
+    }
+  ],
+  "failed": [],
+  "annotations": [],
+  "limits": [
+    "Barge events require human labels to classify speech versus false alarms.",
+    "ACK/DMA distributions exclude speech onset to DTD and are not acoustic stop latency.",
+    "No CPU profile, word-level receipt or ASR/child accuracy is measured."
+  ],
+  "serial_since_last_manual_start": {
+    "codec_read_errors": 0,
+    "codec_write_errors": 0,
+    "discontinuities": 0,
+    "producer_stalls": 0,
+    "boot_markers": 0,
+    "replaced_frames_first_last": [
+      0,
+      4
+    ],
+    "mic_ref_clips_first_last": [
+      [
+        0,
+        0
+      ],
+      [
+        0,
+        0
+      ]
+    ],
+    "capture_wall_timing_windows": [
+      {
+        "ok_frames": 80000,
+        "wall_us": 5230181,
+        "read_wall_us": 1197647,
+        "feed_wall_us": 4019542,
+        "active_at_window_end": true,
+        "handled_samples_per_second": 15295.8
+      },
+      {
+        "ok_frames": 80000,
+        "wall_us": 5681648,
+        "read_wall_us": 14421,
+        "feed_wall_us": 5652836,
+        "active_at_window_end": true,
+        "handled_samples_per_second": 14080.4
+      },
+      {
+        "ok_frames": 80000,
+        "wall_us": 5719077,
+        "read_wall_us": 14652,
+        "feed_wall_us": 5690977,
+        "active_at_window_end": true,
+        "handled_samples_per_second": 13988.3
+      },
+      {
+        "ok_frames": 80000,
+        "wall_us": 5681748,
+        "read_wall_us": 14576,
+        "feed_wall_us": 5653628,
+        "active_at_window_end": true,
+        "handled_samples_per_second": 14080.2
+      },
+      {
+        "ok_frames": 80000,
+        "wall_us": 5689093,
+        "read_wall_us": 14584,
+        "feed_wall_us": 5660659,
+        "active_at_window_end": true,
+        "handled_samples_per_second": 14062.0
+      },
+      {
+        "ok_frames": 80000,
+        "wall_us": 5679848,
+        "read_wall_us": 14548,
+        "feed_wall_us": 5651600,
+        "active_at_window_end": true,
+        "handled_samples_per_second": 14084.9
+      },
+      {
+        "ok_frames": 80000,
+        "wall_us": 5255581,
+        "read_wall_us": 965783,
+        "feed_wall_us": 4276187,
+        "active_at_window_end": false,
+        "handled_samples_per_second": 15221.9
+      },
+      {
+        "ok_frames": 80000,
+        "wall_us": 4994089,
+        "read_wall_us": 1968903,
+        "feed_wall_us": 3012284,
+        "active_at_window_end": false,
+        "handled_samples_per_second": 16018.9
+      },
+      {
+        "ok_frames": 80000,
+        "wall_us": 4995050,
+        "read_wall_us": 1993744,
+        "feed_wall_us": 2988114,
+        "active_at_window_end": false,
+        "handled_samples_per_second": 16015.9
+      },
+      {
+        "ok_frames": 80000,
+        "wall_us": 4990955,
+        "read_wall_us": 1977318,
+        "feed_wall_us": 3000658,
+        "active_at_window_end": false,
+        "handled_samples_per_second": 16029.0
+      },
+      {
+        "ok_frames": 80000,
+        "wall_us": 5019340,
+        "read_wall_us": 1966612,
+        "feed_wall_us": 3039661,
+        "active_at_window_end": false,
+        "handled_samples_per_second": 15938.4
+      },
+      {
+        "ok_frames": 80000,
+        "wall_us": 4989343,
+        "read_wall_us": 1972036,
+        "feed_wall_us": 3004379,
+        "active_at_window_end": false,
+        "handled_samples_per_second": 16034.2
+      },
+      {
+        "ok_frames": 80000,
+        "wall_us": 5009179,
+        "read_wall_us": 1983187,
+        "feed_wall_us": 3012827,
+        "active_at_window_end": false,
+        "handled_samples_per_second": 15970.7
+      },
+      {
+        "ok_frames": 80000,
+        "wall_us": 4979761,
+        "read_wall_us": 1955008,
+        "feed_wall_us": 3011710,
+        "active_at_window_end": false,
+        "handled_samples_per_second": 16065.0
+      },
+      {
+        "ok_frames": 80000,
+        "wall_us": 5015026,
+        "read_wall_us": 1976091,
+        "feed_wall_us": 3025539,
+        "active_at_window_end": false,
+        "handled_samples_per_second": 15952.1
+      },
+      {
+        "ok_frames": 80000,
+        "wall_us": 5004408,
+        "read_wall_us": 1976935,
+        "feed_wall_us": 3014188,
+        "active_at_window_end": false,
+        "handled_samples_per_second": 15985.9
+      },
+      {
+        "ok_frames": 80000,
+        "wall_us": 4994827,
+        "read_wall_us": 1969907,
+        "feed_wall_us": 3011915,
+        "active_at_window_end": false,
+        "handled_samples_per_second": 16016.6
+      },
+      {
+        "ok_frames": 80000,
+        "wall_us": 4985014,
+        "read_wall_us": 1969590,
+        "feed_wall_us": 3002286,
+        "active_at_window_end": false,
+        "handled_samples_per_second": 16048.1
+      },
+      {
+        "ok_frames": 80000,
+        "wall_us": 5019241,
+        "read_wall_us": 1984747,
+        "feed_wall_us": 3021241,
+        "active_at_window_end": false,
+        "handled_samples_per_second": 15938.7
+      },
+      {
+        "ok_frames": 80000,
+        "wall_us": 4994662,
+        "read_wall_us": 1981777,
+        "feed_wall_us": 2999651,
+        "active_at_window_end": false,
+        "handled_samples_per_second": 16017.1
+      },
+      {
+        "ok_frames": 80000,
+        "wall_us": 4994727,
+        "read_wall_us": 1987704,
+        "feed_wall_us": 2993840,
+        "active_at_window_end": false,
+        "handled_samples_per_second": 16016.9
+      },
+      {
+        "ok_frames": 80000,
+        "wall_us": 4991087,
+        "read_wall_us": 1968190,
+        "feed_wall_us": 3009694,
+        "active_at_window_end": false,
+        "handled_samples_per_second": 16028.6
+      },
+      {
+        "ok_frames": 80000,
+        "wall_us": 5019162,
+        "read_wall_us": 1967209,
+        "feed_wall_us": 3038552,
+        "active_at_window_end": false,
+        "handled_samples_per_second": 15938.9
+      },
+      {
+        "ok_frames": 80000,
+        "wall_us": 4989006,
+        "read_wall_us": 1968445,
+        "feed_wall_us": 3007372,
+        "active_at_window_end": false,
+        "handled_samples_per_second": 16035.3
+      },
+      {
+        "ok_frames": 80000,
+        "wall_us": 5009691,
+        "read_wall_us": 1980950,
+        "feed_wall_us": 3015514,
+        "active_at_window_end": false,
+        "handled_samples_per_second": 15969.0
+      },
+      {
+        "ok_frames": 80000,
+        "wall_us": 4979836,
+        "read_wall_us": 1950712,
+        "feed_wall_us": 3015994,
+        "active_at_window_end": false,
+        "handled_samples_per_second": 16064.8
+      },
+      {
+        "ok_frames": 80000,
+        "wall_us": 5014937,
+        "read_wall_us": 1966731,
+        "feed_wall_us": 3034358,
+        "active_at_window_end": false,
+        "handled_samples_per_second": 15952.3
+      },
+      {
+        "ok_frames": 80000,
+        "wall_us": 5004357,
+        "read_wall_us": 1976337,
+        "feed_wall_us": 3014778,
+        "active_at_window_end": false,
+        "handled_samples_per_second": 15986.1
+      },
+      {
+        "ok_frames": 80000,
+        "wall_us": 4995013,
+        "read_wall_us": 1974459,
+        "feed_wall_us": 3007396,
+        "active_at_window_end": false,
+        "handled_samples_per_second": 16016.0
+      },
+      {
+        "ok_frames": 80000,
+        "wall_us": 4984896,
+        "read_wall_us": 1965307,
+        "feed_wall_us": 3006391,
+        "active_at_window_end": false,
+        "handled_samples_per_second": 16048.5
+      },
+      {
+        "ok_frames": 80000,
+        "wall_us": 5019026,
+        "read_wall_us": 1989548,
+        "feed_wall_us": 3016233,
+        "active_at_window_end": false,
+        "handled_samples_per_second": 15939.3
+      },
+      {
+        "ok_frames": 80000,
+        "wall_us": 4994980,
+        "read_wall_us": 1976990,
+        "feed_wall_us": 3004574,
+        "active_at_window_end": false,
+        "handled_samples_per_second": 16016.1
+      },
+      {
+        "ok_frames": 80000,
+        "wall_us": 4994604,
+        "read_wall_us": 1980486,
+        "feed_wall_us": 3001028,
+        "active_at_window_end": false,
+        "handled_samples_per_second": 16017.3
+      },
+      {
+        "ok_frames": 80000,
+        "wall_us": 4991064,
+        "read_wall_us": 1973714,
+        "feed_wall_us": 3004297,
+        "active_at_window_end": false,
+        "handled_samples_per_second": 16028.6
+      },
+      {
+        "ok_frames": 80000,
+        "wall_us": 5019414,
+        "read_wall_us": 1972006,
+        "feed_wall_us": 3033916,
+        "active_at_window_end": false,
+        "handled_samples_per_second": 15938.1
+      },
+      {
+        "ok_frames": 80000,
+        "wall_us": 4988784,
+        "read_wall_us": 1963755,
+        "feed_wall_us": 3011806,
+        "active_at_window_end": false,
+        "handled_samples_per_second": 16036.0
+      }
+    ]
+  }
+}

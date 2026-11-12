@@ -111,6 +111,22 @@ def summarize(directory: Path, device_log: Path | None = None) -> dict:
         text = device_log.read_text(errors="replace").rsplit("HOST_COMMAND s", 1)[-1]
         replacements = [int(v) for v in re.findall(r"replaced_frames=(\d+)", text)]
         clips = [(int(m), int(r)) for m, r in re.findall(r"clips=(\d+)/(\d+)", text)]
+        timings = []
+        for frames, wall, read, feed, active in re.findall(
+            r"capture_perf ok_frames=(\d+) wall_us=(\d+) read_us=(\d+) feed_us=(\d+) active=([01])",
+            text,
+        ):
+            if int(wall) > 0 and int(frames) > 0:
+                timings.append(
+                    {
+                        "ok_frames": int(frames),
+                        "wall_us": int(wall),
+                        "read_wall_us": int(read),
+                        "feed_wall_us": int(feed),
+                        "active_at_window_end": bool(int(active)),
+                        "handled_samples_per_second": round(int(frames) * 1e6 / int(wall), 1),
+                    }
+                )
         report["serial_since_last_manual_start"] = {
             "codec_read_errors": text.count("codec read failed"),
             "codec_write_errors": text.count("codec write failed"),
@@ -121,6 +137,7 @@ def summarize(directory: Path, device_log: Path | None = None) -> dict:
             if replacements
             else None,
             "mic_ref_clips_first_last": [clips[0], clips[-1]] if clips else None,
+            "capture_wall_timing_windows": timings,
         }
     return report
 

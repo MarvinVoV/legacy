@@ -180,22 +180,29 @@ static esp_err_t run_conversation(void)
     if (!set_state(VOICE_CONNECTING)) return ESP_ERR_INVALID_STATE;
     play_local_ack();
     if (!wifi_service_is_connected()) return ESP_ERR_INVALID_STATE;
+    uint32_t replaced_at_prompt = voice_audio_replaced_frames();
     voice_transport_t *transport = NULL;
     esp_err_t result = voice_transport_open(&transport, true, false,
                                             VOICE_SESSION_CONVERSATION);
     if (result != ESP_OK) return result;
+    if (voice_audio_replaced_frames() != replaced_at_prompt) {
+        ESP_LOGW(TAG, "Voice handshake exceeded capture queue; discard incomplete initial utterance");
+        voice_transport_abort(transport);
+        voice_transport_close(transport);
+        return ESP_ERR_INVALID_STATE;
+    }
     voice_transport_set_audio_callback(transport, on_server_audio, NULL);
     (void)set_state(VOICE_LISTENING);
-    voice_audio_flush();
-    /* Drop the tail of the wake phrase before the first user turn. */
-    vTaskDelay(pdMS_TO_TICKS(250));
-    voice_audio_flush();
+    /* play_local_ack already fenced the speaker tail and flushed old PCM.
+     * Preserve what the user said after the cue while the local WS opened;
+     * clearing again here silently removed the beginning of that question. */
 
     voice_sequence_t sequence = {0};
     voice_frame_t frame;
     TickType_t last_audio = xTaskGetTickCount();
     bool dropping_echo = false;
     bool barge_capture = false;
+    bool initial_audio = true;
     /* 600ms (~19KB PSRAM), including the 200ms DTD confirmation. Only AFE
      * residual is retained, never the raw microphone/reference channels. */
     voice_preroll_t preroll = {.capacity = 9600};
@@ -229,6 +236,15 @@ static esp_err_t run_conversation(void)
             continue;
         }
         last_audio = xTaskGetTickCount();
+        if (initial_audio) {
+            initial_audio = false;
+            if (voice_audio_replaced_frames() != replaced_at_prompt) {
+                ESP_LOGW(TAG, "Initial voice audio was replaced before first upload");
+                result = ESP_ERR_INVALID_STATE;
+                voice_transport_abort(transport);
+                break;
+            }
+        }
         if (barge_capture && voice_transport_is_speaking(transport)) {
             /* A later reply owns the speaker now. Start a fresh window. */
             barge_capture = false;

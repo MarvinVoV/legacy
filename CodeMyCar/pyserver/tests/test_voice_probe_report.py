@@ -63,3 +63,15 @@ def test_known_human_utterance_is_not_counted_as_a_confirmed_false_alarm(tmp_pat
     phase = summarize(tmp_path)["phases"][0]
     assert phase["barge_events"] == 2 and phase["human_speech_events"] == 1
     assert phase["confirmed_false_events"] == 0 and phase["unclassified_events"] == 1
+
+
+def test_capture_rate_is_wall_throughput_not_a_cpu_utilization_claim(tmp_path):
+    p = tmp_path / "serial"
+    p.write_text(
+        "HOST_COMMAND s\ncapture_perf ok_frames=80000 wall_us=5000000 "
+        "read_us=3000000 feed_us=1900000 active=1\n"
+        "capture_perf ok_frames=80000 wall_us=0 read_us=0 feed_us=0 active=1\n"
+    )
+    timing = summarize(tmp_path, p)["serial_since_last_manual_start"]["capture_wall_timing_windows"]
+    assert len(timing) == 1 and timing[0]["handled_samples_per_second"] == 16000
+    assert timing[0]["active_at_window_end"] and timing[0]["read_wall_us"] == 3000000

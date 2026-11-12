@@ -13,6 +13,7 @@
 #include <string.h>
 #include "esp_heap_caps.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 #include "freertos/queue.h"
@@ -100,12 +101,17 @@ static void capture_task(void *arg)
     int16_t *pcm = s_pcm_buffer;
 
     int chunk_count = 0;
+    int64_t perf_started = esp_timer_get_time();
+    int64_t read_wall_us = 0, feed_wall_us = 0;
+    unsigned perf_frames = 0;
 #if !CONFIG_IDF_TARGET_ESP32S3
     uint32_t sequence = 0;
     voice_frame_t frame = {0};
 #endif
     while (true) {
+        int64_t operation_started = esp_timer_get_time();
         esp_err_t err = voice_codec_read(s_codec, pcm, VOICE_CHUNK_FRAMES);
+        read_wall_us += esp_timer_get_time() - operation_started;
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "codec read failed: %s", esp_err_to_name(err));
 #if CONFIG_IDF_TARGET_ESP32S3
@@ -128,10 +134,12 @@ static void capture_task(void *arg)
             }
         }
 #if CONFIG_IDF_TARGET_ESP32S3
+        operation_started = esp_timer_get_time();
         if (!voice_frontend_feed(pcm, (size_t)frames * ch)) {
             ESP_LOGE(TAG, "AFE feed failed");
             vTaskDelay(pdMS_TO_TICKS(20));
         }
+        feed_wall_us += esp_timer_get_time() - operation_started;
 #else
         frame.sequence = sequence++;
         frame.frames = frames;
@@ -140,6 +148,20 @@ static void capture_task(void *arg)
 #endif
 
         chunk_count++;
+        perf_frames += (unsigned)frames;
+        if ((chunk_count % 250) == 0) {
+            int64_t now = esp_timer_get_time();
+            /* Wall durations include blocking/preemption, not CPU usage.
+             * Sample counts make slow capture visible even when the later
+             * software queue has no replacements. No PCM is logged. */
+            ESP_LOGI(TAG, "capture_perf ok_frames=%u wall_us=%lld read_us=%lld feed_us=%lld active=%d",
+                     perf_frames, (long long)(now - perf_started),
+                     (long long)read_wall_us, (long long)feed_wall_us,
+                     atomic_load(&s_active));
+            perf_started = esp_timer_get_time();
+            read_wall_us = feed_wall_us = 0;
+            perf_frames = 0;
+        }
         if ((chunk_count % 25) == 0) {
             int rms = (int)sqrt((double)sum_sq / frames);
             ESP_LOGI(TAG, "mic rms=%d peak=%d replaced_frames=%u", rms, peak,
@@ -157,6 +179,7 @@ bool voice_audio_receive(voice_frame_t *frame, unsigned timeout_ms)
 }
 
 void voice_audio_flush(void) { if (s_ring) xQueueReset(s_ring); }
+uint32_t voice_audio_replaced_frames(void) { return atomic_load(&s_replaced_frames); }
 void voice_audio_set_active(bool active) { atomic_store(&s_active, active); }
 bool voice_audio_take_energy_trigger(void) { return atomic_exchange(&s_energy_trigger, false); }
 
