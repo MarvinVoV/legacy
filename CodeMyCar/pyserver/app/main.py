@@ -11,6 +11,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.agent.runtime import AgentRuntime
 from app.api.routes import agent_motion, commands, devices, voice
 from app.config import get_settings
 from app.logging_setup import setup_file_logging
@@ -26,7 +27,9 @@ from app.mqtt.topics import (
 )
 from app.services.baidu_asr import BaiduAsrClient
 from app.services.baidu_tts import BaiduTtsClient
+from app.services.conversation import ConversationConfig
 from app.services.device_manager import DeviceManager
+from app.services.llm import DeepSeekLlmClient
 from app.services.local_audio import LocalAudioPlayer
 from app.services.motion_service import AgentMotionService
 from app.services.ping_service import PingRegistry
@@ -92,6 +95,8 @@ async def lifespan(app: FastAPI):
     app.state.voice_local_player = local_player
     app.state.voice_service = VoiceService(
         VoiceConfig(
+            archive_continuous_segments=settings.voice_archive_continuous_segments,
+            archive_max_segments=settings.voice_archive_max_segments,
             vad_backend=settings.voice_vad_backend,
             start_trigger_ms=settings.voice_vad_start_trigger_ms,
             vad_start_rms=settings.voice_vad_start_rms,
@@ -101,6 +106,7 @@ async def lifespan(app: FastAPI):
             pre_roll_ms=settings.voice_vad_pre_roll_ms,
             max_segment_s=settings.voice_max_segment_s,
             max_session_s=settings.voice_max_session_s,
+            max_continuous_s=settings.voice_max_continuous_s,
             execute_commands=settings.voice_execute_commands,
             tts_feedback=settings.voice_tts_feedback,
             local_playback=settings.voice_local_playback,
@@ -116,6 +122,37 @@ async def lifespan(app: FastAPI):
         tts=voice_tts,
         local_player=local_player,
     )
+    app.state.voice_llm = (
+        DeepSeekLlmClient(
+            api_key=settings.llm_api_key,
+            base_url=settings.llm_base_url,
+            model=settings.llm_model,
+            thinking=settings.llm_thinking,
+            max_tokens=settings.llm_max_tokens,
+            temperature=settings.llm_temperature,
+        )
+        if settings.llm_api_key
+        else None
+    )
+    app.state.voice_conversation_config = ConversationConfig(
+        turn_end_ms=settings.voice_conversation_turn_end_ms,
+        idle_s=settings.voice_conversation_idle_s,
+        max_s=settings.voice_conversation_max_s,
+        max_turns=settings.voice_conversation_max_turns,
+        history_turns=settings.voice_conversation_history_turns,
+        history_tokens=settings.voice_conversation_history_tokens,
+        max_tokens=settings.llm_max_tokens,
+        barge_in_rms=settings.voice_barge_in_rms,
+        barge_in_ms=settings.voice_barge_in_ms,
+    )
+    app.state.agent_runtime = None
+    if settings.agent_enabled and settings.agent_runtime == "deepagents":
+        try:
+            app.state.agent_runtime = await AgentRuntime.create(
+                settings, app.state.voice_service
+            )
+        except Exception:
+            logger.exception("Agent runtime unavailable; conversation falls back to legacy")
 
     # 注册消息处理器（心跳/传感器/日志/ACK/pong/motion）
     handlers = create_handlers(
@@ -132,7 +169,7 @@ async def lifespan(app: FastAPI):
     # 连接 MQTT
     try:
         await mqtt_client.connect()
-    except Exception:
+    except Exception:  # noqa: BLE001 - broker unavailable must not stop the API
         logger.warning("MQTT connection failed, server will run without MQTT")
 
     logger.info("CodeMyCar Server v2.0 started")
@@ -140,6 +177,8 @@ async def lifespan(app: FastAPI):
 
     # 关闭
     await mqtt_client.disconnect()
+    if getattr(app.state, "agent_runtime", None) is not None:
+        await app.state.agent_runtime.aclose()
     await app.state.voice_service.aclose()
     if app.state.voice_asr is not None:
         await app.state.voice_asr.aclose()
@@ -191,9 +230,12 @@ _PUBLIC_PATHS = ("/", "/docs", "/openapi.json", "/redoc", "/docs/oauth2-redirect
 
 @app.middleware("http")
 async def api_key_middleware(request: Request, call_next):
-    if settings.api_key and request.url.path not in _PUBLIC_PATHS:
-        if request.headers.get("X-API-Key") != settings.api_key:
-            return JSONResponse(status_code=401, content={"detail": "invalid or missing X-API-Key"})
+    if (
+        settings.api_key
+        and request.url.path not in _PUBLIC_PATHS
+        and request.headers.get("X-API-Key") != settings.api_key
+    ):
+        return JSONResponse(status_code=401, content={"detail": "invalid or missing X-API-Key"})
     return await call_next(request)
 
 

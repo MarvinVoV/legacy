@@ -70,6 +70,8 @@ async def test_recognize_sends_pcm_contract(calls):
 async def test_token_is_cached(calls):
     client, http = _make_client(calls)
     try:
+        await client.warmup()
+        assert not calls["asr"]
         await client.recognize(b"\x00\x00")
         await client.recognize(b"\x00\x00")
     finally:

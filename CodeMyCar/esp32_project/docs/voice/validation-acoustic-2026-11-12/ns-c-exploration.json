@@ -1,0 +1,76 @@
+{
+  "phases": [
+    {
+      "index": 1,
+      "stage": "quiet",
+      "start_utc": "2026-11-12T10:47:40.152079+00:00",
+      "complete": true,
+      "end_utc": "2026-11-12T10:48:40.491318+00:00",
+      "result": {
+        "stage": "quiet",
+        "planned_s": 60.0,
+        "elapsed_s": 60.339,
+        "complete_audio_bytes": 1927188,
+        "complete_audio_s": 60.225,
+        "interruptions": 0
+      },
+      "annotation": null,
+      "barge_events": 0,
+      "human_speech_events": 0,
+      "confirmed_false_events": 0,
+      "unclassified_events": 0,
+      "zero_barge_events": true,
+      "server_ack": {
+        "samples": 0,
+        "p50_ms": null,
+        "p95_ms": null,
+        "max_ms": null
+      },
+      "device_dma_drain": {
+        "samples": 0,
+        "p50_ms": null,
+        "p95_ms": null,
+        "max_ms": null
+      },
+      "health": {
+        "samples": 2,
+        "heap_min": 41903,
+        "heap_max": 42015,
+        "minimum_ever": 32136,
+        "heap_first_last": [
+          42015,
+          41903
+        ],
+        "uptime_decreases": 0
+      }
+    }
+  ],
+  "failed": [],
+  "annotations": [],
+  "limits": [
+    "Barge events require human labels to classify speech versus false alarms.",
+    "ACK/DMA distributions exclude speech onset to DTD and are not acoustic stop latency.",
+    "No CPU profile, word-level receipt or ASR/child accuracy is measured."
+  ],
+  "serial_since_last_manual_start": {
+    "codec_read_errors": 0,
+    "codec_write_errors": 0,
+    "discontinuities": 0,
+    "producer_stalls": 0,
+    "boot_markers": 0,
+    "replaced_frames_first_last": [
+      0,
+      0
+    ],
+    "mic_ref_clips_first_last": [
+      [
+        0,
+        0
+      ],
+      [
+        0,
+        0
+      ]
+    ]
+  }
+}

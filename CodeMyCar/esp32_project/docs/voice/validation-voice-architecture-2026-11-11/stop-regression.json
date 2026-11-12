@@ -1,0 +1,32 @@
+[
+  {
+    "elapsed_ms": 168.5,
+    "result": {
+      "ok": true,
+      "stopped": true,
+      "accepted": true,
+      "confirmed": true,
+      "seq": 0
+    }
+  },
+  {
+    "elapsed_ms": 78.8,
+    "result": {
+      "ok": true,
+      "stopped": true,
+      "accepted": true,
+      "confirmed": true,
+      "seq": 1
+    }
+  },
+  {
+    "elapsed_ms": 104.8,
+    "result": {
+      "ok": true,
+      "stopped": true,
+      "accepted": true,
+      "confirmed": true,
+      "seq": 2
+    }
+  }
+]

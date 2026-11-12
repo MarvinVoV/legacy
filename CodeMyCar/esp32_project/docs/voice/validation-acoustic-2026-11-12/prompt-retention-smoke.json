@@ -1,0 +1,17 @@
+{
+  "session": "def2640f4061",
+  "requested_phrase": "请讲一个关于小猫的短故事",
+  "agent_received_text": "讲一个关于小猫的短故事",
+  "source": "read-only current-session LangGraph message writes",
+  "segment_ms": 3660,
+  "asr_ms": 2826,
+  "first_tts_ms": 3322,
+  "segment_to_first_audio_send_ms": 8186,
+  "firmware_sha256": "ba7ec58a36bfa06df89e9b5eac7dd3923135d05b2641f60117ffe3953a608fdd",
+  "ns_enabled": false,
+  "limits": [
+    "Core topic and request retained; no claim of word-perfect onset capture.",
+    "The missing polite prefix may be ASR normalization, actual wording or onset loss; waveform comparison not performed.",
+    "Slow-handshake queue-overflow path compiled but not hardware fault-injected."
+  ]
+}

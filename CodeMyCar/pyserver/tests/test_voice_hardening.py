@@ -176,6 +176,7 @@ async def test_playback_gate_drains_audio_without_recognition(tmp_path):
     runner = VoiceSessionRunner(service, session, None)
     service.play_local(TtsAudio("pcm", 16000, 1, b"\0" * 320))
     assert service.is_playing
+    assert service.suppresses_detection
     data = pcm(0.4, 3000) + pcm(0.4)
     runner.feed(data)
     assert session.bytes_received == len(data)
@@ -183,6 +184,26 @@ async def test_playback_gate_drains_audio_without_recognition(tmp_path):
     await runner.close(abort=True)
     await service.aclose()
     assert not service.is_playing
+    assert not service.suppresses_detection
+    session.close()
+    service.release(session)
+
+
+async def test_ready_tone_does_not_suppress_recognition(tmp_path):
+    from app.services.voice_pipeline import VoiceSessionRunner
+    from tests.test_voice_ws import FakeLocalPlayer
+
+    asr = FakeAsr()
+    service = make_service(tmp_path, asr, local_player=FakeLocalPlayer())
+    session = service.create_session("test")
+    runner = VoiceSessionRunner(service, session, None)
+    service.play_ready_tone()
+    assert service.is_playing
+    assert not service.suppresses_detection
+    runner.feed(pcm(0.4, 3000) + pcm(0.4))
+    assert runner.queue.qsize() == 1
+    await runner.close(abort=True)
+    await service.aclose()
     session.close()
     service.release(session)
 
@@ -335,7 +356,9 @@ async def test_ready_tone_is_local_and_playback_is_awaitable(tmp_path):
     service = make_service(tmp_path, FakeAsr(), local_player=player)
     service.play_ready_tone()
     assert service.is_playing
+    assert not service.suppresses_detection
     await service.wait_playback()
     assert not service.is_playing
+    assert not service.suppresses_detection
     assert len(player.played) == 1
     assert player.played[0][1:] == (16000, 1)

@@ -1,0 +1,12 @@
+{
+  "text": "我在",
+  "per": 103,
+  "spd": 6,
+  "pit": 5,
+  "vol": 5,
+  "sample_rate": 16000,
+  "channels": 1,
+  "bits": 16,
+  "bytes": 25018,
+  "sha256": "1d79cf80344e421405aceda9b2ff20c6fa4281c5a93437a108d87b7ff9408c7c"
+}

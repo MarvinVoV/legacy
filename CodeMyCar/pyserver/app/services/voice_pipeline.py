@@ -7,6 +7,7 @@ import logging
 import time
 from typing import Any, Protocol
 
+from app.services.audio_metrics import measure_pcm16
 from app.services.baidu_asr import BaiduAsrError
 from app.services.voice_intent import parse_intent
 from app.services.voice_service import VoiceSegment, VoiceService
@@ -112,6 +113,9 @@ async def _handle_segment(
             frame["angle_deg"] = intent.angle_deg
     if error:
         frame["error"] = error
+    if service.config.archive_continuous_segments:
+        frame["audio_metrics"] = measure_pcm16(segment.pcm).as_dict()
+        logger.info("voice audio metrics index=%d data=%s", segment.index, frame["audio_metrics"])
 
     logger.info(
         "voice result session=%s index=%d text=%r intent=%s",
@@ -163,7 +167,7 @@ class VoiceSessionRunner:
         if self.worker.done():
             self.worker.result()
             raise RuntimeError("voice worker stopped")
-        if self.service.is_playing or (self.one_shot and self.segments):
+        if self.service.suppresses_detection or (self.one_shot and self.segments):
             self.session.feed(pcm, detect=False)
             return
         for segment in self.session.feed(pcm):
@@ -242,12 +246,10 @@ class VoiceSessionRunner:
         await asyncio.gather(self.worker, return_exceptions=True)
         if self.action_task:
             running = not self.action_task.done()
-            if abort and running and self.service.agent_motion is not None:
+            if abort and running:
                 # Cancel an owned active motion via the existing reliable STOP path.
                 try:
-                    await asyncio.wait_for(
-                        self.service.agent_motion.stop(self.session.device_id), 5
-                    )
+                    await asyncio.wait_for(self.service.stop_action(self.session.device_id), 5)
                 except Exception:
                     logger.exception("voice action stop on abort failed")
             self.action_task.cancel()

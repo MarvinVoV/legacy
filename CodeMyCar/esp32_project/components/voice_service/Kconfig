@@ -1,5 +1,18 @@
 menu "Voice Control"
 
+    choice CMCAR_VOICE_MODE
+        prompt "Voice session mode"
+        default CMCAR_VOICE_MODE_COMMAND
+        help
+            COMMAND keeps one utterance per wake and the existing intent path.
+            CONVERSATION keeps one WebSocket session open after a wake and lets
+            the pyserver drive multi-turn ASR -> LLM -> TTS.
+        config CMCAR_VOICE_MODE_COMMAND
+            bool "One command per wake (current behavior)"
+        config CMCAR_VOICE_MODE_CONVERSATION
+            bool "Continuous multi-turn conversation after one wake"
+    endchoice
+
     config CMCAR_VOICE_DENOISE
         bool "Experimental S3 NS during listening (requires A/B validation)"
         depends on IDF_TARGET_ESP32S3
@@ -10,6 +23,15 @@ menu "Voice Control"
         default 64 if IDF_TARGET_ESP32S3
         default 32
         range 16 96
+
+    config CMCAR_VOICE_CODEC_BOARD
+        bool "Use board-specific audio codec (new hardware)"
+        default y if IDF_TARGET_ESP32S3
+        default n
+        help
+            关闭时使用现有 ICS43434 I2S 麦克风（输入 only）。
+            S3 目标板默认启用 ES7210/ES8311/NS4150B；旧麦克风方案在 C6 上
+            保持默认关闭。打开后使用 voice_codec_board.c 的实现。
 
     config CMCAR_VOICE_I2S_BCLK
         int "Microphone I2S BCLK GPIO"
@@ -33,6 +55,119 @@ menu "Voice Control"
         bool "Read right I2S slot (otherwise left)"
         default n
 
+    config CMCAR_VOICE_BOARD_I2C_SDA
+        int "Board codec I2C SDA GPIO"
+        depends on CMCAR_VOICE_CODEC_BOARD
+        default 8
+        range 0 48
+
+    config CMCAR_VOICE_BOARD_I2C_SCL
+        int "Board codec I2C SCL GPIO"
+        depends on CMCAR_VOICE_CODEC_BOARD
+        default 9
+        range 0 48
+
+    config CMCAR_VOICE_BOARD_I2S_MCK
+        int "Board codec I2S MCLK GPIO"
+        depends on CMCAR_VOICE_CODEC_BOARD
+        default 15
+        range 0 48
+
+    config CMCAR_VOICE_BOARD_I2S_BCLK
+        int "Board codec I2S BCLK GPIO"
+        depends on CMCAR_VOICE_CODEC_BOARD
+        default 16
+        range 0 48
+
+    config CMCAR_VOICE_BOARD_I2S_WS
+        int "Board codec I2S WS GPIO"
+        depends on CMCAR_VOICE_CODEC_BOARD
+        default 17
+        range 0 48
+
+    config CMCAR_VOICE_BOARD_I2S_DOUT
+        int "Board codec I2S DOUT GPIO (to board DI)"
+        depends on CMCAR_VOICE_CODEC_BOARD
+        default 18
+        range 0 48
+
+    config CMCAR_VOICE_BOARD_I2S_DIN
+        int "Board codec I2S DIN GPIO (from board DO)"
+        depends on CMCAR_VOICE_CODEC_BOARD
+        default 21
+        range 0 48
+
+    config CMCAR_VOICE_BOARD_PA_GPIO
+        int "NS4150B EN GPIO (-1 = hardwired on)"
+        depends on CMCAR_VOICE_CODEC_BOARD
+        default -1
+        range -1 48
+        help
+            功放使能脚。当前板子 EN 常接 3.3V 时保持 -1；改接 GPIO 后填
+            该 GPIO，初始化完成才拉高，关机/复位前拉低，避免爆音。
+
+    config CMCAR_VOICE_BOARD_VOLUME
+        int "Default playback volume (0-100)"
+        depends on CMCAR_VOICE_CODEC_BOARD
+        default 60
+        range 0 100
+
+    config CMCAR_VOICE_BOARD_INPUT_GAIN_DB
+        int "ES7210 input gain (dB)"
+        depends on CMCAR_VOICE_CODEC_BOARD
+        default 37
+        range 0 48
+
+    config CMCAR_VOICE_BOARD_REFERENCE_GAIN_DB
+        int "ES7210 reference input gain (dB)"
+        depends on CMCAR_VOICE_CODEC_BOARD
+        default 12
+        range 0 48
+        help
+            ch1 是模拟参考，可独立标定增益；37dB 已实测大量削顶。
+            默认 12dB，并应在目标音量下复核，不能套用麦克风增益。
+
+    config CMCAR_VOICE_BOARD_REFERENCE_ADC_CHANNEL
+        int "Physical ES7210 ADC used for reference (zero-based)"
+        depends on CMCAR_VOICE_CODEC_BOARD
+        default 2
+        range 0 3
+        help
+            物理 ADC 编号不一定等于 TDM slot；用串口 g 的增益探测实测确认。
+
+    config CMCAR_VOICE_BOARD_MIC_CHANNEL
+        int "ES7210 TDM channel used as the mono pipeline input"
+        depends on CMCAR_VOICE_CODEC_BOARD
+        default 0
+        range 0 3
+        help
+            实测 ch0/ch2 为两个麦克风，ch1 为 AEC 参考，ch3 为空。
+
+    config CMCAR_VOICE_AEC
+        bool "Enable AFE acoustic echo cancellation with the board reference"
+        depends on CMCAR_VOICE_CODEC_BOARD && IDF_TARGET_ESP32S3
+        default y if IDF_TARGET_ESP32S3
+        default n
+        help
+            把 ch0（麦克风）与 ch1（功放前参考）按 "MR" 交织送进 AFE 并开启
+            AEC。开启后 codec 的 read() 返回 2 通道交织数据。打断（barge-in）
+            依赖这个能力，但还需要服务端配合。
+
+    config CMCAR_VOICE_AEC_HIGH_PERF
+        bool "Use AFE high-performance mode with AEC"
+        depends on CMCAR_VOICE_AEC
+        default n
+        help
+            HIGH_PERF 回声抑制更好，CPU/内存开销更高。
+
+    config CMCAR_VOICE_AEC_FILTER_LENGTH
+        int "AEC adaptive filter length"
+        depends on CMCAR_VOICE_AEC
+        default 8
+        range 1 8
+        help
+            ESP-SR 对 S3 推荐 4；越大收敛越慢但能覆盖更长延迟。
+
     config CMCAR_VOICE_ENABLED
         bool "Enable voice WebSocket upload"
         default y
@@ -41,11 +176,33 @@ menu "Voice Control"
             运行时在串口输入 s + 回车，录一段音频并上传 pyserver。
 
     config CMCAR_VOICE_WAKE_ENABLED
-        bool "Local nihaoxiaozhi wake, one utterance per wake"
+        bool "Local wake word detection"
         default y
         help
             Detect locally; no audio upload before wake. Use the board profile
             to select one compatible model. Missing model fails closed.
+
+    config CMCAR_VOICE_S3_WAKE_MODEL
+        string "S3 WakeNet model keyword"
+        depends on IDF_TARGET_ESP32S3
+        default "xiaoyaxiaoya"
+        help
+            Must match an installed WakeNet model selected in ESP Speech
+            Recognition. This selects a pretrained model, not arbitrary text.
+
+    config CMCAR_VOICE_S3_WAKE_LABEL
+        string "S3 wake phrase for diagnostics"
+        depends on IDF_TARGET_ESP32S3
+        default "小鸭小鸭"
+
+    config CMCAR_VOICE_WAKE_THRESHOLD
+        int "WakeNet detection threshold (milli, 0 = model default)"
+        default 500
+        range 0 999
+        depends on CMCAR_VOICE_WAKE_ENABLED
+        help
+            模型默认阈值写在 _MODEL_INFO_ 里（当前 wn9l 约 0.597）。调低会提高
+            召回率（包括说得很快的情况），同时增加误唤醒；0 表示不改。
 
     config CMCAR_VOICE_CONTINUOUS
         bool "Continuous PCM upload; server VAD owns utterance boundaries"

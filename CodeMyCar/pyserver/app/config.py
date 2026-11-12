@@ -4,6 +4,13 @@ from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from app.models.audio import (
+    DEFAULT_VAD_END_RMS,
+    DEFAULT_VAD_END_SILENCE_MS,
+    DEFAULT_VAD_PRE_ROLL_MS,
+    DEFAULT_VAD_START_RMS,
+)
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -52,8 +59,8 @@ class Settings(BaseSettings):
     baidu_speech_timeout_s: float = 10.0
 
     # 百度短文本语音合成（TTS）
-    baidu_tts_per: int = 5  # 5=度小娇（精品音库，已实测）
-    baidu_tts_spd: int = 5
+    baidu_tts_per: int = 103  # 度米朵；与S3本地唤醒提示音保持一致
+    baidu_tts_spd: int = 6
     baidu_tts_pit: int = 5
     baidu_tts_vol: int = 5
     baidu_tts_aue: int = 4  # 4=16k PCM，直接给 I2S 功放
@@ -61,16 +68,19 @@ class Settings(BaseSettings):
 
     # 语音 WebSocket（P1：接收 PCM、VAD 切分、WAV 归档；暂不执行运动）
     voice_enabled: bool = True
+    voice_archive_continuous_segments: bool = False  # opt-in local diagnostics; never default-record
+    voice_archive_max_segments: int = 8  # per service lifetime; prevents diagnostic disk growth
     voice_artifact_dir: str = "logs/voice"
     voice_vad_backend: str = "webrtc"  # energy仅用于诊断对照
     voice_vad_start_trigger_ms: int = 60
-    voice_vad_start_rms: int = 300
-    voice_vad_end_rms: int = 200
+    voice_vad_start_rms: int = DEFAULT_VAD_START_RMS
+    voice_vad_end_rms: int = DEFAULT_VAD_END_RMS
     voice_vad_min_speech_ms: int = 150
-    voice_vad_end_silence_ms: int = 800
-    voice_vad_pre_roll_ms: int = 300
+    voice_vad_end_silence_ms: int = DEFAULT_VAD_END_SILENCE_MS
+    voice_vad_pre_roll_ms: int = DEFAULT_VAD_PRE_ROLL_MS
     voice_max_segment_s: float = 10.0
     voice_max_session_s: float = 12.0
+    voice_max_continuous_s: float = 60.0
     voice_execute_commands: bool = False  # 默认关闭；开启后语音意图才会下发运动
     voice_tts_feedback: bool = True
     voice_local_playback: bool = True  # 在 pyserver 所在机器上播放 TTS
@@ -80,6 +90,42 @@ class Settings(BaseSettings):
     voice_max_turn_deg: int = 90
     voice_speed_cm_s: int = 10
     voice_min_turn_distance_cm: int = 30
+
+    # 长会话 / DeepSeek（密钥只放 voice.local.env 或环境变量）
+    voice_conversation_enabled: bool = True
+    voice_conversation_turn_end_ms: int = 700
+    voice_conversation_idle_s: float = 15.0
+    voice_conversation_max_s: float = 600.0
+    voice_conversation_max_turns: int = 30
+    voice_conversation_history_turns: int = 12
+    voice_conversation_history_tokens: int = 8000
+    llm_base_url: str = "https://api.deepseek.com"
+    llm_api_key: str = ""
+    llm_model: str = "deepseek-flash"
+    llm_model_pro: str = "deepseek-v4-pro"
+    llm_thinking: bool = False
+    llm_max_tokens: int = 2048
+    llm_temperature: float = 0.7
+    voice_barge_in: bool = False  # requires device AEC (ch1 reference)
+    voice_barge_audio: bool = True  # only after v2 device explicitly negotiates pre-roll
+    voice_barge_in_rms: int = 700
+    voice_barge_in_ms: int = 140
+
+    # LangChain / Deep Agents runtime
+    agent_enabled: bool = True
+    agent_runtime: str = "deepagents"  # deepagents | legacy
+    agent_data_dir: str = "agent_data"
+    agent_checkpoint_db: str = "agent_data/sessions.sqlite"
+    agent_memory_file: str = "AGENTS.md"
+    agent_skills_dir: str = "skills"
+    agent_summary_trigger_tokens: int = 12000
+    agent_summary_keep_messages: int = 8
+    agent_recursion_limit: int = 40
+    agent_mcp_enabled: bool = True
+    agent_mcp_config: str = "mcp.servers.json"
+    agent_mcp_allow: str = ""
+    agent_mcp_deny: str = ""
+    agent_memory_tool_enabled: bool = True
 
     # 日志
     log_level: str = "INFO"

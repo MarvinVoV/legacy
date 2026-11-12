@@ -3,11 +3,14 @@
 #include <stdint.h>
 #include "model_path.h"
 #include "esp_wn_iface.h"
-enum { AFE_TYPE_FD, AFE_MODE_LOW_COST, VAD_MODE_2, AFE_NS_MODE_NET,
+typedef enum { AFE_MODE_LOW_COST, AFE_MODE_HIGH_PERF } afe_mode_t;
+typedef enum { AEC_MODE_FD_LOW_COST, AEC_MODE_FD_HIGH_PERF } aec_mode_t;
+enum { AFE_TYPE_FD, AEC_NLP_LEVEL_VERYAGGR, VAD_MODE_2, AFE_NS_MODE_NET,
        AFE_NS_MODE_WEBRTC, AFE_MEMORY_ALLOC_MORE_PSRAM, VAD_SPEECH };
 typedef struct {
  bool aec_init, se_init, agc_init, vad_init, wakenet_init, ns_init;
  int vad_mode, vad_min_speech_ms, vad_min_noise_ms;
+ int aec_mode, aec_filter_length, aec_nlp_level;
  char *vad_model_name, *wakenet_model_name, *wakenet_model_name_2, *ns_model_name;
  int wakenet_mode, afe_ns_mode, memory_alloc_mode, afe_perferred_core, afe_perferred_priority;
 } afe_config_t;

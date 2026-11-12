@@ -56,3 +56,7 @@ dkms.conf
 
 # macOS
 .DS_Store
+
+# Local reference repositories (not part of CodeMyCar)
+/speech-demo-master/
+/xiaozhi-esp32-main/
