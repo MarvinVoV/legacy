@@ -25,7 +25,8 @@
  * 机械复位（拆舵机臂重新对中，让 1500us 重新等于前轮正中）后，必须把
  * STEERING_SERVO_STRAIGHT_US 改为 1500 并重跑地面直行标定。
  */
-/* 2026-11-08: zero-RPM visual calibration selected 1546us after a left excursion.
+/* 2026-11-14: after linkage reassembly, zero-RPM visual calibration selected
+ * 1470us (1465 right-biased, 1475 left-biased); older 1546us is superseded.
  * Use the same calibration for zero curvature, STOP and hardware safe pulse;
  * do not disguise mechanical neutral as a nonzero wheel-path curvature. */
 #define STEER_PULSE_OFFSET_US ((float)STEERING_SERVO_STRAIGHT_US - STEERING_SERVO_CENTER_US)

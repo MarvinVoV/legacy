@@ -1,0 +1,89 @@
+{
+  "read_only": true,
+  "uart_physically_disconnected_user_confirmed": true,
+  "observed_seconds": 36,
+  "counts": {},
+  "live_heartbeats": [],
+  "api_samples": [
+    {
+      "sample": 1,
+      "online": false,
+      "heartbeat_age_s": 192.8,
+      "esp_uptime_s": 2,
+      "heap_free": 180971,
+      "stm32_connected": true
+    },
+    {
+      "sample": 2,
+      "online": false,
+      "heartbeat_age_s": 196.8,
+      "esp_uptime_s": 2,
+      "heap_free": 180971,
+      "stm32_connected": true
+    },
+    {
+      "sample": 3,
+      "online": false,
+      "heartbeat_age_s": 200.8,
+      "esp_uptime_s": 2,
+      "heap_free": 180971,
+      "stm32_connected": true
+    },
+    {
+      "sample": 4,
+      "online": false,
+      "heartbeat_age_s": 204.8,
+      "esp_uptime_s": 2,
+      "heap_free": 180971,
+      "stm32_connected": true
+    },
+    {
+      "sample": 5,
+      "online": false,
+      "heartbeat_age_s": 208.8,
+      "esp_uptime_s": 2,
+      "heap_free": 180971,
+      "stm32_connected": true
+    },
+    {
+      "sample": 6,
+      "online": false,
+      "heartbeat_age_s": 212.8,
+      "esp_uptime_s": 2,
+      "heap_free": 180971,
+      "stm32_connected": true
+    },
+    {
+      "sample": 7,
+      "online": false,
+      "heartbeat_age_s": 216.9,
+      "esp_uptime_s": 2,
+      "heap_free": 180971,
+      "stm32_connected": true
+    },
+    {
+      "sample": 8,
+      "online": false,
+      "heartbeat_age_s": 220.9,
+      "esp_uptime_s": 2,
+      "heap_free": 180971,
+      "stm32_connected": true
+    },
+    {
+      "sample": 9,
+      "online": false,
+      "heartbeat_age_s": 224.9,
+      "esp_uptime_s": 2,
+      "heap_free": 180971,
+      "stm32_connected": true
+    },
+    {
+      "sample": 10,
+      "online": false,
+      "heartbeat_age_s": 228.9,
+      "esp_uptime_s": 2,
+      "heap_free": 180971,
+      "stm32_connected": true
+    }
+  ]
+}

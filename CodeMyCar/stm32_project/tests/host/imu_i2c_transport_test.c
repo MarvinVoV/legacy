@@ -3,7 +3,14 @@
 #include <assert.h>
 #include <stdio.h>
 
-I2C_HandleTypeDef hi2c1;
+static I2C_TypeDef instance={.ISR=0x8000};
+I2C_HandleTypeDef hi2c1={.Instance=&instance,.State=0x20};
+static uint32_t now;
+static bool latchedBusy;
+uint32_t HAL_GetTick(void) { return now; }
+void vTaskDelay(TickType_t ticks) { now+=ticks; }
+unsigned HAL_GPIO_ReadPin(void *port,uint16_t pin)
+{ assert(port==GPIOB); return pin==GPIO_PIN_6; }
 static int mode, pending, receive, resets, enabled=0;
 extern volatile uint32_t g_imuI2cCompletions, g_imuI2cTimeouts, g_imuI2cErrors;
 void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef*);
@@ -29,7 +36,7 @@ void xSemaphoreGiveFromISR(SemaphoreHandle_t sem,BaseType_t *wake)
 static HAL_StatusTypeDef start(uint8_t *buffer)
 {
     assert(!pending && enabled==3);
-    if (mode==3) return HAL_BUSY;
+    if (mode==3 || latchedBusy) return HAL_BUSY;
     pending=1;hi2c1.pBuffPtr=buffer;
     return HAL_OK;
 }
@@ -38,7 +45,7 @@ HAL_StatusTypeDef HAL_I2C_Master_Receive_IT(I2C_HandleTypeDef *bus,uint16_t a,ui
 HAL_StatusTypeDef HAL_I2C_Master_Transmit_IT(I2C_HandleTypeDef *bus,uint16_t a,uint8_t *b,uint16_t n)
 { (void)a;(void)n;assert(bus==&hi2c1); receive=0;return start(b); }
 HAL_StatusTypeDef HAL_I2C_DeInit(I2C_HandleTypeDef *bus)
-{ assert(bus==&hi2c1 && !enabled);pending=0;++resets;return HAL_OK; }
+{ assert(bus==&hi2c1 && !enabled);pending=0;latchedBusy=false;++resets;return HAL_OK; }
 HAL_StatusTypeDef HAL_I2C_Init(I2C_HandleTypeDef *bus)
 { assert(bus==&hi2c1 && !bus->pBuffPtr && !enabled);return mode==4 ? HAL_ERROR:HAL_OK; }
 void HAL_I2C_EV_IRQHandler(I2C_HandleTypeDef *b) { (void)b; }
@@ -66,13 +73,29 @@ int main(void)
     HAL_I2C_MasterRxCpltCallback(&hi2c1);
     mode=0;
     assert(ImuI2c_Transfer(1,0x94,buffer,32,20)==HAL_OK);
+    /* A latched startup BUSY is cleared without reissuing the uncertain write. */
+    now+=250; latchedBusy=true;
+    assert(ImuI2c_Transfer(0,0x94,buffer,32,20)==HAL_BUSY);
+    assert(!latchedBusy && resets==2 && !hi2c1.pBuffPtr);
+    assert(g_imuI2cLastIsr==0x8000 && g_imuI2cLastState==0x20);
+    assert(g_imuI2cLastPins==1 && g_imuI2cBusy==1);
+    HAL_I2C_MasterTxCpltCallback(&hi2c1); /* late IRQ must not signal next call */
+    assert(ImuI2c_Transfer(0,0x94,buffer,32,20)==HAL_OK);
+    /* Permanent BUSY: rate limit reset attempts and yield, never spin/retry. */
     mode=3;
+    for (unsigned i=0;i<20;i++)
+        assert(ImuI2c_Transfer(1,0x94,buffer,32,20)==HAL_BUSY);
+    assert(resets==2 && now>=271);
+    now+=250;
     assert(ImuI2c_Transfer(1,0x94,buffer,32,20)==HAL_BUSY);
+    assert(resets==3);
     mode=4;
     assert(ImuI2c_Transfer(1,0x94,buffer,32,20)==HAL_ERROR);
-    assert(!pending && !hi2c1.pBuffPtr && resets==2);
+    assert(!pending && !hi2c1.pBuffPtr && resets==4);
+    assert(g_imuI2cRecoveryFailures==1);
     mode=0;
     assert(ImuI2c_Transfer(1,0x94,buffer,32,20)==HAL_OK);
-    assert(g_imuI2cCompletions==4 && g_imuI2cTimeouts==2 && g_imuI2cErrors==2);
+    assert(g_imuI2cCompletions==5 && g_imuI2cTimeouts==2);
+    assert(g_imuI2cBusy==22 && g_imuI2cErrors==23);
     puts("IMU I2C: RX/TX, ISR completion, error, timeout quiescence, late IRQ and recovery PASS");
 }

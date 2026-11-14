@@ -1,0 +1,117 @@
+{
+  "read_only": true,
+  "power_source": "user reported external 5V ESP32 only",
+  "seconds": 40,
+  "counts": {
+    "data/DEV_1/status": 1,
+    "data/DEV_1/heartbeat": 1
+  },
+  "live_heartbeats": [
+    {
+      "at": 1794579633.448884,
+      "retained": false,
+      "data": {
+        "heap": 182523,
+        "heap_min": 84564,
+        "uptime_s": 62,
+        "stm32_connected": false,
+        "session_id": 425502857,
+        "esp_build": "c0fe2de79173-dirty",
+        "esp_idf": "v6.1",
+        "stm32_build": "unknown",
+        "stm32_dirty": true,
+        "protocol_version": 0
+      }
+    }
+  ],
+  "samples": [
+    {
+      "sample": 1,
+      "online": true,
+      "last_heartbeat_age": 1.4,
+      "uptime_s": 32,
+      "heap_free": 182523,
+      "stm32_connected": false
+    },
+    {
+      "sample": 2,
+      "online": true,
+      "last_heartbeat_age": 5.4,
+      "uptime_s": 32,
+      "heap_free": 182523,
+      "stm32_connected": false
+    },
+    {
+      "sample": 3,
+      "online": true,
+      "last_heartbeat_age": 9.4,
+      "uptime_s": 32,
+      "heap_free": 182523,
+      "stm32_connected": false
+    },
+    {
+      "sample": 4,
+      "online": true,
+      "last_heartbeat_age": 13.4,
+      "uptime_s": 32,
+      "heap_free": 182523,
+      "stm32_connected": false
+    },
+    {
+      "sample": 5,
+      "online": true,
+      "last_heartbeat_age": 17.5,
+      "uptime_s": 32,
+      "heap_free": 182523,
+      "stm32_connected": false
+    },
+    {
+      "sample": 6,
+      "online": true,
+      "last_heartbeat_age": 21.5,
+      "uptime_s": 32,
+      "heap_free": 182523,
+      "stm32_connected": false
+    },
+    {
+      "sample": 7,
+      "online": true,
+      "last_heartbeat_age": 25.5,
+      "uptime_s": 32,
+      "heap_free": 182523,
+      "stm32_connected": false
+    },
+    {
+      "sample": 8,
+      "online": true,
+      "last_heartbeat_age": 29.5,
+      "uptime_s": 32,
+      "heap_free": 182523,
+      "stm32_connected": false
+    },
+    {
+      "sample": 9,
+      "online": true,
+      "last_heartbeat_age": 3.5,
+      "uptime_s": 62,
+      "heap_free": 182523,
+      "stm32_connected": false
+    },
+    {
+      "sample": 10,
+      "online": true,
+      "last_heartbeat_age": 7.5,
+      "uptime_s": 62,
+      "heap_free": 182523,
+      "stm32_connected": false
+    },
+    {
+      "sample": 11,
+      "online": true,
+      "last_heartbeat_age": 11.5,
+      "uptime_s": 62,
+      "heap_free": 182523,
+      "stm32_connected": false
+    }
+  ]
+}

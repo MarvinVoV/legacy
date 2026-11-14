@@ -1,0 +1,21 @@
+{
+  "online": true,
+  "last_heartbeat_age": 13.7,
+  "uptime_s": 63,
+  "stm32_connected": true,
+  "yaw_deg": -0.1,
+  "yaw_rate_dps": 0.13,
+  "imu_status": 3,
+  "imu_age_s": 2.0,
+  "accel_mps2": [
+    -0.097,
+    -0.937,
+    9.867
+  ],
+  "gyro_radps": [
+    0.003,
+    -0.003,
+    0.001
+  ],
+  "imu_raw_age_s": 1.9
+}

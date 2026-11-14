@@ -1,0 +1,155 @@
+{
+  "read_only": true,
+  "seconds": 30,
+  "new_heartbeats": [
+    {
+      "at": 1794581798.461706,
+      "data": {
+        "heap": 182391,
+        "heap_min": 88000,
+        "uptime_s": 33,
+        "stm32_connected": true,
+        "session_id": 1901978311,
+        "esp_build": "c0fe2de79173-dirty",
+        "esp_idf": "v6.1",
+        "stm32_build": "dd5759f967f8",
+        "stm32_dirty": true,
+        "protocol_version": 2
+      }
+    }
+  ],
+  "samples": [
+    {
+      "sample": 1,
+      "online": true,
+      "last_heartbeat_age": 23.2,
+      "uptime_s": 2,
+      "stm32_connected": true,
+      "imu_age_s": 0.1,
+      "yaw_deg": 0.0,
+      "imu_raw_age_s": 0.1,
+      "stm_report_age_s": 0.6,
+      "stm_uptime_ms": 25027
+    },
+    {
+      "sample": 2,
+      "online": true,
+      "last_heartbeat_age": 26.2,
+      "uptime_s": 2,
+      "stm32_connected": true,
+      "imu_age_s": 0.1,
+      "yaw_deg": 0.0,
+      "imu_raw_age_s": 0.1,
+      "stm_report_age_s": 0.59,
+      "stm_uptime_ms": 28057
+    },
+    {
+      "sample": 3,
+      "online": true,
+      "last_heartbeat_age": 29.2,
+      "uptime_s": 2,
+      "stm32_connected": true,
+      "imu_age_s": 0.2,
+      "yaw_deg": -0.1,
+      "imu_raw_age_s": 0.2,
+      "stm_report_age_s": 0.3,
+      "stm_uptime_ms": 31251
+    },
+    {
+      "sample": 4,
+      "online": true,
+      "last_heartbeat_age": 1.2,
+      "uptime_s": 33,
+      "stm32_connected": true,
+      "imu_age_s": 0.0,
+      "yaw_deg": -0.1,
+      "imu_raw_age_s": 0.0,
+      "stm_report_age_s": 0.31,
+      "stm_uptime_ms": 34355
+    },
+    {
+      "sample": 5,
+      "online": true,
+      "last_heartbeat_age": 4.2,
+      "uptime_s": 33,
+      "stm32_connected": true,
+      "imu_age_s": 0.8,
+      "yaw_deg": 0.0,
+      "imu_raw_age_s": 0.8,
+      "stm_report_age_s": 0.19,
+      "stm_uptime_ms": 37359
+    },
+    {
+      "sample": 6,
+      "online": true,
+      "last_heartbeat_age": 7.2,
+      "uptime_s": 33,
+      "stm32_connected": true,
+      "imu_age_s": 0.3,
+      "yaw_deg": -0.1,
+      "imu_raw_age_s": 0.3,
+      "stm_report_age_s": 0.27,
+      "stm_uptime_ms": 40372
+    },
+    {
+      "sample": 7,
+      "online": true,
+      "last_heartbeat_age": 10.2,
+      "uptime_s": 33,
+      "stm32_connected": true,
+      "imu_age_s": 0.0,
+      "yaw_deg": -0.1,
+      "imu_raw_age_s": 0.0,
+      "stm_report_age_s": 0.12,
+      "stm_uptime_ms": 43404
+    },
+    {
+      "sample": 8,
+      "online": true,
+      "last_heartbeat_age": 13.2,
+      "uptime_s": 33,
+      "stm32_connected": true,
+      "imu_age_s": 0.5,
+      "yaw_deg": -0.1,
+      "imu_raw_age_s": 0.3,
+      "stm_report_age_s": 0.21,
+      "stm_uptime_ms": 46415
+    },
+    {
+      "sample": 9,
+      "online": true,
+      "last_heartbeat_age": 16.2,
+      "uptime_s": 33,
+      "stm32_connected": true,
+      "imu_age_s": 0.1,
+      "yaw_deg": 0.0,
+      "imu_raw_age_s": 0.1,
+      "stm_report_age_s": 0.3,
+      "stm_uptime_ms": 49436
+    },
+    {
+      "sample": 10,
+      "online": true,
+      "last_heartbeat_age": 19.3,
+      "uptime_s": 33,
+      "stm32_connected": true,
+      "imu_age_s": 0.6,
+      "yaw_deg": 0.0,
+      "imu_raw_age_s": 0.6,
+      "stm_report_age_s": 1.28,
+      "stm_uptime_ms": 51447
+    },
+    {
+      "sample": 11,
+      "online": true,
+      "last_heartbeat_age": 22.3,
+      "uptime_s": 33,
+      "stm32_connected": true,
+      "imu_age_s": 0.1,
+      "yaw_deg": -0.1,
+      "imu_raw_age_s": 0.1,
+      "stm_report_age_s": 0.12,
+      "stm_uptime_ms": 55477
+    }
+  ]
+}

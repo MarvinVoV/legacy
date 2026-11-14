@@ -1,0 +1,33 @@
+[36m[01m      -------------------------------------------------------------------
+[39;49m[0m[36m[01m                        STM32CubeProgrammer v2.23.0                  
+[39;49m[0m[36m[01m      -------------------------------------------------------------------
+
+[39;49m[0m[90mST-LINK SN  : 001800495300000A4E594B4D
+[39;49m[0m[90mST-LINK FW  : V2J48M35
+[39;49m[0m[90mBoard       : --
+[39;49m[0m[90mVoltage     : 3.27V
+[39;49m[0m[90mSWD freq    : 100 KHz
+[39;49m[0m[90mConnect mode: Hot Plug
+[39;49m[0m[90mReset mode  : Software reset
+[39;49m[0m[90mDevice ID   : 0x483
+[39;49m[0m[90mRevision ID : Rev Z
+[39;49m[0m[39;49m[0m[39;49mDevice name : STM32H72x/STM32H73x
+[39;49m[0m[39;49mNVM size    : 1 MBytes
+[39;49m[0m[39;49mDevice type : MCU
+[39;49m[0m[39;49mDevice CPU  : Cortex-M7
+[39;49m[0m[39;49mBL Version  : 0x93
+[39;49m[0m[39;49m
+[39;49m[0m[39;49m[0m[39;49m[0m[90mMemory checksum calculating ...
+[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0m[39;49m[0mMemory [0x08000000 : 0x0801DFD0] - Checksum : 0x00D9E834
+[39;49m[0m============  File Checksum Calculator  ===========
+
+[39;49m[0m[39;49mFile : /Users/sunyameng/github/legacy/CodeMyCar/stm32_project/build/NoSonar/stm32_project.bin
+[39;49m[0m[39;49mSegments total number : 1
+[39;49m[0m[39;49m  + Segment [0] : 
+[39;49m[0m[90m      Address  = 0x00000000
+[39;49m[0m[90m      Size     = 119.95 KB
+[39;49m[0m[90m      Checksum = 0x00CAECFD
+[39;49m[0m[39;49mSegments total checksum : 0x00CAECFD
+[39;49m[0m---------------------------------------------------
+
+[39;49m[0m[39;49m[0m

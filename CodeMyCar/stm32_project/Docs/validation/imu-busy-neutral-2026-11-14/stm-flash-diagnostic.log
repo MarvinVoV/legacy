@@ -1,0 +1,87 @@
+[36m[01m      -------------------------------------------------------------------
+[39;49m[0m[36m[01m                        STM32CubeProgrammer v2.23.0                  
+[39;49m[0m[36m[01m      -------------------------------------------------------------------
+
+[39;49m[0m[90mST-LINK SN  : 001800495300000A4E594B4D
+[39;49m[0m[90mST-LINK FW  : V2J48M35
+[39;49m[0m[90mBoard       : --
+[39;49m[0m[90mVoltage     : 3.26V
+[39;49m[0m[90mSWD freq    : 950 KHz
+[39;49m[0m[90mConnect mode: Hot Plug
+[39;49m[0m[90mReset mode  : Software reset
+[39;49m[0m[90mDevice ID   : 0x483
+[39;49m[0m[90mRevision ID : Rev Z
+[39;49m[0m[39;49m[0m[39;49mDevice name : STM32H72x/STM32H73x
+[39;49m[0m[39;49mNVM size    : 1 MBytes
+[39;49m[0m[39;49mDevice type : MCU
+[39;49m[0m[39;49mDevice CPU  : Cortex-M7
+[39;49m[0m[39;49mBL Version  : 0x93
+[39;49m[0m[39;49m
+[39;49m[0m[39;49m[0m[39;49m[0m[39;49m
+[39;49m[0m[39;49mUPLOADING OPTION BYTES DATA ...
+[39;49m[0m[39;49m
+[39;49m[0m[39;49m  Bank          : 0x00
+[39;49m[0m[39;49m  Address       : 0x5200201c 
+[39;49m[0m[39;49m  Size          : 92 Bytes
+[39;49m[0m[39;49m
+[39;49m[0m[00;32m[==================================================] 100% [39;49m[39;49m[0m[39;49m[0m[39;49m
+[39;49m[0m[39;49m
+[39;49m[0m[39;49m
+[39;49m[0m[39;49mOPTION BYTES BANK: 0
+[39;49m[0m[39;49m
+[39;49m[0m[39;49m   Read Out Protection:
+[39;49m[0m[39;49m
+[39;49m[0m[39;49m     RDP          : 0xAA (Level 0, no protection) 
+[39;49m[0m[39;49m
+[39;49m[0m[39;49m   BOR Level:
+[39;49m[0m[39;49m
+[39;49m[0m[39;49m     BOR_LEV      : 0x0 (BOR OFF) 
+[39;49m[0m[39;49m
+[39;49m[0m[39;49m   User Configuration:
+[39;49m[0m[39;49m
+[39;49m[0m[39;49m     IWDG1_SW     : 0x1 (Independent watchdog is controlled by software) 
+[39;49m[0m[39;49m     NRST_STOP    : 0x1 (STOP mode on Domain 1 is entering without reset) 
+[39;49m[0m[39;49m     NRST_STBY    : 0x1 (STANDBY mode on Domain 1 is entering without reset) 
+[39;49m[0m[39;49m     IO_HSLV      : 0x0 (Product working in the full voltage range, I/O speed optimization at low-voltage disabled) 
+[39;49m[0m[39;49m     FZ_IWDG_STOP : 0x1 (Independent watchdog is running in STOP mode) 
+[39;49m[0m[39;49m     FZ_IWDG_SDBY : 0x1 (Independent watchdog is running in STANDBY mode) 
+[39;49m[0m[39;49m
+[39;49m[0m[39;49m   Boot address Option Bytes:
+[39;49m[0m[39;49m
+[39;49m[0m[39;49m     BOOT_CM7_ADD0: 0x800  (0x8000000) 
+[39;49m[0m[39;49m     BOOT_CM7_ADD1: 0x1FF0  (0x1FF00000) 
+[39;49m[0m[39;49m
+[39;49m[0m[39;49m   PCROP Protection:
+[39;49m[0m[39;49m
+[39;49m[0m[39;49m     PROT_AREA_START: 0xFF  (0x800FF00) 
+[39;49m[0m[39;49m     PROT_AREA_END: 0x0  (0x80000FF) 
+[39;49m[0m[39;49m     DMEP         : 0x0 (Flash Bank PCROP zone is kept when RDP level regression (change from level 1 to 0) occurs) 
+[39;49m[0m[39;49m
+[39;49m[0m[39;49m   Write Protection:
+[39;49m[0m[39;49m
+[39;49m[0m[39;49m     WRPS0        : 0x1 (Write protection not active) 
+[39;49m[0m[39;49m     WRPS1        : 0x1 (Write protection not active) 
+[39;49m[0m[39;49m     WRPS2        : 0x1 (Write protection not active) 
+[39;49m[0m[39;49m     WRPS3        : 0x1 (Write protection not active) 
+[39;49m[0m[39;49m     WRPS4        : 0x1 (Write protection not active) 
+[39;49m[0m[39;49m     WRPS5        : 0x1 (Write protection not active) 
+[39;49m[0m[39;49m     WRPS6        : 0x1 (Write protection not active) 
+[39;49m[0m[39;49m     WRPS7        : 0x1 (Write protection not active) 
+[39;49m[0m[39;49m
+[39;49m[0m[39;49m   TCM_AXI Shared Configuration:
+[39;49m[0m[39;49m
+[39;49m[0m[39;49m     TCM_AXI_SHARED: 0x0 (64 KB ITCM : 320KB system AXI) 
+[39;49m[0m[39;49m     CPU_FREQ_BOOST: 0x0 (Feature disabled) 
+[39;49m[0m[39;49m
+Reading 32-bit memory content
+[39;49m[0m[39;49m  Size          : 16 Bytes
+[39;49m[0m[39;49m  Address:      : 0x5200200C
+[39;49m[0m[39;49m0x5200200C : 1FAF0030 00010000 00000000 00000001
+[39;49m[0m[39;49m
+Reading 32-bit memory content
+[39;49m[0m[39;49m  Size          : 4 Bytes
+[39;49m[0m[39;49m  Address:      : 0x58024818
+[39;49m[0m[39;49m0x58024818 : 00006000
+[39;49m[0m[39;49m
+
+[39;49m[0m[39;49m[0m

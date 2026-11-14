@@ -1,0 +1,21 @@
+{
+  "returncode": 0,
+  "block_size": 64,
+  "image_bytes": 122832,
+  "read_bytes": 122832,
+  "missing_bytes": 0,
+  "mismatch_bytes": 40259,
+  "first_mismatches": [
+    "0x8000d40",
+    "0x8000d41",
+    "0x8000d42",
+    "0x8000d43",
+    "0x8000d44",
+    "0x8000d45",
+    "0x8000d46",
+    "0x8000d47",
+    "0x8000d48",
+    "0x8000d49"
+  ],
+  "passed": false
+}

@@ -1,0 +1,23 @@
+[
+  {
+    "online": true,
+    "last_heartbeat_age": 11.6,
+    "uptime_s": 1,
+    "heap_free": 181139,
+    "stm32_connected": false
+  },
+  {
+    "online": true,
+    "last_heartbeat_age": 26.6,
+    "uptime_s": 1,
+    "heap_free": 181139,
+    "stm32_connected": false
+  },
+  {
+    "online": true,
+    "last_heartbeat_age": 9.4,
+    "uptime_s": 32,
+    "heap_free": 182503,
+    "stm32_connected": false
+  }
+]

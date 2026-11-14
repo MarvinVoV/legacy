@@ -1,0 +1,16 @@
+[1/8] Building C object CMakeFiles/stm32_project.elf.dir/Application/Tasks/SonarTask/Src/sonar_task.c.obj
+[2/8] Building C object CMakeFiles/stm32_project.elf.dir/Application/Tasks/ServoTask/Src/servo_task.c.obj
+[3/8] Building C object CMakeFiles/stm32_project.elf.dir/Core/Src/stm32h7xx_it.c.obj
+[4/8] Building C object CMakeFiles/stm32_project.elf.dir/Application/Tasks/MotorTask/Src/motor_task.c.obj
+[5/8] Building C object CMakeFiles/stm32_project.elf.dir/Application/Tasks/ImuTask/Src/imu_task.c.obj
+[6/8] Building C object CMakeFiles/stm32_project.elf.dir/Application/Tasks/PowerTask/Src/power_task.c.obj
+[7/8] Building C object CMakeFiles/stm32_project.elf.dir/Core/Src/main.c.obj
+[8/8] Linking C executable stm32_project.elf; Building /Users/sunyameng/github/legacy/CodeMyCar/stm32_project/build/NoSonar/stm32_project.hex / Building /Users/sunyameng/github/legacy/CodeMyCar/stm32_project/build/NoSonar/stm32_project.bin
+Memory region         Used Size  Region Size  %age Used
+         DTCMRAM:       69008 B       128 KB     52.65%
+         DMA_RAM:        3392 B         8 KB     41.41%
+          RAM_D1:           0 B       312 KB      0.00%
+          RAM_D2:           0 B        32 KB      0.00%
+          RAM_D3:           0 B        16 KB      0.00%
+         ITCMRAM:           0 B        64 KB      0.00%
+           FLASH:      122832 B         1 MB     11.71%

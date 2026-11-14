@@ -1,0 +1,11 @@
+{
+  "binary_sha256": "ecade1d1e55b5f83293696ec6b9dc5d55ca7509d00f971f0ea978c56d08aaff6",
+  "bytes": 122832,
+  "neutral_us": 1470,
+  "profile": "NoSonar,250MHz,cacheON,asyncI2C",
+  "flash_verified": true,
+  "reason": "External supply OFF: CubeProgrammer full download+verify PASS, reset PASS; TIM2 PSC249 ARR19999 CCR1=1470",
+  "host_regression": "PASS",
+  "arm_build": "PASS",
+  "imu_hil_pending": true
+}

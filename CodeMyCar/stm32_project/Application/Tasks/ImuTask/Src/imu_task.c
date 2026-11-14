@@ -13,6 +13,7 @@
 #include "pkt_protocol.h"
 #include "sensor_protocol.h"
 #include "task.h"
+#include "imu_i2c_transport.h"
 
 #define IMU_TASK_PERIOD_MS 10u /* 100 Hz */
 #define IMU_LOG_PERIOD_MS 100u /* 10 Hz */
@@ -96,6 +97,8 @@ static void ImuTask_doTask(void* pvParameters)
     uint32_t lastWake = osKernelGetTickCount();
     uint32_t lastLog = lastWake;
     uint32_t lastTimingLog = lastWake;
+    uint32_t lastBusLog = lastWake;
+    uint32_t lastNoDataLog = lastWake;
     bool needInit = true;
     uint32_t nextInitTick = 0u;
     uint32_t initDoneHal = 0u;
@@ -160,8 +163,9 @@ static void ImuTask_doTask(void* pvParameters)
                          (unsigned long)svc->grvCount,
                          (unsigned long)svc->gyroCount);
             }
-            else
+            else if (now-lastNoDataLog >= 1000u)
             {
+                lastNoDataLog = now;
                 extern volatile uint32_t sh2_diag_reads, sh2_diag_packets;
                 extern volatile uint8_t sh2_diag_last_hdr[4], sh2_diag_last_pl[4];
                 LOG_WARN(LOG_MODULE_SENSOR,
@@ -172,6 +176,18 @@ static void ImuTask_doTask(void* pvParameters)
                          sh2_diag_last_hdr[2], sh2_diag_last_hdr[3],
                          sh2_diag_last_pl[0], sh2_diag_last_pl[1],
                          sh2_diag_last_pl[2], sh2_diag_last_pl[3]);
+            }
+            if (now-lastBusLog >= 1000u &&
+                (g_imuI2cErrors || g_imuI2cTimeouts))
+            {
+                lastBusLog = now;
+                LOG_WARN(LOG_MODULE_SENSOR,
+                         "IMU_BUS err=%lu tout=%lu busy=%lu rec=%lu fail=%lu ISR=%08lX state=%lu code=%08lX pins=%lu",
+                         (unsigned long)g_imuI2cErrors, (unsigned long)g_imuI2cTimeouts,
+                         (unsigned long)g_imuI2cBusy, (unsigned long)g_imuI2cRecoveries,
+                         (unsigned long)g_imuI2cRecoveryFailures,
+                         (unsigned long)g_imuI2cLastIsr, (unsigned long)g_imuI2cLastState,
+                         (unsigned long)g_imuI2cLastError, (unsigned long)g_imuI2cLastPins);
             }
             if (now-lastTimingLog >= 1000u && svc->grvCount && svc->gyroCount)
             {

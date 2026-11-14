@@ -1,0 +1,302 @@
+{
+  "read_only": true,
+  "seconds": 40,
+  "counts": {
+    "data/DEV_1/log": 508,
+    "data/DEV_1/sensor": 280,
+    "data/DEV_1/motion": 40,
+    "data/DEV_1/status": 1,
+    "data/DEV_1/heartbeat": 1
+  },
+  "live_heartbeats": [
+    {
+      "heap": 182375,
+      "heap_min": 82828,
+      "uptime_s": 62,
+      "stm32_connected": true,
+      "session_id": 236695254,
+      "esp_build": "c0fe2de79173-dirty",
+      "esp_idf": "v6.1",
+      "stm32_build": "dd5759f967f8",
+      "stm32_dirty": true,
+      "protocol_version": 2
+    }
+  ],
+  "samples": [
+    {
+      "sample": 1,
+      "online": true,
+      "last_heartbeat_age": 1.0,
+      "uptime_s": 32,
+      "heap_free": 182363,
+      "stm32_connected": true,
+      "stm_uptime_ms": 33584,
+      "stm_report_age_s": 0.6,
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 0,
+        "age_ms": 114,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "sample": 2,
+      "online": true,
+      "last_heartbeat_age": 5.0,
+      "uptime_s": 32,
+      "heap_free": 182363,
+      "stm32_connected": true,
+      "stm_uptime_ms": 37594,
+      "stm_report_age_s": 0.53,
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 0,
+        "age_ms": 153,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "sample": 3,
+      "online": true,
+      "last_heartbeat_age": 9.0,
+      "uptime_s": 32,
+      "heap_free": 182363,
+      "stm32_connected": true,
+      "stm_uptime_ms": 41628,
+      "stm_report_age_s": 0.49,
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 0,
+        "age_ms": 157,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "sample": 4,
+      "online": true,
+      "last_heartbeat_age": 13.0,
+      "uptime_s": 32,
+      "heap_free": 182363,
+      "stm32_connected": true,
+      "stm_uptime_ms": 45659,
+      "stm_report_age_s": 0.5,
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 0,
+        "age_ms": 114,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "sample": 5,
+      "online": true,
+      "last_heartbeat_age": 17.0,
+      "uptime_s": 32,
+      "heap_free": 182363,
+      "stm32_connected": true,
+      "stm_uptime_ms": 49669,
+      "stm_report_age_s": 0.52,
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 0,
+        "age_ms": 192,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "sample": 6,
+      "online": true,
+      "last_heartbeat_age": 21.0,
+      "uptime_s": 32,
+      "heap_free": 182363,
+      "stm32_connected": true,
+      "stm_uptime_ms": 53727,
+      "stm_report_age_s": 0.37,
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 0,
+        "age_ms": 181,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "sample": 7,
+      "online": true,
+      "last_heartbeat_age": 25.1,
+      "uptime_s": 32,
+      "heap_free": 182363,
+      "stm32_connected": true,
+      "stm_uptime_ms": 57894,
+      "stm_report_age_s": 0.3,
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 0,
+        "age_ms": 214,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "sample": 8,
+      "online": true,
+      "last_heartbeat_age": 29.1,
+      "uptime_s": 32,
+      "heap_free": 182363,
+      "stm32_connected": true,
+      "stm_uptime_ms": 61942,
+      "stm_report_age_s": 0.31,
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 0,
+        "age_ms": 58,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "sample": 9,
+      "online": true,
+      "last_heartbeat_age": 3.1,
+      "uptime_s": 62,
+      "heap_free": 182375,
+      "stm32_connected": true,
+      "stm_uptime_ms": 65955,
+      "stm_report_age_s": 0.26,
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 0,
+        "age_ms": 265,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "sample": 10,
+      "online": true,
+      "last_heartbeat_age": 7.1,
+      "uptime_s": 62,
+      "heap_free": 182375,
+      "stm32_connected": true,
+      "stm_uptime_ms": 69964,
+      "stm_report_age_s": 0.24,
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 0,
+        "age_ms": 241,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "sample": 11,
+      "online": true,
+      "last_heartbeat_age": 11.1,
+      "uptime_s": 62,
+      "heap_free": 182375,
+      "stm32_connected": true,
+      "stm_uptime_ms": 73976,
+      "stm_report_age_s": 0.33,
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 0,
+        "age_ms": 328,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    }
+  ]
+}

@@ -1,0 +1,207 @@
+{
+  "test": "suspended_servo_left_center_right_center",
+  "motor_rpm_targets": [
+    0,
+    0
+  ],
+  "firmware_neutral_us": 1546,
+  "new_1470_neutral_not_flashed": true,
+  "stages": [
+    {
+      "stage": "left",
+      "curve": -1.0,
+      "computed_lighting_direction_confirmed": true,
+      "lighting_sample": {
+        "mode": 3,
+        "emotion": "calm",
+        "voice": 0,
+        "flags": 0,
+        "intensity": 100,
+        "remaining_ms": 0,
+        "accepted": 0,
+        "rejected": 0,
+        "session_id": 236695254,
+        "uptime_ms": 505719,
+        "epoch": 0,
+        "pixels": [
+          6,
+          2,
+          0,
+          10,
+          4,
+          0,
+          11,
+          4,
+          0,
+          0,
+          7,
+          3,
+          0,
+          7,
+          3,
+          0,
+          7,
+          3
+        ]
+      }
+    },
+    {
+      "stage": "center",
+      "curve": 0,
+      "computed_lighting_direction_confirmed": true,
+      "lighting_sample": {
+        "mode": 0,
+        "emotion": "calm",
+        "voice": 0,
+        "flags": 0,
+        "intensity": 100,
+        "remaining_ms": 0,
+        "accepted": 0,
+        "rejected": 0,
+        "session_id": 236695254,
+        "uptime_ms": 511008,
+        "epoch": 0,
+        "pixels": [
+          0,
+          6,
+          2,
+          0,
+          6,
+          2,
+          0,
+          6,
+          2,
+          0,
+          6,
+          2,
+          0,
+          6,
+          2,
+          0,
+          6,
+          2
+        ]
+      }
+    },
+    {
+      "stage": "right",
+      "curve": 1.0,
+      "computed_lighting_direction_confirmed": true,
+      "lighting_sample": {
+        "mode": 4,
+        "emotion": "calm",
+        "voice": 0,
+        "flags": 0,
+        "intensity": 100,
+        "remaining_ms": 0,
+        "accepted": 0,
+        "rejected": 0,
+        "session_id": 236695254,
+        "uptime_ms": 515987,
+        "epoch": 0,
+        "pixels": [
+          0,
+          2,
+          1,
+          0,
+          2,
+          1,
+          0,
+          2,
+          1,
+          7,
+          2,
+          0,
+          6,
+          2,
+          0,
+          4,
+          1,
+          0
+        ]
+      }
+    },
+    {
+      "stage": "center_final",
+      "curve": 0,
+      "computed_lighting_direction_confirmed": true,
+      "lighting_sample": {
+        "mode": 0,
+        "emotion": "calm",
+        "voice": 0,
+        "flags": 0,
+        "intensity": 100,
+        "remaining_ms": 0,
+        "accepted": 0,
+        "rejected": 0,
+        "session_id": 236695254,
+        "uptime_ms": 521040,
+        "epoch": 0,
+        "pixels": [
+          0,
+          4,
+          2,
+          0,
+          4,
+          2,
+          0,
+          4,
+          2,
+          0,
+          4,
+          2,
+          0,
+          4,
+          2,
+          0,
+          4,
+          2
+        ]
+      }
+    }
+  ],
+  "passed": true,
+  "initial_stop": {
+    "ok": true,
+    "stopped": true,
+    "accepted": true,
+    "confirmed": true,
+    "seq": 12
+  },
+  "final_stop": {
+    "ok": true,
+    "stopped": true,
+    "accepted": true,
+    "confirmed": true,
+    "seq": 13
+  },
+  "final_state": {
+    "ok": true,
+    "online": true,
+    "stm32_connected": true,
+    "motion_supported": true,
+    "motion": {
+      "state": "idle",
+      "mode": 0,
+      "fault": false,
+      "lease_expired": false,
+      "error": 0,
+      "heading_source": "encoder",
+      "seq": 13,
+      "age_ms": 3,
+      "stale": false
+    },
+    "pose": {
+      "x_cm": 4.3,
+      "y_cm": -1.2,
+      "heading_deg": 3.054,
+      "odometer_cm": 4.2
+    },
+    "velocity": {
+      "linear_cm_s": 0.0,
+      "angular_deg_s": 0.0
+    }
+  },
+  "manual_confirmation": "用户确认：动作平稳、方向正确，无异常",
+  "evidence_limit": "lighting方向来自已提交PWM，不是轮角传感器；本轮验证执行响应，未验收机械中位正直"
+}

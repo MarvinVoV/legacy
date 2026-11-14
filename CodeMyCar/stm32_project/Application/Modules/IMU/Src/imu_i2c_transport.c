@@ -11,6 +11,44 @@ static volatile HAL_StatusTypeDef s_result;
 volatile uint32_t g_imuI2cCompletions;
 volatile uint32_t g_imuI2cTimeouts;
 volatile uint32_t g_imuI2cErrors;
+volatile uint32_t g_imuI2cBusy;
+volatile uint32_t g_imuI2cRecoveries;
+volatile uint32_t g_imuI2cRecoveryFailures;
+volatile uint32_t g_imuI2cLastIsr, g_imuI2cLastState, g_imuI2cLastError;
+volatile uint32_t g_imuI2cLastPins;
+static bool s_recovered;
+static uint32_t s_lastRecoveryMs;
+
+/* Exclusive ImuTask ownership: quiesce IRQs before invalidating any transfer
+ * buffer. This resets peripheral/HAL state, not the sensor or its yaw reference.
+ * A physically held-low bus may still require wiring/power repair. */
+static HAL_StatusTypeDef recover(void)
+{
+    g_imuI2cLastIsr = hi2c1.Instance->ISR;
+    g_imuI2cLastState = hi2c1.State;
+    g_imuI2cLastError = hi2c1.ErrorCode;
+    g_imuI2cLastPins = (uint32_t)HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_6) |
+        ((uint32_t)HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_7) << 1);
+    HAL_NVIC_DisableIRQ(I2C1_EV_IRQn);
+    HAL_NVIC_DisableIRQ(I2C1_ER_IRQn);
+    s_active = false;
+    const HAL_StatusTypeDef stopped = HAL_I2C_DeInit(&hi2c1);
+    hi2c1.pBuffPtr = NULL;
+    const HAL_StatusTypeDef initialized = HAL_I2C_Init(&hi2c1);
+    HAL_NVIC_ClearPendingIRQ(I2C1_EV_IRQn);
+    HAL_NVIC_ClearPendingIRQ(I2C1_ER_IRQn);
+    (void)xSemaphoreTake(s_completion, 0u);
+    HAL_NVIC_EnableIRQ(I2C1_EV_IRQn);
+    HAL_NVIC_EnableIRQ(I2C1_ER_IRQn);
+    s_lastRecoveryMs = HAL_GetTick();
+    s_recovered = true;
+    ++g_imuI2cRecoveries;
+    if (stopped != HAL_OK || initialized != HAL_OK) {
+        ++g_imuI2cRecoveryFailures;
+        return HAL_ERROR;
+    }
+    return HAL_OK;
+}
 
 static void complete(I2C_HandleTypeDef *bus, HAL_StatusTypeDef status)
 {
@@ -52,6 +90,17 @@ HAL_StatusTypeDef ImuI2c_Transfer(bool receive, uint16_t address,
     if (started != HAL_OK) {
         s_active = false;
         ++g_imuI2cErrors;
+        if (started == HAL_BUSY) {
+            ++g_imuI2cBusy;
+            /* At most four BUSY recoveries/s; never loop/reset repeatedly inside
+             * one call or retry an uncertain write. The caller owns retries. */
+            if (!s_recovered || HAL_GetTick()-s_lastRecoveryMs >= 250u) {
+                if (recover() != HAL_OK) return HAL_ERROR;
+            }
+            /* SH-2 polls read() while opening. Yield on persistent BUSY rather
+             * than burning hundreds of thousands of failed reads per second. */
+            vTaskDelay(pdMS_TO_TICKS(1u));
+        }
         return started;
     }
     if (xSemaphoreTake(s_completion, pdMS_TO_TICKS(timeoutMs)) == pdTRUE) return s_result;
@@ -59,17 +108,7 @@ HAL_StatusTypeDef ImuI2c_Transfer(bool receive, uint16_t address,
     /* A timed-out IT operation must NOT outlive the caller's stack buffer.
      * Disable both IRQs and stop/reinitialize the peripheral before returning.
      * No asynchronous abort is left pointing at an expired header/chunk. */
-    HAL_NVIC_DisableIRQ(I2C1_EV_IRQn);
-    HAL_NVIC_DisableIRQ(I2C1_ER_IRQn);
-    s_active = false;
     ++g_imuI2cTimeouts;
-    (void)HAL_I2C_DeInit(&hi2c1);
-    hi2c1.pBuffPtr = NULL;
-    const HAL_StatusTypeDef recovered = HAL_I2C_Init(&hi2c1);
-    HAL_NVIC_ClearPendingIRQ(I2C1_EV_IRQn);
-    HAL_NVIC_ClearPendingIRQ(I2C1_ER_IRQn);
-    (void)xSemaphoreTake(s_completion, 0u);
-    HAL_NVIC_EnableIRQ(I2C1_EV_IRQn);
-    HAL_NVIC_EnableIRQ(I2C1_ER_IRQn);
+    const HAL_StatusTypeDef recovered = recover();
     return recovered == HAL_OK ? HAL_TIMEOUT : HAL_ERROR;
 }
