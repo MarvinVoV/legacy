@@ -1,0 +1,6662 @@
+{
+  "scope": "Both boards USB, new power board removed, TB GND direct STM, user ready: forward50mmps10seconds only",
+  "limitations": [
+    "No ground driving/accuracy test",
+    "No independent supply root-cause certification"
+  ],
+  "results": [
+    {
+      "case": "initial_stop",
+      "passed": true,
+      "stop": {
+        "ms": 111.3,
+        "reply": {
+          "ok": true,
+          "stopped": true,
+          "accepted": true,
+          "confirmed": true,
+          "seq": 26
+        }
+      }
+    },
+    {
+      "case": "dual_usb_forward_50mmps_10s",
+      "passed": true,
+      "command": {
+        "linear_mmps": 50,
+        "seconds": 10
+      },
+      "ack_count": 80,
+      "first_ack_ms": 92.9,
+      "max_ack_gap_ms": 268.1,
+      "left_tail_mmps": [
+        50,
+        48,
+        50,
+        49,
+        50,
+        50,
+        49,
+        47,
+        52,
+        50,
+        51,
+        53,
+        50,
+        54,
+        46,
+        50
+      ],
+      "right_tail_mmps": [
+        51,
+        51,
+        50,
+        51,
+        49,
+        49,
+        49,
+        52,
+        47,
+        50,
+        48,
+        47,
+        49,
+        47,
+        54,
+        48
+      ],
+      "motion_samples": [
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 0,
+          "right_mmps": 0,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 0,
+          "right_mmps": 0,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 4,
+          "right_mmps": 4,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 22,
+          "right_mmps": 35,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 32,
+          "right_mmps": 28,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 31,
+          "right_mmps": 28,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 28,
+          "right_mmps": 34,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 36,
+          "right_mmps": 39,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 38,
+          "right_mmps": 39,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 36,
+          "right_mmps": 42,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 40,
+          "right_mmps": 42,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 41,
+          "right_mmps": 41,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 41,
+          "right_mmps": 42,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 42,
+          "right_mmps": 41,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 40,
+          "right_mmps": 46,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 39,
+          "right_mmps": 46,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 44,
+          "right_mmps": 43,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 44,
+          "right_mmps": 44,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 42,
+          "right_mmps": 46,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 46,
+          "right_mmps": 43,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 43,
+          "right_mmps": 47,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 43,
+          "right_mmps": 46,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 46,
+          "right_mmps": 44,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 43,
+          "right_mmps": 48,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 46,
+          "right_mmps": 46,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 45,
+          "right_mmps": 49,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 44,
+          "right_mmps": 50,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 47,
+          "right_mmps": 46,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 47,
+          "right_mmps": 47,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 46,
+          "right_mmps": 48,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 47,
+          "right_mmps": 49,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 46,
+          "right_mmps": 49,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 46,
+          "right_mmps": 48,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 47,
+          "right_mmps": 47,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 46,
+          "right_mmps": 48,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 48,
+          "right_mmps": 49,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 46,
+          "right_mmps": 50,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 51,
+          "right_mmps": 49,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 47,
+          "right_mmps": 51,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 48,
+          "right_mmps": 48,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 49,
+          "right_mmps": 51,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 48,
+          "right_mmps": 49,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 52,
+          "right_mmps": 49,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 52,
+          "right_mmps": 48,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 49,
+          "right_mmps": 48,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 50,
+          "right_mmps": 49,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 47,
+          "right_mmps": 50,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 52,
+          "right_mmps": 49,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 49,
+          "right_mmps": 51,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 51,
+          "right_mmps": 49,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 53,
+          "right_mmps": 50,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 49,
+          "right_mmps": 49,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 49,
+          "right_mmps": 48,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 48,
+          "right_mmps": 49,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 48,
+          "right_mmps": 51,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 50,
+          "right_mmps": 49,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 47,
+          "right_mmps": 50,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 53,
+          "right_mmps": 48,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 48,
+          "right_mmps": 52,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 48,
+          "right_mmps": 48,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 46,
+          "right_mmps": 51,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 50,
+          "right_mmps": 51,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 50,
+          "right_mmps": 51,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 49,
+          "right_mmps": 52,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 52,
+          "right_mmps": 50,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 50,
+          "right_mmps": 51,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 49,
+          "right_mmps": 50,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 53,
+          "right_mmps": 50,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 49,
+          "right_mmps": 53,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 53,
+          "right_mmps": 50,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 50,
+          "right_mmps": 52,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 53,
+          "right_mmps": 49,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 54,
+          "right_mmps": 48,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 49,
+          "right_mmps": 51,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 53,
+          "right_mmps": 49,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 50,
+          "right_mmps": 53,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 53,
+          "right_mmps": 48,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 53,
+          "right_mmps": 49,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 52,
+          "right_mmps": 48,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 54,
+          "right_mmps": 49,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 49,
+          "right_mmps": 52,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 50,
+          "right_mmps": 51,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 50,
+          "right_mmps": 52,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 49,
+          "right_mmps": 51,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 55,
+          "right_mmps": 49,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 48,
+          "right_mmps": 54,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 54,
+          "right_mmps": 49,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 48,
+          "right_mmps": 54,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 49,
+          "right_mmps": 52,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 48,
+          "right_mmps": 52,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 49,
+          "right_mmps": 52,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 54,
+          "right_mmps": 49,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 50,
+          "right_mmps": 52,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 53,
+          "right_mmps": 49,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 51,
+          "right_mmps": 51,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 49,
+          "right_mmps": 52,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 50,
+          "right_mmps": 52,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 49,
+          "right_mmps": 51,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 52,
+          "right_mmps": 48,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 51,
+          "right_mmps": 49,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 52,
+          "right_mmps": 50,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 47,
+          "right_mmps": 52,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 53,
+          "right_mmps": 50,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 54,
+          "right_mmps": 49,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 53,
+          "right_mmps": 50,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 54,
+          "right_mmps": 49,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 54,
+          "right_mmps": 49,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 50,
+          "right_mmps": 50,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 53,
+          "right_mmps": 49,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 47,
+          "right_mmps": 51,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 53,
+          "right_mmps": 49,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 51,
+          "right_mmps": 49,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 54,
+          "right_mmps": 48,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 49,
+          "right_mmps": 51,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 50,
+          "right_mmps": 50,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 50,
+          "right_mmps": 50,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 49,
+          "right_mmps": 50,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 49,
+          "right_mmps": 49,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 51,
+          "right_mmps": 51,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 49,
+          "right_mmps": 51,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 53,
+          "right_mmps": 49,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 50,
+          "right_mmps": 50,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 49,
+          "right_mmps": 52,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 49,
+          "right_mmps": 51,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 48,
+          "right_mmps": 51,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 53,
+          "right_mmps": 49,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 49,
+          "right_mmps": 52,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 54,
+          "right_mmps": 47,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 47,
+          "right_mmps": 50,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 49,
+          "right_mmps": 49,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 45,
+          "right_mmps": 52,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 46,
+          "right_mmps": 51,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 51,
+          "right_mmps": 49,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 49,
+          "right_mmps": 50,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 54,
+          "right_mmps": 45,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 52,
+          "right_mmps": 48,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 48,
+          "right_mmps": 50,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 54,
+          "right_mmps": 47,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 51,
+          "right_mmps": 49,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 53,
+          "right_mmps": 46,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 52,
+          "right_mmps": 48,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 48,
+          "right_mmps": 50,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 53,
+          "right_mmps": 47,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 47,
+          "right_mmps": 52,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 47,
+          "right_mmps": 50,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 52,
+          "right_mmps": 47,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 53,
+          "right_mmps": 46,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 54,
+          "right_mmps": 45,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 46,
+          "right_mmps": 52,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 47,
+          "right_mmps": 51,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 48,
+          "right_mmps": 53,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 52,
+          "right_mmps": 48,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 50,
+          "right_mmps": 49,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 50,
+          "right_mmps": 51,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 48,
+          "right_mmps": 51,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 50,
+          "right_mmps": 50,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 49,
+          "right_mmps": 51,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 50,
+          "right_mmps": 49,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 50,
+          "right_mmps": 49,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 49,
+          "right_mmps": 49,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 47,
+          "right_mmps": 52,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 52,
+          "right_mmps": 47,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 50,
+          "right_mmps": 50,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 51,
+          "right_mmps": 48,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 53,
+          "right_mmps": 47,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 50,
+          "right_mmps": 49,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 54,
+          "right_mmps": 47,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 46,
+          "right_mmps": 54,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        },
+        {
+          "seq": 200,
+          "mode": 3,
+          "state": "running",
+          "fault": false,
+          "error": 0,
+          "lease_expired": false,
+          "left_mmps": 50,
+          "right_mmps": 48,
+          "goal_heading_source": "encoder",
+          "session_id": 3965383293
+        }
+      ]
+    },
+    {
+      "case": "stop_after_forward",
+      "passed": true,
+      "stop": {
+        "ms": 256.7,
+        "reply": {
+          "ok": true,
+          "stopped": true,
+          "accepted": true,
+          "confirmed": true,
+          "seq": 27
+        }
+      }
+    },
+    {
+      "case": "final_stop",
+      "passed": true,
+      "stop": {
+        "ms": 137.0,
+        "reply": {
+          "ok": true,
+          "stopped": true,
+          "accepted": true,
+          "confirmed": true,
+          "seq": 28
+        }
+      }
+    }
+  ],
+  "events": [
+    {
+      "t": 870850.887189125,
+      "kind": "ack",
+      "data": {
+        "seq": 26,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870850.95857575,
+      "kind": "motion",
+      "data": {
+        "seq": 26,
+        "mode": 0,
+        "state": "idle",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870851.045538625,
+      "kind": "motion",
+      "data": {
+        "seq": 26,
+        "mode": 0,
+        "state": "idle",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870851.27540625,
+      "kind": "motion",
+      "data": {
+        "seq": 26,
+        "mode": 0,
+        "state": "idle",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870851.275550875,
+      "kind": "motion",
+      "data": {
+        "seq": 26,
+        "mode": 0,
+        "state": "idle",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870851.367311416,
+      "kind": "motion",
+      "data": {
+        "seq": 26,
+        "mode": 0,
+        "state": "idle",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870851.471032,
+      "kind": "motion",
+      "data": {
+        "seq": 26,
+        "mode": 0,
+        "state": "idle",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870851.555154,
+      "kind": "motion",
+      "data": {
+        "seq": 26,
+        "mode": 0,
+        "state": "idle",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870851.678075,
+      "kind": "motion",
+      "data": {
+        "seq": 26,
+        "mode": 0,
+        "state": "idle",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870851.763568916,
+      "kind": "motion",
+      "data": {
+        "seq": 26,
+        "mode": 0,
+        "state": "idle",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870851.798388333,
+      "kind": "motion",
+      "data": {
+        "seq": 26,
+        "mode": 0,
+        "state": "idle",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870851.880353083,
+      "kind": "motion",
+      "data": {
+        "seq": 26,
+        "mode": 0,
+        "state": "idle",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870852.399791041,
+      "kind": "motion",
+      "data": {
+        "seq": 26,
+        "mode": 0,
+        "state": "idle",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870853.545411708,
+      "kind": "motion",
+      "data": {
+        "seq": 26,
+        "mode": 0,
+        "state": "idle",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870854.059250333,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870854.059331208,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870854.132466958,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870854.132582416,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870854.132661416,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 4,
+        "right_mmps": 4,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870854.23719375,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 22,
+        "right_mmps": 35,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870854.338786791,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870854.33886925,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 32,
+        "right_mmps": 28,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870854.338931625,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 31,
+        "right_mmps": 28,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870854.442186916,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870854.442301125,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 28,
+        "right_mmps": 34,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870854.547624041,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870854.547815666,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 36,
+        "right_mmps": 39,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870854.547951708,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 38,
+        "right_mmps": 39,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870854.603338041,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870854.603492416,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 36,
+        "right_mmps": 42,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870854.746978875,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 40,
+        "right_mmps": 42,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870854.752030875,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 41,
+        "right_mmps": 41,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870854.866127916,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 41,
+        "right_mmps": 42,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870854.871392958,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870854.871460541,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 42,
+        "right_mmps": 41,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870854.954837708,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870854.954934708,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 40,
+        "right_mmps": 46,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870854.955010125,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 39,
+        "right_mmps": 46,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870855.059678958,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870855.0599085,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 44,
+        "right_mmps": 43,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870855.060085708,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 44,
+        "right_mmps": 44,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870855.08262275,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 42,
+        "right_mmps": 46,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870855.177412875,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870855.177474666,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 46,
+        "right_mmps": 43,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870855.177523333,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 43,
+        "right_mmps": 47,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870855.265709791,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870855.265858,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 43,
+        "right_mmps": 46,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870855.367424416,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 46,
+        "right_mmps": 44,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870855.371139,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 43,
+        "right_mmps": 48,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870855.481032041,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870855.481148375,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 46,
+        "right_mmps": 46,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870855.481267541,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 45,
+        "right_mmps": 49,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870855.562402375,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870855.562607416,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 44,
+        "right_mmps": 50,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870855.591589333,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870855.59170675,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 47,
+        "right_mmps": 46,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870855.757502291,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 47,
+        "right_mmps": 47,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870855.767392916,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 46,
+        "right_mmps": 48,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870855.793462,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 47,
+        "right_mmps": 49,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870855.798566833,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870855.798689375,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 46,
+        "right_mmps": 49,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870855.890379166,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870855.890474833,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 46,
+        "right_mmps": 48,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870855.890573375,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 47,
+        "right_mmps": 47,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870855.960273583,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870856.054423041,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 46,
+        "right_mmps": 48,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870856.09489625,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870856.100274166,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 48,
+        "right_mmps": 49,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870856.19739725,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 46,
+        "right_mmps": 50,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870856.197455375,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 51,
+        "right_mmps": 49,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870856.3048965,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870856.305043625,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 47,
+        "right_mmps": 51,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870856.305154708,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 48,
+        "right_mmps": 48,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870856.414118583,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870856.414301208,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 49,
+        "right_mmps": 51,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870856.414519333,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 48,
+        "right_mmps": 49,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870856.509446625,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870856.509641708,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 52,
+        "right_mmps": 49,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870856.50979975,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 52,
+        "right_mmps": 48,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870856.600365291,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 49,
+        "right_mmps": 48,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870856.702386166,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870856.702473875,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 50,
+        "right_mmps": 49,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870856.702594958,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 47,
+        "right_mmps": 50,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870856.733574291,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870856.733767291,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 52,
+        "right_mmps": 49,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870856.780048041,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 49,
+        "right_mmps": 51,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870856.859433666,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870856.859484916,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 51,
+        "right_mmps": 49,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870856.880635625,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 53,
+        "right_mmps": 50,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870857.027860333,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870857.028026583,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 49,
+        "right_mmps": 49,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870857.028148,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 49,
+        "right_mmps": 48,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870857.080686125,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 48,
+        "right_mmps": 49,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870857.189576291,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870857.18965375,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 48,
+        "right_mmps": 51,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870857.189726916,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 50,
+        "right_mmps": 49,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870857.262247458,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870857.262297708,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 47,
+        "right_mmps": 50,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870857.360644958,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 53,
+        "right_mmps": 48,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870857.3652185,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870857.365293,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 48,
+        "right_mmps": 52,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870857.528234083,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 48,
+        "right_mmps": 48,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870857.535204,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 46,
+        "right_mmps": 51,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870857.569475291,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870857.57612475,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 50,
+        "right_mmps": 51,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870857.650164666,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870857.650253041,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 50,
+        "right_mmps": 51,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870857.65031675,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 49,
+        "right_mmps": 52,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870857.752782875,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870857.752887375,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 52,
+        "right_mmps": 50,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870857.752964,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 50,
+        "right_mmps": 51,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870857.844503375,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870857.844605666,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 49,
+        "right_mmps": 50,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870857.844678333,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 53,
+        "right_mmps": 50,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870857.866245916,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 49,
+        "right_mmps": 53,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870858.056209041,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 53,
+        "right_mmps": 50,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870858.063589041,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870858.063686125,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 50,
+        "right_mmps": 52,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870858.082949875,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870858.083146666,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 53,
+        "right_mmps": 49,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870858.210789708,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 54,
+        "right_mmps": 48,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870858.21573925,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 49,
+        "right_mmps": 51,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870858.264025916,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870858.264131625,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 53,
+        "right_mmps": 49,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870858.449563583,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 50,
+        "right_mmps": 53,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870858.45311575,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870858.453163708,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 53,
+        "right_mmps": 48,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870858.453195708,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 53,
+        "right_mmps": 49,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870858.556584083,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870858.55667975,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 52,
+        "right_mmps": 48,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870858.57629425,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 54,
+        "right_mmps": 49,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870858.580679083,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 49,
+        "right_mmps": 52,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870858.67822825,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870858.678306333,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 50,
+        "right_mmps": 51,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870858.678369791,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 50,
+        "right_mmps": 52,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870858.783650791,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870858.783755375,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 49,
+        "right_mmps": 51,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870858.783840833,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 55,
+        "right_mmps": 49,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870858.886382625,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870858.886491,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 48,
+        "right_mmps": 54,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870858.886564208,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 54,
+        "right_mmps": 49,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870858.965181875,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870858.965301791,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 48,
+        "right_mmps": 54,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870858.98866975,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 49,
+        "right_mmps": 52,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870859.08255175,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 48,
+        "right_mmps": 52,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870859.180437791,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870859.180525791,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 49,
+        "right_mmps": 52,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870859.184168666,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 54,
+        "right_mmps": 49,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870859.252592541,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870859.252701416,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 50,
+        "right_mmps": 52,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870859.364728583,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870859.365069208,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 53,
+        "right_mmps": 49,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870859.365208,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 51,
+        "right_mmps": 51,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870859.482402666,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 49,
+        "right_mmps": 52,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870859.486364958,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 50,
+        "right_mmps": 52,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870859.558898791,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870859.559004541,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 49,
+        "right_mmps": 51,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870859.6013445,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870859.60140175,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 52,
+        "right_mmps": 48,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870859.60144375,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 51,
+        "right_mmps": 49,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870859.797608833,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 52,
+        "right_mmps": 50,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870859.804387833,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 47,
+        "right_mmps": 52,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870859.862951041,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870859.86668975,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870859.866743708,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 53,
+        "right_mmps": 50,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870859.866818791,
+      "kind": "motion",
+      "data": {
+        "seq": 0,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 53,
+        "right_mmps": 50,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870859.9302395,
+      "kind": "motion",
+      "data": {
+        "seq": 0,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 50,
+        "right_mmps": 50,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870859.997913875,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870859.998064625,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 54,
+        "right_mmps": 49,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870859.998251208,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 53,
+        "right_mmps": 50,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870860.078145625,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870860.078257666,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 54,
+        "right_mmps": 49,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870860.078339875,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 54,
+        "right_mmps": 49,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870860.210199333,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870860.210341333,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 50,
+        "right_mmps": 50,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870860.257307125,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 53,
+        "right_mmps": 49,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870860.356309791,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 47,
+        "right_mmps": 51,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870860.361969291,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870860.3620145,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 53,
+        "right_mmps": 49,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870860.522547333,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 51,
+        "right_mmps": 49,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870860.52991475,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870860.530028833,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 54,
+        "right_mmps": 48,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870860.533627166,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 49,
+        "right_mmps": 51,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870860.661015833,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870860.661055875,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 50,
+        "right_mmps": 50,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870860.661083916,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 50,
+        "right_mmps": 50,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870860.7570415,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 49,
+        "right_mmps": 50,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870860.760514125,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870860.760593875,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 49,
+        "right_mmps": 49,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870860.858162375,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 51,
+        "right_mmps": 51,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870860.864173416,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870860.864227291,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 49,
+        "right_mmps": 51,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870860.936974125,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870860.937070083,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 53,
+        "right_mmps": 49,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870860.937167083,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 50,
+        "right_mmps": 50,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870861.035595625,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 49,
+        "right_mmps": 52,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870861.131150625,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870861.131267,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 49,
+        "right_mmps": 51,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870861.131340916,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 48,
+        "right_mmps": 51,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870861.237716916,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870861.237849,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 53,
+        "right_mmps": 49,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870861.2379935,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 49,
+        "right_mmps": 52,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870861.336184208,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 54,
+        "right_mmps": 47,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870861.450272625,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870861.454266625,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 47,
+        "right_mmps": 50,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870861.454368333,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 49,
+        "right_mmps": 49,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870861.5583555,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870861.558476625,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 45,
+        "right_mmps": 52,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870861.558566833,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 46,
+        "right_mmps": 51,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870861.578408875,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 51,
+        "right_mmps": 49,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870861.670052333,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870861.670152333,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 49,
+        "right_mmps": 50,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870861.839589333,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 54,
+        "right_mmps": 45,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870861.844889208,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870861.844960916,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870861.845076666,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 52,
+        "right_mmps": 48,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870861.852065125,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 48,
+        "right_mmps": 50,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870861.873004,
+      "kind": "motion",
+      "data": {
+        "seq": 1,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 48,
+        "right_mmps": 52,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870861.873093625,
+      "kind": "motion",
+      "data": {
+        "seq": 1,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 46,
+        "right_mmps": 53,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870861.975204166,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870861.975286583,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 54,
+        "right_mmps": 47,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870861.975347875,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 51,
+        "right_mmps": 49,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870862.095325666,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 53,
+        "right_mmps": 46,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870862.178435916,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870862.178622583,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 52,
+        "right_mmps": 48,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870862.178770125,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 48,
+        "right_mmps": 50,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870862.262756875,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870862.26281225,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 53,
+        "right_mmps": 47,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870862.293625375,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870862.293674916,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 47,
+        "right_mmps": 52,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870862.462899375,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 47,
+        "right_mmps": 50,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870862.467016916,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 52,
+        "right_mmps": 47,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870862.554974708,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870862.560558583,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 53,
+        "right_mmps": 46,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870862.560679416,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 54,
+        "right_mmps": 45,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870862.5894885,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870862.589597166,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 46,
+        "right_mmps": 52,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870862.589665,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 47,
+        "right_mmps": 51,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870862.764848958,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 48,
+        "right_mmps": 53,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870862.797920541,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 52,
+        "right_mmps": 48,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870862.804576416,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870862.804647958,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870862.804704,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 50,
+        "right_mmps": 49,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870862.804761416,
+      "kind": "motion",
+      "data": {
+        "seq": 2,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 49,
+        "right_mmps": 51,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870862.904025708,
+      "kind": "motion",
+      "data": {
+        "seq": 2,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 51,
+        "right_mmps": 48,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870863.011210583,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870863.01133925,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 50,
+        "right_mmps": 51,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870863.011434041,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 48,
+        "right_mmps": 51,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870863.06094725,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870863.061064458,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 50,
+        "right_mmps": 50,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870863.104496416,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 49,
+        "right_mmps": 51,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870863.210728166,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870863.210945041,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 50,
+        "right_mmps": 49,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870863.310325791,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 50,
+        "right_mmps": 49,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870863.410867166,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870863.410986958,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 49,
+        "right_mmps": 49,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870863.411068875,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 47,
+        "right_mmps": 52,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870863.513747458,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870863.513835541,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 52,
+        "right_mmps": 47,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870863.513906958,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 50,
+        "right_mmps": 50,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870863.560827,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870863.560969375,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 51,
+        "right_mmps": 48,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870863.686325625,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 53,
+        "right_mmps": 47,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870863.691000791,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870863.69109,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 50,
+        "right_mmps": 49,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870863.790829833,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 54,
+        "right_mmps": 47,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870863.797434666,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870863.797545708,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 46,
+        "right_mmps": 54,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870863.856492875,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 50,
+        "right_mmps": 48,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870864.009974791,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 49,
+        "right_mmps": 50,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870864.015385958,
+      "kind": "ack",
+      "data": {
+        "seq": 200,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870864.015462958,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 47,
+        "right_mmps": 51,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870864.015524958,
+      "kind": "motion",
+      "data": {
+        "seq": 200,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 54,
+        "right_mmps": 48,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870864.121360208,
+      "kind": "ack",
+      "data": {
+        "seq": 27,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870864.12146725,
+      "kind": "motion",
+      "data": {
+        "seq": 27,
+        "mode": 0,
+        "state": "idle",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 47,
+        "right_mmps": 51,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870864.121596166,
+      "kind": "motion",
+      "data": {
+        "seq": 27,
+        "mode": 0,
+        "state": "idle",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 43,
+        "right_mmps": 41,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870864.228426,
+      "kind": "motion",
+      "data": {
+        "seq": 27,
+        "mode": 0,
+        "state": "idle",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870864.369255333,
+      "kind": "ack",
+      "data": {
+        "seq": 28,
+        "ack": true,
+        "status": 0,
+        "session_id": 3965383293
+      }
+    },
+    {
+      "t": 870864.369445375,
+      "kind": "motion",
+      "data": {
+        "seq": 28,
+        "mode": 0,
+        "state": "idle",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3965383293
+      }
+    }
+  ],
+  "commands": [
+    {
+      "seq": 200,
+      "mono": 870853.966378041,
+      "unix": 1794651741.6238441,
+      "speed_mm_s": 50,
+      "http_ms": 4.8
+    },
+    {
+      "seq": 200,
+      "mono": 870854.086520333,
+      "unix": 1794651741.743986,
+      "speed_mm_s": 50,
+      "http_ms": 5.4
+    },
+    {
+      "seq": 200,
+      "mono": 870854.208554541,
+      "unix": 1794651741.8660202,
+      "speed_mm_s": 50,
+      "http_ms": 4.7
+    },
+    {
+      "seq": 200,
+      "mono": 870854.331759166,
+      "unix": 1794651741.989224,
+      "speed_mm_s": 50,
+      "http_ms": 6.9
+    },
+    {
+      "seq": 200,
+      "mono": 870854.4518665,
+      "unix": 1794651742.109331,
+      "speed_mm_s": 50,
+      "http_ms": 5.9
+    },
+    {
+      "seq": 200,
+      "mono": 870854.574294708,
+      "unix": 1794651742.231759,
+      "speed_mm_s": 50,
+      "http_ms": 6.1
+    },
+    {
+      "seq": 200,
+      "mono": 870854.698749541,
+      "unix": 1794651742.356214,
+      "speed_mm_s": 50,
+      "http_ms": 6.4
+    },
+    {
+      "seq": 200,
+      "mono": 870854.82379125,
+      "unix": 1794651742.4812539,
+      "speed_mm_s": 50,
+      "http_ms": 4.1
+    },
+    {
+      "seq": 200,
+      "mono": 870854.948834708,
+      "unix": 1794651742.606297,
+      "speed_mm_s": 50,
+      "http_ms": 8.0
+    },
+    {
+      "seq": 200,
+      "mono": 870855.073864333,
+      "unix": 1794651742.7313259,
+      "speed_mm_s": 50,
+      "http_ms": 5.7
+    },
+    {
+      "seq": 200,
+      "mono": 870855.194977708,
+      "unix": 1794651742.852438,
+      "speed_mm_s": 50,
+      "http_ms": 3.2
+    },
+    {
+      "seq": 200,
+      "mono": 870855.315049583,
+      "unix": 1794651742.972511,
+      "speed_mm_s": 50,
+      "http_ms": 6.0
+    },
+    {
+      "seq": 200,
+      "mono": 870855.440084291,
+      "unix": 1794651743.097544,
+      "speed_mm_s": 50,
+      "http_ms": 4.9
+    },
+    {
+      "seq": 200,
+      "mono": 870855.56510625,
+      "unix": 1794651743.2225652,
+      "speed_mm_s": 50,
+      "http_ms": 4.5
+    },
+    {
+      "seq": 200,
+      "mono": 870855.689204291,
+      "unix": 1794651743.3466618,
+      "speed_mm_s": 50,
+      "http_ms": 4.1
+    },
+    {
+      "seq": 200,
+      "mono": 870855.811783166,
+      "unix": 1794651743.46924,
+      "speed_mm_s": 50,
+      "http_ms": 2.5
+    },
+    {
+      "seq": 200,
+      "mono": 870855.936785333,
+      "unix": 1794651743.594242,
+      "speed_mm_s": 50,
+      "http_ms": 3.4
+    },
+    {
+      "seq": 200,
+      "mono": 870856.061814625,
+      "unix": 1794651743.7192802,
+      "speed_mm_s": 50,
+      "http_ms": 4.0
+    },
+    {
+      "seq": 200,
+      "mono": 870856.186854916,
+      "unix": 1794651743.8443148,
+      "speed_mm_s": 50,
+      "http_ms": 6.0
+    },
+    {
+      "seq": 200,
+      "mono": 870856.3076985,
+      "unix": 1794651743.965154,
+      "speed_mm_s": 50,
+      "http_ms": 4.4
+    },
+    {
+      "seq": 200,
+      "mono": 870856.432733458,
+      "unix": 1794651744.090189,
+      "speed_mm_s": 50,
+      "http_ms": 3.8
+    },
+    {
+      "seq": 200,
+      "mono": 870856.557759833,
+      "unix": 1794651744.215214,
+      "speed_mm_s": 50,
+      "http_ms": 4.2
+    },
+    {
+      "seq": 200,
+      "mono": 870856.682460541,
+      "unix": 1794651744.339915,
+      "speed_mm_s": 50,
+      "http_ms": 5.0
+    },
+    {
+      "seq": 200,
+      "mono": 870856.806163708,
+      "unix": 1794651744.463617,
+      "speed_mm_s": 50,
+      "http_ms": 4.4
+    },
+    {
+      "seq": 200,
+      "mono": 870856.930771625,
+      "unix": 1794651744.588224,
+      "speed_mm_s": 50,
+      "http_ms": 3.9
+    },
+    {
+      "seq": 200,
+      "mono": 870857.055767625,
+      "unix": 1794651744.7132201,
+      "speed_mm_s": 50,
+      "http_ms": 4.4
+    },
+    {
+      "seq": 200,
+      "mono": 870857.180804458,
+      "unix": 1794651744.8382561,
+      "speed_mm_s": 50,
+      "http_ms": 4.1
+    },
+    {
+      "seq": 200,
+      "mono": 870857.30578125,
+      "unix": 1794651744.963232,
+      "speed_mm_s": 50,
+      "http_ms": 2.5
+    },
+    {
+      "seq": 200,
+      "mono": 870857.430848458,
+      "unix": 1794651745.0883,
+      "speed_mm_s": 50,
+      "http_ms": 4.9
+    },
+    {
+      "seq": 200,
+      "mono": 870857.554287666,
+      "unix": 1794651745.211738,
+      "speed_mm_s": 50,
+      "http_ms": 4.0
+    },
+    {
+      "seq": 200,
+      "mono": 870857.676679083,
+      "unix": 1794651745.3341289,
+      "speed_mm_s": 50,
+      "http_ms": 4.6
+    },
+    {
+      "seq": 200,
+      "mono": 870857.798872958,
+      "unix": 1794651745.456322,
+      "speed_mm_s": 50,
+      "http_ms": 2.9
+    },
+    {
+      "seq": 200,
+      "mono": 870857.923897166,
+      "unix": 1794651745.581346,
+      "speed_mm_s": 50,
+      "http_ms": 3.6
+    },
+    {
+      "seq": 200,
+      "mono": 870858.048940708,
+      "unix": 1794651745.706389,
+      "speed_mm_s": 50,
+      "http_ms": 5.6
+    },
+    {
+      "seq": 200,
+      "mono": 870858.173716041,
+      "unix": 1794651745.831164,
+      "speed_mm_s": 50,
+      "http_ms": 5.1
+    },
+    {
+      "seq": 200,
+      "mono": 870858.298418375,
+      "unix": 1794651745.955866,
+      "speed_mm_s": 50,
+      "http_ms": 5.6
+    },
+    {
+      "seq": 200,
+      "mono": 870858.422603375,
+      "unix": 1794651746.08005,
+      "speed_mm_s": 50,
+      "http_ms": 3.2
+    },
+    {
+      "seq": 200,
+      "mono": 870858.547630666,
+      "unix": 1794651746.20508,
+      "speed_mm_s": 50,
+      "http_ms": 6.2
+    },
+    {
+      "seq": 200,
+      "mono": 870858.671066083,
+      "unix": 1794651746.328511,
+      "speed_mm_s": 50,
+      "http_ms": 4.5
+    },
+    {
+      "seq": 200,
+      "mono": 870858.794698916,
+      "unix": 1794651746.4521432,
+      "speed_mm_s": 50,
+      "http_ms": 3.7
+    },
+    {
+      "seq": 200,
+      "mono": 870858.919094208,
+      "unix": 1794651746.576538,
+      "speed_mm_s": 50,
+      "http_ms": 3.8
+    },
+    {
+      "seq": 200,
+      "mono": 870859.041134208,
+      "unix": 1794651746.698581,
+      "speed_mm_s": 50,
+      "http_ms": 4.4
+    },
+    {
+      "seq": 200,
+      "mono": 870859.165426291,
+      "unix": 1794651746.822869,
+      "speed_mm_s": 50,
+      "http_ms": 3.7
+    },
+    {
+      "seq": 200,
+      "mono": 870859.2902715,
+      "unix": 1794651746.947714,
+      "speed_mm_s": 50,
+      "http_ms": 4.4
+    },
+    {
+      "seq": 200,
+      "mono": 870859.415372833,
+      "unix": 1794651747.0728161,
+      "speed_mm_s": 50,
+      "http_ms": 8.5
+    },
+    {
+      "seq": 200,
+      "mono": 870859.539539125,
+      "unix": 1794651747.196981,
+      "speed_mm_s": 50,
+      "http_ms": 4.6
+    },
+    {
+      "seq": 200,
+      "mono": 870859.664347,
+      "unix": 1794651747.3217869,
+      "speed_mm_s": 50,
+      "http_ms": 3.4
+    },
+    {
+      "seq": 200,
+      "mono": 870859.789341166,
+      "unix": 1794651747.446781,
+      "speed_mm_s": 50,
+      "http_ms": 4.3
+    },
+    {
+      "seq": 200,
+      "mono": 870859.91437,
+      "unix": 1794651747.571809,
+      "speed_mm_s": 50,
+      "http_ms": 2.9
+    },
+    {
+      "seq": 200,
+      "mono": 870860.039432166,
+      "unix": 1794651747.696875,
+      "speed_mm_s": 50,
+      "http_ms": 5.5
+    },
+    {
+      "seq": 200,
+      "mono": 870860.164129625,
+      "unix": 1794651747.821569,
+      "speed_mm_s": 50,
+      "http_ms": 6.5
+    },
+    {
+      "seq": 200,
+      "mono": 870860.289170916,
+      "unix": 1794651747.9466088,
+      "speed_mm_s": 50,
+      "http_ms": 4.5
+    },
+    {
+      "seq": 200,
+      "mono": 870860.411181833,
+      "unix": 1794651748.068618,
+      "speed_mm_s": 50,
+      "http_ms": 1.9
+    },
+    {
+      "seq": 200,
+      "mono": 870860.531696583,
+      "unix": 1794651748.1891332,
+      "speed_mm_s": 50,
+      "http_ms": 4.7
+    },
+    {
+      "seq": 200,
+      "mono": 870860.656744916,
+      "unix": 1794651748.314181,
+      "speed_mm_s": 50,
+      "http_ms": 3.5
+    },
+    {
+      "seq": 200,
+      "mono": 870860.781780375,
+      "unix": 1794651748.4392169,
+      "speed_mm_s": 50,
+      "http_ms": 4.8
+    },
+    {
+      "seq": 200,
+      "mono": 870860.906816291,
+      "unix": 1794651748.564252,
+      "speed_mm_s": 50,
+      "http_ms": 4.4
+    },
+    {
+      "seq": 200,
+      "mono": 870861.031856875,
+      "unix": 1794651748.689292,
+      "speed_mm_s": 50,
+      "http_ms": 6.1
+    },
+    {
+      "seq": 200,
+      "mono": 870861.156228875,
+      "unix": 1794651748.813665,
+      "speed_mm_s": 50,
+      "http_ms": 4.3
+    },
+    {
+      "seq": 200,
+      "mono": 870861.281030416,
+      "unix": 1794651748.938466,
+      "speed_mm_s": 50,
+      "http_ms": 6.0
+    },
+    {
+      "seq": 200,
+      "mono": 870861.406081791,
+      "unix": 1794651749.063516,
+      "speed_mm_s": 50,
+      "http_ms": 6.2
+    },
+    {
+      "seq": 200,
+      "mono": 870861.529136125,
+      "unix": 1794651749.186569,
+      "speed_mm_s": 50,
+      "http_ms": 5.6
+    },
+    {
+      "seq": 200,
+      "mono": 870861.6508765,
+      "unix": 1794651749.308309,
+      "speed_mm_s": 50,
+      "http_ms": 3.2
+    },
+    {
+      "seq": 200,
+      "mono": 870861.77446125,
+      "unix": 1794651749.4318972,
+      "speed_mm_s": 50,
+      "http_ms": 4.9
+    },
+    {
+      "seq": 200,
+      "mono": 870861.898893458,
+      "unix": 1794651749.5563252,
+      "speed_mm_s": 50,
+      "http_ms": 3.6
+    },
+    {
+      "seq": 200,
+      "mono": 870862.02163325,
+      "unix": 1794651749.679064,
+      "speed_mm_s": 50,
+      "http_ms": 4.2
+    },
+    {
+      "seq": 200,
+      "mono": 870862.145112875,
+      "unix": 1794651749.8025432,
+      "speed_mm_s": 50,
+      "http_ms": 5.6
+    },
+    {
+      "seq": 200,
+      "mono": 870862.270140458,
+      "unix": 1794651749.927569,
+      "speed_mm_s": 50,
+      "http_ms": 1.8
+    },
+    {
+      "seq": 200,
+      "mono": 870862.39409975,
+      "unix": 1794651750.051529,
+      "speed_mm_s": 50,
+      "http_ms": 5.5
+    },
+    {
+      "seq": 200,
+      "mono": 870862.516009083,
+      "unix": 1794651750.1734378,
+      "speed_mm_s": 50,
+      "http_ms": 5.9
+    },
+    {
+      "seq": 200,
+      "mono": 870862.640313625,
+      "unix": 1794651750.2977421,
+      "speed_mm_s": 50,
+      "http_ms": 3.8
+    },
+    {
+      "seq": 200,
+      "mono": 870862.764116791,
+      "unix": 1794651750.421543,
+      "speed_mm_s": 50,
+      "http_ms": 3.3
+    },
+    {
+      "seq": 200,
+      "mono": 870862.889140375,
+      "unix": 1794651750.546567,
+      "speed_mm_s": 50,
+      "http_ms": 3.7
+    },
+    {
+      "seq": 200,
+      "mono": 870863.014162125,
+      "unix": 1794651750.6715882,
+      "speed_mm_s": 50,
+      "http_ms": 4.9
+    },
+    {
+      "seq": 200,
+      "mono": 870863.138493916,
+      "unix": 1794651750.7959192,
+      "speed_mm_s": 50,
+      "http_ms": 2.7
+    },
+    {
+      "seq": 200,
+      "mono": 870863.263534291,
+      "unix": 1794651750.920959,
+      "speed_mm_s": 50,
+      "http_ms": 4.6
+    },
+    {
+      "seq": 200,
+      "mono": 870863.385110333,
+      "unix": 1794651751.0425348,
+      "speed_mm_s": 50,
+      "http_ms": 4.6
+    },
+    {
+      "seq": 200,
+      "mono": 870863.510140083,
+      "unix": 1794651751.167567,
+      "speed_mm_s": 50,
+      "http_ms": 4.4
+    },
+    {
+      "seq": 200,
+      "mono": 870863.632478875,
+      "unix": 1794651751.289901,
+      "speed_mm_s": 50,
+      "http_ms": 1.9
+    },
+    {
+      "seq": 200,
+      "mono": 870863.756210166,
+      "unix": 1794651751.413633,
+      "speed_mm_s": 50,
+      "http_ms": 2.9
+    },
+    {
+      "seq": 200,
+      "mono": 870863.880823375,
+      "unix": 1794651751.538246,
+      "speed_mm_s": 50,
+      "http_ms": 5.4
+    }
+  ],
+  "completed": true,
+  "operator_confirmation": "Both rear wheels clearly rotated forward and stopped",
+  "physical_validation_passed": true
+}

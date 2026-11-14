@@ -11,6 +11,8 @@
   "imu_hil": "PASS 120s passive telemetry: counts5108->17099, no restart/reopen/error diagnostic; STM USB+IMU STM3V3, ESP external5V, TB6612OFF",
   "mechanical_neutral_recheck_pending": false,
   "external_supply_root_cause": "Not uniquely identified; flash with external supply OFF verified, ON remains unreliable",
-  "suspended_smoke": "PASS: ACK, wheel direction, final STOP; user confirms smooth servo return and motor forward/reverse after direct TB GND",
-  "ground_driving_validation_pending": true
+  "suspended_smoke": "PASS final dual-USB baseline: forward/reverse50mmps10s and small servo sweep all independently confirmed by user",
+  "ground_driving_validation_pending": true,
+  "motor_physical_validation_pending": false,
+  "setup": "Both USB; new power board completely removed; direct UART/commonGND; IMU STM3V3; TB GND directSTM; servo TB5V/PA5"
 }

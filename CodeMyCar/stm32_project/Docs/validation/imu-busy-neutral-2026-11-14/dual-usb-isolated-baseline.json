@@ -1,0 +1,245 @@
+{
+  "setup": "User confirms both USB, direct common GND, new power board completely disconnected, TB6612 off",
+  "rows": [
+    {
+      "at": 1794651661.499982,
+      "status": {
+        "online": true,
+        "last_heartbeat_age": 10.1,
+        "uptime_s": 33,
+        "stm32_connected": true,
+        "sensor_age_s": 0.2,
+        "imu_age_s": 0.2,
+        "yaw_deg": 0.0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 0,
+        "age_ms": 363,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      },
+      "pose": {
+        "x_cm": 0.0,
+        "y_cm": 0.0,
+        "heading_deg": 0.0,
+        "odometer_cm": 0.0
+      }
+    },
+    {
+      "at": 1794651666.512147,
+      "status": {
+        "online": true,
+        "last_heartbeat_age": 15.1,
+        "uptime_s": 33,
+        "stm32_connected": true,
+        "sensor_age_s": 0.1,
+        "imu_age_s": 0.1,
+        "yaw_deg": 0.0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 0,
+        "age_ms": 441,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      },
+      "pose": {
+        "x_cm": 0.0,
+        "y_cm": 0.0,
+        "heading_deg": 0.0,
+        "odometer_cm": 0.0
+      }
+    },
+    {
+      "at": 1794651671.5203378,
+      "status": {
+        "online": true,
+        "last_heartbeat_age": 20.1,
+        "uptime_s": 33,
+        "stm32_connected": true,
+        "sensor_age_s": 0.1,
+        "imu_age_s": 0.0,
+        "yaw_deg": 0.0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 0,
+        "age_ms": 440,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      },
+      "pose": {
+        "x_cm": 0.0,
+        "y_cm": 0.0,
+        "heading_deg": 0.0,
+        "odometer_cm": 0.0
+      }
+    },
+    {
+      "at": 1794651676.534229,
+      "status": {
+        "online": true,
+        "last_heartbeat_age": 25.1,
+        "uptime_s": 33,
+        "stm32_connected": true,
+        "sensor_age_s": 0.2,
+        "imu_age_s": 0.2,
+        "yaw_deg": 0.0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 0,
+        "age_ms": 320,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      },
+      "pose": {
+        "x_cm": 0.0,
+        "y_cm": 0.0,
+        "heading_deg": 0.0,
+        "odometer_cm": 0.0
+      }
+    },
+    {
+      "at": 1794651681.547366,
+      "status": {
+        "online": true,
+        "last_heartbeat_age": 0.2,
+        "uptime_s": 63,
+        "stm32_connected": true,
+        "sensor_age_s": 0.0,
+        "imu_age_s": 0.0,
+        "yaw_deg": 0.0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 0,
+        "age_ms": 482,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      },
+      "pose": {
+        "x_cm": 0.0,
+        "y_cm": 0.0,
+        "heading_deg": 0.0,
+        "odometer_cm": 0.0
+      }
+    },
+    {
+      "at": 1794651686.555669,
+      "status": {
+        "online": true,
+        "last_heartbeat_age": 5.2,
+        "uptime_s": 63,
+        "stm32_connected": true,
+        "sensor_age_s": 0.1,
+        "imu_age_s": 0.0,
+        "yaw_deg": 0.0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 0,
+        "age_ms": 433,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      },
+      "pose": {
+        "x_cm": 0.0,
+        "y_cm": 0.0,
+        "heading_deg": 0.0,
+        "odometer_cm": 0.0
+      }
+    },
+    {
+      "at": 1794651691.5610209,
+      "status": {
+        "online": true,
+        "last_heartbeat_age": 10.2,
+        "uptime_s": 63,
+        "stm32_connected": true,
+        "sensor_age_s": 0.2,
+        "imu_age_s": 0.1,
+        "yaw_deg": 0.0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 0,
+        "age_ms": 403,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      },
+      "pose": {
+        "x_cm": 0.0,
+        "y_cm": 0.0,
+        "heading_deg": 0.0,
+        "odometer_cm": 0.0
+      }
+    }
+  ],
+  "events": [],
+  "imu_first": [
+    "2026-11-14 18:21:01,511 [device.DEV_1] INFO: [INFO][sensor] IMU yaw=-0.01 deg rate=0.11 dps bias=0.000 st=3 grv=3500 gyro=3500 ",
+    "2026-11-14 18:21:01,515 [device.DEV_1] INFO: [INFO][sensor] IMU yaw=-0.01 deg rate=0.00 dps bias=0.000 st=3 grv=3510 gyro=3510 "
+  ],
+  "imu_last": [
+    "2026-11-14 18:21:31,359 [device.DEV_1] INFO: [INFO][sensor] IMU yaw=0.00 deg rate=0.00 dps bias=0.000 st=3 grv=6486 gyro=6486 ",
+    "2026-11-14 18:21:31,451 [device.DEV_1] INFO: [INFO][sensor] IMU yaw=0.00 deg rate=0.00 dps bias=0.000 st=3 grv=6496 gyro=6496 "
+  ]
+}
