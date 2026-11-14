@@ -1,0 +1,39 @@
+{
+  "samples": 787,
+  "sample_window_s": 163.8,
+  "seconds_since_last_sample": 0.2,
+  "first5s_median_yaw": -0.1,
+  "last10s_median_yaw": -46.9,
+  "yaw_range": [
+    -46.9,
+    -0.1
+  ],
+  "rate_range": [
+    -13.5,
+    2.9
+  ],
+  "last10s_yaw_range": [
+    -46.9,
+    -46.6
+  ],
+  "last10s_rate_range": [
+    -0.57,
+    0.56
+  ],
+  "max_abs_raw_gyro_radps": 0.251,
+  "last": {
+    "at": 1794584696.740297,
+    "online": true,
+    "stm32_connected": true,
+    "yaw_deg": -46.6,
+    "yaw_rate_dps": -0.12,
+    "imu_status": 3,
+    "imu_age_s": 0.1,
+    "gyro_radps": [
+      -0.007,
+      -0.001,
+      -0.001
+    ],
+    "imu_raw_age_s": 0.1
+  }
+}

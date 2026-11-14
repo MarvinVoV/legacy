@@ -1,0 +1,96 @@
+{
+  "samples": [
+    {
+      "at": 1794585461.028938,
+      "online": false,
+      "last_heartbeat_age": 360.0,
+      "uptime_s": 1502,
+      "stm32_connected": true,
+      "sensor_age_s": 351.9,
+      "imu_age_s": 351.9,
+      "yaw_deg": 7.7
+    },
+    {
+      "at": 1794585466.039101,
+      "online": false,
+      "last_heartbeat_age": 365.0,
+      "uptime_s": 1502,
+      "stm32_connected": true,
+      "sensor_age_s": 356.9,
+      "imu_age_s": 356.9,
+      "yaw_deg": 7.7
+    },
+    {
+      "at": 1794585471.047287,
+      "online": false,
+      "last_heartbeat_age": 370.0,
+      "uptime_s": 1502,
+      "stm32_connected": true,
+      "sensor_age_s": 361.9,
+      "imu_age_s": 361.9,
+      "yaw_deg": 7.7
+    },
+    {
+      "at": 1794585476.0552351,
+      "online": false,
+      "last_heartbeat_age": 375.0,
+      "uptime_s": 1502,
+      "stm32_connected": true,
+      "sensor_age_s": 366.9,
+      "imu_age_s": 366.9,
+      "yaw_deg": 7.7
+    },
+    {
+      "at": 1794585481.0639381,
+      "online": false,
+      "last_heartbeat_age": 380.0,
+      "uptime_s": 1502,
+      "stm32_connected": true,
+      "sensor_age_s": 371.9,
+      "imu_age_s": 371.9,
+      "yaw_deg": 7.7
+    },
+    {
+      "at": 1794585486.0724218,
+      "online": false,
+      "last_heartbeat_age": 385.0,
+      "uptime_s": 1502,
+      "stm32_connected": true,
+      "sensor_age_s": 376.9,
+      "imu_age_s": 376.9,
+      "yaw_deg": 7.7
+    },
+    {
+      "at": 1794585491.077944,
+      "online": false,
+      "last_heartbeat_age": 390.0,
+      "uptime_s": 1502,
+      "stm32_connected": true,
+      "sensor_age_s": 381.9,
+      "imu_age_s": 381.9,
+      "yaw_deg": 7.7
+    },
+    {
+      "at": 1794585496.0828202,
+      "online": false,
+      "last_heartbeat_age": 395.0,
+      "uptime_s": 1502,
+      "stm32_connected": true,
+      "sensor_age_s": 386.9,
+      "imu_age_s": 386.9,
+      "yaw_deg": 7.7
+    },
+    {
+      "at": 1794585501.0903811,
+      "online": false,
+      "last_heartbeat_age": 400.0,
+      "uptime_s": 1502,
+      "stm32_connected": true,
+      "sensor_age_s": 391.9,
+      "imu_age_s": 391.9,
+      "yaw_deg": 7.7
+    }
+  ],
+  "new_log_bytes": 711,
+  "imu_timeout_lines": []
+}

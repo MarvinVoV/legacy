@@ -1,0 +1,130 @@
+{
+  "samples": [
+    {
+      "at": 1794588581.1765518,
+      "online": false,
+      "last_heartbeat_age": 2861.6,
+      "uptime_s": 183,
+      "stm32_connected": true,
+      "sensor_age_s": 2845.1,
+      "imu_age_s": 2845.1,
+      "yaw_deg": -0.4,
+      "yaw_rate_dps": -0.12,
+      "imu_status": 3
+    },
+    {
+      "at": 1794588586.184472,
+      "online": false,
+      "last_heartbeat_age": 2866.7,
+      "uptime_s": 183,
+      "stm32_connected": true,
+      "sensor_age_s": 2850.1,
+      "imu_age_s": 2850.1,
+      "yaw_deg": -0.4,
+      "yaw_rate_dps": -0.12,
+      "imu_status": 3
+    },
+    {
+      "at": 1794588591.1934369,
+      "online": false,
+      "last_heartbeat_age": 2871.7,
+      "uptime_s": 183,
+      "stm32_connected": true,
+      "sensor_age_s": 2855.1,
+      "imu_age_s": 2855.1,
+      "yaw_deg": -0.4,
+      "yaw_rate_dps": -0.12,
+      "imu_status": 3
+    },
+    {
+      "at": 1794588596.197023,
+      "online": false,
+      "last_heartbeat_age": 2876.7,
+      "uptime_s": 183,
+      "stm32_connected": true,
+      "sensor_age_s": 2860.1,
+      "imu_age_s": 2860.1,
+      "yaw_deg": -0.4,
+      "yaw_rate_dps": -0.12,
+      "imu_status": 3
+    },
+    {
+      "at": 1794588601.200476,
+      "online": false,
+      "last_heartbeat_age": 2881.7,
+      "uptime_s": 183,
+      "stm32_connected": true,
+      "sensor_age_s": 2865.1,
+      "imu_age_s": 2865.1,
+      "yaw_deg": -0.4,
+      "yaw_rate_dps": -0.12,
+      "imu_status": 3
+    },
+    {
+      "at": 1794588606.20307,
+      "online": false,
+      "last_heartbeat_age": 2886.7,
+      "uptime_s": 183,
+      "stm32_connected": true,
+      "sensor_age_s": 2870.1,
+      "imu_age_s": 2870.1,
+      "yaw_deg": -0.4,
+      "yaw_rate_dps": -0.12,
+      "imu_status": 3
+    },
+    {
+      "at": 1794588611.21017,
+      "online": false,
+      "last_heartbeat_age": 2891.7,
+      "uptime_s": 183,
+      "stm32_connected": true,
+      "sensor_age_s": 2875.1,
+      "imu_age_s": 2875.1,
+      "yaw_deg": -0.4,
+      "yaw_rate_dps": -0.12,
+      "imu_status": 3
+    },
+    {
+      "at": 1794588616.214664,
+      "online": false,
+      "last_heartbeat_age": 2896.7,
+      "uptime_s": 183,
+      "stm32_connected": true,
+      "sensor_age_s": 2880.1,
+      "imu_age_s": 2880.1,
+      "yaw_deg": -0.4,
+      "yaw_rate_dps": -0.12,
+      "imu_status": 3
+    },
+    {
+      "at": 1794588621.2218308,
+      "online": false,
+      "last_heartbeat_age": 2901.7,
+      "uptime_s": 183,
+      "stm32_connected": true,
+      "sensor_age_s": 2885.1,
+      "imu_age_s": 2885.1,
+      "yaw_deg": -0.4,
+      "yaw_rate_dps": -0.12,
+      "imu_status": 3
+    },
+    {
+      "at": 1794588626.2249851,
+      "online": false,
+      "last_heartbeat_age": 2906.7,
+      "uptime_s": 183,
+      "stm32_connected": true,
+      "sensor_age_s": 2890.2,
+      "imu_age_s": 2890.2,
+      "yaw_deg": -0.4,
+      "yaw_rate_dps": -0.12,
+      "imu_status": 3
+    }
+  ],
+  "new_log_bytes": 855,
+  "reopen_count": 0,
+  "imu_events": [],
+  "imu_sample_log_count": 0,
+  "first_sample_logs": [],
+  "last_sample_logs": []
+}

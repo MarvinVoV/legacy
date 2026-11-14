@@ -1,0 +1,3 @@
+WiFi recovery: synchronous failure, backoff/cap, success, duplicate events, stop/late timer PASS
+MQTT recovery: repeated startup failure, retry success, idempotence, SDK reconnect, busy mutex, stop/destroy PASS
+WiFi recovery: synchronous failure, backoff/cap, success, duplicate events, stop/late timer PASS

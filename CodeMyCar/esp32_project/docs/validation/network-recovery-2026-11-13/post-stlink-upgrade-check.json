@@ -1,0 +1,124 @@
+{
+  "note": "User reported ST-LINK firmware upgrade; subsequent passive telemetry only. STM32 USB, ESP/IMU external power.",
+  "samples": [
+    {
+      "at": 1794646699.8338351,
+      "online": true,
+      "last_heartbeat_age": 4.7,
+      "uptime_s": 482,
+      "stm32_connected": true,
+      "sensor_age_s": 0.1,
+      "imu_age_s": 0.1,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646704.84527,
+      "online": true,
+      "last_heartbeat_age": 9.7,
+      "uptime_s": 482,
+      "stm32_connected": true,
+      "sensor_age_s": 0.2,
+      "imu_age_s": 0.1,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646709.849497,
+      "online": true,
+      "last_heartbeat_age": 14.7,
+      "uptime_s": 482,
+      "stm32_connected": true,
+      "sensor_age_s": 0.0,
+      "imu_age_s": 0.0,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646714.861054,
+      "online": true,
+      "last_heartbeat_age": 19.7,
+      "uptime_s": 482,
+      "stm32_connected": true,
+      "sensor_age_s": 0.0,
+      "imu_age_s": 0.0,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646719.870262,
+      "online": true,
+      "last_heartbeat_age": 24.7,
+      "uptime_s": 482,
+      "stm32_connected": true,
+      "sensor_age_s": 0.2,
+      "imu_age_s": 0.1,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646724.878779,
+      "online": true,
+      "last_heartbeat_age": 29.7,
+      "uptime_s": 482,
+      "stm32_connected": true,
+      "sensor_age_s": 0.0,
+      "imu_age_s": 0.0,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646729.889241,
+      "online": true,
+      "last_heartbeat_age": 4.7,
+      "uptime_s": 512,
+      "stm32_connected": true,
+      "sensor_age_s": 0.3,
+      "imu_age_s": 0.2,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646734.9008799,
+      "online": true,
+      "last_heartbeat_age": 9.7,
+      "uptime_s": 512,
+      "stm32_connected": true,
+      "sensor_age_s": 0.2,
+      "imu_age_s": 0.1,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646739.907768,
+      "online": true,
+      "last_heartbeat_age": 14.7,
+      "uptime_s": 512,
+      "stm32_connected": true,
+      "sensor_age_s": 0.1,
+      "imu_age_s": 0.1,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646744.9163232,
+      "online": true,
+      "last_heartbeat_age": 19.7,
+      "uptime_s": 512,
+      "stm32_connected": true,
+      "sensor_age_s": 0.1,
+      "imu_age_s": 0.1,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    }
+  ],
+  "events": [],
+  "first_imu_logs": [
+    "2026-11-14 16:58:19,887 [device.DEV_1] INFO: [INFO][sensor] IMU yaw=-0.01 deg rate=0.00 dps bias=0.000 st=3 grv=4082 gyro=4082 ",
+    "2026-11-14 16:58:19,992 [device.DEV_1] INFO: [INFO][sensor] IMU yaw=-0.01 deg rate=0.00 dps bias=0.000 st=3 grv=4092 gyro=4092 "
+  ],
+  "last_imu_logs": [
+    "2026-11-14 16:59:04,742 [device.DEV_1] INFO: [INFO][sensor] IMU yaw=-0.02 deg rate=0.00 dps bias=0.000 st=3 grv=8557 gyro=8557 ",
+    "2026-11-14 16:59:04,748 [device.DEV_1] INFO: [INFO][sensor] IMU yaw=-0.02 deg rate=0.00 dps bias=0.000 st=3 grv=8567 gyro=8567 "
+  ]
+}

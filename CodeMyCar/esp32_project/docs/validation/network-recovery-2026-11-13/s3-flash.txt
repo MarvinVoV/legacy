@@ -1,0 +1,154 @@
+[1/17] Performing build step for 'bootloader'
+[1/1] cd /Users/sunyameng/github/legacy/CodeMyCar/esp32_project/build-s3/bootloader && /Users/sunyameng/.espressif/tools/python/v6.1/venv/bin/python /Users/sunyameng/.espressif/v6.1/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 bootloader 0x0 /Users/sunyameng/github/legacy/CodeMyCar/esp32_project/build-s3/bootloader/bootloader.bin
+Bootloader binary size 0x5450 bytes. 0x2bb0 bytes (34%) free.
+[2/17] No install step for 'bootloader'
+[3/17] Completed 'bootloader'
+[4/17] Building C object esp-idf/main/CMakeFiles/__idf_main.dir/src/main.c.obj
+[5/17] Building C object esp-idf/remote_log/CMakeFiles/__idf_remote_log.dir/src/remote_log.c.obj
+[6/17] Building C object esp-idf/health_monitor/CMakeFiles/__idf_health_monitor.dir/src/health_monitor.c.obj
+[7/17] Building C object esp-idf/mqtt_service/CMakeFiles/__idf_mqtt_service.dir/src/mqtt_service.c.obj
+[8/17] Linking C static library esp-idf/mqtt_service/libmqtt_service.a
+[9/17] Building C object esp-idf/bridge/CMakeFiles/__idf_bridge.dir/src/bridge.c.obj
+[10/17] Linking C static library esp-idf/remote_log/libremote_log.a
+[11/17] Linking C static library esp-idf/bridge/libbridge.a
+[12/17] Linking C static library esp-idf/health_monitor/libhealth_monitor.a
+[13/17] Linking C static library esp-idf/main/libmain.a
+[14/17] Generating esp-idf/esp_system/ld/sections.ld
+Skipping linker script generation, section names unchanged
+[15/17] Linking CXX executable esp32_project.elf
+[16/17] Generating binary image from built executable
+esptool v5.6.0
+Creating ESP32-S3 image...
+Merged 3 ELF sections.
+Successfully created ESP32-S3 image.
+Generated /Users/sunyameng/github/legacy/CodeMyCar/esp32_project/build-s3/esp32_project.bin
+[17/17] cd /Users/sunyameng/github/legacy/CodeMyCar/esp32_project/build-s3 && /Users/sunyameng/.espressif/tools/python/v6.1/venv/bin/python /Users/sunyameng/.espressif/v6.1/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 partition --type app /Users/sunyameng/github/legacy/CodeMyCar/esp32_project/build-s3/partition_table/partition-table.bin /Users/sunyameng/github/legacy/CodeMyCar/esp32_project/build-s3/esp32_project.bin
+esp32_project.bin binary size 0x191040 bytes. Smallest app partition is 0x600000 bytes. 0x46efc0 bytes (74%) free.
+Adding "flash"'s dependency "all" to list of commands with default set of options.
+Executing action: all (aliases: build)
+Running ninja in directory /Users/sunyameng/github/legacy/CodeMyCar/esp32_project/build-s3
+Executing "ninja all"...
+Executing action: flash
+Running ninja in directory /Users/sunyameng/github/legacy/CodeMyCar/esp32_project/build-s3
+Executing "ninja flash"...
+[1/5] cd /Users/sunyameng/github/legacy/CodeMyCar/esp32_project/build-s3 && /Users/sunyameng/.espressif/tools/python/v6.1/venv/bin/python /Users/sunyameng/.espressif/v6.1/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 partition --type app /Users/sunyameng/github/legacy/CodeMyCar/esp32_project/build-s3/partition_table/partition-table.bin /Users/sunyameng/github/legacy/CodeMyCar/esp32_project/build-s3/esp32_project.bin
+esp32_project.bin binary size 0x191040 bytes. Smallest app partition is 0x600000 bytes. 0x46efc0 bytes (74%) free.
+[2/5] Performing build step for 'bootloader'
+[1/1] cd /Users/sunyameng/github/legacy/CodeMyCar/esp32_project/build-s3/bootloader && /Users/sunyameng/.espressif/tools/python/v6.1/venv/bin/python /Users/sunyameng/.espressif/v6.1/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 bootloader 0x0 /Users/sunyameng/github/legacy/CodeMyCar/esp32_project/build-s3/bootloader/bootloader.bin
+Bootloader binary size 0x5450 bytes. 0x2bb0 bytes (34%) free.
+[3/5] No install step for 'bootloader'
+[4/5] Completed 'bootloader'
+[4/5] Running utility command for flash
+esptool --chip esp32s3 -p /dev/cu.usbserial-110 -b 460800 --before=default-reset --after=hard-reset write-flash --flash-mode dout --flash-freq 80m --flash-size 32MB 0x0 bootloader/bootloader.bin 0x8000 partition_table/partition-table.bin 0x610000 srmodels/srmodels.bin 0x10000 esp32_project.bin --diff-with bootloader/bootloader_flashed.bin partition_table/partition-table_flashed.bin srmodels/srmodels_flashed.bin esp32_project_flashed.bin
+esptool v5.6.0
+Serial port /dev/cu.usbserial-110:
+Connecting....
+Connected to ESP32-S3 on /dev/cu.usbserial-110:
+Chip type:          ESP32-S3 (QFN56) (revision v0.2)
+Features:           Wi-Fi, BT 5 (LE), Dual Core + LP Core, 240MHz, Embedded PSRAM 16MB (AP_1v8)
+Crystal frequency:  40MHz
+MAC:                d8:85:ac:bf:20:20
+
+Uploading stub flasher...
+Running stub flasher...
+Stub flasher running.
+Changing baud rate to 460800...
+Changed.
+
+Configuring flash size...
+
+Writing 'bootloader/bootloader.bin' at 0x00000000...
+SHA digest in image updated.
+SHA digest in image updated.
+No changed sectors found, verifying if data is in flash...
+'bootloader/bootloader.bin' at 0x00000000 verified.
+
+Writing 'partition_table/partition-table.bin' at 0x00008000...
+No changed sectors found, verifying if data is in flash...
+'partition_table/partition-table.bin' at 0x00008000 verified.
+
+Writing 'srmodels/srmodels.bin' at 0x00610000...
+No changed sectors found, verifying if data is in flash...
+'srmodels/srmodels.bin' at 0x00610000 verified.
+
+Writing 'esp32_project.bin' at 0x00010000...
+Changed data sectors found, fast reflashing...
+Reflashing 1 changed sector at 0x00010000...
+Flash will be erased from 0x00010000 to 0x00010fff...
+Compressed 4096 bytes to 1965...
+Writing at 0x00011000 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100.0% 1.92kB/1.92kB [0s]
+Wrote 4096 bytes (1965 compressed) at 0x00010000 in 0.1 seconds (330.1 kbit/s).
+Reflashing 33 changed sectors at 0x00016000...
+Flash will be erased from 0x00016000 to 0x00036fff...
+Compressed 135168 bytes to 52818...
+Writing at 0x0002385a ━━━━━━━━━                       31.0% 16.00kB/51.58kB [0s]
+Writing at 0x0002edbe ━━━━━━━━━━━━━━━━━━╸             62.0% 32.00kB/51.58kB [0s]
+Writing at 0x00035b42 ━━━━━━━━━━━━━━━━━━━━━━━━━━━╸    93.1% 48.00kB/51.58kB [1s]
+Writing at 0x00037000 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100.0% 51.58kB/51.58kB [1s]
+Wrote 135168 bytes (52818 compressed) at 0x00016000 in 1.4 seconds (753.0 kbit/s).
+Reflashing 362 changed sectors at 0x00038000...
+Flash will be erased from 0x00038000 to 0x001a1fff...
+Compressed 1482752 bytes to 923058...
+Writing at 0x000404b6 ╸                                1.8% 16.00kB/901.42kB [0s]
+Writing at 0x0004798b ━                                3.5% 32.00kB/901.42kB [0s]
+Writing at 0x000513d4 ━╸                               5.3% 48.00kB/901.42kB [1s]
+Writing at 0x00057015 ━━                               7.1% 64.00kB/901.42kB [1s]
+Writing at 0x0005cbf9 ━━╸                              8.9% 80.00kB/901.42kB [2s]
+Writing at 0x000623a3 ━━━                             10.6% 96.00kB/901.42kB [2s]
+Writing at 0x00067ba4 ━━━╸                            12.4% 112.00kB/901.42kB [3s]
+Writing at 0x0006d9fb ━━━━                            14.2% 128.00kB/901.42kB [3s]
+Writing at 0x00073217 ━━━━╸                           16.0% 144.00kB/901.42kB [3s]
+Writing at 0x000788b5 ━━━━━                           17.7% 160.00kB/901.42kB [4s]
+Writing at 0x0007eca2 ━━━━━╸                          19.5% 176.00kB/901.42kB [4s]
+Writing at 0x000845f9 ━━━━━━                          21.3% 192.00kB/901.42kB [5s]
+Writing at 0x0008b8c3 ━━━━━━╸                         23.1% 208.00kB/901.42kB [5s]
+Writing at 0x00091261 ━━━━━━━                         24.8% 224.00kB/901.42kB [6s]
+Writing at 0x00096f32 ━━━━━━━╸                        26.6% 240.00kB/901.42kB [6s]
+Writing at 0x000b304e ━━━━━━━━╸                       28.4% 256.00kB/901.42kB [6s]
+Writing at 0x000bd767 ━━━━━━━━━                       30.2% 272.00kB/901.42kB [7s]
+Writing at 0x000c3219 ━━━━━━━━━╸                      31.9% 288.00kB/901.42kB [8s]
+Writing at 0x000c92e7 ━━━━━━━━━━                      33.7% 304.00kB/901.42kB [8s]
+Writing at 0x000cf184 ━━━━━━━━━━╸                     35.5% 320.00kB/901.42kB [9s]
+Writing at 0x000d7335 ━━━━━━━━━━━                     37.3% 336.00kB/901.42kB [9s]
+Writing at 0x000dc8ff ━━━━━━━━━━━╸                    39.0% 352.00kB/901.42kB [9s]
+Writing at 0x000e2910 ━━━━━━━━━━━━                    40.8% 368.00kB/901.42kB [10s]
+Writing at 0x000e832a ━━━━━━━━━━━━╸                   42.6% 384.00kB/901.42kB [10s]
+Writing at 0x000ee56d ━━━━━━━━━━━━━                   44.4% 400.00kB/901.42kB [11s]
+Writing at 0x000f367f ━━━━━━━━━━━━━╸                  46.1% 416.00kB/901.42kB [11s]
+Writing at 0x000f8ba4 ━━━━━━━━━━━━━━                  47.9% 432.00kB/901.42kB [12s]
+Writing at 0x000fdfd8 ━━━━━━━━━━━━━━╸                 49.7% 448.00kB/901.42kB [12s]
+Writing at 0x001039db ━━━━━━━━━━━━━━━                 51.5% 464.00kB/901.42kB [12s]
+Writing at 0x00108dfd ━━━━━━━━━━━━━━━╸                53.2% 480.00kB/901.42kB [13s]
+Writing at 0x0010e41b ━━━━━━━━━━━━━━━━╸               55.0% 496.00kB/901.42kB [13s]
+Writing at 0x00113885 ━━━━━━━━━━━━━━━━━               56.8% 512.00kB/901.42kB [14s]
+Writing at 0x00118a17 ━━━━━━━━━━━━━━━━━╸              58.6% 528.00kB/901.42kB [14s]
+Writing at 0x0011dc16 ━━━━━━━━━━━━━━━━━━              60.3% 544.00kB/901.42kB [15s]
+Writing at 0x001233d7 ━━━━━━━━━━━━━━━━━━╸             62.1% 560.00kB/901.42kB [15s]
+Writing at 0x00128b34 ━━━━━━━━━━━━━━━━━━━             63.9% 576.00kB/901.42kB [15s]
+Writing at 0x0012df96 ━━━━━━━━━━━━━━━━━━━╸            65.7% 592.00kB/901.42kB [16s]
+Writing at 0x001334a1 ━━━━━━━━━━━━━━━━━━━━            67.4% 608.00kB/901.42kB [16s]
+Writing at 0x00138c02 ━━━━━━━━━━━━━━━━━━━━╸           69.2% 624.00kB/901.42kB [17s]
+Writing at 0x0013e3e3 ━━━━━━━━━━━━━━━━━━━━━           71.0% 640.00kB/901.42kB [17s]
+Writing at 0x0014338c ━━━━━━━━━━━━━━━━━━━━━╸          72.8% 656.00kB/901.42kB [18s]
+Writing at 0x0014860e ━━━━━━━━━━━━━━━━━━━━━━          74.5% 672.00kB/901.42kB [18s]
+Writing at 0x0014d803 ━━━━━━━━━━━━━━━━━━━━━━╸         76.3% 688.00kB/901.42kB [19s]
+Writing at 0x00152be8 ━━━━━━━━━━━━━━━━━━━━━━━         78.1% 704.00kB/901.42kB [19s]
+Writing at 0x00157d13 ━━━━━━━━━━━━━━━━━━━━━━━╸        79.9% 720.00kB/901.42kB [19s]
+Writing at 0x0015cf5b ━━━━━━━━━━━━━━━━━━━━━━━━        81.6% 736.00kB/901.42kB [20s]
+Writing at 0x001633f8 ━━━━━━━━━━━━━━━━━━━━━━━━━       83.4% 752.00kB/901.42kB [20s]
+Writing at 0x00168ba0 ━━━━━━━━━━━━━━━━━━━━━━━━━╸      85.2% 768.00kB/901.42kB [21s]
+Writing at 0x00170b1f ━━━━━━━━━━━━━━━━━━━━━━━━━━      87.0% 784.00kB/901.42kB [21s]
+Writing at 0x0017b388 ━━━━━━━━━━━━━━━━━━━━━━━━━━╸     88.7% 800.00kB/901.42kB [22s]
+Writing at 0x00180a0f ━━━━━━━━━━━━━━━━━━━━━━━━━━━     90.5% 816.00kB/901.42kB [22s]
+Writing at 0x001867e0 ━━━━━━━━━━━━━━━━━━━━━━━━━━━╸    92.3% 832.00kB/901.42kB [22s]
+Writing at 0x0018ce2b ━━━━━━━━━━━━━━━━━━━━━━━━━━━━    94.1% 848.00kB/901.42kB [23s]
+Writing at 0x0019413b ━━━━━━━━━━━━━━━━━━━━━━━━━━━━╸   95.8% 864.00kB/901.42kB [23s]
+Writing at 0x00199d1b ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━   97.6% 880.00kB/901.42kB [24s]
+Writing at 0x0019eba4 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╸  99.4% 896.00kB/901.42kB [24s]
+Writing at 0x001a2000 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100.0% 901.42kB/901.42kB [24s]
+Wrote 1482752 bytes (923058 compressed) at 0x00038000 in 24.9 seconds (476.5 kbit/s).
+Verifying written data...
+Hash of data verified.
+
+Hard resetting via RTS pin...
+Done

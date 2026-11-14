@@ -688,7 +688,11 @@ static void on_system_event(void* arg, esp_event_base_t base,
         case CMCAR_WIFI_GOT_IP:
             ESP_LOGI(TAG, "WiFi got IP → starting MQTT");
             s_state = SYS_STATE_CONNECTING;
-            mqtt_service_start();
+            {
+                const esp_err_t err = mqtt_service_start();
+                if (err != ESP_OK)
+                    ESP_LOGW(TAG, "MQTT start failed (%s); service will retry", esp_err_to_name(err));
+            }
             break;
 
         case CMCAR_MQTT_CONNECTED:

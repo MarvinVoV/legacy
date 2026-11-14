@@ -1,0 +1,292 @@
+{
+  "power_description": "User-confirmed: STM32 USB only; ESP32 and IMU remain on external power board (IMU3.3V); common GND. Telemetry only, no SWD during120s.",
+  "samples": [
+    {
+      "at": 1794646412.9741812,
+      "online": true,
+      "last_heartbeat_age": 17.8,
+      "uptime_s": 182,
+      "stm32_connected": true,
+      "sensor_age_s": 0.1,
+      "imu_age_s": 0.0,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646417.983571,
+      "online": true,
+      "last_heartbeat_age": 22.8,
+      "uptime_s": 182,
+      "stm32_connected": true,
+      "sensor_age_s": 0.0,
+      "imu_age_s": 0.1,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646422.9880772,
+      "online": true,
+      "last_heartbeat_age": 27.8,
+      "uptime_s": 182,
+      "stm32_connected": true,
+      "sensor_age_s": 0.1,
+      "imu_age_s": 0.1,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646427.996161,
+      "online": true,
+      "last_heartbeat_age": 2.8,
+      "uptime_s": 212,
+      "stm32_connected": true,
+      "sensor_age_s": 0.2,
+      "imu_age_s": 0.2,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646433.004502,
+      "online": true,
+      "last_heartbeat_age": 7.8,
+      "uptime_s": 212,
+      "stm32_connected": true,
+      "sensor_age_s": 0.0,
+      "imu_age_s": 0.0,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646438.0129302,
+      "online": true,
+      "last_heartbeat_age": 12.8,
+      "uptime_s": 212,
+      "stm32_connected": true,
+      "sensor_age_s": 0.2,
+      "imu_age_s": 0.1,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646443.017587,
+      "online": true,
+      "last_heartbeat_age": 17.8,
+      "uptime_s": 212,
+      "stm32_connected": true,
+      "sensor_age_s": 0.2,
+      "imu_age_s": 0.1,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646448.0234408,
+      "online": true,
+      "last_heartbeat_age": 22.9,
+      "uptime_s": 212,
+      "stm32_connected": true,
+      "sensor_age_s": 0.0,
+      "imu_age_s": 0.0,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646453.030464,
+      "online": true,
+      "last_heartbeat_age": 27.9,
+      "uptime_s": 212,
+      "stm32_connected": true,
+      "sensor_age_s": 0.0,
+      "imu_age_s": 0.0,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646458.0374882,
+      "online": true,
+      "last_heartbeat_age": 2.9,
+      "uptime_s": 242,
+      "stm32_connected": true,
+      "sensor_age_s": 0.2,
+      "imu_age_s": 0.1,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646463.050165,
+      "online": true,
+      "last_heartbeat_age": 7.9,
+      "uptime_s": 242,
+      "stm32_connected": true,
+      "sensor_age_s": 0.1,
+      "imu_age_s": 0.1,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646468.059605,
+      "online": true,
+      "last_heartbeat_age": 12.9,
+      "uptime_s": 242,
+      "stm32_connected": true,
+      "sensor_age_s": 0.1,
+      "imu_age_s": 0.1,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646473.068384,
+      "online": true,
+      "last_heartbeat_age": 17.9,
+      "uptime_s": 242,
+      "stm32_connected": true,
+      "sensor_age_s": 0.0,
+      "imu_age_s": 0.0,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646478.078451,
+      "online": true,
+      "last_heartbeat_age": 22.9,
+      "uptime_s": 242,
+      "stm32_connected": true,
+      "sensor_age_s": 0.1,
+      "imu_age_s": 0.1,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646483.084384,
+      "online": true,
+      "last_heartbeat_age": 27.9,
+      "uptime_s": 242,
+      "stm32_connected": true,
+      "sensor_age_s": 0.1,
+      "imu_age_s": 0.1,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646488.093736,
+      "online": true,
+      "last_heartbeat_age": 2.9,
+      "uptime_s": 272,
+      "stm32_connected": true,
+      "sensor_age_s": 0.1,
+      "imu_age_s": 0.1,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646493.103306,
+      "online": true,
+      "last_heartbeat_age": 7.9,
+      "uptime_s": 272,
+      "stm32_connected": true,
+      "sensor_age_s": 0.2,
+      "imu_age_s": 0.0,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646498.110395,
+      "online": true,
+      "last_heartbeat_age": 12.9,
+      "uptime_s": 272,
+      "stm32_connected": true,
+      "sensor_age_s": 0.1,
+      "imu_age_s": 0.1,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646503.118211,
+      "online": true,
+      "last_heartbeat_age": 17.9,
+      "uptime_s": 272,
+      "stm32_connected": true,
+      "sensor_age_s": 0.1,
+      "imu_age_s": 0.1,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646508.125192,
+      "online": true,
+      "last_heartbeat_age": 22.9,
+      "uptime_s": 272,
+      "stm32_connected": true,
+      "sensor_age_s": 0.1,
+      "imu_age_s": 0.0,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646513.131882,
+      "online": true,
+      "last_heartbeat_age": 28.0,
+      "uptime_s": 272,
+      "stm32_connected": true,
+      "sensor_age_s": 0.2,
+      "imu_age_s": 0.1,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646518.1372979,
+      "online": true,
+      "last_heartbeat_age": 3.0,
+      "uptime_s": 302,
+      "stm32_connected": true,
+      "sensor_age_s": 0.1,
+      "imu_age_s": 0.1,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646523.145827,
+      "online": true,
+      "last_heartbeat_age": 8.0,
+      "uptime_s": 302,
+      "stm32_connected": true,
+      "sensor_age_s": 0.1,
+      "imu_age_s": 0.1,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646528.156464,
+      "online": true,
+      "last_heartbeat_age": 13.0,
+      "uptime_s": 302,
+      "stm32_connected": true,
+      "sensor_age_s": 0.1,
+      "imu_age_s": 0.1,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646533.1633122,
+      "online": true,
+      "last_heartbeat_age": 18.0,
+      "uptime_s": 302,
+      "stm32_connected": true,
+      "sensor_age_s": 0.1,
+      "imu_age_s": 0.1,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    }
+  ],
+  "events": [],
+  "imu_sample_log_count": 1163,
+  "first_sample_logs": [
+    "2026-11-14 16:53:33,087 [device.DEV_1] INFO: [INFO][sensor] IMU yaw=-0.01 deg rate=0.00 dps bias=0.000 st=3 grv=6528 gyro=6529 ",
+    "2026-11-14 16:53:33,202 [device.DEV_1] INFO: [INFO][sensor] IMU yaw=-0.01 deg rate=0.00 dps bias=0.000 st=3 grv=6539 gyro=6539 ",
+    "2026-11-14 16:53:33,292 [device.DEV_1] INFO: [INFO][sensor] IMU yaw=-0.01 deg rate=0.00 dps bias=0.000 st=3 grv=6549 gyro=6549 "
+  ],
+  "last_sample_logs": [
+    "2026-11-14 16:55:32,934 [device.DEV_1] INFO: [INFO][sensor] IMU yaw=-0.01 deg rate=0.00 dps bias=0.000 st=3 grv=18484 gyro=18484 ",
+    "2026-11-14 16:55:32,941 [device.DEV_1] INFO: [INFO][sensor] IMU yaw=-0.01 deg rate=0.00 dps bias=0.000 st=3 grv=18495 gyro=18495 ",
+    "2026-11-14 16:55:33,075 [device.DEV_1] INFO: [INFO][sensor] IMU yaw=-0.01 deg rate=0.00 dps bias=0.000 st=3 grv=18505 gyro=18505 "
+  ]
+}

@@ -1,0 +1,601 @@
+{
+  "rst_removed_user_confirmed": true,
+  "read_only": true,
+  "seconds": 60,
+  "counts": {},
+  "live_heartbeats": [],
+  "imu_timeout_count": 0,
+  "imu_ready_count": 0,
+  "samples": [
+    {
+      "sample": 1,
+      "at": 1794583105.746058,
+      "online": false,
+      "last_heartbeat_age": 138.5,
+      "uptime_s": 32,
+      "stm32_connected": true,
+      "yaw_deg": -0.3,
+      "yaw_rate_dps": 0.28,
+      "imu_status": 3,
+      "imu_age_s": 116.8,
+      "gyro_radps": [
+        0.0,
+        0.009,
+        0.003
+      ],
+      "imu_raw_age_s": 116.8,
+      "stm_uptime_ms": null
+    },
+    {
+      "sample": 2,
+      "at": 1794583107.755222,
+      "online": false,
+      "last_heartbeat_age": 140.5,
+      "uptime_s": 32,
+      "stm32_connected": true,
+      "yaw_deg": -0.3,
+      "yaw_rate_dps": 0.28,
+      "imu_status": 3,
+      "imu_age_s": 118.8,
+      "gyro_radps": [
+        0.0,
+        0.009,
+        0.003
+      ],
+      "imu_raw_age_s": 118.8,
+      "stm_uptime_ms": null
+    },
+    {
+      "sample": 3,
+      "at": 1794583109.765652,
+      "online": false,
+      "last_heartbeat_age": 142.6,
+      "uptime_s": 32,
+      "stm32_connected": true,
+      "yaw_deg": -0.3,
+      "yaw_rate_dps": 0.28,
+      "imu_status": 3,
+      "imu_age_s": 120.8,
+      "gyro_radps": [
+        0.0,
+        0.009,
+        0.003
+      ],
+      "imu_raw_age_s": 120.8,
+      "stm_uptime_ms": null
+    },
+    {
+      "sample": 4,
+      "at": 1794583111.7764459,
+      "online": false,
+      "last_heartbeat_age": 144.6,
+      "uptime_s": 32,
+      "stm32_connected": true,
+      "yaw_deg": -0.3,
+      "yaw_rate_dps": 0.28,
+      "imu_status": 3,
+      "imu_age_s": 122.8,
+      "gyro_radps": [
+        0.0,
+        0.009,
+        0.003
+      ],
+      "imu_raw_age_s": 122.8,
+      "stm_uptime_ms": null
+    },
+    {
+      "sample": 5,
+      "at": 1794583113.7859619,
+      "online": false,
+      "last_heartbeat_age": 146.6,
+      "uptime_s": 32,
+      "stm32_connected": true,
+      "yaw_deg": -0.3,
+      "yaw_rate_dps": 0.28,
+      "imu_status": 3,
+      "imu_age_s": 124.8,
+      "gyro_radps": [
+        0.0,
+        0.009,
+        0.003
+      ],
+      "imu_raw_age_s": 124.8,
+      "stm_uptime_ms": null
+    },
+    {
+      "sample": 6,
+      "at": 1794583115.7932339,
+      "online": false,
+      "last_heartbeat_age": 148.6,
+      "uptime_s": 32,
+      "stm32_connected": true,
+      "yaw_deg": -0.3,
+      "yaw_rate_dps": 0.28,
+      "imu_status": 3,
+      "imu_age_s": 126.8,
+      "gyro_radps": [
+        0.0,
+        0.009,
+        0.003
+      ],
+      "imu_raw_age_s": 126.8,
+      "stm_uptime_ms": null
+    },
+    {
+      "sample": 7,
+      "at": 1794583117.800375,
+      "online": false,
+      "last_heartbeat_age": 150.6,
+      "uptime_s": 32,
+      "stm32_connected": true,
+      "yaw_deg": -0.3,
+      "yaw_rate_dps": 0.28,
+      "imu_status": 3,
+      "imu_age_s": 128.8,
+      "gyro_radps": [
+        0.0,
+        0.009,
+        0.003
+      ],
+      "imu_raw_age_s": 128.8,
+      "stm_uptime_ms": null
+    },
+    {
+      "sample": 8,
+      "at": 1794583119.806248,
+      "online": false,
+      "last_heartbeat_age": 152.6,
+      "uptime_s": 32,
+      "stm32_connected": true,
+      "yaw_deg": -0.3,
+      "yaw_rate_dps": 0.28,
+      "imu_status": 3,
+      "imu_age_s": 130.8,
+      "gyro_radps": [
+        0.0,
+        0.009,
+        0.003
+      ],
+      "imu_raw_age_s": 130.8,
+      "stm_uptime_ms": null
+    },
+    {
+      "sample": 9,
+      "at": 1794583121.815163,
+      "online": false,
+      "last_heartbeat_age": 154.6,
+      "uptime_s": 32,
+      "stm32_connected": true,
+      "yaw_deg": -0.3,
+      "yaw_rate_dps": 0.28,
+      "imu_status": 3,
+      "imu_age_s": 132.8,
+      "gyro_radps": [
+        0.0,
+        0.009,
+        0.003
+      ],
+      "imu_raw_age_s": 132.8,
+      "stm_uptime_ms": null
+    },
+    {
+      "sample": 10,
+      "at": 1794583123.824775,
+      "online": false,
+      "last_heartbeat_age": 156.6,
+      "uptime_s": 32,
+      "stm32_connected": true,
+      "yaw_deg": -0.3,
+      "yaw_rate_dps": 0.28,
+      "imu_status": 3,
+      "imu_age_s": 134.8,
+      "gyro_radps": [
+        0.0,
+        0.009,
+        0.003
+      ],
+      "imu_raw_age_s": 134.8,
+      "stm_uptime_ms": null
+    },
+    {
+      "sample": 11,
+      "at": 1794583125.834618,
+      "online": false,
+      "last_heartbeat_age": 158.6,
+      "uptime_s": 32,
+      "stm32_connected": true,
+      "yaw_deg": -0.3,
+      "yaw_rate_dps": 0.28,
+      "imu_status": 3,
+      "imu_age_s": 136.9,
+      "gyro_radps": [
+        0.0,
+        0.009,
+        0.003
+      ],
+      "imu_raw_age_s": 136.9,
+      "stm_uptime_ms": null
+    },
+    {
+      "sample": 12,
+      "at": 1794583127.842718,
+      "online": false,
+      "last_heartbeat_age": 160.6,
+      "uptime_s": 32,
+      "stm32_connected": true,
+      "yaw_deg": -0.3,
+      "yaw_rate_dps": 0.28,
+      "imu_status": 3,
+      "imu_age_s": 138.9,
+      "gyro_radps": [
+        0.0,
+        0.009,
+        0.003
+      ],
+      "imu_raw_age_s": 138.9,
+      "stm_uptime_ms": null
+    },
+    {
+      "sample": 13,
+      "at": 1794583129.852407,
+      "online": false,
+      "last_heartbeat_age": 162.6,
+      "uptime_s": 32,
+      "stm32_connected": true,
+      "yaw_deg": -0.3,
+      "yaw_rate_dps": 0.28,
+      "imu_status": 3,
+      "imu_age_s": 140.9,
+      "gyro_radps": [
+        0.0,
+        0.009,
+        0.003
+      ],
+      "imu_raw_age_s": 140.9,
+      "stm_uptime_ms": null
+    },
+    {
+      "sample": 14,
+      "at": 1794583131.861365,
+      "online": false,
+      "last_heartbeat_age": 164.6,
+      "uptime_s": 32,
+      "stm32_connected": true,
+      "yaw_deg": -0.3,
+      "yaw_rate_dps": 0.28,
+      "imu_status": 3,
+      "imu_age_s": 142.9,
+      "gyro_radps": [
+        0.0,
+        0.009,
+        0.003
+      ],
+      "imu_raw_age_s": 142.9,
+      "stm_uptime_ms": null
+    },
+    {
+      "sample": 15,
+      "at": 1794583133.86869,
+      "online": false,
+      "last_heartbeat_age": 166.7,
+      "uptime_s": 32,
+      "stm32_connected": true,
+      "yaw_deg": -0.3,
+      "yaw_rate_dps": 0.28,
+      "imu_status": 3,
+      "imu_age_s": 144.9,
+      "gyro_radps": [
+        0.0,
+        0.009,
+        0.003
+      ],
+      "imu_raw_age_s": 144.9,
+      "stm_uptime_ms": null
+    },
+    {
+      "sample": 16,
+      "at": 1794583135.876127,
+      "online": false,
+      "last_heartbeat_age": 168.7,
+      "uptime_s": 32,
+      "stm32_connected": true,
+      "yaw_deg": -0.3,
+      "yaw_rate_dps": 0.28,
+      "imu_status": 3,
+      "imu_age_s": 146.9,
+      "gyro_radps": [
+        0.0,
+        0.009,
+        0.003
+      ],
+      "imu_raw_age_s": 146.9,
+      "stm_uptime_ms": null
+    },
+    {
+      "sample": 17,
+      "at": 1794583137.881968,
+      "online": false,
+      "last_heartbeat_age": 170.7,
+      "uptime_s": 32,
+      "stm32_connected": true,
+      "yaw_deg": -0.3,
+      "yaw_rate_dps": 0.28,
+      "imu_status": 3,
+      "imu_age_s": 148.9,
+      "gyro_radps": [
+        0.0,
+        0.009,
+        0.003
+      ],
+      "imu_raw_age_s": 148.9,
+      "stm_uptime_ms": null
+    },
+    {
+      "sample": 18,
+      "at": 1794583139.8888042,
+      "online": false,
+      "last_heartbeat_age": 172.7,
+      "uptime_s": 32,
+      "stm32_connected": true,
+      "yaw_deg": -0.3,
+      "yaw_rate_dps": 0.28,
+      "imu_status": 3,
+      "imu_age_s": 150.9,
+      "gyro_radps": [
+        0.0,
+        0.009,
+        0.003
+      ],
+      "imu_raw_age_s": 150.9,
+      "stm_uptime_ms": null
+    },
+    {
+      "sample": 19,
+      "at": 1794583141.899177,
+      "online": false,
+      "last_heartbeat_age": 174.7,
+      "uptime_s": 32,
+      "stm32_connected": true,
+      "yaw_deg": -0.3,
+      "yaw_rate_dps": 0.28,
+      "imu_status": 3,
+      "imu_age_s": 152.9,
+      "gyro_radps": [
+        0.0,
+        0.009,
+        0.003
+      ],
+      "imu_raw_age_s": 152.9,
+      "stm_uptime_ms": null
+    },
+    {
+      "sample": 20,
+      "at": 1794583143.906572,
+      "online": false,
+      "last_heartbeat_age": 176.7,
+      "uptime_s": 32,
+      "stm32_connected": true,
+      "yaw_deg": -0.3,
+      "yaw_rate_dps": 0.28,
+      "imu_status": 3,
+      "imu_age_s": 154.9,
+      "gyro_radps": [
+        0.0,
+        0.009,
+        0.003
+      ],
+      "imu_raw_age_s": 154.9,
+      "stm_uptime_ms": null
+    },
+    {
+      "sample": 21,
+      "at": 1794583145.916422,
+      "online": false,
+      "last_heartbeat_age": 178.7,
+      "uptime_s": 32,
+      "stm32_connected": true,
+      "yaw_deg": -0.3,
+      "yaw_rate_dps": 0.28,
+      "imu_status": 3,
+      "imu_age_s": 156.9,
+      "gyro_radps": [
+        0.0,
+        0.009,
+        0.003
+      ],
+      "imu_raw_age_s": 156.9,
+      "stm_uptime_ms": null
+    },
+    {
+      "sample": 22,
+      "at": 1794583147.927381,
+      "online": false,
+      "last_heartbeat_age": 180.7,
+      "uptime_s": 32,
+      "stm32_connected": true,
+      "yaw_deg": -0.3,
+      "yaw_rate_dps": 0.28,
+      "imu_status": 3,
+      "imu_age_s": 158.9,
+      "gyro_radps": [
+        0.0,
+        0.009,
+        0.003
+      ],
+      "imu_raw_age_s": 158.9,
+      "stm_uptime_ms": null
+    },
+    {
+      "sample": 23,
+      "at": 1794583149.9342358,
+      "online": false,
+      "last_heartbeat_age": 182.7,
+      "uptime_s": 32,
+      "stm32_connected": true,
+      "yaw_deg": -0.3,
+      "yaw_rate_dps": 0.28,
+      "imu_status": 3,
+      "imu_age_s": 161.0,
+      "gyro_radps": [
+        0.0,
+        0.009,
+        0.003
+      ],
+      "imu_raw_age_s": 161.0,
+      "stm_uptime_ms": null
+    },
+    {
+      "sample": 24,
+      "at": 1794583151.9398851,
+      "online": false,
+      "last_heartbeat_age": 184.7,
+      "uptime_s": 32,
+      "stm32_connected": true,
+      "yaw_deg": -0.3,
+      "yaw_rate_dps": 0.28,
+      "imu_status": 3,
+      "imu_age_s": 163.0,
+      "gyro_radps": [
+        0.0,
+        0.009,
+        0.003
+      ],
+      "imu_raw_age_s": 163.0,
+      "stm_uptime_ms": null
+    },
+    {
+      "sample": 25,
+      "at": 1794583153.9492102,
+      "online": false,
+      "last_heartbeat_age": 186.7,
+      "uptime_s": 32,
+      "stm32_connected": true,
+      "yaw_deg": -0.3,
+      "yaw_rate_dps": 0.28,
+      "imu_status": 3,
+      "imu_age_s": 165.0,
+      "gyro_radps": [
+        0.0,
+        0.009,
+        0.003
+      ],
+      "imu_raw_age_s": 165.0,
+      "stm_uptime_ms": null
+    },
+    {
+      "sample": 26,
+      "at": 1794583155.958888,
+      "online": false,
+      "last_heartbeat_age": 188.7,
+      "uptime_s": 32,
+      "stm32_connected": true,
+      "yaw_deg": -0.3,
+      "yaw_rate_dps": 0.28,
+      "imu_status": 3,
+      "imu_age_s": 167.0,
+      "gyro_radps": [
+        0.0,
+        0.009,
+        0.003
+      ],
+      "imu_raw_age_s": 167.0,
+      "stm_uptime_ms": null
+    },
+    {
+      "sample": 27,
+      "at": 1794583157.969107,
+      "online": false,
+      "last_heartbeat_age": 190.8,
+      "uptime_s": 32,
+      "stm32_connected": true,
+      "yaw_deg": -0.3,
+      "yaw_rate_dps": 0.28,
+      "imu_status": 3,
+      "imu_age_s": 169.0,
+      "gyro_radps": [
+        0.0,
+        0.009,
+        0.003
+      ],
+      "imu_raw_age_s": 169.0,
+      "stm_uptime_ms": null
+    },
+    {
+      "sample": 28,
+      "at": 1794583159.97649,
+      "online": false,
+      "last_heartbeat_age": 192.8,
+      "uptime_s": 32,
+      "stm32_connected": true,
+      "yaw_deg": -0.3,
+      "yaw_rate_dps": 0.28,
+      "imu_status": 3,
+      "imu_age_s": 171.0,
+      "gyro_radps": [
+        0.0,
+        0.009,
+        0.003
+      ],
+      "imu_raw_age_s": 171.0,
+      "stm_uptime_ms": null
+    },
+    {
+      "sample": 29,
+      "at": 1794583161.98644,
+      "online": false,
+      "last_heartbeat_age": 194.8,
+      "uptime_s": 32,
+      "stm32_connected": true,
+      "yaw_deg": -0.3,
+      "yaw_rate_dps": 0.28,
+      "imu_status": 3,
+      "imu_age_s": 173.0,
+      "gyro_radps": [
+        0.0,
+        0.009,
+        0.003
+      ],
+      "imu_raw_age_s": 173.0,
+      "stm_uptime_ms": null
+    },
+    {
+      "sample": 30,
+      "at": 1794583163.991134,
+      "online": false,
+      "last_heartbeat_age": 196.8,
+      "uptime_s": 32,
+      "stm32_connected": true,
+      "yaw_deg": -0.3,
+      "yaw_rate_dps": 0.28,
+      "imu_status": 3,
+      "imu_age_s": 175.0,
+      "gyro_radps": [
+        0.0,
+        0.009,
+        0.003
+      ],
+      "imu_raw_age_s": 175.0,
+      "stm_uptime_ms": null
+    },
+    {
+      "sample": 31,
+      "at": 1794583166.000316,
+      "online": false,
+      "last_heartbeat_age": 198.8,
+      "uptime_s": 32,
+      "stm32_connected": true,
+      "yaw_deg": -0.3,
+      "yaw_rate_dps": 0.28,
+      "imu_status": 3,
+      "imu_age_s": 177.0,
+      "gyro_radps": [
+        0.0,
+        0.009,
+        0.003
+      ],
+      "imu_raw_age_s": 177.0,
+      "stm_uptime_ms": null
+    }
+  ],
+  "imu_logs": []
+}

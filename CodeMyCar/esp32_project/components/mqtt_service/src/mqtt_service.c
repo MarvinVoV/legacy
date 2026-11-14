@@ -7,11 +7,14 @@
 
 #include "mqtt_service.h"
 
+#include <stdatomic.h>
+
 #include "cmcar_errors.h"
 #include "cmcar_events.h"
 #include "cmcar_topics.h"
 #include "esp_event.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/task.h"
@@ -21,8 +24,44 @@ static const char* TAG = "mqtt_svc";
 
 static esp_mqtt_client_handle_t s_client = NULL;
 static SemaphoreHandle_t s_mutex = NULL;
-static bool s_connected = false;
-static bool s_running = false;
+static atomic_bool s_connected = false;
+static atomic_bool s_running = false;
+/* Protected by s_mutex; SDK auto-reconnect owns an already started client. */
+static bool s_started;
+static esp_timer_handle_t s_start_retry_timer;
+#define MQTT_START_RETRY_US 2000000ULL
+
+static void schedule_start_retry(void)
+{
+    if (!s_running || !s_start_retry_timer) return;
+    (void)esp_timer_stop(s_start_retry_timer);
+    const esp_err_t err = esp_timer_start_once(s_start_retry_timer, MQTT_START_RETRY_US);
+    if (err != ESP_OK) ESP_LOGE(TAG, "MQTT startup retry timer failed: %s", esp_err_to_name(err));
+}
+
+static esp_err_t try_start(void)
+{
+    /* Never block the shared esp_timer task behind network publication. */
+    if (xSemaphoreTake(s_mutex, 0) != pdTRUE) return ESP_ERR_TIMEOUT;
+    esp_err_t err = ESP_ERR_INVALID_STATE;
+    if (s_running && s_client != NULL) {
+        err = s_started ? ESP_OK : esp_mqtt_client_start(s_client);
+        if (err == ESP_OK) s_started = true;
+    }
+    xSemaphoreGive(s_mutex);
+    return err;
+}
+
+static void startup_retry_cb(void* arg)
+{
+    (void)arg;
+    if (!s_running) return;
+    const esp_err_t err = try_start();
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "MQTT startup retry failed: %s", esp_err_to_name(err));
+        schedule_start_retry();
+    }
+}
 
 static mqtt_rx_cb_t s_rx_cb = NULL;
 static void* s_rx_cb_ctx = NULL;
@@ -116,6 +155,18 @@ esp_err_t mqtt_service_init(void)
         return ESP_FAIL;
     }
 
+    const esp_timer_create_args_t retry_args = {
+        .callback = startup_retry_cb, .name = "mqtt_start_retry",
+    };
+    const esp_err_t retry_err = esp_timer_create(&retry_args, &s_start_retry_timer);
+    if (retry_err != ESP_OK) {
+        esp_mqtt_client_destroy(s_client);
+        s_client = NULL;
+        vSemaphoreDelete(s_mutex);
+        s_mutex = NULL;
+        return retry_err;
+    }
+    s_started = false;
     esp_mqtt_client_register_event(s_client, ESP_EVENT_ANY_ID,
                                    mqtt_event_handler, NULL);
 
@@ -131,11 +182,8 @@ esp_err_t mqtt_service_start(void)
         return ESP_ERR_INVALID_STATE;
     }
     s_running = true;
-    const esp_err_t err = esp_mqtt_client_start(s_client);
-    if (err != ESP_OK)
-    {
-        s_running = false;
-    }
+    const esp_err_t err = try_start();
+    if (err != ESP_OK) schedule_start_retry();
     return err;
 }
 
@@ -147,12 +195,22 @@ esp_err_t mqtt_service_stop(void)
     }
     s_running = false;
     s_connected = false;
-    return esp_mqtt_client_stop(s_client);
+    if (s_start_retry_timer) (void)esp_timer_stop(s_start_retry_timer);
+    xSemaphoreTake(s_mutex, portMAX_DELAY);
+    const esp_err_t err = s_started ? esp_mqtt_client_stop(s_client) : ESP_OK;
+    if (err == ESP_OK) s_started = false;
+    xSemaphoreGive(s_mutex);
+    return err;
 }
 
 esp_err_t mqtt_service_destroy(void)
 {
-    s_running = false;
+    (void)mqtt_service_stop();
+    if (s_start_retry_timer) {
+        (void)esp_timer_stop(s_start_retry_timer);
+        (void)esp_timer_delete(s_start_retry_timer);
+        s_start_retry_timer = NULL;
+    }
     if (s_client != NULL)
     {
         esp_mqtt_client_destroy(s_client);

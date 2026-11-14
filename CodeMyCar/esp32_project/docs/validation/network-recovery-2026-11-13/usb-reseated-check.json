@@ -1,0 +1,120 @@
+{
+  "note": "USB reseated by user; telemetry only, no SWD/actuation/flash",
+  "samples": [
+    {
+      "at": 1794646634.448781,
+      "online": true,
+      "last_heartbeat_age": 29.3,
+      "uptime_s": 392,
+      "stm32_connected": true,
+      "sensor_age_s": 0.5,
+      "imu_age_s": 0.4,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646639.4613261,
+      "online": true,
+      "last_heartbeat_age": 4.3,
+      "uptime_s": 422,
+      "stm32_connected": true,
+      "sensor_age_s": 0.3,
+      "imu_age_s": 5.4,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646644.467959,
+      "online": true,
+      "last_heartbeat_age": 9.3,
+      "uptime_s": 422,
+      "stm32_connected": true,
+      "sensor_age_s": 0.3,
+      "imu_age_s": 0.1,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646649.475358,
+      "online": true,
+      "last_heartbeat_age": 14.3,
+      "uptime_s": 422,
+      "stm32_connected": true,
+      "sensor_age_s": 0.1,
+      "imu_age_s": 0.1,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646654.483047,
+      "online": true,
+      "last_heartbeat_age": 19.3,
+      "uptime_s": 422,
+      "stm32_connected": true,
+      "sensor_age_s": 0.1,
+      "imu_age_s": 0.1,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646659.490415,
+      "online": true,
+      "last_heartbeat_age": 24.3,
+      "uptime_s": 422,
+      "stm32_connected": true,
+      "sensor_age_s": 0.1,
+      "imu_age_s": 0.1,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646664.499435,
+      "online": true,
+      "last_heartbeat_age": 29.3,
+      "uptime_s": 422,
+      "stm32_connected": true,
+      "sensor_age_s": 0.1,
+      "imu_age_s": 0.1,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646669.506453,
+      "online": true,
+      "last_heartbeat_age": 4.3,
+      "uptime_s": 452,
+      "stm32_connected": true,
+      "sensor_age_s": 0.1,
+      "imu_age_s": 0.1,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794646674.5165231,
+      "online": true,
+      "last_heartbeat_age": 9.3,
+      "uptime_s": 452,
+      "stm32_connected": true,
+      "sensor_age_s": 0.1,
+      "imu_age_s": 0.1,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    }
+  ],
+  "events": [
+    "2026-11-14 16:57:18,307 [device.DEV_1] INFO: [INFO][system] PERF boot cpu=250000000 hclk=250000000 pclk=125000000 cache=1/1 dma_nc=8192 ",
+    "2026-11-14 16:57:18,584 [device.DEV_1] INFO: [WARNING][sensor] IMU init failed: 0x0302 (retry in 2s) ",
+    "2026-11-14 16:57:20,970 [device.DEV_1] INFO: [INFO][sensor] IMU ready (SH-2) ",
+    "2026-11-14 16:57:36,148 [device.DEV_1] INFO: [INFO][system] PERF boot cpu=250000000 hclk=250000000 pclk=125000000 cache=1/1 dma_nc=8192 ",
+    "2026-11-14 16:57:36,437 [device.DEV_1] INFO: [WARNING][sensor] IMU init failed: 0x0302 (retry in 2s) ",
+    "2026-11-14 16:57:38,814 [device.DEV_1] INFO: [INFO][sensor] IMU ready (SH-2) "
+  ],
+  "first_imu_logs": [
+    "2026-11-14 16:57:21,092 [device.DEV_1] INFO: [INFO][sensor] IMU yaw=-0.01 deg rate=0.11 dps bias=0.000 st=3 grv=3 gyro=3 ",
+    "2026-11-14 16:57:21,291 [device.DEV_1] INFO: [INFO][sensor] IMU yaw=-0.01 deg rate=0.00 dps bias=0.000 st=3 grv=13 gyro=13 "
+  ],
+  "last_imu_logs": [
+    "2026-11-14 16:57:54,286 [device.DEV_1] INFO: [INFO][sensor] IMU yaw=-0.00 deg rate=0.00 dps bias=0.000 st=3 grv=1528 gyro=1528 ",
+    "2026-11-14 16:57:54,396 [device.DEV_1] INFO: [INFO][sensor] IMU yaw=-0.00 deg rate=0.00 dps bias=0.000 st=3 grv=1538 gyro=1538 "
+  ]
+}

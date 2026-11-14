@@ -1,0 +1,7 @@
+{
+  "branch": "codex/network-startup-recovery",
+  "deployed": true,
+  "note": "ESP32 isolated USB: verified flash, 3 warm reset starts and65s heartbeat stability PASS. Not an external supply cold-start or injected network failure test.",
+  "image_sha256": "ed851ed6ae2e39e66a4d03ce44157264390495ca1f7c93dd9ce33670beec6c84",
+  "port": "/dev/cu.usbserial-110"
+}

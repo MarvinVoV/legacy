@@ -2,7 +2,7 @@
 
 /**
  * @file mqtt_service.h
- * @brief MQTT 客户端服务（线程安全，指数退避重连）
+ * @brief MQTT 客户端服务（SDK网络重连 + 有界间隔的启动失败重试）
  */
 
 #include <stdbool.h>
@@ -16,6 +16,9 @@ typedef void (*mqtt_rx_cb_t)(const char* topic, size_t topic_len,
                               void* user_ctx);
 
 esp_err_t mqtt_service_init(void);
+/** Idempotent start request. A synchronous error is returned to the caller
+ * and retried by the service every 2s until successful or explicitly stopped.
+ * Normal network disconnects are handled by ESP-MQTT, without starting twice. */
 esp_err_t mqtt_service_start(void);
 esp_err_t mqtt_service_stop(void);
 esp_err_t mqtt_service_destroy(void);

@@ -9,6 +9,7 @@
 #include "wifi_service.h"
 
 #include <string.h>
+#include <stdatomic.h>
 
 #include "cmcar_events.h"
 #include "esp_event.h"
@@ -23,9 +24,9 @@ static const char* TAG = "wifi_svc";
 
 #define WIFI_RECONNECT_MAX_MS 60000
 
-static bool s_connected = false;
-static bool s_running = false;
-static int s_retry_count = 0;
+static atomic_bool s_connected = false;
+static atomic_bool s_running = false;
+static atomic_int s_retry_count = 0;
 static esp_timer_handle_t s_reconnect_timer;
 
 /* 指数退避计算 */
@@ -39,10 +40,12 @@ static uint32_t backoff_ms(int attempt)
     return (delay > WIFI_RECONNECT_MAX_MS) ? WIFI_RECONNECT_MAX_MS : delay;
 }
 
+static void retry_connect_later(void);
+
 static void reconnect_timer_cb(void* arg)
 {
     (void)arg;
-    if (!s_running)
+    if (!s_running || s_connected)
     {
         return;
     }
@@ -50,6 +53,8 @@ static void reconnect_timer_cb(void* arg)
     if (err != ESP_OK)
     {
         ESP_LOGW(TAG, "esp_wifi_connect failed: %s", esp_err_to_name(err));
+        /* A synchronous failure need not emit STA_DISCONNECTED. */
+        retry_connect_later();
     }
 }
 
@@ -68,6 +73,23 @@ static void schedule_reconnect(uint32_t delay_ms)
     }
 }
 
+/* Both synchronous connect errors and disconnect events must re-arm recovery. */
+static void retry_connect_later(void)
+{
+    const int max_retry = CONFIG_CMCAR_WIFI_MAX_RETRY;
+    if (!s_running || s_connected) return;
+    if (max_retry != 0 && s_retry_count >= max_retry) {
+        ESP_LOGE(TAG, "Max retries (%d) reached, giving up", max_retry);
+        return;
+    }
+    const uint32_t delay = backoff_ms(s_retry_count);
+    /* Keep an unlimited deployment from overflowing after prolonged outages. */
+    if (max_retry != 0 || s_retry_count < 30) ++s_retry_count;
+    ESP_LOGI(TAG, "Reconnecting in %lu ms (attempt %d)",
+             (unsigned long)delay, s_retry_count);
+    schedule_reconnect(delay);
+}
+
 /* WiFi + IP 事件处理器 */
 static void wifi_event_handler(void* arg, esp_event_base_t event_base,
                                int32_t event_id, void* event_data)
@@ -78,7 +100,7 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
         {
             case WIFI_EVENT_STA_START:
                 ESP_LOGI(TAG, "STA started, connecting...");
-                esp_wifi_connect();
+                reconnect_timer_cb(NULL);
                 break;
 
             case WIFI_EVENT_STA_CONNECTED:
@@ -103,21 +125,7 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
                 esp_event_post(CMCAR_EVENTS, CMCAR_WIFI_DISCONNECTED, NULL, 0,
                                pdMS_TO_TICKS(100));
 
-                /* 指数退避重连 */
-                const int max_retry = CONFIG_CMCAR_WIFI_MAX_RETRY;
-                if (s_running && (max_retry == 0 || s_retry_count < max_retry))
-                {
-                    const uint32_t delay = backoff_ms(s_retry_count);
-                    ESP_LOGI(TAG, "Reconnecting in %lu ms (attempt %d)",
-                             (unsigned long)delay, s_retry_count + 1);
-                    s_retry_count++;
-                    schedule_reconnect(delay);
-                }
-                else
-                {
-                    ESP_LOGE(TAG, "Max retries (%d) reached, giving up",
-                             max_retry);
-                }
+                retry_connect_later();
                 break;
             }
 
@@ -127,6 +135,8 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
     }
     else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP)
     {
+        /* A queued IP event after stop/disconnect must not restart MQTT. */
+        if (!s_running || !s_connected) return;
         const ip_event_got_ip_t* evt = (ip_event_got_ip_t*)event_data;
         ESP_LOGI(TAG, "Got IP: " IPSTR, IP2STR(&evt->ip_info.ip));
         s_retry_count = 0;
@@ -189,6 +199,8 @@ esp_err_t wifi_service_init(void)
 
 esp_err_t wifi_service_start(void)
 {
+    if (s_running) return ESP_OK;
+    s_retry_count = 0;
     s_running = true;
     /* 配置 WiFi 参数 */
     wifi_config_t wifi_config = {

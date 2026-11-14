@@ -1,0 +1,175 @@
+{
+  "power_description": "6V 1000mA adapter, input100-240VAC; via DC-120533A; output voltage unmeasured",
+  "samples": [
+    {
+      "at": 1794645237.3046389,
+      "online": true,
+      "last_heartbeat_age": 14.1,
+      "uptime_s": 2,
+      "heap_free": 180871,
+      "stm32_connected": true,
+      "sensor_age_s": 0.2,
+      "imu_age_s": 2.1,
+      "yaw_deg": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794645242.31218,
+      "online": true,
+      "last_heartbeat_age": 19.1,
+      "uptime_s": 2,
+      "heap_free": 180871,
+      "stm32_connected": true,
+      "sensor_age_s": 0.2,
+      "imu_age_s": 0.1,
+      "yaw_deg": -0.1,
+      "imu_status": 3
+    },
+    {
+      "at": 1794645247.320044,
+      "online": true,
+      "last_heartbeat_age": 24.1,
+      "uptime_s": 2,
+      "heap_free": 180871,
+      "stm32_connected": true,
+      "sensor_age_s": 0.1,
+      "imu_age_s": 0.1,
+      "yaw_deg": -0.1,
+      "imu_status": 3
+    },
+    {
+      "at": 1794645252.328655,
+      "online": true,
+      "last_heartbeat_age": 29.1,
+      "uptime_s": 2,
+      "heap_free": 180871,
+      "stm32_connected": true,
+      "sensor_age_s": 0.0,
+      "imu_age_s": 0.0,
+      "yaw_deg": -0.1,
+      "imu_status": 3
+    },
+    {
+      "at": 1794645257.338241,
+      "online": true,
+      "last_heartbeat_age": 3.1,
+      "uptime_s": 33,
+      "heap_free": 182303,
+      "stm32_connected": true,
+      "sensor_age_s": 0.0,
+      "imu_age_s": 0.0,
+      "yaw_deg": -0.1,
+      "imu_status": 3
+    },
+    {
+      "at": 1794645262.34511,
+      "online": true,
+      "last_heartbeat_age": 8.1,
+      "uptime_s": 33,
+      "heap_free": 182303,
+      "stm32_connected": true,
+      "sensor_age_s": 0.2,
+      "imu_age_s": 1.9,
+      "yaw_deg": -0.1,
+      "imu_status": 3
+    },
+    {
+      "at": 1794645267.350629,
+      "online": true,
+      "last_heartbeat_age": 13.1,
+      "uptime_s": 33,
+      "heap_free": 182303,
+      "stm32_connected": true,
+      "sensor_age_s": 0.1,
+      "imu_age_s": 6.9,
+      "yaw_deg": -0.1,
+      "imu_status": 3
+    },
+    {
+      "at": 1794645272.360521,
+      "online": true,
+      "last_heartbeat_age": 18.1,
+      "uptime_s": 33,
+      "heap_free": 182303,
+      "stm32_connected": true,
+      "sensor_age_s": 0.1,
+      "imu_age_s": 12.0,
+      "yaw_deg": -0.1,
+      "imu_status": 3
+    },
+    {
+      "at": 1794645277.3695948,
+      "online": true,
+      "last_heartbeat_age": 23.1,
+      "uptime_s": 33,
+      "heap_free": 182303,
+      "stm32_connected": true,
+      "sensor_age_s": 0.2,
+      "imu_age_s": 17.0,
+      "yaw_deg": -0.1,
+      "imu_status": 3
+    },
+    {
+      "at": 1794645282.373728,
+      "online": true,
+      "last_heartbeat_age": 28.1,
+      "uptime_s": 33,
+      "heap_free": 182303,
+      "stm32_connected": true,
+      "sensor_age_s": 0.0,
+      "imu_age_s": 22.0,
+      "yaw_deg": -0.1,
+      "imu_status": 3
+    },
+    {
+      "at": 1794645287.380407,
+      "online": true,
+      "last_heartbeat_age": 3.2,
+      "uptime_s": 63,
+      "heap_free": 182339,
+      "stm32_connected": true,
+      "sensor_age_s": 0.0,
+      "imu_age_s": 27.0,
+      "yaw_deg": -0.1,
+      "imu_status": 3
+    },
+    {
+      "at": 1794645292.3868659,
+      "online": true,
+      "last_heartbeat_age": 8.2,
+      "uptime_s": 63,
+      "heap_free": 182339,
+      "stm32_connected": true,
+      "sensor_age_s": 0.2,
+      "imu_age_s": 32.0,
+      "yaw_deg": -0.1,
+      "imu_status": 3
+    },
+    {
+      "at": 1794645297.393644,
+      "online": true,
+      "last_heartbeat_age": 13.2,
+      "uptime_s": 63,
+      "heap_free": 182339,
+      "stm32_connected": true,
+      "sensor_age_s": 0.0,
+      "imu_age_s": 37.0,
+      "yaw_deg": -0.1,
+      "imu_status": 3
+    }
+  ],
+  "reopen_count": 1,
+  "imu_events": [
+    "2026-11-14 16:33:57,955 [device.DEV_1] INFO: [INFO][sensor] IMU ready (SH-2) ",
+    "2026-11-14 16:34:20,426 [device.DEV_1] INFO: [WARNING][sensor] IMU timeout -> reopen SH-2 "
+  ],
+  "imu_sample_log_count": 218,
+  "first_sample_logs": [
+    "2026-11-14 16:33:58,076 [device.DEV_1] INFO: [INFO][sensor] IMU yaw=-0.04 deg rate=-0.11 dps bias=0.000 st=3 grv=3 gyro=3 ",
+    "2026-11-14 16:33:58,264 [device.DEV_1] INFO: [INFO][sensor] IMU yaw=-0.05 deg rate=-0.22 dps bias=0.000 st=3 grv=14 gyro=14 "
+  ],
+  "last_sample_logs": [
+    "2026-11-14 16:34:20,216 [device.DEV_1] INFO: [INFO][sensor] IMU yaw=-0.08 deg rate=0.00 dps bias=0.000 st=3 grv=2022 gyro=2022 ",
+    "2026-11-14 16:34:20,425 [device.DEV_1] INFO: [INFO][sensor] IMU yaw=-0.08 deg rate=0.00 dps bias=0.000 st=3 grv=2022 gyro=2022 "
+  ]
+}

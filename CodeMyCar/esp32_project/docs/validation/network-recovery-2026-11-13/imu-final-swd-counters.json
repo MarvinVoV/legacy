@@ -1,0 +1,11 @@
+{
+  "read_only_hotplug": true,
+  "i2c_errors": 0,
+  "i2c_timeouts": 0,
+  "i2c_completions": 410657,
+  "reference_id": 2,
+  "grv_count": 41005,
+  "gyro_count": 41005,
+  "accel_count": 25940,
+  "note": "Final SWD snapshot after clockwise/counterclockwise manual tests, no reset or register writes."
+}

@@ -1,0 +1,139 @@
+{
+  "power_description": "User reports 6V DC adapter into DC-120533A power board; actual output voltage not verified",
+  "samples": [
+    {
+      "at": 1794644848.221357,
+      "online": true,
+      "last_heartbeat_age": 29.2,
+      "uptime_s": 122,
+      "heap_free": 182355,
+      "stm32_connected": true,
+      "sensor_age_s": 0.2,
+      "imu_age_s": 0.2,
+      "yaw_deg": 1.8,
+      "yaw_rate_dps": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794644853.228309,
+      "online": true,
+      "last_heartbeat_age": 4.2,
+      "uptime_s": 152,
+      "heap_free": 182355,
+      "stm32_connected": true,
+      "sensor_age_s": 0.2,
+      "imu_age_s": 4.8,
+      "yaw_deg": 1.8,
+      "yaw_rate_dps": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794644858.238432,
+      "online": true,
+      "last_heartbeat_age": 9.2,
+      "uptime_s": 152,
+      "heap_free": 182355,
+      "stm32_connected": true,
+      "sensor_age_s": 0.2,
+      "imu_age_s": 9.8,
+      "yaw_deg": 1.8,
+      "yaw_rate_dps": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794644863.248121,
+      "online": true,
+      "last_heartbeat_age": 14.2,
+      "uptime_s": 152,
+      "heap_free": 182355,
+      "stm32_connected": true,
+      "sensor_age_s": 0.1,
+      "imu_age_s": 14.8,
+      "yaw_deg": 1.8,
+      "yaw_rate_dps": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794644868.2561128,
+      "online": true,
+      "last_heartbeat_age": 19.3,
+      "uptime_s": 152,
+      "heap_free": 182355,
+      "stm32_connected": true,
+      "sensor_age_s": 0.3,
+      "imu_age_s": 19.8,
+      "yaw_deg": 1.8,
+      "yaw_rate_dps": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794644873.266117,
+      "online": true,
+      "last_heartbeat_age": 24.3,
+      "uptime_s": 152,
+      "heap_free": 182355,
+      "stm32_connected": true,
+      "sensor_age_s": 0.3,
+      "imu_age_s": 24.8,
+      "yaw_deg": 1.8,
+      "yaw_rate_dps": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794644878.2690618,
+      "online": true,
+      "last_heartbeat_age": 29.3,
+      "uptime_s": 152,
+      "heap_free": 182355,
+      "stm32_connected": true,
+      "sensor_age_s": 0.1,
+      "imu_age_s": 29.8,
+      "yaw_deg": 1.8,
+      "yaw_rate_dps": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794644883.279051,
+      "online": true,
+      "last_heartbeat_age": 4.3,
+      "uptime_s": 182,
+      "heap_free": 182355,
+      "stm32_connected": true,
+      "sensor_age_s": 0.2,
+      "imu_age_s": 34.8,
+      "yaw_deg": 1.8,
+      "yaw_rate_dps": 0.0,
+      "imu_status": 3
+    },
+    {
+      "at": 1794644888.284759,
+      "online": true,
+      "last_heartbeat_age": 9.3,
+      "uptime_s": 182,
+      "heap_free": 182355,
+      "stm32_connected": true,
+      "sensor_age_s": 0.2,
+      "imu_age_s": 39.8,
+      "yaw_deg": 1.8,
+      "yaw_rate_dps": 0.0,
+      "imu_status": 3
+    }
+  ],
+  "reopen_count": 2,
+  "imu_events": [
+    "2026-11-14 16:27:28,649 [device.DEV_1] INFO: [WARNING][sensor] IMU timeout -> reopen SH-2 ",
+    "2026-11-14 16:27:32,108 [device.DEV_1] INFO: [INFO][sensor] IMU ready (SH-2) ",
+    "2026-11-14 16:27:33,604 [device.DEV_1] INFO: [WARNING][sensor] IMU no first frame -> reopen SH-2 "
+  ],
+  "imu_sample_log_count": 4,
+  "first_sample_logs": [
+    "2026-11-14 16:27:28,240 [device.DEV_1] INFO: [INFO][sensor] IMU yaw=1.81 deg rate=0.00 dps bias=0.000 st=3 grv=14984 gyro=14984 ",
+    "2026-11-14 16:27:28,346 [device.DEV_1] INFO: [INFO][sensor] IMU yaw=1.81 deg rate=0.00 dps bias=0.000 st=3 grv=14984 gyro=14984 ",
+    "2026-11-14 16:27:28,441 [device.DEV_1] INFO: [INFO][sensor] IMU yaw=1.81 deg rate=0.00 dps bias=0.000 st=3 grv=14984 gyro=14984 "
+  ],
+  "last_sample_logs": [
+    "2026-11-14 16:27:28,346 [device.DEV_1] INFO: [INFO][sensor] IMU yaw=1.81 deg rate=0.00 dps bias=0.000 st=3 grv=14984 gyro=14984 ",
+    "2026-11-14 16:27:28,441 [device.DEV_1] INFO: [INFO][sensor] IMU yaw=1.81 deg rate=0.00 dps bias=0.000 st=3 grv=14984 gyro=14984 ",
+    "2026-11-14 16:27:28,640 [device.DEV_1] INFO: [INFO][sensor] IMU yaw=1.81 deg rate=0.00 dps bias=0.000 st=3 grv=14984 gyro=14984 "
+  ]
+}

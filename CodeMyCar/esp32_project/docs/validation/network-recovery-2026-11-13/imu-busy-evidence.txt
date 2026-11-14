@@ -1,0 +1,25 @@
+2026-11-14 16:35:48,304 [device.DEV_1] INFO: [INFO][sensor] IMU probe: 0x4A=2 0x4B=2 (0=OK 1=ERR 2=BUSY 3=TIMEOUT) 
+2026-11-14 16:35:48,304 [device.DEV_1] INFO: [WARNING][sensor] IMU init failed: 0x0302 (retry in 2s) 
+2026-11-14 16:35:48,470 [device.DEV_1] INFO: [WARNING][sensor] IMU no data reads=7074675 pkts=7569 hdr=13 00 03 15 pl=FF FF FF FF 
+2026-11-14 16:35:48,482 [device.DEV_1] INFO: [WARNING][sensor] IMU no data reads=7074675 pkts=7569 hdr=13 00 03 15 pl=FF FF FF FF 
+2026-11-14 16:35:48,660 [device.DEV_1] INFO: [WARNING][sensor] IMU no data reads=7074675 pkts=7569 hdr=13 00 03 15 pl=FF FF FF FF 
+2026-11-14 16:35:48,665 [device.DEV_1] INFO: [WARNING][sensor] IMU no data reads=7074675 pkts=7569 hdr=13 00 03 15 pl=FF FF FF FF 
+2026-11-14 16:35:48,777 [device.DEV_1] INFO: [WARNING][sensor] IMU no data reads=7074675 pkts=7569 hdr=13 00 03 15 pl=FF FF FF FF 
+2026-11-14 16:35:48,965 [device.DEV_1] INFO: [WARNING][sensor] IMU no data reads=7074675 pkts=7569 hdr=13 00 03 15 pl=FF FF FF FF 
+2026-11-14 16:35:48,971 [device.DEV_1] INFO: [WARNING][sensor] IMU no data reads=7074675 pkts=7569 hdr=13 00 03 15 pl=FF FF FF FF 
+2026-11-14 16:35:49,166 [device.DEV_1] INFO: [WARNING][sensor] IMU no data reads=7074675 pkts=7569 hdr=13 00 03 15 pl=FF FF FF FF 
+2026-11-14 16:35:49,170 [device.DEV_1] INFO: [WARNING][sensor] IMU no data reads=7074675 pkts=7569 hdr=13 00 03 15 pl=FF FF FF FF 
+2026-11-14 16:35:49,365 [device.DEV_1] INFO: [WARNING][sensor] IMU no data reads=7074675 pkts=7569 hdr=13 00 03 15 pl=FF FF FF FF 
+2026-11-14 16:35:49,521 [device.DEV_1] INFO: [WARNING][sensor] IMU no data reads=7074675 pkts=7569 hdr=13 00 03 15 pl=FF FF FF FF 
+2026-11-14 16:35:49,525 [device.DEV_1] INFO: [WARNING][sensor] IMU no data reads=7074675 pkts=7569 hdr=13 00 03 15 pl=FF FF FF FF 
+2026-11-14 16:35:49,526 [device.DEV_1] INFO: [WARNING][sensor] IMU no data reads=7074675 pkts=7569 hdr=13 00 03 15 pl=FF FF FF FF 
+2026-11-14 16:35:49,773 [device.DEV_1] INFO: [WARNING][sensor] IMU no data reads=7074675 pkts=7569 hdr=13 00 03 15 pl=FF FF FF FF 
+2026-11-14 16:35:49,774 [device.DEV_1] INFO: [WARNING][sensor] IMU no data reads=7074675 pkts=7569 hdr=13 00 03 15 pl=FF FF FF FF 
+2026-11-14 16:35:49,966 [device.DEV_1] INFO: [WARNING][sensor] IMU no data reads=7074675 pkts=7569 hdr=13 00 03 15 pl=FF FF FF FF 
+2026-11-14 16:35:49,978 [device.DEV_1] INFO: [WARNING][sensor] IMU no data reads=7074675 pkts=7569 hdr=13 00 03 15 pl=FF FF FF FF 
+2026-11-14 16:35:50,165 [device.DEV_1] INFO: [WARNING][sensor] IMU no data reads=7074675 pkts=7569 hdr=13 00 03 15 pl=FF FF FF FF 
+2026-11-14 16:35:50,173 [device.DEV_1] INFO: [WARNING][sensor] IMU no data reads=7074675 pkts=7569 hdr=13 00 03 15 pl=FF FF FF FF 
+2026-11-14 16:35:50,346 [device.DEV_1] INFO: [WARNING][sensor] IMU no data reads=7074675 pkts=7569 hdr=13 00 03 15 pl=FF FF FF FF 
+2026-11-14 16:35:50,780 [device.DEV_1] INFO: [INFO][sensor] IMU probe: 0x4A=2 0x4B=2 (0=OK 1=ERR 2=BUSY 3=TIMEOUT) 
+2026-11-14 16:35:50,781 [device.DEV_1] INFO: [WARNING][sensor] IMU init failed: 0x0302 (retry in 2s) 
+2026-11-14 16:35:50,856 [device.DEV_1] INFO: [WARNING][sensor] IMU no data reads=7270366 pkts=7569 hdr=13 00 03 15 pl=FF FF FF FF 

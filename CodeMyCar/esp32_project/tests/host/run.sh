@@ -18,3 +18,5 @@ cc -std=c11 -O2 -g -fsanitize=address,undefined \
   ../../components/pkt_codec/src/motion_status.c \
   ../../managed_components/espressif__cjson/cJSON/cJSON.c -o "$out/test_motion_json"
 "$out/test_motion_json"
+
+bash ./run_network.sh
