@@ -16,6 +16,9 @@
 #include "steering_lut.h"
 #include "power_task.h"
 #include "light_task.h"
+#include "display.h"
+#include "display_config.h"
+#include "display_eye.h"
 
 
 /**
@@ -314,6 +317,18 @@ int System_Initialize()
     ImuTask_Init(&imuService);
     PowerTask_Init(); /* Optional INA219 telemetry; independent low-priority I2C2. */
     LightTask_Init(); /* Low-brightness LED bring-up only; no motion side effects. */
+
+    /* 5c. 显示屏（GC9A01，SPI2）：失败不阻塞系统 */
+    if (!Display_Init())
+    {
+        LOG_ERROR(LOG_MODULE_SYSTEM, "Display init failed; system continues");
+    }
+#if DISPLAY_SELF_TEST
+    else
+    {
+        DisplayEye_Start();
+    }
+#endif
 
     // 6. 蜂鸣器（上电自检响 3 声，便于确认接线）
     Buzzer_Init();

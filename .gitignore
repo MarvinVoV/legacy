@@ -60,3 +60,6 @@ dkms.conf
 # Local reference repositories (not part of CodeMyCar)
 /speech-demo-master/
 /xiaozhi-esp32-main/
+
+# 屏幕厂商资料（大文件，不入库）
+CodeMyCar/1.28寸彩屏7针圆板模块/
