@@ -1,0 +1,174 @@
+[
+  {
+    "source": "cmcar-new-module-rear-wheels.json",
+    "seq": 220,
+    "start_local": "2026-11-14T18:50:00.575119",
+    "last_command_local": "2026-11-14T18:50:10.505587",
+    "parameters": {
+      "mode": 3,
+      "linear_vel_mmps": 50,
+      "curvature_1pm": 0,
+      "refresh_ms_approx": 120
+    },
+    "commands": 81,
+    "ack_count": 81,
+    "ack_statuses": [
+      0
+    ],
+    "session_ids": [
+      3438066493
+    ],
+    "motion_frames": 156,
+    "operator_observation": "User: no wheel movement",
+    "left_mmps_range": [
+      0,
+      0
+    ],
+    "right_mmps_range": [
+      0,
+      0
+    ]
+  },
+  {
+    "source": "cmcar-esp-usb-same-ground-forward10.json",
+    "seq": 230,
+    "start_local": "2026-11-14T19:17:57.697642",
+    "last_command_local": "2026-11-14T19:18:07.618318",
+    "parameters": {
+      "mode": 3,
+      "linear_vel_mmps": 50,
+      "curvature_1pm": 0,
+      "refresh_ms_approx": 120
+    },
+    "commands": 81,
+    "ack_count": 81,
+    "ack_statuses": [
+      0
+    ],
+    "session_ids": [
+      2113523378
+    ],
+    "motion_frames": 168,
+    "operator_observation": "User: no wheel movement",
+    "left_mmps_range": [
+      0,
+      0
+    ],
+    "right_mmps_range": [
+      0,
+      0
+    ]
+  },
+  {
+    "source": "cmcar-direct-ground-restored-forward10.json",
+    "seq": 240,
+    "start_local": "2026-11-14T19:31:29.194772",
+    "last_command_local": "2026-11-14T19:31:39.117618",
+    "parameters": {
+      "mode": 3,
+      "linear_vel_mmps": 50,
+      "curvature_1pm": 0,
+      "refresh_ms_approx": 120
+    },
+    "commands": 81,
+    "ack_count": 81,
+    "ack_statuses": [
+      0
+    ],
+    "session_ids": [
+      3083884283
+    ],
+    "motion_frames": 174,
+    "operator_observation": "User: no response; contradicts measured wheel movement, unresolved",
+    "left_mmps_range": [
+      0,
+      54
+    ],
+    "right_mmps_range": [
+      0,
+      54
+    ]
+  },
+  {
+    "source": "cmcar-motor-correlated-probe.json",
+    "seq": 250,
+    "start_local": "2026-11-14T19:43:16.484872",
+    "last_command_local": "2026-11-14T19:43:22.445368",
+    "parameters": {
+      "mode": 3,
+      "linear_vel_mmps": 50,
+      "curvature_1pm": 0,
+      "refresh_ms_approx": 120
+    },
+    "commands": 49,
+    "ack_count": 49,
+    "ack_statuses": [
+      0
+    ],
+    "session_ids": [
+      3083884283
+    ],
+    "motion_frames": 100,
+    "operator_observation": "User: saw movement, second wheel not clearly observed",
+    "left_mmps_range": [
+      0,
+      54
+    ],
+    "right_mmps_range": [
+      0,
+      54
+    ],
+    "raw_counter_delta": {
+      "TIM4_signed": -2196,
+      "TIM5_signed": 2166
+    },
+    "final_stop": {
+      "ok": true,
+      "stopped": true,
+      "accepted": true,
+      "confirmed": true,
+      "seq": 51
+    }
+  },
+  {
+    "source": "cmcar-motor-correlated-repeat10.json",
+    "seq": 251,
+    "start_local": "2026-11-14T19:44:09.403165",
+    "last_command_local": "2026-11-14T19:44:19.311708",
+    "parameters": {
+      "mode": 3,
+      "linear_vel_mmps": 50,
+      "curvature_1pm": 0,
+      "refresh_ms_approx": 120
+    },
+    "commands": 81,
+    "ack_count": 81,
+    "ack_statuses": [
+      0
+    ],
+    "session_ids": [
+      3083884283
+    ],
+    "motion_frames": 173,
+    "operator_observation": "User: both wheels rotated",
+    "left_mmps_range": [
+      0,
+      54
+    ],
+    "right_mmps_range": [
+      0,
+      55
+    ],
+    "raw_counter_delta": {
+      "TIM4_signed": -3752,
+      "TIM5_signed": 3748
+    },
+    "final_stop": {
+      "ok": true,
+      "stopped": true,
+      "accepted": true,
+      "confirmed": true,
+      "seq": 53
+    }
+  }
+]

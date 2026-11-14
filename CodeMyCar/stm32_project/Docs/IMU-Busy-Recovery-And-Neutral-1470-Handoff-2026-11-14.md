@@ -4,12 +4,14 @@
 
 ## 当前状态（最新，以此为准）
 
-- 新增独立电源板已完全移除：STM32与ESP32各自USB供电，UART GPIO4→PA11/GPIO5←PA12，**两板GND直接连接**；IMU取STM32 3V3/GND、PB6/PB7，RST不接；TB6612独立电机电源，信号GND直连STM32，舵机取TB6612 5V/GND、PA5信号。没有USB与外部5V并联。
-- 固件：IMU BUSY有界恢复/故障快照与唯一停车中位1470µs已完整host回归、ARM构建、外部电源关闭后的完整下载verify及实际50Hz/1470µs核验，已合并main，未push。
-- 双USB静止30秒基线通过：通信和心跳持续，IMU约100Hz；零轮速、里程0不自增，无重启/IMU重开。此前还通过新固件120秒IMU连续采样。
-- **最终实物回归通过（区别于早先有争议的短测）**：单独+50mm/s正转10秒、-50mm/s反转10秒，用户分别确认两只后轮确实转动且正常停下；小幅舵机左/中/右/中各5秒，用户确认动作正常、最终稳定居中，后轮测量速度全程0。最终可靠STOP、双轮0速。
-- 当前基线可工作，但**外部电源方案未验收/根因未唯一定位**。舵机地线对照支持回路/接触影响；双USB成功也改变了供电与观察时间，不能仅凭这些现象判定某电源板损坏、或断言所有历史问题都由单一根因引起。
-- 未验收：脱离USB的供电方案、独立电源开启时烧录（地线更改后未重新对照）、动态负载/长期稳定性、重新装配后的落地直行精度。不要直接接回新增电源板并宣布完成。
+最新接线、实物验收、失败/成功逐项对比及新保护固件，统一见 [Motor-Servo-Dual-USB-Verified-Baseline-2026-11-14.md](Motor-Servo-Dual-USB-Verified-Baseline-2026-11-14.md)。下面历史“最终通过”等标题只描述各自窗口，不能覆盖后续失败。
+
+- 基线：STM32/ESP32各自USB供电，两板UART GPIO4→PA11/GPIO5←PA12，GND直接连接；IMU取STM32 3V3/GND、PB6/PB7、不接RST；TB6612原电池供电，信号GND直连STM32；舵机PA5、取TB6612 5V/GND，中位1470µs。新增独立供电板完全退出。
+- 舵机最新实物通过：19:35左右/中各5秒，用户确认正常；161ACK、337运动帧轮速全0，IMU约100Hz，ServoTask20ms/miss0，rx_drop/log_drop0。
+- 电机19:44正转10秒：两路原始计数各约3750、实测速度约50mm/s，用户明确两轮都转。此前零轮速不转、以及19:31有轮速但用户没看到的矛盾仍保留；历史间歇不转根因未定位，外部电源方案未验收。
+- 发现正式固件的无进展门槛15RPM漏掉50mm/s（约14.691RPM）。已在`codex/motor-low-speed-progress-guard`修复、测试、烧录完整verify+reset；新BIN SHA256为`345548e67aa274bdc80622c9b5c89bc3ac6cd59e782e9e92efff9fc53d2b5947`。TB6612断电实测约2.2秒fault8、两路CCR=0/inhibit=true、新运动拒绝，之后正常复位。当前分支不是main，不自动push。
+- 保护修复后已上电复测±50mm/s各12秒、中间停车8秒；用户明确两轮正反转及停车正常，无误报；最终STOP seq64确认，零速/无故障。详细证据见新基线文档。
+- 未验收：历史间歇故障根因、外部供电冷启动/带载、重新装配后落地精度；不要把保护修复当成电机不转根因修复。
 
 以下为历史失败过程。源代码与完整STM32 host回归、NoSonar ARM构建通过。此前烧录未验收：ST-LINK可识别芯片，但ELF/BIN、UnderReset/Normal连接在sector0擦除阶段失败；最后一次有libusb设备无响应，随后No debug probe detected。已请求关闭升级工具并重新连接可靠USB。选项字节只读RDP=AA、WRPS均未启用；未更改保护/选项字节。不能确认擦除失败后Flash完整，连接恢复后应先完成同一BIN写入与完整verify，再重启验收。
 
@@ -106,3 +108,35 @@ ESP32联网修复已提交38e5ed6（之前实机通过），可独立合并main�
 本轮观测基于API/MQTT，无ST-LINK操作；ACK流和测量分别验证，且实物反馈独立记录。ACK流新脚本每120ms刷新，监控最近ACK不超过500ms及fault/lease/轮速边界，避免单次350ms迟到就把已执行的阶段错误描述成未开始。HTTP/ACK不是实物证明；实物否定时该轮不能验收。聊天提示和工具输出存在延迟，应先预告并单独执行足够观察时长，保存实际发送时间戳，不能把工具返回时刻称为动作开始。
 
 证据：dual-usb-isolated-baseline.json、dual-usb-forward-10s.json、dual-usb-reverse-10s.json、dual-usb-servo-small.json、dual-usb-final-state.json；每个动作报告含operator_confirmation。当前没有继续运动指令，服务保持运行。后续引入外部供电应保持固件/指令/观察时长一致，一次只改变一个支路，先验收静态再带载；不在烧录失败或无STM遥测状态继续判断IMU。
+
+## 更换另一块电源模块：仅ESP供电的初步对照
+
+用户另取一块较大电源模块，型号/输出电流和实测电压尚未提供。仅ESP取该模块5V，STM32仍USB、IMU取STM32 3V3，UART与两板直接GND按建议恢复；不通过新模块转接两板地线。用户报告板上RGB/绿灯偶发亮。未解释具体灯功能，不把亮灭当联网或电压合格依据。
+
+只读45秒连接观察通过：ESP心跳uptime123→153秒，堆182387B稳定；STM连接持续、普通遥测和IMU年龄0–0.1秒，GRV/gyro4444→8916约100Hz，无boot/reopen/init失败。IMU_BUS累计err1993在窗口前已存在、窗口中不增加，busy/timeout/recover均0；不是每条告警都代表一次新错误。保持STOP、零轮速，全程无动作、无ST-LINK。只证明此供电组合短时待机通信通过，不证明带载/冷启动/长期可靠性或烧录条件通过，也不能据此判断原电源板已损坏。证据new-power-module-esp-check.json（仅ESP时STM未接是预期）、new-module-uart-connected.json。
+
+## 新模块供ESP时运动失败与纯上报核查（最新）
+
+同一软件，ESP改新模块供电、STM USB，用户确认驱动上电稳定后执行+50mm/s10秒：81次发送/81次ACK均status0，156帧实测左右速度全0，里程无增量，用户确认实物无动作。脚本判失败后finally STOP确认，反转未执行。此结果不同于早先短测时序争议：本轮是有效指令被接受但无测量运动，不能按通过处理，也不能仅凭关联判新电源模块损坏。执行链/禁止标志/驱动供电/地线等仍需区分。
+
+用户要求暂停动作先查上报，仅读35秒：heartbeat2帧，motion35帧，heading339、imu337帧，lighting35帧，battery31帧；新鲜度IMU约0.1秒、motion约0.5秒、lighting/battery约1秒。IMU累计错误1993窗口内不增，busy/timeout/recover均0，无重启/重开，近期日志rx_drop/log_drop=0。INA219 available=false/error1，电压电流SOC均null；仅错误状态正常上报，不是有效测量。超声未启用，65535是无效值，不是真实距离。链路上报通过不能代替执行器验收；当前STOP、两轮零速。证据new-module-motor-failure-summary.json、new-module-rear-wheels.json、reporting-readonly-audit.json。没有继续动作或ST-LINK操作。
+
+## 电机执行层小块只读诊断（最新）
+
+为区分软件禁止与实际驱动链路，STOP下先小块读取确认计时器运行、目标0、inhibit=true；随后已授权悬空50mm/s仅3秒，使用热连接小块RAM/寄存器读取，不烧录、不写目标寄存器、不运行checksum。基于当前NoSonar ELF动态解析符号/偏移；未来编译后不可复用绝对地址。
+
+50mm/s活动采样：MotionContext cmdL/R及驱动target/ramp均14.691RPM，两个HAL inhibit=false；TIM3 CCR1/2约1985/1987→2199/2201（ARR15624，约12.7→14.1%）；GPIOF ODR=0x140；TIM4 CNT65534、TIM5 CNT65529两次不变。说明控制逻辑已放行、计时器配置在产生PWM，但不能证明PA6/7引脚波形已到TB6612或VM正常。
+
+为排除只在50mm/s起步死区的解释，100mm/s2.5秒短诊断：目标/ramp29.382RPM、inhibit=false、CCR约3483/3479→3920/3915（22.3→25.1%），同两路CNT不变。随后日志明确encoder no-progress fault，API error8，ACK status5（内部执行失败）；不是仅据ACK码推断网络错误。脚本finally的状态检查把仍锁存fault也视为失败，输出FINAL_STOP_FAILED；agent因此立即要求物理关闭驱动并重新可靠STOP，后续accepted/confirmed/stopped均true、seq41，mode0、实际零速、fault8保留，不再发送动作。不能声称故障已清除或已通过。
+
+当前结论：目标与PWM已在STM内部确认，测量计数不动且用户观察未转。下一步核对TB6612电机主电源VM/VIN是否仍原12V电池、STBY/逻辑使能/信号到达与实际供电；不能将“有PWM寄存器值”等同于电机端已有驱动电压，也不能唯一归因新ESP电源模块。已请求用户保持TB6612关闭核对主电源来源。所有读数/故障/STOP原始证据保留。
+
+### 主电源来源与引脚复用核对
+
+用户确认TB6612主电源VM/VIN仍原12V电池、接法未变，并表示目前TB6612电源开着。agent未再发运动/清故障；STOP下小块只读确认GPIOA PA6/PA7 MODER=2（AF）、AFRL对应AF2（TIM3）；TIM3 CR1=0x81、CCER=0x11，两路已使能，STOP CCR1/2=0。不能把内部配置正确等同于驱动板端的波形/供电正确。下一步请求VM/VIN对GND实际电压；有表则测量，无表则核实INA219是否仍串电池正极并恢复其逻辑/I2C供电，避免继续基于“12V标签/开关已开”推断电压正常。保持故障8锁存，不继续动作。
+
+## ESP恢复USB、仍经独立板共地的对照失败
+
+用户明确ESP32 USB、STM32 USB，但两板GND仍各接独立电源板，RGB此次不亮。该接法不是此前已实物通过的“两板GND直接连接、独立板完全移除”。预检两板在线、无fault、STOP/零速、IMU新鲜；随后相同50mm/s10秒正转，81次发送/ACK均status0，168帧速度全0，finally STOP确认seq43约150.9ms。单独恢复ESP USB未恢复电机，不能宣称ESP独立供电就是唯一原因，也不能用RGB灭推断正常。
+
+下一步只将GND拓扑恢复此前成功基线：全断电，拔两板到新电源板的GND，ESP GND直连STM GND，TB信号GND直连STM，双USB及UART等其他线不变。先只上主板、TB关闭核查，再同条件动作。未继续增加传感器接线或修改代码。

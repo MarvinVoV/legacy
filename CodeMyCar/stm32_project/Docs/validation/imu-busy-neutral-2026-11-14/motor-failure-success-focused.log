@@ -1,0 +1,262 @@
+2026-11-14 18:50:00,621 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=0.00 ref=0.00 err=0.00 corr=0.000 k=0.000 v=0.000
+2026-11-14 18:50:00,621 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.01 pulses=-7
+2026-11-14 18:50:00,725 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.01 pulses=2
+2026-11-14 18:50:01,165 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.12 pulses=-7
+2026-11-14 18:50:01,166 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.12 pulses=2
+2026-11-14 18:50:01,648 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=0.00 ref=0.00 err=0.00 corr=0.000 k=0.000 v=0.000
+2026-11-14 18:50:01,653 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.13 pulses=-7
+2026-11-14 18:50:01,654 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.13 pulses=2
+2026-11-14 18:50:02,169 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.15 pulses=-7
+2026-11-14 18:50:02,175 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.15 pulses=2
+2026-11-14 18:50:02,630 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=0.00 ref=0.00 err=0.00 corr=0.000 k=0.000 v=0.000
+2026-11-14 18:50:02,724 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.16 pulses=-7
+2026-11-14 18:50:02,729 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.16 pulses=2
+2026-11-14 18:50:03,124 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.17 pulses=-7
+2026-11-14 18:50:03,141 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.17 pulses=2
+2026-11-14 18:50:03,615 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=0.00 ref=0.00 err=0.00 corr=0.000 k=0.000 v=0.000
+2026-11-14 18:50:03,667 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.19 pulses=-7
+2026-11-14 18:50:03,673 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.19 pulses=2
+2026-11-14 18:50:04,128 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.20 pulses=-7
+2026-11-14 18:50:04,128 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.20 pulses=2
+2026-11-14 18:50:04,639 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=0.00 ref=0.00 err=0.00 corr=0.000 k=0.000 v=0.000
+2026-11-14 18:50:04,707 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.22 pulses=-7
+2026-11-14 18:50:04,711 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.22 pulses=2
+2026-11-14 18:50:05,127 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.23 pulses=-7
+2026-11-14 18:50:05,147 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.23 pulses=2
+2026-11-14 18:50:05,647 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=0.00 ref=0.00 err=0.00 corr=0.000 k=0.000 v=0.000
+2026-11-14 18:50:05,657 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.25 pulses=-7
+2026-11-14 18:50:05,658 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.25 pulses=2
+2026-11-14 18:50:06,144 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.26 pulses=-7
+2026-11-14 18:50:06,152 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.26 pulses=2
+2026-11-14 18:50:06,616 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=0.00 ref=0.00 err=0.00 corr=0.000 k=0.000 v=0.000
+2026-11-14 18:50:06,669 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.28 pulses=-7
+2026-11-14 18:50:06,673 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.28 pulses=2
+2026-11-14 18:50:07,171 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.29 pulses=-7
+2026-11-14 18:50:07,172 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.29 pulses=2
+2026-11-14 18:50:07,461 [device.DEV_1] INFO: [INFO][system] RTOS motor_l n=2017 min=5ms max=5ms miss=0 budget=7ms
+2026-11-14 18:50:07,471 [device.DEV_1] INFO: [INFO][system] RTOS motor_r n=2017 min=5ms max=5ms miss=0 budget=7ms
+2026-11-14 18:50:07,483 [device.DEV_1] INFO: [INFO][system] PERF cpu_permille=126 heap=10544 min=9672 tasks=15 rx_drop=0 log_drop=0
+2026-11-14 18:50:07,685 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=0.00 ref=0.00 err=0.00 corr=0.000 k=0.000 v=0.000
+2026-11-14 18:50:07,693 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.31 pulses=-7
+2026-11-14 18:50:07,694 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.31 pulses=2
+2026-11-14 18:50:08,151 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.32 pulses=-7
+2026-11-14 18:50:08,152 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.32 pulses=2
+2026-11-14 18:50:08,637 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=0.00 ref=0.00 err=0.00 corr=0.000 k=0.000 v=0.000
+2026-11-14 18:50:08,639 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.34 pulses=-7
+2026-11-14 18:50:08,725 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.34 pulses=2
+2026-11-14 18:50:09,138 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.35 pulses=-7
+2026-11-14 18:50:09,138 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.35 pulses=2
+2026-11-14 18:50:09,624 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=0.00 ref=0.00 err=0.00 corr=0.000 k=0.000 v=0.000
+2026-11-14 18:50:09,666 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.37 pulses=-7
+2026-11-14 18:50:09,681 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.37 pulses=2
+2026-11-14 18:50:10,162 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.38 pulses=-7
+2026-11-14 18:50:10,162 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.38 pulses=2
+2026-11-14 18:50:10,623 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=0.02 ref=0.00 err=0.00 corr=0.000 k=0.000 v=0.000
+2026-11-14 18:50:10,697 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.39 pulses=-7
+2026-11-14 18:50:10,700 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.39 pulses=2
+2026-11-14 19:17:57,299 [device.DEV_1] INFO: [INFO][system] RTOS motor_l n=2016 min=5ms max=5ms miss=0 budget=7ms
+2026-11-14 19:17:57,300 [device.DEV_1] INFO: [INFO][system] RTOS motor_r n=2016 min=5ms max=5ms miss=0 budget=7ms
+2026-11-14 19:17:57,359 [device.DEV_1] INFO: [INFO][system] PERF cpu_permille=101 heap=10544 min=9680 tasks=15 rx_drop=0 log_drop=0
+2026-11-14 19:17:57,743 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=0.40 ref=0.00 err=0.00 corr=0.000 k=0.000 v=0.000
+2026-11-14 19:17:57,776 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.01 pulses=-2
+2026-11-14 19:17:57,781 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.01 pulses=1
+2026-11-14 19:17:58,240 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.12 pulses=-2
+2026-11-14 19:17:58,368 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.12 pulses=1
+2026-11-14 19:17:58,815 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=0.40 ref=0.00 err=0.00 corr=0.000 k=0.000 v=0.000
+2026-11-14 19:17:58,819 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.13 pulses=-2
+2026-11-14 19:17:58,819 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.13 pulses=1
+2026-11-14 19:17:59,244 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.15 pulses=-2
+2026-11-14 19:17:59,337 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.15 pulses=1
+2026-11-14 19:17:59,776 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=0.40 ref=0.00 err=0.00 corr=0.000 k=0.000 v=0.000
+2026-11-14 19:17:59,787 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.16 pulses=-2
+2026-11-14 19:17:59,788 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.16 pulses=1
+2026-11-14 19:18:00,250 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.17 pulses=-2
+2026-11-14 19:18:00,754 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=0.40 ref=0.00 err=0.00 corr=0.000 k=0.000 v=0.000
+2026-11-14 19:18:00,755 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.19 pulses=-2
+2026-11-14 19:18:00,755 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.19 pulses=1
+2026-11-14 19:18:01,237 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.20 pulses=-2
+2026-11-14 19:18:01,333 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.20 pulses=1
+2026-11-14 19:18:01,744 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=0.40 ref=0.00 err=0.00 corr=0.000 k=0.000 v=0.000
+2026-11-14 19:18:01,806 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.22 pulses=-2
+2026-11-14 19:18:01,811 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.22 pulses=1
+2026-11-14 19:18:02,292 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.23 pulses=-2
+2026-11-14 19:18:02,293 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.23 pulses=1
+2026-11-14 19:18:02,894 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=0.41 ref=0.00 err=0.00 corr=0.000 k=0.000 v=0.000
+2026-11-14 19:18:02,902 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.25 pulses=-2
+2026-11-14 19:18:02,903 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.25 pulses=1
+2026-11-14 19:18:03,321 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.26 pulses=-2
+2026-11-14 19:18:03,325 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.26 pulses=1
+2026-11-14 19:18:03,763 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=0.40 ref=0.00 err=0.00 corr=0.000 k=0.000 v=0.000
+2026-11-14 19:18:03,769 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.28 pulses=-2
+2026-11-14 19:18:03,769 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.28 pulses=1
+2026-11-14 19:18:04,357 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.29 pulses=-2
+2026-11-14 19:18:04,358 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.29 pulses=1
+2026-11-14 19:18:04,772 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=0.40 ref=0.00 err=0.00 corr=0.000 k=0.000 v=0.000
+2026-11-14 19:18:04,775 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.31 pulses=-2
+2026-11-14 19:18:04,776 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.31 pulses=1
+2026-11-14 19:18:05,295 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.32 pulses=-2
+2026-11-14 19:18:05,299 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.32 pulses=1
+2026-11-14 19:18:05,793 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=0.40 ref=0.00 err=0.00 corr=0.000 k=0.000 v=0.000
+2026-11-14 19:18:05,793 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.34 pulses=-2
+2026-11-14 19:18:05,793 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.34 pulses=1
+2026-11-14 19:18:06,293 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.35 pulses=-2
+2026-11-14 19:18:06,297 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.35 pulses=1
+2026-11-14 19:18:06,758 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=0.40 ref=0.00 err=0.00 corr=0.000 k=0.000 v=0.000
+2026-11-14 19:18:06,759 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.37 pulses=-2
+2026-11-14 19:18:06,822 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.37 pulses=1
+2026-11-14 19:18:07,249 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.38 pulses=-2
+2026-11-14 19:18:07,334 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.38 pulses=1
+2026-11-14 19:18:07,388 [device.DEV_1] INFO: [INFO][system] RTOS motor_l n=2015 min=5ms max=5ms miss=0 budget=7ms
+2026-11-14 19:18:07,388 [device.DEV_1] INFO: [INFO][system] RTOS motor_r n=2015 min=5ms max=5ms miss=0 budget=7ms
+2026-11-14 19:18:07,402 [device.DEV_1] INFO: [INFO][system] PERF cpu_permille=126 heap=10544 min=9680 tasks=15 rx_drop=0 log_drop=0
+2026-11-14 19:18:07,758 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=0.40 ref=0.00 err=0.00 corr=0.000 k=0.000 v=0.000
+2026-11-14 19:18:07,761 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=-0.0 duty=0.39 pulses=-2
+2026-11-14 19:18:07,762 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.39 pulses=1
+2026-11-14 19:31:29,280 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=-0.32 ref=0.00 err=0.00 corr=0.000 k=0.000 v=0.000
+2026-11-14 19:31:29,286 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=0.0 duty=0.01 pulses=-48
+2026-11-14 19:31:29,286 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.01 pulses=661
+2026-11-14 19:31:29,774 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=9.8 duty=0.08 pulses=52
+2026-11-14 19:31:29,775 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.6 act=10.2 duty=0.08 pulses=774
+2026-11-14 19:31:30,250 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=-0.32 ref=-0.32 err=0.00 corr=0.000 k=0.000 v=0.040
+2026-11-14 19:31:30,251 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=15.2 act=11.7 duty=0.08 pulses=198
+2026-11-14 19:31:30,360 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.2 act=12.3 duty=0.07 pulses=926
+2026-11-14 19:31:30,827 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=15.5 act=13.1 duty=0.09 pulses=366
+2026-11-14 19:31:30,831 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=13.9 act=14.8 duty=0.07 pulses=1100
+2026-11-14 19:31:31,245 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=-0.32 ref=-0.32 err=0.00 corr=0.000 k=0.000 v=0.050
+2026-11-14 19:31:31,261 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.1 act=15.4 duty=0.07 pulses=550
+2026-11-14 19:31:31,262 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=15.3 act=13.9 duty=0.08 pulses=1284
+2026-11-14 19:31:31,763 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.8 act=14.6 duty=0.08 pulses=739
+2026-11-14 19:31:31,763 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.6 act=14.8 duty=0.07 pulses=1477
+2026-11-14 19:31:32,275 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=-0.32 ref=-0.32 err=0.00 corr=0.000 k=0.000 v=0.050
+2026-11-14 19:31:32,284 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=15.5 act=14.0 duty=0.09 pulses=930
+2026-11-14 19:31:32,284 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=13.8 act=15.5 duty=0.06 pulses=1671
+2026-11-14 19:31:32,739 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.2 act=15.0 duty=0.07 pulses=1121
+2026-11-14 19:31:32,793 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=15.2 act=14.2 duty=0.08 pulses=1863
+2026-11-14 19:31:33,257 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=-0.32 ref=-0.32 err=0.00 corr=0.000 k=0.000 v=0.050
+2026-11-14 19:31:33,268 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.8 act=14.9 duty=0.08 pulses=1312
+2026-11-14 19:31:33,269 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.6 act=14.4 duty=0.07 pulses=2053
+2026-11-14 19:31:33,810 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=15.6 act=14.0 duty=0.09 pulses=1504
+2026-11-14 19:31:33,817 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=13.8 act=15.8 duty=0.06 pulses=2244
+2026-11-14 19:31:34,272 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=-0.32 ref=-0.32 err=0.00 corr=0.000 k=0.000 v=0.050
+2026-11-14 19:31:34,273 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.1 act=15.1 duty=0.07 pulses=1696
+2026-11-14 19:31:34,349 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=15.3 act=14.0 duty=0.08 pulses=2433
+2026-11-14 19:31:34,503 [device.DEV_1] INFO: [INFO][system] RTOS motor_l n=2015 min=5ms max=5ms miss=0 budget=7ms
+2026-11-14 19:31:34,504 [device.DEV_1] INFO: [INFO][system] RTOS motor_r n=2014 min=5ms max=5ms miss=0 budget=7ms
+2026-11-14 19:31:34,519 [device.DEV_1] INFO: [INFO][system] PERF cpu_permille=114 heap=10472 min=9680 tasks=15 rx_drop=0 log_drop=0
+2026-11-14 19:31:34,764 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.8 act=15.5 duty=0.08 pulses=1888
+2026-11-14 19:31:34,768 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.6 act=14.7 duty=0.07 pulses=2625
+2026-11-14 19:31:35,245 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=-0.32 ref=-0.32 err=0.00 corr=0.000 k=0.000 v=0.051
+2026-11-14 19:31:35,251 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=15.3 act=14.5 duty=0.08 pulses=2082
+2026-11-14 19:31:35,357 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.1 act=15.4 duty=0.07 pulses=2819
+2026-11-14 19:31:35,742 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.4 act=15.1 duty=0.08 pulses=2278
+2026-11-14 19:31:35,798 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=15.0 act=14.6 duty=0.07 pulses=3014
+2026-11-14 19:31:36,243 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=-0.32 ref=-0.32 err=0.00 corr=0.000 k=0.000 v=0.051
+2026-11-14 19:31:36,243 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.5 act=15.0 duty=0.08 pulses=2472
+2026-11-14 19:31:36,357 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.9 act=14.6 duty=0.07 pulses=3207
+2026-11-14 19:31:36,742 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.8 act=15.2 duty=0.08 pulses=2666
+2026-11-14 19:31:36,835 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.6 act=15.1 duty=0.07 pulses=3400
+2026-11-14 19:31:37,250 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=-0.32 ref=-0.32 err=-0.00 corr=0.000 k=0.000 v=0.051
+2026-11-14 19:31:37,251 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=15.4 act=14.5 duty=0.09 pulses=2861
+2026-11-14 19:31:37,353 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=13.9 act=15.9 duty=0.06 pulses=3596
+2026-11-14 19:31:37,776 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.4 act=15.0 duty=0.08 pulses=3057
+2026-11-14 19:31:37,777 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=15.0 act=14.5 duty=0.07 pulses=3788
+2026-11-14 19:31:38,243 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=-0.32 ref=-0.32 err=0.00 corr=0.000 k=0.000 v=0.051
+2026-11-14 19:31:38,289 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=13.8 act=16.1 duty=0.07 pulses=3253
+2026-11-14 19:31:38,396 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=15.5 act=14.3 duty=0.08 pulses=3982
+2026-11-14 19:31:38,770 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=15.1 act=14.8 duty=0.08 pulses=3446
+2026-11-14 19:31:38,771 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.3 act=14.9 duty=0.07 pulses=4175
+2026-11-14 19:31:39,241 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=-0.31 ref=-0.32 err=0.01 corr=0.000 k=0.000 v=0.051
+2026-11-14 19:31:39,241 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=15.2 act=14.2 duty=0.08 pulses=3641
+2026-11-14 19:31:39,310 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.2 act=15.4 duty=0.06 pulses=4370
+2026-11-14 19:43:16,590 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=6.14 ref=0.00 err=0.01 corr=0.000 k=0.000 v=0.000
+2026-11-14 19:43:16,591 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.7 act=0.0 duty=0.01 pulses=3663
+2026-11-14 19:43:16,639 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.7 act=0.0 duty=0.01 pulses=4390
+2026-11-14 19:43:17,150 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=15.2 act=10.5 duty=0.08 pulses=3778
+2026-11-14 19:43:17,157 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.1 act=11.5 duty=0.07 pulses=4516
+2026-11-14 19:43:17,611 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=6.14 ref=6.14 err=0.00 corr=0.000 k=0.000 v=0.043
+2026-11-14 19:43:17,611 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=15.6 act=12.0 duty=0.09 pulses=3938
+2026-11-14 19:43:17,612 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=13.8 act=13.7 duty=0.06 pulses=4681
+2026-11-14 19:43:18,084 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=15.0 act=13.7 duty=0.08 pulses=4110
+2026-11-14 19:43:18,173 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.4 act=13.7 duty=0.07 pulses=4852
+2026-11-14 19:43:18,591 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=6.14 ref=6.14 err=0.00 corr=0.000 k=0.000 v=0.047
+2026-11-14 19:43:18,615 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.2 act=14.5 duty=0.07 pulses=4286
+2026-11-14 19:43:18,618 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=15.2 act=13.5 duty=0.08 pulses=5031
+2026-11-14 19:43:19,127 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=15.7 act=13.7 duty=0.09 pulses=4464
+2026-11-14 19:43:19,127 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=13.7 act=15.1 duty=0.06 pulses=5216
+2026-11-14 19:43:19,603 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=6.14 ref=6.14 err=0.00 corr=0.000 k=0.000 v=0.049
+2026-11-14 19:43:19,607 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.4 act=15.0 duty=0.07 pulses=4650
+2026-11-14 19:43:19,607 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=15.0 act=14.0 duty=0.08 pulses=5404
+2026-11-14 19:43:20,056 [device.DEV_1] INFO: [INFO][system] RTOS motor_l n=2014 min=5ms max=5ms miss=0 budget=7ms
+2026-11-14 19:43:20,071 [device.DEV_1] INFO: [INFO][system] RTOS motor_r n=2015 min=5ms max=5ms miss=0 budget=7ms
+2026-11-14 19:43:20,099 [device.DEV_1] INFO: [INFO][system] PERF cpu_permille=110 heap=10544 min=9600 tasks=15 rx_drop=0 log_drop=0
+2026-11-14 19:43:20,172 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=15.2 act=14.1 duty=0.08 pulses=4838
+2026-11-14 19:43:20,172 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.2 act=15.2 duty=0.07 pulses=5598
+2026-11-14 19:43:20,588 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=6.14 ref=6.14 err=0.00 corr=0.000 k=0.000 v=0.050
+2026-11-14 19:43:20,606 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.8 act=14.6 duty=0.08 pulses=5032
+2026-11-14 19:43:20,610 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.6 act=14.8 duty=0.07 pulses=5790
+2026-11-14 19:43:21,079 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.3 act=15.5 duty=0.07 pulses=5225
+2026-11-14 19:43:21,162 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=15.1 act=14.6 duty=0.08 pulses=5982
+2026-11-14 19:43:21,660 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=6.15 ref=6.14 err=0.01 corr=0.000 k=0.000 v=0.051
+2026-11-14 19:43:21,665 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.8 act=15.2 duty=0.08 pulses=5418
+2026-11-14 19:43:21,666 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.6 act=14.5 duty=0.07 pulses=6175
+2026-11-14 19:43:22,103 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.8 act=14.6 duty=0.08 pulses=5611
+2026-11-14 19:43:22,103 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.6 act=14.8 duty=0.07 pulses=6369
+2026-11-14 19:43:22,575 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=6.13 ref=6.14 err=-0.01 corr=0.000 k=0.000 v=0.052
+2026-11-14 19:43:22,610 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=15.1 act=14.8 duty=0.08 pulses=5806
+2026-11-14 19:43:22,614 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.3 act=15.5 duty=0.07 pulses=6565
+2026-11-14 19:44:09,528 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=6.20 ref=0.00 err=-0.01 corr=0.000 k=0.000 v=0.000
+2026-11-14 19:44:09,529 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.8 act=0.0 duty=0.01 pulses=5829
+2026-11-14 19:44:09,562 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.6 act=0.0 duty=0.01 pulses=6586
+2026-11-14 19:44:10,028 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=15.8 act=12.0 duty=0.08 pulses=5965
+2026-11-14 19:44:10,029 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=13.6 act=13.8 duty=0.06 pulses=6736
+2026-11-14 19:44:10,448 [device.DEV_1] INFO: [INFO][system] RTOS motor_l n=2016 min=5ms max=5ms miss=0 budget=7ms
+2026-11-14 19:44:10,456 [device.DEV_1] INFO: [INFO][system] RTOS motor_r n=2017 min=5ms max=5ms miss=0 budget=7ms
+2026-11-14 19:44:10,483 [device.DEV_1] INFO: [INFO][system] PERF cpu_permille=104 heap=10544 min=9600 tasks=15 rx_drop=0 log_drop=0
+2026-11-14 19:44:10,620 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=6.20 ref=6.20 err=0.00 corr=0.000 k=0.000 v=0.046
+2026-11-14 19:44:10,628 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.9 act=13.6 duty=0.07 pulses=6135
+2026-11-14 19:44:10,628 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.5 act=13.5 duty=0.07 pulses=6912
+2026-11-14 19:44:11,032 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.9 act=14.3 duty=0.07 pulses=6312
+2026-11-14 19:44:11,033 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.5 act=13.9 duty=0.07 pulses=7093
+2026-11-14 19:44:11,574 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=6.19 ref=6.20 err=-0.01 corr=0.000 k=0.000 v=0.047
+2026-11-14 19:44:11,578 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=15.3 act=13.5 duty=0.08 pulses=6489
+2026-11-14 19:44:11,578 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.1 act=14.0 duty=0.06 pulses=7275
+2026-11-14 19:44:12,021 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.6 act=14.9 duty=0.07 pulses=6673
+2026-11-14 19:44:12,093 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.8 act=14.2 duty=0.07 pulses=7460
+2026-11-14 19:44:12,522 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=6.17 ref=6.20 err=-0.02 corr=0.000 k=0.000 v=0.050
+2026-11-14 19:44:12,523 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.9 act=14.6 duty=0.08 pulses=6863
+2026-11-14 19:44:12,607 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.5 act=14.7 duty=0.07 pulses=7650
+2026-11-14 19:44:13,035 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.4 act=15.1 duty=0.07 pulses=7056
+2026-11-14 19:44:13,035 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=15.0 act=14.4 duty=0.07 pulses=7839
+2026-11-14 19:44:13,522 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=6.17 ref=6.20 err=-0.02 corr=0.000 k=0.000 v=0.050
+2026-11-14 19:44:13,522 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.0 act=15.8 duty=0.06 pulses=7248
+2026-11-14 19:44:13,597 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=15.4 act=13.8 duty=0.08 pulses=8028
+2026-11-14 19:44:14,031 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.9 act=14.9 duty=0.08 pulses=7442
+2026-11-14 19:44:14,035 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.5 act=14.5 duty=0.07 pulses=8221
+2026-11-14 19:44:14,529 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=6.17 ref=6.20 err=-0.02 corr=0.000 k=0.000 v=0.052
+2026-11-14 19:44:14,591 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=15.5 act=14.3 duty=0.08 pulses=7636
+2026-11-14 19:44:14,594 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=13.9 act=15.9 duty=0.06 pulses=8416
+2026-11-14 19:44:15,047 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.9 act=15.2 duty=0.08 pulses=7832
+2026-11-14 19:44:15,047 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.5 act=15.5 duty=0.06 pulses=8609
+2026-11-14 19:44:15,552 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=6.18 ref=6.20 err=-0.01 corr=0.000 k=0.000 v=0.050
+2026-11-14 19:44:15,556 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.4 act=15.3 duty=0.07 pulses=8026
+2026-11-14 19:44:15,557 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=15.0 act=14.1 duty=0.07 pulses=8801
+2026-11-14 19:44:16,015 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.9 act=14.9 duty=0.07 pulses=8218
+2026-11-14 19:44:16,113 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.5 act=14.7 duty=0.07 pulses=8994
+2026-11-14 19:44:16,585 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=6.17 ref=6.20 err=-0.02 corr=0.000 k=0.000 v=0.052
+2026-11-14 19:44:16,591 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=15.2 act=14.8 duty=0.08 pulses=8412
+2026-11-14 19:44:16,592 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.2 act=15.5 duty=0.06 pulses=9187
+2026-11-14 19:44:17,013 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.4 act=15.4 duty=0.07 pulses=8606
+2026-11-14 19:44:17,109 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=15.0 act=14.6 duty=0.07 pulses=9378
+2026-11-14 19:44:17,535 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=6.17 ref=6.20 err=-0.03 corr=0.000 k=0.000 v=0.051
+2026-11-14 19:44:17,598 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.8 act=15.1 duty=0.07 pulses=8800
+2026-11-14 19:44:17,602 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.5 act=14.8 duty=0.07 pulses=9570
+2026-11-14 19:44:18,060 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=15.5 act=14.0 duty=0.08 pulses=8993
+2026-11-14 19:44:18,060 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=13.8 act=15.7 duty=0.06 pulses=9762
+2026-11-14 19:44:18,524 [device.DEV_1] INFO: [INFO][motion] HEAD straight=1 yaw=6.20 ref=6.20 err=0.00 corr=0.000 k=0.000 v=0.050
+2026-11-14 19:44:18,524 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.5 act=14.6 duty=0.07 pulses=9187
+2026-11-14 19:44:18,590 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=14.9 act=14.7 duty=0.07 pulses=9952
+2026-11-14 19:44:19,064 [device.DEV_1] INFO: [INFO][motor] MOT_L tgt=14.1 act=15.5 duty=0.06 pulses=9379
+2026-11-14 19:44:19,064 [device.DEV_1] INFO: [INFO][motor] MOT_R tgt=15.3 act=13.8 duty=0.08 pulses=10141
+2026-11-14 19:44:20,511 [device.DEV_1] INFO: [INFO][system] RTOS motor_l n=2012 min=5ms max=5ms miss=0 budget=7ms
+2026-11-14 19:44:20,511 [device.DEV_1] INFO: [INFO][system] RTOS motor_r n=2012 min=5ms max=5ms miss=0 budget=7ms
+2026-11-14 19:44:20,531 [device.DEV_1] INFO: [INFO][system] PERF cpu_permille=126 heap=10544 min=9544 tasks=15 rx_drop=0 log_drop=0

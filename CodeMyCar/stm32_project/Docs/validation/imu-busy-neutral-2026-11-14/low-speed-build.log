@@ -1,0 +1,25 @@
+[1/17] Building C object CMakeFiles/stm32_project.elf.dir/Application/System/Utils/Src/encoder_fault_monitor.c.obj
+[2/17] Building C object CMakeFiles/stm32_project.elf.dir/Application/System/Utils/Src/steering_lut.c.obj
+[3/17] Building C object CMakeFiles/stm32_project.elf.dir/Application/Modules/IMU/Src/imu_i2c_transport.c.obj
+[4/17] Building C object CMakeFiles/stm32_project.elf.dir/Application/Tasks/LightTask/Src/light_task.c.obj
+[5/17] Building C object CMakeFiles/stm32_project.elf.dir/Application/Tasks/ImuTask/Src/imu_task.c.obj
+[6/17] Building C object CMakeFiles/stm32_project.elf.dir/Application/System/Utils/Src/runtime_stats.c.obj
+[7/17] Building C object CMakeFiles/stm32_project.elf.dir/Application/Modules/IMU/Src/sh2_hal_stm32.c.obj
+[8/17] Building C object CMakeFiles/stm32_project.elf.dir/Application/System/Init/Src/system_init.c.obj
+[9/17] Building C object CMakeFiles/stm32_project.elf.dir/Application/Services/Ctrl/Src/cmd_process.c.obj
+[10/17] Building C object CMakeFiles/stm32_project.elf.dir/Application/System/Utils/Src/safety_supervisor.c.obj
+[11/17] Building C object CMakeFiles/stm32_project.elf.dir/Application/Tasks/CtrlTask/Src/ctrl_task.c.obj
+[12/17] Building C object CMakeFiles/stm32_project.elf.dir/Application/Tasks/MotorTask/Src/motor_task.c.obj
+[13/17] Building C object CMakeFiles/stm32_project.elf.dir/Application/Tasks/MotionTask/Src/motion_task.c.obj
+[14/17] Building C object CMakeFiles/stm32_project.elf.dir/Application/Services/Ctrl/Src/motion_service.c.obj
+[15/17] Building C object CMakeFiles/stm32_project.elf.dir/Application/Tasks/ServoTask/Src/servo_task.c.obj
+[16/17] Building C object CMakeFiles/stm32_project.elf.dir/Core/Src/main.c.obj
+[17/17] Linking C executable stm32_project.elf; Building /Users/sunyameng/github/legacy/CodeMyCar/stm32_project/build/NoSonar/stm32_project.hex / Building /Users/sunyameng/github/legacy/CodeMyCar/stm32_project/build/NoSonar/stm32_project.bin
+Memory region         Used Size  Region Size  %age Used
+         DTCMRAM:       69008 B       128 KB     52.65%
+         DMA_RAM:        3392 B         8 KB     41.41%
+          RAM_D1:           0 B       312 KB      0.00%
+          RAM_D2:           0 B        32 KB      0.00%
+          RAM_D3:           0 B        16 KB      0.00%
+         ITCMRAM:           0 B        64 KB      0.00%
+           FLASH:        120 KB         1 MB     11.72%

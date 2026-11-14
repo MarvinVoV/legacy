@@ -1,0 +1,25 @@
+{
+  "setup": "ESP replacement module, STM USB, direct shared GND; ratings unverified",
+  "forward_command_mmps": 50,
+  "requested_seconds": 10,
+  "commands": 81,
+  "acks": 81,
+  "motion_frames": 156,
+  "measured_all_zero": true,
+  "operator": "No physical motion observed",
+  "reverse_executed": false,
+  "final_stop": {
+    "case": "final_stop",
+    "passed": true,
+    "stop": {
+      "ms": 41.7,
+      "reply": {
+        "ok": true,
+        "stopped": true,
+        "accepted": true,
+        "confirmed": true,
+        "seq": 35
+      }
+    }
+  }
+}

@@ -1,0 +1,300 @@
+{
+  "setup": "User reports new module ESP supply, STM32 USB, UART and GND restored; ESP green LED on. Supply specs unverified. No commands/SWD.",
+  "samples": [
+    {
+      "at": 1794652920.487364,
+      "status": {
+        "online": true,
+        "last_heartbeat_age": 4.3,
+        "uptime_s": 123,
+        "heap_free": 182387,
+        "stm32_connected": true,
+        "sensor_age_s": 0.0,
+        "imu_age_s": 0.0,
+        "yaw_deg": 0.0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 0,
+        "age_ms": 373,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "at": 1794652925.500424,
+      "status": {
+        "online": true,
+        "last_heartbeat_age": 9.4,
+        "uptime_s": 123,
+        "heap_free": 182387,
+        "stm32_connected": true,
+        "sensor_age_s": 0.1,
+        "imu_age_s": 0.1,
+        "yaw_deg": 0.0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 0,
+        "age_ms": 430,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "at": 1794652930.5127869,
+      "status": {
+        "online": true,
+        "last_heartbeat_age": 14.4,
+        "uptime_s": 123,
+        "heap_free": 182387,
+        "stm32_connected": true,
+        "sensor_age_s": 0.1,
+        "imu_age_s": 0.1,
+        "yaw_deg": 0.0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 0,
+        "age_ms": 491,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "at": 1794652935.52544,
+      "status": {
+        "online": true,
+        "last_heartbeat_age": 19.4,
+        "uptime_s": 123,
+        "heap_free": 182387,
+        "stm32_connected": true,
+        "sensor_age_s": 0.2,
+        "imu_age_s": 0.2,
+        "yaw_deg": 0.0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 0,
+        "age_ms": 497,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "at": 1794652940.534409,
+      "status": {
+        "online": true,
+        "last_heartbeat_age": 24.4,
+        "uptime_s": 123,
+        "heap_free": 182387,
+        "stm32_connected": true,
+        "sensor_age_s": 0.1,
+        "imu_age_s": 0.1,
+        "yaw_deg": 0.0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 0,
+        "age_ms": 395,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "at": 1794652945.54746,
+      "status": {
+        "online": true,
+        "last_heartbeat_age": 29.4,
+        "uptime_s": 123,
+        "heap_free": 182387,
+        "stm32_connected": true,
+        "sensor_age_s": 0.1,
+        "imu_age_s": 0.1,
+        "yaw_deg": 0.0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 0,
+        "age_ms": 519,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "at": 1794652950.558939,
+      "status": {
+        "online": true,
+        "last_heartbeat_age": 4.4,
+        "uptime_s": 153,
+        "heap_free": 182387,
+        "stm32_connected": true,
+        "sensor_age_s": 0.2,
+        "imu_age_s": 0.0,
+        "yaw_deg": 0.0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 0,
+        "age_ms": 416,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "at": 1794652955.5728269,
+      "status": {
+        "online": true,
+        "last_heartbeat_age": 9.4,
+        "uptime_s": 153,
+        "heap_free": 182387,
+        "stm32_connected": true,
+        "sensor_age_s": 0.0,
+        "imu_age_s": 0.0,
+        "yaw_deg": 0.0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 0,
+        "age_ms": 464,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "at": 1794652960.5881112,
+      "status": {
+        "online": true,
+        "last_heartbeat_age": 14.4,
+        "uptime_s": 153,
+        "heap_free": 182387,
+        "stm32_connected": true,
+        "sensor_age_s": 0.2,
+        "imu_age_s": 0.2,
+        "yaw_deg": 0.0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 0,
+        "age_ms": 502,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    },
+    {
+      "at": 1794652965.596823,
+      "status": {
+        "online": true,
+        "last_heartbeat_age": 19.5,
+        "uptime_s": 153,
+        "heap_free": 182387,
+        "stm32_connected": true,
+        "sensor_age_s": 0.1,
+        "imu_age_s": 0.1,
+        "yaw_deg": 0.0
+      },
+      "motion": {
+        "state": "idle",
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "error": 0,
+        "heading_source": "encoder",
+        "seq": 0,
+        "age_ms": 551,
+        "stale": false
+      },
+      "velocity": {
+        "linear_cm_s": 0.0,
+        "angular_deg_s": 0.0
+      }
+    }
+  ],
+  "events": [],
+  "imu_first": [
+    "2026-11-14 18:42:00,640 [device.DEV_1] INFO: [INFO][sensor] IMU yaw=0.00 deg rate=0.00 dps bias=0.000 st=3 grv=4444 gyro=4444 ",
+    "2026-11-14 18:42:00,844 [device.DEV_1] INFO: [INFO][sensor] IMU yaw=0.00 deg rate=0.00 dps bias=0.000 st=3 grv=4454 gyro=4454 "
+  ],
+  "imu_last": [
+    "2026-11-14 18:42:45,448 [device.DEV_1] INFO: [INFO][sensor] IMU yaw=0.01 deg rate=0.00 dps bias=0.000 st=3 grv=8906 gyro=8906 ",
+    "2026-11-14 18:42:45,453 [device.DEV_1] INFO: [INFO][sensor] IMU yaw=0.01 deg rate=0.00 dps bias=0.000 st=3 grv=8916 gyro=8916 "
+  ],
+  "bus_first": [
+    "2026-11-14 18:42:01,503 [device.DEV_1] INFO: [WARNING][sensor] IMU_BUS err=1993 tout=0 busy=0 rec=0 fail=0 ISR=00000000 state=0 code=00000000 pins=0 "
+  ],
+  "bus_last": [
+    "2026-11-14 18:42:44,837 [device.DEV_1] INFO: [WARNING][sensor] IMU_BUS err=1993 tout=0 busy=0 rec=0 fail=0 ISR=00000000 state=0 code=00000000 pins=0 "
+  ]
+}

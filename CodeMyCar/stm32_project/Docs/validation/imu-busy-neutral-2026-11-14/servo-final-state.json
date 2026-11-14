@@ -1,0 +1,39 @@
+{
+  "at": 1794656314.476953,
+  "status": {
+    "online": true,
+    "last_heartbeat_age": 15.8,
+    "uptime_s": 484,
+    "stm32_connected": true,
+    "sensor_age_s": 0.0,
+    "imu_age_s": 0.0,
+    "yaw_deg": 6.1
+  },
+  "state": {
+    "ok": true,
+    "online": true,
+    "stm32_connected": true,
+    "motion_supported": true,
+    "motion": {
+      "state": "idle",
+      "mode": 0,
+      "fault": false,
+      "lease_expired": false,
+      "error": 0,
+      "heading_source": "encoder",
+      "seq": 49,
+      "age_ms": 880,
+      "stale": false
+    },
+    "pose": {
+      "x_cm": 44.7,
+      "y_cm": -27.4,
+      "heading_deg": -32.648,
+      "odometer_cm": 52.7
+    },
+    "velocity": {
+      "linear_cm_s": 0.0,
+      "angular_deg_s": 0.0
+    }
+  }
+}

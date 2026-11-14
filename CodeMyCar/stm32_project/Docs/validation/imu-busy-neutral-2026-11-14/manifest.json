@@ -11,8 +11,26 @@
   "imu_hil": "PASS 120s passive telemetry: counts5108->17099, no restart/reopen/error diagnostic; STM USB+IMU STM3V3, ESP external5V, TB6612OFF",
   "mechanical_neutral_recheck_pending": false,
   "external_supply_root_cause": "Not uniquely identified; flash with external supply OFF verified, ON remains unreliable",
-  "suspended_smoke": "PASS final dual-USB baseline: forward/reverse50mmps10s and small servo sweep all independently confirmed by user",
+  "suspended_smoke": "PASS new low-speed-protection firmware: forward50mmps12s, STOP8s, reverse50mmps12s; both wheels and STOP confirmed by user; no ST-LINK access during normal test",
   "ground_driving_validation_pending": true,
   "motor_physical_validation_pending": false,
-  "setup": "Both USB; new power board completely removed; direct UART/commonGND; IMU STM3V3; TB GND directSTM; servo TB5V/PA5"
+  "setup": "Both USB; new power board completely removed; direct UART/commonGND; IMU STM3V3; TB GND directSTM; servo TB5V/PA5",
+  "motor_intermittent_failure_root_cause_pending": true,
+  "low_speed_no_progress_monitor_gap": "FIXED in development branch; gates0.1RPM/12%effort, adaptive timeout >=1500ms; full host/build/Flash verify and live fault test PASS",
+  "latest_motor_stop_seq": 64,
+  "latest_motor_counter_delta": {
+    "TIM4": -3752,
+    "TIM5": 3748
+  },
+  "servo_reporting": "PASS 161 ACK/337 motion frames at zero speed, IMU~100Hz, servo20ms miss0, rx_drop/log_drop0",
+  "current_firmware": {
+    "unix": 1794657156.7128909,
+    "binary_sha256": "345548e67aa274bdc80622c9b5c89bc3ac6cd59e782e9e92efff9fc53d2b5947",
+    "bytes": 122880,
+    "returncode": 0,
+    "verified_and_reset": true,
+    "supply": "Both boards USB; user confirms TB6612 OFF; independent supply removed",
+    "neutral_us": 1470
+  },
+  "latest_guard_hil": "PASS fault8 in2215.5ms, CCR1/2=0, inhibit=true, new motion rejected; normal powered regression PASS without false alarms"
 }

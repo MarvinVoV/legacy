@@ -1,0 +1,1655 @@
+{
+  "test": "TB6612 OFF, 50mmps continuously renewed: real STM32 must latch encoder fault, cut PWM, reject further motion",
+  "events": [
+    {
+      "unix": 1794657199.406424,
+      "mono": 876311.702400208,
+      "kind": "ack",
+      "data": {
+        "seq": 55,
+        "ack": true,
+        "status": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657199.4064798,
+      "mono": 876311.702455541,
+      "kind": "motion",
+      "data": {
+        "seq": 55,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 449,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 26,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657199.527905,
+      "mono": 876311.823881083,
+      "kind": "motion",
+      "data": {
+        "seq": 55,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657199.58154,
+      "mono": 876311.877516166,
+      "kind": "motion",
+      "data": {
+        "seq": 55,
+        "state": "idle",
+        "error": 0,
+        "mode": 0,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657199.5904121,
+      "mono": 876311.886387916,
+      "kind": "ack",
+      "data": {
+        "seq": 252,
+        "ack": true,
+        "status": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657199.5905259,
+      "mono": 876311.886501583,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "running",
+        "error": 0,
+        "mode": 3,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657199.7219892,
+      "mono": 876312.017963416,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "running",
+        "error": 0,
+        "mode": 3,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657199.809122,
+      "mono": 876312.105096791,
+      "kind": "ack",
+      "data": {
+        "seq": 252,
+        "ack": true,
+        "status": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657199.8092108,
+      "mono": 876312.105185291,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "running",
+        "error": 0,
+        "mode": 3,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657199.809263,
+      "mono": 876312.105237458,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "running",
+        "error": 0,
+        "mode": 3,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657199.8943732,
+      "mono": 876312.190348083,
+      "kind": "ack",
+      "data": {
+        "seq": 252,
+        "ack": true,
+        "status": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657199.8944561,
+      "mono": 876312.190430666,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "running",
+        "error": 0,
+        "mode": 3,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657199.894507,
+      "mono": 876312.190481666,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "running",
+        "error": 0,
+        "mode": 3,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657200.0287192,
+      "mono": 876312.32469275,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "running",
+        "error": 0,
+        "mode": 3,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657200.033472,
+      "mono": 876312.329445791,
+      "kind": "ack",
+      "data": {
+        "seq": 252,
+        "ack": true,
+        "status": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657200.033598,
+      "mono": 876312.32957175,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "running",
+        "error": 0,
+        "mode": 3,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657200.0822551,
+      "mono": 876312.378229208,
+      "kind": "ack",
+      "data": {
+        "seq": 252,
+        "ack": true,
+        "status": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657200.082535,
+      "mono": 876312.3785095,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "running",
+        "error": 0,
+        "mode": 3,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657200.082676,
+      "mono": 876312.378649583,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "running",
+        "error": 0,
+        "mode": 3,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657200.234293,
+      "mono": 876312.530266625,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "running",
+        "error": 0,
+        "mode": 3,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657200.3254678,
+      "mono": 876312.621441083,
+      "kind": "ack",
+      "data": {
+        "seq": 252,
+        "ack": true,
+        "status": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657200.325588,
+      "mono": 876312.621561291,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "running",
+        "error": 0,
+        "mode": 3,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657200.335888,
+      "mono": 876312.631860958,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "running",
+        "error": 0,
+        "mode": 3,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657200.400427,
+      "mono": 876312.69640025,
+      "kind": "ack",
+      "data": {
+        "seq": 252,
+        "ack": true,
+        "status": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657200.400626,
+      "mono": 876312.696598708,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "running",
+        "error": 0,
+        "mode": 3,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657200.400774,
+      "mono": 876312.696746666,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "running",
+        "error": 0,
+        "mode": 3,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657200.4607098,
+      "mono": 876312.756682916,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "running",
+        "error": 0,
+        "mode": 3,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657200.574753,
+      "mono": 876312.870725458,
+      "kind": "ack",
+      "data": {
+        "seq": 252,
+        "ack": true,
+        "status": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657200.58209,
+      "mono": 876312.878062333,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "running",
+        "error": 0,
+        "mode": 3,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657200.582196,
+      "mono": 876312.878167875,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "running",
+        "error": 0,
+        "mode": 3,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657200.616607,
+      "mono": 876312.912579041,
+      "kind": "ack",
+      "data": {
+        "seq": 252,
+        "ack": true,
+        "status": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657200.616755,
+      "mono": 876312.912727,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "running",
+        "error": 0,
+        "mode": 3,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657200.728807,
+      "mono": 876313.024779625,
+      "kind": "ack",
+      "data": {
+        "seq": 252,
+        "ack": true,
+        "status": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657200.728958,
+      "mono": 876313.024929458,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "running",
+        "error": 0,
+        "mode": 3,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657200.729038,
+      "mono": 876313.025009666,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "running",
+        "error": 0,
+        "mode": 3,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657200.8255649,
+      "mono": 876313.1215365,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "running",
+        "error": 0,
+        "mode": 3,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657200.895765,
+      "mono": 876313.191736875,
+      "kind": "ack",
+      "data": {
+        "seq": 252,
+        "ack": true,
+        "status": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657200.895912,
+      "mono": 876313.191882541,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "running",
+        "error": 0,
+        "mode": 3,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657200.8960042,
+      "mono": 876313.191974958,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "running",
+        "error": 0,
+        "mode": 3,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657200.9507442,
+      "mono": 876313.246715375,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "running",
+        "error": 0,
+        "mode": 3,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657201.042022,
+      "mono": 876313.337993166,
+      "kind": "ack",
+      "data": {
+        "seq": 252,
+        "ack": true,
+        "status": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657201.042187,
+      "mono": 876313.338157458,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "running",
+        "error": 0,
+        "mode": 3,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657201.042269,
+      "mono": 876313.338239208,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "running",
+        "error": 0,
+        "mode": 3,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657201.219808,
+      "mono": 876313.515778375,
+      "kind": "ack",
+      "data": {
+        "seq": 252,
+        "ack": true,
+        "status": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657201.219866,
+      "mono": 876313.515835875,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "running",
+        "error": 0,
+        "mode": 3,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657201.2199109,
+      "mono": 876313.515880875,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "running",
+        "error": 0,
+        "mode": 3,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657201.2634199,
+      "mono": 876313.559389875,
+      "kind": "ack",
+      "data": {
+        "seq": 252,
+        "ack": true,
+        "status": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657201.2637,
+      "mono": 876313.559669375,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "running",
+        "error": 0,
+        "mode": 3,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657201.375446,
+      "mono": 876313.671415625,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "running",
+        "error": 0,
+        "mode": 3,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657201.37957,
+      "mono": 876313.675539875,
+      "kind": "ack",
+      "data": {
+        "seq": 252,
+        "ack": true,
+        "status": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657201.3797262,
+      "mono": 876313.67569575,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "running",
+        "error": 0,
+        "mode": 3,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657201.539168,
+      "mono": 876313.8351385,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "running",
+        "error": 0,
+        "mode": 3,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657201.543108,
+      "mono": 876313.839076958,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "running",
+        "error": 0,
+        "mode": 3,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657201.543338,
+      "mono": 876313.839307416,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "running",
+        "error": 0,
+        "mode": 3,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657201.577844,
+      "mono": 876313.873813166,
+      "kind": "ack",
+      "data": {
+        "seq": 252,
+        "ack": true,
+        "status": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657201.577966,
+      "mono": 876313.873934916,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "running",
+        "error": 0,
+        "mode": 3,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657201.658195,
+      "mono": 876313.95416425,
+      "kind": "ack",
+      "data": {
+        "seq": 252,
+        "ack": true,
+        "status": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657201.6583931,
+      "mono": 876313.954362,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "running",
+        "error": 0,
+        "mode": 3,
+        "fault": false,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657201.751255,
+      "mono": 876314.047223666,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "error",
+        "error": 8,
+        "mode": 0,
+        "fault": true,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657201.751376,
+      "mono": 876314.047344375,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "error",
+        "error": 8,
+        "mode": 0,
+        "fault": true,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657201.773453,
+      "mono": 876314.069422,
+      "kind": "ack",
+      "data": {
+        "seq": 252,
+        "ack": true,
+        "status": 5,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657201.893047,
+      "mono": 876314.189015041,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "error",
+        "error": 8,
+        "mode": 0,
+        "fault": true,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657201.932229,
+      "mono": 876314.228197041,
+      "kind": "ack",
+      "data": {
+        "seq": 253,
+        "ack": true,
+        "status": 5,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657201.932287,
+      "mono": 876314.228254833,
+      "kind": "ack",
+      "data": {
+        "seq": 252,
+        "ack": true,
+        "status": 5,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657201.932346,
+      "mono": 876314.2283135,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "error",
+        "error": 8,
+        "mode": 0,
+        "fault": true,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657202.0770292,
+      "mono": 876314.37299725,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "error",
+        "error": 8,
+        "mode": 0,
+        "fault": true,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657202.223974,
+      "mono": 876314.51994125,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "error",
+        "error": 8,
+        "mode": 0,
+        "fault": true,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657202.367126,
+      "mono": 876314.663092791,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "error",
+        "error": 8,
+        "mode": 0,
+        "fault": true,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657202.3755462,
+      "mono": 876314.67151225,
+      "kind": "motion",
+      "data": {
+        "seq": 252,
+        "state": "error",
+        "error": 8,
+        "mode": 0,
+        "fault": true,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657202.466447,
+      "mono": 876314.762413708,
+      "kind": "ack",
+      "data": {
+        "seq": 56,
+        "ack": true,
+        "status": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657202.466552,
+      "mono": 876314.762518333,
+      "kind": "motion",
+      "data": {
+        "seq": 56,
+        "state": "error",
+        "error": 8,
+        "mode": 0,
+        "fault": true,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    },
+    {
+      "unix": 1794657202.466624,
+      "mono": 876314.762590416,
+      "kind": "motion",
+      "data": {
+        "seq": 56,
+        "state": "error",
+        "error": 8,
+        "mode": 0,
+        "fault": true,
+        "lease_expired": false,
+        "goal_heading_source": "encoder",
+        "x_mm": 0,
+        "y_mm": 0,
+        "theta_mdeg": 494,
+        "odometer_mm": 0,
+        "goal_distance_mm": 0,
+        "goal_turn_mdeg": 0,
+        "goal_duration_ms": 0,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "session_id": 3083884283
+      }
+    }
+  ],
+  "commands": [
+    {
+      "mono": 876311.831772458,
+      "unix": 1794657199.538731,
+      "seq": 252
+    },
+    {
+      "mono": 876311.957948875,
+      "unix": 1794657199.6658711,
+      "seq": 252
+    },
+    {
+      "mono": 876312.0822705,
+      "unix": 1794657199.793816,
+      "seq": 252
+    },
+    {
+      "mono": 876312.210659583,
+      "unix": 1794657199.917037,
+      "seq": 252
+    },
+    {
+      "mono": 876312.338058875,
+      "unix": 1794657200.046535,
+      "seq": 252
+    },
+    {
+      "mono": 876312.463814458,
+      "unix": 1794657200.171032,
+      "seq": 252
+    },
+    {
+      "mono": 876312.592070791,
+      "unix": 1794657200.302774,
+      "seq": 252
+    },
+    {
+      "mono": 876312.723794708,
+      "unix": 1794657200.431415,
+      "seq": 252
+    },
+    {
+      "mono": 876312.852467833,
+      "unix": 1794657200.564018,
+      "seq": 252
+    },
+    {
+      "mono": 876312.983701666,
+      "unix": 1794657200.691159,
+      "seq": 252
+    },
+    {
+      "mono": 876313.111545958,
+      "unix": 1794657200.821603,
+      "seq": 252
+    },
+    {
+      "mono": 876313.242662625,
+      "unix": 1794657200.953778,
+      "seq": 252
+    },
+    {
+      "mono": 876313.374855625,
+      "unix": 1794657201.0867321,
+      "seq": 252
+    },
+    {
+      "mono": 876313.507876875,
+      "unix": 1794657201.216546,
+      "seq": 252
+    },
+    {
+      "mono": 876313.633681708,
+      "unix": 1794657201.341897,
+      "seq": 252
+    },
+    {
+      "mono": 876313.761300083,
+      "unix": 1794657201.471832,
+      "seq": 252
+    },
+    {
+      "mono": 876313.892888583,
+      "unix": 1794657201.603363,
+      "seq": 252
+    },
+    {
+      "mono": 876314.022121375,
+      "unix": 1794657201.7339761,
+      "seq": 252
+    },
+    {
+      "mono": 876314.154386208,
+      "unix": 1794657201.8619,
+      "seq": 252
+    },
+    {
+      "mono": 876314.157906875,
+      "unix": 1794657201.864148,
+      "seq": 253
+    }
+  ],
+  "unix": 1794657199.290547,
+  "initial_stop": {
+    "ok": true,
+    "stopped": true,
+    "accepted": true,
+    "confirmed": true,
+    "seq": 55
+  },
+  "precheck": {
+    "ok": true,
+    "online": true,
+    "stm32_connected": true,
+    "motion_supported": true,
+    "motion": {
+      "state": "idle",
+      "mode": 0,
+      "fault": false,
+      "lease_expired": false,
+      "error": 0,
+      "heading_source": "encoder",
+      "seq": 55,
+      "age_ms": 6,
+      "stale": false
+    },
+    "pose": {
+      "x_cm": 0.0,
+      "y_cm": 0.0,
+      "heading_deg": -0.494,
+      "odometer_cm": 0.0
+    },
+    "velocity": {
+      "linear_cm_s": 0.0,
+      "angular_deg_s": 0.0
+    }
+  },
+  "fault_elapsed_ms": 2215.5,
+  "fault": {
+    "unix": 1794657201.751255,
+    "mono": 876314.047223666,
+    "kind": "motion",
+    "data": {
+      "seq": 252,
+      "state": "error",
+      "error": 8,
+      "mode": 0,
+      "fault": true,
+      "lease_expired": false,
+      "goal_heading_source": "encoder",
+      "x_mm": 0,
+      "y_mm": 0,
+      "theta_mdeg": 494,
+      "odometer_mm": 0,
+      "goal_distance_mm": 0,
+      "goal_turn_mdeg": 0,
+      "goal_duration_ms": 0,
+      "left_mmps": 0,
+      "right_mmps": 0,
+      "session_id": 3083884283
+    }
+  },
+  "rejected_motion_ack": {
+    "unix": 1794657201.932229,
+    "mono": 876314.228197041,
+    "kind": "ack",
+    "data": {
+      "seq": 253,
+      "ack": true,
+      "status": 5,
+      "session_id": 3083884283
+    }
+  },
+  "passed": true,
+  "final_stop": {
+    "ok": true,
+    "stopped": true,
+    "accepted": true,
+    "confirmed": true,
+    "seq": 56
+  },
+  "final_state": {
+    "ok": true,
+    "online": true,
+    "stm32_connected": true,
+    "motion_supported": true,
+    "motion": {
+      "state": "error",
+      "mode": 0,
+      "fault": true,
+      "lease_expired": false,
+      "error": 8,
+      "heading_source": "encoder",
+      "seq": 56,
+      "age_ms": 3,
+      "stale": false
+    },
+    "pose": {
+      "x_cm": 0.0,
+      "y_cm": 0.0,
+      "heading_deg": -0.494,
+      "odometer_cm": 0.0
+    },
+    "velocity": {
+      "linear_cm_s": 0.0,
+      "angular_deg_s": 0.0
+    }
+  }
+}

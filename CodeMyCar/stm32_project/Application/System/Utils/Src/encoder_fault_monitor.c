@@ -3,7 +3,10 @@
 #include <math.h>
 #include <string.h>
 
-#define ENCODER_MONITOR_COMMAND_RPM       15.0f
+/* 1mm/s is ~0.294RPM with the current wheels. The old 15RPM gate even
+ * excluded 50mm/s. Keep only a near-zero gate; effort still must be >=12%.
+ * At very low RPM allow two progress intervals for encoder quantization. */
+#define ENCODER_MONITOR_COMMAND_RPM       0.1f
 #define ENCODER_MONITOR_DUTY              0.12f
 #define ENCODER_MONITOR_ACTUAL_RPM        3.0f
 #define ENCODER_MONITOR_PROGRESS_REVS     0.002f
@@ -67,7 +70,12 @@ bool encoder_fault_monitor_poll(EncoderFaultMonitor* monitor,
         return false;
     }
 
+    const float progressTimeoutMs =
+        120000.0f * ENCODER_MONITOR_PROGRESS_REVS / fabsf(commandRpm);
+    const uint32_t noProgressMs = progressTimeoutMs > ENCODER_MONITOR_NO_PROGRESS_MS
+        ? (uint32_t)ceilf(progressTimeoutMs) : ENCODER_MONITOR_NO_PROGRESS_MS;
+
     return (uint32_t)(nowMs - monitor->armedAtMs) > ENCODER_MONITOR_ARM_MS &&
            (uint32_t)(nowMs - monitor->lastProgressMs) >
-               ENCODER_MONITOR_NO_PROGRESS_MS;
+               noProgressMs;
 }

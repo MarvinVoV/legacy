@@ -1,0 +1,9 @@
+{
+  "unix": 1794657156.7128909,
+  "binary_sha256": "345548e67aa274bdc80622c9b5c89bc3ac6cd59e782e9e92efff9fc53d2b5947",
+  "bytes": 122880,
+  "returncode": 0,
+  "verified_and_reset": true,
+  "supply": "Both boards USB; user confirms TB6612 OFF; independent supply removed",
+  "neutral_us": 1470
+}

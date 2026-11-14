@@ -1,0 +1,73 @@
+import json,time,threading,subprocess,re,struct,os
+from pathlib import Path
+import httpx,paho.mqtt.client as mqtt
+from app.config import get_settings
+s=get_settings(); out=Path('/tmp/cmcar-motor-correlated-repeat10.json'); report={'started_unix':time.time(),'events':[],'hardware':[],'commands':[]}; lock=threading.Lock(); done=threading.Event(); ready=threading.Event()
+http=httpx.Client(base_url='http://127.0.0.1:8000/api/v1',headers={'X-API-Key':s.api_key} if s.api_key else {},trust_env=False,timeout=4)
+def save():
+ with lock: data=json.dumps(report,ensure_ascii=False,indent=2)
+ out.write_text(data+'\n')
+def stop():
+ r=http.post('/agent/devices/DEV_1/stop');r.raise_for_status();d=r.json();assert all(d.get(k) for k in ['accepted','confirmed','stopped']),d
+ return d
+client=mqtt.Client(mqtt.CallbackAPIVersion.VERSION2,client_id=f'cmcar-correlated-{os.getpid()}')
+if s.mqtt_username:client.username_pw_set(s.mqtt_username,s.mqtt_password)
+def connect(c,u,f,rc,p):c.subscribe('data/DEV_1/#')
+def sub(c,u,mid,rc,p):ready.set()
+def msg(c,u,m):
+ try:d=json.loads(m.payload)
+ except Exception:return
+ kind=m.topic.rsplit('/',1)[-1]
+ if kind not in ['motion','ack','heartbeat']:return
+ with lock:report['events'].append({'unix':time.time(),'mono':time.monotonic(),'kind':kind,'retain':m.retain,'data':d})
+client.on_connect=connect;client.on_subscribe=sub;client.on_message=msg
+cli='/opt/ST/STM32CubeCLT_1.22.0/STM32CubeProgrammer/bin/STM32_Programmer_CLI'
+reads=[(0x40000400,60),(0x40000824,4),(0x40000c24,4),(0x58020000,36),(0x58020c00,24),(0x58021400,24),(0x200018f0,8),(0x2000198c,8),(0x20001934,4),(0x200019d0,4),(0x20001954,4),(0x200019f0,4)]
+def hw():
+ while not done.is_set():
+  cmd=[cli,'-c','port=SWD','mode=HOTPLUG','freq=1000','sn=001800495300000A4E594B4D']
+  for a,n in reads:cmd+=['-r32',hex(a),str(n)]
+  d={'start_unix':time.time(),'start_mono':time.monotonic()}
+  try:
+   r=subprocess.run(cmd,capture_output=True,text=True,timeout=3);txt=re.sub(r'\x1b\[[0-9;]*m','',r.stdout+r.stderr);words={}
+   for line in txt.splitlines():
+    m=re.match(r'0x([0-9A-Fa-f]{8})\s*:\s*(.*)',line)
+    if m:
+     for j,w in enumerate(re.findall(r'\b[0-9A-Fa-f]{8}\b',m[2])):words[int(m[1],16)+j*4]=int(w,16)
+   d.update(rc=r.returncode,words={hex(k):v for k,v in words.items()})
+   for key,a in [('tim4',0x40000824),('tim5',0x40000c24),('ccr1',0x40000434),('ccr2',0x40000438),('gpioa_idr',0x58020010),('gpiof_idr',0x58021410),('gpiof_odr',0x58021414)]:d[key]=words.get(a)
+   for key,a in [('r_target',0x200018f0),('l_target',0x2000198c),('r_rpm',0x20001934),('l_rpm',0x200019d0),('r_duty',0x20001954),('l_duty',0x200019f0)]:
+    if a in words:d[key]=struct.unpack('<f',words[a].to_bytes(4,'little'))[0]
+   if not words:d['error_output']=txt[-1500:]
+  except Exception as e:d['error']=str(e)
+  d['end_unix']=time.time()
+  with lock:report['hardware'].append(d)
+  done.wait(.35)
+try:
+ client.connect(s.mqtt_host,s.mqtt_port);client.loop_start();assert ready.wait(3)
+ report['initial_stop']=stop();state=http.get('/agent/devices/DEV_1/state').json();report['precheck']=state
+ assert not state['motion']['fault'] and not state['motion']['stale'] and state['stm32_connected'],state
+ worker=threading.Thread(target=hw,daemon=True);worker.start();time.sleep(1.5)
+ start=time.monotonic();report['active_start_unix']=time.time();seq=251
+ while time.monotonic()-start<10:
+  tick=time.monotonic();r=http.post('/devices/DEV_1/commands',json={'seq':seq,'cmd':'motion','motion':{'mode':3,'params':{'linear_vel':50,'curvature_1pm':0}}});r.raise_for_status();assert r.json().get('success'),r.json()
+  report['commands'].append({'unix':time.time(),'seq':seq})
+  with lock:events=[e for e in report['events'] if e['mono']>=start]
+  ack=[e for e in events if e['kind']=='ack' and e['data'].get('seq')==seq]
+  motion=[e for e in events if e['kind']=='motion' and e['data'].get('seq')==seq]
+  assert not any(e['data'].get('status',0)!=0 for e in ack),'ACK rejected'
+  assert not any(e['data'].get('fault') or e['data'].get('lease_expired') for e in motion),'motion fault'
+  if time.monotonic()-start>1:assert ack and time.monotonic()-ack[-1]['mono']<.7,'ACK stale'
+  time.sleep(max(0,.12-(time.monotonic()-tick)))
+ report['active_end_unix']=time.time();report['completed']=True
+except Exception as e:report['failure']=repr(e);print('DIAGNOSTIC_ABORT',repr(e),flush=True)
+finally:
+ try:report['final_stop']=stop()
+ except Exception as e:report['stop_failure']=repr(e)
+ time.sleep(1);done.set()
+ if 'worker' in globals():worker.join(4)
+ try:report['final_state']=http.get('/agent/devices/DEV_1/state').json()
+ except Exception:pass
+ save();client.loop_stop();client.disconnect();http.close()
+ print(json.dumps({k:v for k,v in report.items() if k not in ['events','commands','hardware']},ensure_ascii=False),flush=True)
+ for d in report['hardware']:print('HW',json.dumps({k:v for k,v in d.items() if k!='words'},ensure_ascii=False),flush=True)
