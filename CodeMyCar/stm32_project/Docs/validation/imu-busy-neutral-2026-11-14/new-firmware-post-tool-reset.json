@@ -1,0 +1,86 @@
+{
+  "power": "STM32 USB + IMU STM32 3V3; ESP external; user RST after aborted checksum; NO SWD during window",
+  "samples": [
+    {
+      "at": 1794648773.269593,
+      "online": true,
+      "last_heartbeat_age": 7.1,
+      "uptime_s": 243,
+      "stm32_connected": true,
+      "sensor_age_s": 0.2,
+      "imu_age_s": 0.1,
+      "yaw_deg": 0.0
+    },
+    {
+      "at": 1794648778.280355,
+      "online": true,
+      "last_heartbeat_age": 12.1,
+      "uptime_s": 243,
+      "stm32_connected": true,
+      "sensor_age_s": 0.0,
+      "imu_age_s": 0.0,
+      "yaw_deg": 0.0
+    },
+    {
+      "at": 1794648783.289829,
+      "online": true,
+      "last_heartbeat_age": 17.1,
+      "uptime_s": 243,
+      "stm32_connected": true,
+      "sensor_age_s": 0.2,
+      "imu_age_s": 0.1,
+      "yaw_deg": 0.0
+    },
+    {
+      "at": 1794648788.299705,
+      "online": true,
+      "last_heartbeat_age": 22.2,
+      "uptime_s": 243,
+      "stm32_connected": true,
+      "sensor_age_s": 0.2,
+      "imu_age_s": 0.2,
+      "yaw_deg": 0.0
+    },
+    {
+      "at": 1794648793.3056052,
+      "online": true,
+      "last_heartbeat_age": 27.2,
+      "uptime_s": 243,
+      "stm32_connected": true,
+      "sensor_age_s": 0.1,
+      "imu_age_s": 0.1,
+      "yaw_deg": 0.0
+    },
+    {
+      "at": 1794648798.31289,
+      "online": true,
+      "last_heartbeat_age": 2.2,
+      "uptime_s": 273,
+      "stm32_connected": true,
+      "sensor_age_s": 0.0,
+      "imu_age_s": 0.0,
+      "yaw_deg": 0.0
+    },
+    {
+      "at": 1794648803.319422,
+      "online": true,
+      "last_heartbeat_age": 7.2,
+      "uptime_s": 273,
+      "stm32_connected": true,
+      "sensor_age_s": 0.2,
+      "imu_age_s": 0.1,
+      "yaw_deg": 0.0
+    }
+  ],
+  "events": [],
+  "first_imu_logs": [
+    "2026-11-14 17:32:53,289 [device.DEV_1] INFO: [INFO][sensor] IMU yaw=-0.01 deg rate=0.11 dps bias=0.000 st=3 grv=2070 gyro=2070 ",
+    "2026-11-14 17:32:53,488 [device.DEV_1] INFO: [INFO][sensor] IMU yaw=-0.01 deg rate=-0.12 dps bias=0.000 st=3 grv=2080 gyro=2080 "
+  ],
+  "last_imu_logs": [
+    "2026-11-14 17:33:23,185 [device.DEV_1] INFO: [INFO][sensor] IMU yaw=-0.01 deg rate=0.00 dps bias=0.000 st=3 grv=5053 gyro=5053 ",
+    "2026-11-14 17:33:23,197 [device.DEV_1] INFO: [INFO][sensor] IMU yaw=-0.02 deg rate=0.00 dps bias=0.000 st=3 grv=5063 gyro=5063 "
+  ],
+  "first_bus_log": [],
+  "last_bus_log": []
+}

@@ -7,5 +7,8 @@
   "reason": "External supply OFF: CubeProgrammer full download+verify PASS, reset PASS; TIM2 PSC249 ARR19999 CCR1=1470",
   "host_regression": "PASS",
   "arm_build": "PASS",
-  "imu_hil_pending": true
+  "imu_hil_pending": false,
+  "imu_hil": "PASS 120s passive telemetry: counts5108->17099, no restart/reopen/error diagnostic; STM USB+IMU STM3V3, ESP external5V, TB6612OFF",
+  "mechanical_neutral_recheck_pending": true,
+  "external_supply_root_cause": "Not uniquely identified; flash with external supply OFF verified, ON remains unreliable"
 }
