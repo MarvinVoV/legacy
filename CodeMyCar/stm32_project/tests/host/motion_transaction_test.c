@@ -14,6 +14,7 @@ static bool measurementFail, measurementStale;
 static bool imuAvailable;
 static float imuYaw, leftRevs, rightRevs;
 static float measuredLeftRpm, measuredRightRpm;
+static float measuredDuty;
 static float submittedRpm[2];
 static int targetFail=-1;
 static bool steerFail;
@@ -40,6 +41,7 @@ int MotorService_brakeAll(MotorService* s)
 {MotorService_SetInhibit(s,true);return brakeFail?ERR_MOTOR_MUTEX_FAIL:0;}
 bool MotorService_getStateEx(MotorService* s,MotorID i,MotorState* o)
 {(void)s;*o=(MotorState){.lastUpdate=measurementStale?now-201:now};
+ o->appliedDuty=measuredDuty;
  o->position.revolutions=i==MOTOR_LEFT_WHEEL?leftRevs:rightRevs;
  o->velocity.rpm=i==MOTOR_LEFT_WHEEL?measuredLeftRpm:measuredRightRpm;
  o->velocity.mps=o->velocity.rpm*2*3.14159265f*0.0325f/60;return !measurementFail;}
@@ -316,5 +318,32 @@ int main(void)
     MotionService_GetStatus(&c,&status);
     assert(c.goal.finished && !c.goalSettling && status.state==MOTION_STATE_ERROR);
     assert(!c.faultLatched && status.goalDistanceMm>=105);
+    /* Field regression: a live 50mm/s DRIVE lease, powered but motionless
+     * encoders, must fault and inhibit BOTH outputs; repeated requests must
+     * neither reset the progress timer nor clear the latched fault. */
+    imuAvailable=false;
+    measuredLeftRpm=measuredRightRpm=0;
+    for(int sign=-1;sign<=1;sign+=2) {
+        assert(MotionService_EmergencyStop(&c,130)==0);
+        measuredDuty=0;now+=5;MotionService_Run(&c);
+        const uint32_t start=now;
+        bool fault=false;
+        for(int i=0;i<400;i++) {
+            now+=5;
+            safety_channel_update(&front,100,now);
+            safety_channel_update(&rear,100,now);
+            assert(MotionService_SetDriveParams(&c,sign*.05f,0,131)==0);
+            measuredDuty=.2f;
+            MotionService_Run(&c);
+            if(c.faultLatched) {fault=true;break;}
+        }
+        assert(fault && now-start<=1600 && c.faultCode==MOTION_ERR_ENCODER);
+        assert(inhibited && c.cmdLeftRpm==0 && c.cmdRightRpm==0);
+        MotionService_GetStatus(&c,&status);
+        assert(status.state==MOTION_STATE_ERROR && status.error==MOTION_ERR_ENCODER);
+        assert(MotionService_SetDriveParams(&c,sign*.05f,0,132)==ERR_MOTION_FAULT_LATCHED);
+        measuredDuty=0;now+=5;MotionService_Run(&c);
+        assert(MotionService_ClearFault(&c,133)==0);
+    }
     puts("motion_transaction: all tests passed");
 }
