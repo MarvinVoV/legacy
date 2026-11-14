@@ -1,0 +1,38 @@
+{
+  "at": 1794654036.1202948,
+  "stop_http": 200,
+  "stop": {
+    "ok": true,
+    "stopped": true,
+    "accepted": true,
+    "confirmed": true,
+    "seq": 41
+  },
+  "state": {
+    "ok": true,
+    "online": true,
+    "stm32_connected": true,
+    "motion_supported": true,
+    "motion": {
+      "state": "error",
+      "mode": 0,
+      "fault": true,
+      "lease_expired": false,
+      "error": 8,
+      "heading_source": "encoder",
+      "seq": 41,
+      "age_ms": 3,
+      "stale": false
+    },
+    "pose": {
+      "x_cm": 0.0,
+      "y_cm": 0.0,
+      "heading_deg": -0.404,
+      "odometer_cm": 0.0
+    },
+    "velocity": {
+      "linear_cm_s": 0.0,
+      "angular_deg_s": 0.0
+    }
+  }
+}

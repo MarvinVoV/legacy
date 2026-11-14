@@ -1,0 +1,97 @@
+      -------------------------------------------------------------------
+                        STM32CubeProgrammer v2.23.0
+      -------------------------------------------------------------------
+
+ST-LINK SN  : 001800495300000A4E594B4D
+ST-LINK FW  : V2J48M35
+Board       : --
+Voltage     : 3.26V
+SWD freq    : 950 KHz
+Connect mode: Hot Plug
+Reset mode  : Software reset
+Device ID   : 0x483
+Revision ID : Rev Z
+Device name : STM32H72x/STM32H73x
+NVM size    : 1 MBytes
+Device type : MCU
+Device CPU  : Cortex-M7
+BL Version  : 0x93
+
+
+Reading 32-bit memory content
+  Size          : 60 Bytes
+  Address:      : 0x40000400
+0x40000400 : 00000081 00000000 00000000 00000000
+0x40000410 : 0000001F 00000000 00006868 00000000
+0x40000420 : 00000011 00002D7F 00000000 00003D08
+0x40000430 : 00000000 00000897 00000899
+
+
+
+Reading 32-bit memory content
+  Size          : 8 Bytes
+  Address:      : 0x58021410
+0x58021410 : 00000140 00000140
+
+
+
+Reading 32-bit memory content
+  Size          : 8 Bytes
+  Address:      : 0x20001AB0
+0x20001AB0 : 416B0F43 416B0F43
+
+
+
+Reading 32-bit memory content
+  Size          : 8 Bytes
+  Address:      : 0x200018F0
+0x200018F0 : 416B0F43 416B0F43
+
+
+
+Reading 32-bit memory content
+  Size          : 8 Bytes
+  Address:      : 0x2000198C
+0x2000198C : 416B0F43 416B0F43
+
+
+
+Reading 32-bit memory content
+  Size          : 4 Bytes
+  Address:      : 0x20001898
+0x20001898 : 00000000
+
+
+
+Reading 32-bit memory content
+  Size          : 4 Bytes
+  Address:      : 0x200018C0
+0x200018C0 : 00000001
+
+
+
+Reading 32-bit memory content
+  Size          : 4 Bytes
+  Address:      : 0x20001954
+0x20001954 : 3E103F31
+
+
+
+Reading 32-bit memory content
+  Size          : 4 Bytes
+  Address:      : 0x200019F0
+0x200019F0 : 3E1065B4
+
+
+
+Reading 32-bit memory content
+  Size          : 4 Bytes
+  Address:      : 0x40000824
+0x40000824 : 0000FFFE
+
+
+
+Reading 32-bit memory content
+  Size          : 4 Bytes
+  Address:      : 0x40000C24
+0x40000C24 : 0000FFF9

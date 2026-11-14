@@ -1,0 +1,1 @@
+Assertion failed: (encoder_fault_monitor_poll(&m, 1501, low_commands[i], 0.2f, 0, 0, false)), function main, file encoder_fault_monitor_test.c, line 43.

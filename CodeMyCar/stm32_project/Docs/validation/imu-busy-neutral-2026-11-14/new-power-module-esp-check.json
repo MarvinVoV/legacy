@@ -1,0 +1,205 @@
+{
+  "note": "User testing replacement power module for ESP; model/output ratings not confirmed. Read-only, no actuation.",
+  "samples": [
+    {
+      "at": 1794652540.52459,
+      "status": {
+        "online": true,
+        "last_heartbeat_age": 18.3,
+        "uptime_s": 33,
+        "heap_free": 182451,
+        "stm32_connected": false,
+        "sensor_age_s": 229.5,
+        "imu_age_s": 229.5,
+        "yaw_deg": -0.6
+      },
+      "motion": {
+        "state": "idle",
+        "mode": null,
+        "fault": null,
+        "lease_expired": null,
+        "error": null,
+        "heading_source": null,
+        "seq": null,
+        "age_ms": null,
+        "stale": false
+      },
+      "velocity": null
+    },
+    {
+      "at": 1794652545.5326002,
+      "status": {
+        "online": true,
+        "last_heartbeat_age": 23.3,
+        "uptime_s": 33,
+        "heap_free": 182451,
+        "stm32_connected": false,
+        "sensor_age_s": 234.5,
+        "imu_age_s": 234.5,
+        "yaw_deg": -0.6
+      },
+      "motion": {
+        "state": "idle",
+        "mode": null,
+        "fault": null,
+        "lease_expired": null,
+        "error": null,
+        "heading_source": null,
+        "seq": null,
+        "age_ms": null,
+        "stale": false
+      },
+      "velocity": null
+    },
+    {
+      "at": 1794652550.541313,
+      "status": {
+        "online": true,
+        "last_heartbeat_age": 28.3,
+        "uptime_s": 33,
+        "heap_free": 182451,
+        "stm32_connected": false,
+        "sensor_age_s": 239.5,
+        "imu_age_s": 239.5,
+        "yaw_deg": -0.6
+      },
+      "motion": {
+        "state": "idle",
+        "mode": null,
+        "fault": null,
+        "lease_expired": null,
+        "error": null,
+        "heading_source": null,
+        "seq": null,
+        "age_ms": null,
+        "stale": false
+      },
+      "velocity": null
+    },
+    {
+      "at": 1794652555.551289,
+      "status": {
+        "online": true,
+        "last_heartbeat_age": 3.3,
+        "uptime_s": 63,
+        "heap_free": 182495,
+        "stm32_connected": false,
+        "sensor_age_s": 244.5,
+        "imu_age_s": 244.5,
+        "yaw_deg": -0.6
+      },
+      "motion": {
+        "state": "idle",
+        "mode": null,
+        "fault": null,
+        "lease_expired": null,
+        "error": null,
+        "heading_source": null,
+        "seq": null,
+        "age_ms": null,
+        "stale": false
+      },
+      "velocity": null
+    },
+    {
+      "at": 1794652560.561138,
+      "status": {
+        "online": true,
+        "last_heartbeat_age": 8.3,
+        "uptime_s": 63,
+        "heap_free": 182495,
+        "stm32_connected": false,
+        "sensor_age_s": 249.5,
+        "imu_age_s": 249.5,
+        "yaw_deg": -0.6
+      },
+      "motion": {
+        "state": "idle",
+        "mode": null,
+        "fault": null,
+        "lease_expired": null,
+        "error": null,
+        "heading_source": null,
+        "seq": null,
+        "age_ms": null,
+        "stale": false
+      },
+      "velocity": null
+    },
+    {
+      "at": 1794652565.57004,
+      "status": {
+        "online": true,
+        "last_heartbeat_age": 13.3,
+        "uptime_s": 63,
+        "heap_free": 182495,
+        "stm32_connected": false,
+        "sensor_age_s": 254.6,
+        "imu_age_s": 254.6,
+        "yaw_deg": -0.6
+      },
+      "motion": {
+        "state": "idle",
+        "mode": null,
+        "fault": null,
+        "lease_expired": null,
+        "error": null,
+        "heading_source": null,
+        "seq": null,
+        "age_ms": null,
+        "stale": false
+      },
+      "velocity": null
+    },
+    {
+      "at": 1794652570.576499,
+      "status": {
+        "online": true,
+        "last_heartbeat_age": 18.3,
+        "uptime_s": 63,
+        "heap_free": 182495,
+        "stm32_connected": false,
+        "sensor_age_s": 259.6,
+        "imu_age_s": 259.6,
+        "yaw_deg": -0.6
+      },
+      "motion": {
+        "state": "idle",
+        "mode": null,
+        "fault": null,
+        "lease_expired": null,
+        "error": null,
+        "heading_source": null,
+        "seq": null,
+        "age_ms": null,
+        "stale": false
+      },
+      "velocity": null
+    },
+    {
+      "at": 1794652575.5857,
+      "status": {
+        "online": true,
+        "last_heartbeat_age": 23.4,
+        "uptime_s": 63,
+        "heap_free": 182495,
+        "stm32_connected": false,
+        "sensor_age_s": 264.6,
+        "imu_age_s": 264.6,
+        "yaw_deg": -0.6
+      },
+      "motion": {
+        "state": "idle",
+        "mode": null,
+        "fault": null,
+        "lease_expired": null,
+        "error": null,
+        "heading_source": null,
+        "seq": null,
+        "age_ms": null,
+        "stale": false
+      },
+      "velocity": null
+    }
+  ]
+}

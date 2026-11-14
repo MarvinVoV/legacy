@@ -1,0 +1,44 @@
+import json,time,threading,os
+from pathlib import Path
+import httpx,paho.mqtt.client as mqtt
+from app.config import get_settings
+s=get_settings();report={'test':'TB6612 OFF, 50mmps continuously renewed: real STM32 must latch encoder fault, cut PWM, reject further motion','events':[],'commands':[],'unix':time.time()};lock=threading.Lock();ready=threading.Event()
+client=mqtt.Client(mqtt.CallbackAPIVersion.VERSION2,client_id=f'low-speed-guard-{os.getpid()}')
+if s.mqtt_username:client.username_pw_set(s.mqtt_username,s.mqtt_password)
+def connect(c,u,f,rc,p):c.subscribe([('data/DEV_1/ack',0),('data/DEV_1/motion',0)])
+def sub(c,u,mid,rc,p):ready.set()
+def msg(c,u,m):
+ try:d=json.loads(m.payload)
+ except Exception:return
+ with lock:report['events'].append({'unix':time.time(),'mono':time.monotonic(),'kind':m.topic.rsplit('/',1)[-1],'data':d})
+client.on_connect=connect;client.on_subscribe=sub;client.on_message=msg
+client.connect(s.mqtt_host,s.mqtt_port);client.loop_start();assert ready.wait(3)
+http=httpx.Client(base_url='http://127.0.0.1:8000/api/v1',headers={'X-API-Key':s.api_key} if s.api_key else {},trust_env=False,timeout=4)
+def command(seq):
+ t=time.monotonic();r=http.post('/devices/DEV_1/commands',json={'seq':seq,'cmd':'motion','motion':{'mode':3,'params':{'linear_vel':50,'curvature_1pm':0}}});r.raise_for_status();assert r.json().get('success');report['commands'].append({'mono':t,'unix':time.time(),'seq':seq})
+def stop():
+ r=http.post('/agent/devices/DEV_1/stop');r.raise_for_status();d=r.json();assert all(d.get(k) for k in ['accepted','confirmed','stopped']),d;return d
+try:
+ report['initial_stop']=stop();state=http.get('/agent/devices/DEV_1/state').json();assert state['stm32_connected'] and not state['motion']['stale'] and not state['motion']['fault'],state;report['precheck']=state
+ start=time.monotonic();seq=252;fault=None
+ while time.monotonic()-start<5:
+  command(seq)
+  with lock:motion=[e for e in report['events'] if e['mono']>=start and e['kind']=='motion']
+  faults=[e for e in motion if e['data'].get('fault')]
+  if faults:fault=faults[0];break
+  time.sleep(.12)
+ assert fault is not None,'No no-progress fault within5s'
+ assert fault['data'].get('error')==8,fault
+ report['fault_elapsed_ms']=round((fault['mono']-start)*1000,1);report['fault']=fault
+ # A new request must be rejected, not silently clear the latch.
+ command(253);time.sleep(.45)
+ with lock:rejected=[e for e in report['events'] if e['kind']=='ack' and e['data'].get('seq')==253 and e['data'].get('status')!=0]
+ assert rejected,'Fault did not reject new motion'
+ report['rejected_motion_ack']=rejected[-1];report['passed']=True
+except Exception as e:report['passed']=False;report['failure']=repr(e)
+finally:
+ try:report['final_stop']=stop();report['final_state']=http.get('/agent/devices/DEV_1/state').json()
+ except Exception as e:report['stop_error']=repr(e)
+ Path('/tmp/cmcar-low-speed-hil.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n');http.close();client.loop_stop();client.disconnect()
+ print(json.dumps({k:v for k,v in report.items() if k not in ['events','commands']},ensure_ascii=False),flush=True)
+ assert report['passed'],report.get('failure')

@@ -1,0 +1,987 @@
+{
+  "scope": "Suspended motor-only repeat, measured encoder speeds and ACK-stream validation; no steering sweep; prep10s, forward5s, stop6s, reverse5s",
+  "limitations": [
+    "No ground driving/accuracy test",
+    "No independent supply root-cause certification"
+  ],
+  "results": [
+    {
+      "case": "initial_stop",
+      "passed": true,
+      "stop": {
+        "ms": 101.5,
+        "reply": {
+          "ok": true,
+          "stopped": true,
+          "accepted": true,
+          "confirmed": true,
+          "seq": 39
+        }
+      }
+    }
+  ],
+  "events": [
+    {
+      "t": 873115.358573208,
+      "kind": "motion",
+      "data": {
+        "seq": 38,
+        "mode": 0,
+        "state": "idle",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873115.478096916,
+      "kind": "ack",
+      "data": {
+        "seq": 39,
+        "ack": true,
+        "status": 0,
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873115.478165208,
+      "kind": "motion",
+      "data": {
+        "seq": 39,
+        "mode": 0,
+        "state": "idle",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873115.524664166,
+      "kind": "ack",
+      "data": {
+        "seq": 226,
+        "ack": true,
+        "status": 0,
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873115.524713625,
+      "kind": "motion",
+      "data": {
+        "seq": 39,
+        "mode": 0,
+        "state": "idle",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873115.524737875,
+      "kind": "motion",
+      "data": {
+        "seq": 226,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873115.663001458,
+      "kind": "ack",
+      "data": {
+        "seq": 226,
+        "ack": true,
+        "status": 0,
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873115.663132375,
+      "kind": "motion",
+      "data": {
+        "seq": 226,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873115.663211916,
+      "kind": "motion",
+      "data": {
+        "seq": 226,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873115.782005083,
+      "kind": "motion",
+      "data": {
+        "seq": 226,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873115.867060375,
+      "kind": "ack",
+      "data": {
+        "seq": 226,
+        "ack": true,
+        "status": 0,
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873115.867175625,
+      "kind": "motion",
+      "data": {
+        "seq": 226,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873115.867248583,
+      "kind": "motion",
+      "data": {
+        "seq": 226,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873115.903574208,
+      "kind": "ack",
+      "data": {
+        "seq": 226,
+        "ack": true,
+        "status": 0,
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873115.998381958,
+      "kind": "motion",
+      "data": {
+        "seq": 226,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873116.004460583,
+      "kind": "motion",
+      "data": {
+        "seq": 226,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873116.083227625,
+      "kind": "ack",
+      "data": {
+        "seq": 226,
+        "ack": true,
+        "status": 0,
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873116.083499625,
+      "kind": "motion",
+      "data": {
+        "seq": 226,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873116.083695625,
+      "kind": "motion",
+      "data": {
+        "seq": 226,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873116.186266916,
+      "kind": "motion",
+      "data": {
+        "seq": 226,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873116.186319125,
+      "kind": "motion",
+      "data": {
+        "seq": 226,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873116.289854416,
+      "kind": "ack",
+      "data": {
+        "seq": 226,
+        "ack": true,
+        "status": 0,
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873116.289921166,
+      "kind": "motion",
+      "data": {
+        "seq": 226,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873116.289974583,
+      "kind": "motion",
+      "data": {
+        "seq": 13,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873116.405623,
+      "kind": "ack",
+      "data": {
+        "seq": 226,
+        "ack": true,
+        "status": 0,
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873116.405666666,
+      "kind": "motion",
+      "data": {
+        "seq": 13,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873116.405697125,
+      "kind": "motion",
+      "data": {
+        "seq": 226,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873116.4868625,
+      "kind": "ack",
+      "data": {
+        "seq": 226,
+        "ack": true,
+        "status": 0,
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873116.486905166,
+      "kind": "motion",
+      "data": {
+        "seq": 226,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873116.487017291,
+      "kind": "motion",
+      "data": {
+        "seq": 14,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873116.542642375,
+      "kind": "ack",
+      "data": {
+        "seq": 226,
+        "ack": true,
+        "status": 0,
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873116.542720208,
+      "kind": "motion",
+      "data": {
+        "seq": 14,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873116.542788541,
+      "kind": "motion",
+      "data": {
+        "seq": 226,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873116.687211791,
+      "kind": "ack",
+      "data": {
+        "seq": 226,
+        "ack": true,
+        "status": 0,
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873116.687413541,
+      "kind": "motion",
+      "data": {
+        "seq": 226,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873116.687568958,
+      "kind": "motion",
+      "data": {
+        "seq": 226,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873116.808948208,
+      "kind": "ack",
+      "data": {
+        "seq": 226,
+        "ack": true,
+        "status": 0,
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873116.809005125,
+      "kind": "motion",
+      "data": {
+        "seq": 226,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873116.809036166,
+      "kind": "motion",
+      "data": {
+        "seq": 226,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873116.882702708,
+      "kind": "ack",
+      "data": {
+        "seq": 226,
+        "ack": true,
+        "status": 0,
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873116.88275,
+      "kind": "motion",
+      "data": {
+        "seq": 226,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873116.928637791,
+      "kind": "motion",
+      "data": {
+        "seq": 226,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873117.008168916,
+      "kind": "motion",
+      "data": {
+        "seq": 226,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873117.069217291,
+      "kind": "ack",
+      "data": {
+        "seq": 226,
+        "ack": true,
+        "status": 0,
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873117.06927275,
+      "kind": "motion",
+      "data": {
+        "seq": 226,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873117.12011525,
+      "kind": "motion",
+      "data": {
+        "seq": 226,
+        "mode": 0,
+        "state": "error",
+        "fault": true,
+        "error": 8,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873117.126603958,
+      "kind": "motion",
+      "data": {
+        "seq": 226,
+        "mode": 0,
+        "state": "error",
+        "fault": true,
+        "error": 8,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873117.21732025,
+      "kind": "ack",
+      "data": {
+        "seq": 226,
+        "ack": true,
+        "status": 5,
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873117.217434125,
+      "kind": "motion",
+      "data": {
+        "seq": 226,
+        "mode": 0,
+        "state": "error",
+        "fault": true,
+        "error": 8,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873117.3049995,
+      "kind": "ack",
+      "data": {
+        "seq": 226,
+        "ack": true,
+        "status": 5,
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873117.407030875,
+      "kind": "ack",
+      "data": {
+        "seq": 40,
+        "ack": true,
+        "status": 0,
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873117.407246458,
+      "kind": "motion",
+      "data": {
+        "seq": 226,
+        "mode": 0,
+        "state": "error",
+        "fault": true,
+        "error": 8,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3438066493
+      }
+    },
+    {
+      "t": 873117.438775375,
+      "kind": "motion",
+      "data": {
+        "seq": 40,
+        "mode": 0,
+        "state": "error",
+        "fault": true,
+        "error": 8,
+        "lease_expired": false,
+        "left_mmps": 0,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 3438066493
+      }
+    }
+  ],
+  "commands": [
+    {
+      "seq": 226,
+      "mono": 873115.481631,
+      "unix": 1794654003.146326,
+      "speed_mm_s": 100,
+      "http_ms": 2.0
+    },
+    {
+      "seq": 226,
+      "mono": 873115.606657125,
+      "unix": 1794654003.271351,
+      "speed_mm_s": 100,
+      "http_ms": 2.3
+    },
+    {
+      "seq": 226,
+      "mono": 873115.731703125,
+      "unix": 1794654003.396398,
+      "speed_mm_s": 100,
+      "http_ms": 6.2
+    },
+    {
+      "seq": 226,
+      "mono": 873115.855013041,
+      "unix": 1794654003.519708,
+      "speed_mm_s": 100,
+      "http_ms": 5.7
+    },
+    {
+      "seq": 226,
+      "mono": 873115.980053,
+      "unix": 1794654003.644747,
+      "speed_mm_s": 100,
+      "http_ms": 2.1
+    },
+    {
+      "seq": 226,
+      "mono": 873116.105083625,
+      "unix": 1794654003.769778,
+      "speed_mm_s": 100,
+      "http_ms": 5.6
+    },
+    {
+      "seq": 226,
+      "mono": 873116.227183166,
+      "unix": 1794654003.891876,
+      "speed_mm_s": 100,
+      "http_ms": 2.5
+    },
+    {
+      "seq": 226,
+      "mono": 873116.349804125,
+      "unix": 1794654004.014496,
+      "speed_mm_s": 100,
+      "http_ms": 2.1
+    },
+    {
+      "seq": 226,
+      "mono": 873116.474827,
+      "unix": 1794654004.139519,
+      "speed_mm_s": 100,
+      "http_ms": 1.9
+    },
+    {
+      "seq": 226,
+      "mono": 873116.599142416,
+      "unix": 1794654004.263834,
+      "speed_mm_s": 100,
+      "http_ms": 2.5
+    },
+    {
+      "seq": 226,
+      "mono": 873116.723132875,
+      "unix": 1794654004.387824,
+      "speed_mm_s": 100,
+      "http_ms": 3.8
+    },
+    {
+      "seq": 226,
+      "mono": 873116.848142625,
+      "unix": 1794654004.512833,
+      "speed_mm_s": 100,
+      "http_ms": 2.1
+    },
+    {
+      "seq": 226,
+      "mono": 873116.973068041,
+      "unix": 1794654004.637759,
+      "speed_mm_s": 100,
+      "http_ms": 2.0
+    },
+    {
+      "seq": 226,
+      "mono": 873117.09631325,
+      "unix": 1794654004.761003,
+      "speed_mm_s": 100,
+      "http_ms": 1.9
+    },
+    {
+      "seq": 226,
+      "mono": 873117.221351541,
+      "unix": 1794654004.8860412,
+      "speed_mm_s": 100,
+      "http_ms": 4.2
+    }
+  ],
+  "hardware_samples": [
+    {
+      "mono_start": 873116.186859625,
+      "unix": 1794654003.851552,
+      "returncode": 0,
+      "words": {
+        "0x40000400": 129,
+        "0x40000404": 0,
+        "0x40000408": 0,
+        "0x4000040c": 0,
+        "0x40000410": 31,
+        "0x40000414": 0,
+        "0x40000418": 26728,
+        "0x4000041c": 0,
+        "0x40000420": 17,
+        "0x40000424": 12604,
+        "0x40000428": 0,
+        "0x4000042c": 15624,
+        "0x40000430": 0,
+        "0x40000434": 3483,
+        "0x40000438": 3479,
+        "0x58021410": 320,
+        "0x58021414": 320,
+        "0x20001ab0": 1105923907,
+        "0x20001ab4": 1105923907,
+        "0x200018f0": 1105923907,
+        "0x200018f4": 1105923907,
+        "0x2000198c": 1105923907,
+        "0x20001990": 1105923907,
+        "0x20001898": 0,
+        "0x200018c0": 1,
+        "0x20001954": 1046780506,
+        "0x200019f0": 1046760788,
+        "0x40000824": 65534,
+        "0x40000c24": 65529
+      },
+      "cmd_rpm_l": 29.3824520111084,
+      "cmd_rpm_r": 29.3824520111084,
+      "driver_r_target": 29.3824520111084,
+      "driver_r_ramp": 29.3824520111084,
+      "driver_l_target": 29.3824520111084,
+      "driver_l_ramp": 29.3824520111084,
+      "driver_r_duty": 0.2232450544834137,
+      "driver_l_duty": 0.2229512333869934,
+      "inhibit_r": false,
+      "inhibit_l": false,
+      "pwm_ccr1": 3483,
+      "pwm_ccr2": 3479,
+      "encoder_tim4": 65534,
+      "encoder_tim5": 65529,
+      "direction_gpiof_odr": 320,
+      "mono_end": 873116.393927708
+    },
+    {
+      "mono_start": 873116.699049625,
+      "unix": 1794654004.363741,
+      "returncode": 0,
+      "words": {
+        "0x40000400": 129,
+        "0x40000404": 0,
+        "0x40000408": 0,
+        "0x4000040c": 0,
+        "0x40000410": 31,
+        "0x40000414": 0,
+        "0x40000418": 26728,
+        "0x4000041c": 0,
+        "0x40000420": 17,
+        "0x40000424": 8032,
+        "0x40000428": 0,
+        "0x4000042c": 15624,
+        "0x40000430": 0,
+        "0x40000434": 3920,
+        "0x40000438": 3915,
+        "0x58021410": 320,
+        "0x58021414": 320,
+        "0x20001ab0": 1105923907,
+        "0x20001ab4": 1105923907,
+        "0x200018f0": 1105923907,
+        "0x200018f4": 1105923907,
+        "0x2000198c": 1105923907,
+        "0x20001990": 1105923907,
+        "0x20001898": 0,
+        "0x200018c0": 1,
+        "0x20001954": 1048614859,
+        "0x200019f0": 1048604999,
+        "0x40000824": 65534,
+        "0x40000c24": 65529
+      },
+      "cmd_rpm_l": 29.3824520111084,
+      "cmd_rpm_r": 29.3824520111084,
+      "driver_r_target": 29.3824520111084,
+      "driver_r_ramp": 29.3824520111084,
+      "driver_l_target": 29.3824520111084,
+      "driver_l_ramp": 29.3824520111084,
+      "driver_r_duty": 0.25115808844566345,
+      "driver_l_duty": 0.2508642375469208,
+      "inhibit_r": false,
+      "inhibit_l": false,
+      "pwm_ccr1": 3920,
+      "pwm_ccr2": 3915,
+      "encoder_tim4": 65534,
+      "encoder_tim5": 65529,
+      "direction_gpiof_odr": 320,
+      "mono_end": 873116.86752525
+    }
+  ],
+  "completed": false,
+  "failure": "AssertionError: [{'t': 873115.524664166, 'kind': 'ack', 'data': {'seq': 226, 'ack': True, 'status': 0, 'session_id': 3438066493}}, {'t': 873115.663001458, 'kind': 'ack', 'data': {'seq': 226, 'ack': True, 'status': 0, 'session_id': 3438066493}}, {'t': 873115.867060375, 'kind': 'ack', 'data': {'seq': 226, 'ack': True, 'status': 0, 'session_id': 3438066493}}, {'t': 873115.903574208, 'kind': 'ack', 'data': {'seq': 226, 'ack': True, 'status': 0, 'session_id': 3438066493}}, {'t': 873116.083227625, 'kind': 'ack', 'data': {'seq': 226, 'ack': True, 'status': 0, 'session_id': 3438066493}}, {'t': 873116.289854416, 'kind': 'ack', 'data': {'seq': 226, 'ack': True, 'status': 0, 'session_id': 3438066493}}, {'t': 873116.405623, 'kind': 'ack', 'data': {'seq': 226, 'ack': True, 'status': 0, 'session_id': 3438066493}}, {'t': 873116.4868625, 'kind': 'ack', 'data': {'seq': 226, 'ack': True, 'status': 0, 'session_id': 3438066493}}, {'t': 873116.542642375, 'kind': 'ack', 'data': {'seq': 226, 'ack': True, 'status': 0, 'session_id': 3438066493}}, {'t': 873116.687211791, 'kind': 'ack', 'data': {'seq': 226, 'ack': True, 'status': 0, 'session_id': 3438066493}}, {'t': 873116.808948208, 'kind': 'ack', 'data': {'seq': 226, 'ack': True, 'status': 0, 'session_id': 3438066493}}, {'t': 873116.882702708, 'kind': 'ack', 'data': {'seq': 226, 'ack': True, 'status': 0, 'session_id': 3438066493}}, {'t': 873117.069217291, 'kind': 'ack', 'data': {'seq': 226, 'ack': True, 'status': 0, 'session_id': 3438066493}}, {'t': 873117.21732025, 'kind': 'ack', 'data': {'seq': 226, 'ack': True, 'status': 5, 'session_id': 3438066493}}]",
+  "final_stop_error": "AssertionError"
+}
