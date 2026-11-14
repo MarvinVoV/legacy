@@ -45,16 +45,28 @@ static void display_delay_ms(uint32_t ms)
 static void cs_low(void)  { HAL_GPIO_WritePin(DISPLAY_CS_PORT, DISPLAY_CS_PIN, GPIO_PIN_RESET); }
 static void cs_high(void) { HAL_GPIO_WritePin(DISPLAY_CS_PORT, DISPLAY_CS_PIN, GPIO_PIN_SET); }
 
+/* 商家例程对每个字节都切换 CS，本模块对 CS 行为敏感，照此实现。 */
+static void write_byte(const uint8_t value)
+{
+    cs_low();
+    (void)HAL_SPI_Transmit(&s_spi, (uint8_t *)&value, 1u, 100u);
+    cs_high();
+}
+
 static void write_cmd(const uint8_t cmd)
 {
     HAL_GPIO_WritePin(DISPLAY_DC_PORT, DISPLAY_DC_PIN, GPIO_PIN_RESET);
-    (void)HAL_SPI_Transmit(&s_spi, (uint8_t *)&cmd, 1u, 100u);
+    write_byte(cmd);
+    HAL_GPIO_WritePin(DISPLAY_DC_PORT, DISPLAY_DC_PIN, GPIO_PIN_SET);
 }
 
 static void write_data(const uint8_t *data, uint16_t len)
 {
     HAL_GPIO_WritePin(DISPLAY_DC_PORT, DISPLAY_DC_PIN, GPIO_PIN_SET);
-    (void)HAL_SPI_Transmit(&s_spi, (uint8_t *)data, len, 100u);
+    for (uint16_t i = 0u; i < len; ++i)
+    {
+        write_byte(data[i]);
+    }
 }
 
 static void write_u8(const uint8_t value)
@@ -113,10 +125,11 @@ static bool display_spi_init(void)
 
 static void display_hw_reset(void)
 {
+    /* 与商家例程一致：低 100ms -> 高 100ms */
     HAL_GPIO_WritePin(DISPLAY_RST_PORT, DISPLAY_RST_PIN, GPIO_PIN_RESET);
-    display_delay_ms(20u);
+    display_delay_ms(100u);
     HAL_GPIO_WritePin(DISPLAY_RST_PORT, DISPLAY_RST_PIN, GPIO_PIN_SET);
-    display_delay_ms(120u);
+    display_delay_ms(100u);
 }
 
 /* ==================== GC9A01 初始化序列 ==================== */
@@ -150,8 +163,8 @@ static void gc9a01_init_sequence(void)
     write_cmd(0x8B); write_u8(0x80);
     write_cmd(0x8C); write_u8(0x01);
     write_cmd(0x8D); write_u8(0x01);
-    write_cmd(0x8E); write_u8(0x01);
-    write_cmd(0x8F); write_u8(0x01);
+    write_cmd(0x8E); write_u8(0xFF);
+    write_cmd(0x8F); write_u8(0xFF);
 
     write_cmd(0xB6); write_u8(0x00); write_u8(0x20);
 
@@ -262,9 +275,7 @@ bool Display_Init(void)
     display_hw_reset();
     /* 初始化命令必须在片选有效期间发送；此前漏了 cs_low()，
      * 面板会忽略整段初始化序列，只显示未初始化的 GRAM 噪声。 */
-    cs_low();
     gc9a01_init_sequence();
-    cs_high();
     return true;
 }
 
@@ -277,8 +288,6 @@ void Display_FillRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t c
     if ((uint32_t)x + w > DISPLAY_WIDTH)  { w = (uint16_t)(DISPLAY_WIDTH - x); }
     if ((uint32_t)y + h > DISPLAY_HEIGHT) { h = (uint16_t)(DISPLAY_HEIGHT - y); }
 
-    cs_low();
-
     write_cmd(0x2A);
     write_u8((uint8_t)(x >> 8)); write_u8((uint8_t)(x & 0xFFu));
     write_u8((uint8_t)((x + w - 1u) >> 8)); write_u8((uint8_t)((x + w - 1u) & 0xFFu));
@@ -289,50 +298,30 @@ void Display_FillRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t c
 
     write_cmd(0x2C);
 
-    /* 行缓冲必须是静态的：Display_Init 在 defaultTask 中执行，
-     * 该任务栈仅 128*4 = 512 字节，局部数组会直接栈溢出。 */
+    /* 与商家例程一致：每个像素字节单独切换 CS。 */
+    HAL_GPIO_WritePin(DISPLAY_DC_PORT, DISPLAY_DC_PIN, GPIO_PIN_SET);
 #if DISPLAY_BITS_PER_PIXEL == 18
-    static uint8_t s_line[DISPLAY_WIDTH * 3u];
     const uint8_t r5 = (uint8_t)((color >> 11) & 0x1Fu);
     const uint8_t g6 = (uint8_t)((color >> 5) & 0x3Fu);
     const uint8_t b5 = (uint8_t)(color & 0x1Fu);
     const uint8_t r6 = (uint8_t)((r5 << 1) | (r5 >> 4));
     const uint8_t b6 = (uint8_t)((b5 << 1) | (b5 >> 4));
-    for (uint16_t i = 0u; i < w; ++i)
-    {
-        s_line[3u * i]      = r6;
-        s_line[3u * i + 1u] = g6;
-        s_line[3u * i + 2u] = b6;
-    }
-    const uint16_t row_bytes = (uint16_t)(w * 3u);
 #else
-    static uint8_t s_line[DISPLAY_WIDTH * 2u];
     const uint8_t hi = (uint8_t)(color >> 8);
     const uint8_t lo = (uint8_t)(color & 0xFFu);
-    for (uint16_t i = 0u; i < w; ++i)
-    {
-        s_line[2u * i]      = hi;
-        s_line[2u * i + 1u] = lo;
-    }
-    const uint16_t row_bytes = (uint16_t)(w * 2u);
 #endif
 
-    HAL_GPIO_WritePin(DISPLAY_DC_PORT, DISPLAY_DC_PIN, GPIO_PIN_SET);
-    uint16_t errs = 0u;
-    HAL_StatusTypeDef first_err = HAL_OK;
     for (uint16_t row = 0u; row < h; ++row)
     {
-        const HAL_StatusTypeDef st = HAL_SPI_Transmit(&s_spi, s_line, row_bytes, 100u);
-        if (st != HAL_OK)
+        for (uint16_t col = 0u; col < w; ++col)
         {
-            if (errs == 0u) { first_err = st; }
-            ++errs;
+#if DISPLAY_BITS_PER_PIXEL == 18
+            write_byte(r6); write_byte(g6); write_byte(b6);
+#else
+            write_byte(hi); write_byte(lo);
+#endif
         }
     }
-
-    cs_high();
-    LOG_INFO(LOG_MODULE_SYSTEM, "DISP fill x=%u y=%u w=%u h=%u errs=%u first=%d",
-             x, y, w, h, errs, (int)first_err);
 }
 
 void Display_Fill(uint16_t color)
@@ -350,97 +339,6 @@ void Display_SelfTest(void)
     display_delay_ms(DISPLAY_SELF_TEST_HOLD_MS);
 }
 
-/* ==================== bit-bang 诊断 ==================== */
-
-static void bb_pin_init(void)
-{
-    /* 先把 SPI 外设关掉，再把 PB13/PB15 改成普通输出 */
-    (void)HAL_SPI_DeInit(&s_spi);
-
-    GPIO_InitTypeDef out = {0};
-    out.Pin   = GPIO_PIN_13 | GPIO_PIN_15;
-    out.Mode  = GPIO_MODE_OUTPUT_PP;
-    out.Pull  = GPIO_NOPULL;
-    out.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-    HAL_GPIO_Init(GPIOB, &out);
-
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_15, GPIO_PIN_RESET);
-}
-
-static void bb_byte(uint8_t value)
-{
-    /* CPOL=1 / CPHA=1（Mode 3）：空闲时钟为高，数据在下降沿被采样 */
-    for (int8_t i = 7; i >= 0; --i)
-    {
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_RESET);
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_15,
-                          ((value >> i) & 1u) ? GPIO_PIN_SET : GPIO_PIN_RESET);
-        display_delay_us(1u);
-        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_13, GPIO_PIN_SET);
-        display_delay_us(1u);
-    }
-}
-
-static void bb_cmd(uint8_t cmd)
-{
-    HAL_GPIO_WritePin(DISPLAY_DC_PORT, DISPLAY_DC_PIN, GPIO_PIN_RESET);
-    bb_byte(cmd);
-}
-
-static void bb_data(uint8_t data)
-{
-    HAL_GPIO_WritePin(DISPLAY_DC_PORT, DISPLAY_DC_PIN, GPIO_PIN_SET);
-    bb_byte(data);
-}
-
-static void bb_fill(uint16_t color)
-{
-    const uint8_t hi = (uint8_t)(color >> 8);
-    const uint8_t lo = (uint8_t)(color & 0xFFu);
-
-    cs_low();
-    bb_cmd(0x2A);
-    bb_data(0x00); bb_data(0x00); bb_data(0x00); bb_data(239);
-    bb_cmd(0x2B);
-    bb_data(0x00); bb_data(0x00); bb_data(0x00); bb_data(239);
-    bb_cmd(0x2C);
-    HAL_GPIO_WritePin(DISPLAY_DC_PORT, DISPLAY_DC_PIN, GPIO_PIN_SET);
-
-    for (uint32_t i = 0u; i < (uint32_t)DISPLAY_WIDTH * DISPLAY_HEIGHT; ++i)
-    {
-        bb_byte(hi);
-        bb_byte(lo);
-    }
-    cs_high();
-}
-
-void Display_DiagToggle(void)
-{
-    /* 回到已验证可出颜色的最小序列（Sleep Out 在色深之前）。
-     * 完整厂商寄存器表会让本模块黑屏，需要逐段回填定位。 */
-    display_hw_reset();
-    cs_low();
-    write_cmd(0x01); display_delay_ms(120u);
-    write_cmd(0x11); display_delay_ms(120u);
-    write_cmd(0x3A); write_u8(0x05);
-    write_cmd(0x36); write_u8(0x00);
-    write_cmd(0x21);
-    write_cmd(0x29); display_delay_ms(50u);
-    cs_high();
-
-    for (uint8_t round = 0u; round < 4u; ++round)
-    {
-        /* 黑底 + 四角各一个 20x20 白方块，用于确认行列映射 */
-        Display_Fill(DISPLAY_COLOR_BLACK);
-        display_delay_ms(300u);
-        Display_FillRect(0u,   0u,   20u, 20u, DISPLAY_COLOR_WHITE); /* 左上 */
-        Display_FillRect(220u, 0u,   20u, 20u, DISPLAY_COLOR_RED);   /* 右上 */
-        Display_FillRect(0u,   220u, 20u, 20u, DISPLAY_COLOR_GREEN); /* 左下 */
-        Display_FillRect(220u, 220u, 20u, 20u, DISPLAY_COLOR_BLUE);  /* 右下 */
-        display_delay_ms(4000u);
-    }
-}
 
 #else /* !DISPLAY_ENABLED */
 
@@ -451,6 +349,5 @@ void Display_FillRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t c
     (void)x; (void)y; (void)w; (void)h; (void)color;
 }
 void Display_SelfTest(void) { }
-void Display_DiagToggle(void) { }
 
 #endif /* DISPLAY_ENABLED */

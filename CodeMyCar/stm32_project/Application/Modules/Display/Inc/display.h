@@ -35,12 +35,5 @@ void Display_FillRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t c
 /** 上电自检：红 → 绿 → 蓝 → 停在蓝色（阻塞，仅启动阶段调用） */
 void Display_SelfTest(void);
 
-/**
- * @brief 诊断：每 1.5 秒切换 display off(0x28) / on(0x29)，共 5 轮。
- *
- * 用于确认命令是否真的到达屏幕：若能看到屏幕明暗变化，说明 SPI 与
- * DC/CS 通路正常，问题在数据格式；若毫无变化，说明命令根本没到屏。
- */
-void Display_DiagToggle(void);
 
 #endif /* MODULES_DISPLAY_INC_DISPLAY_H_ */

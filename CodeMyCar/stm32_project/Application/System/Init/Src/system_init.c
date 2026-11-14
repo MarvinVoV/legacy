@@ -325,8 +325,7 @@ int System_Initialize()
 #if DISPLAY_SELF_TEST
     else
     {
-        /* 当前阶段：用 display on/off 切换确认命令是否到达屏幕 */
-        Display_DiagToggle();
+        Display_SelfTest();
     }
 #endif
 
