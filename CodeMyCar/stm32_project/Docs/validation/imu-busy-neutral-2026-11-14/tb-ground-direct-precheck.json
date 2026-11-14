@@ -1,0 +1,110 @@
+[
+  {
+    "at": 1794650346.8568661,
+    "status": {
+      "online": true,
+      "last_heartbeat_age": 18.9,
+      "uptime_s": 33,
+      "stm32_connected": true,
+      "sensor_age_s": 0.1,
+      "imu_age_s": 0.1,
+      "yaw_deg": -0.1
+    },
+    "motion": {
+      "state": "idle",
+      "mode": 0,
+      "fault": false,
+      "lease_expired": false,
+      "error": 0,
+      "heading_source": "encoder",
+      "seq": 0,
+      "age_ms": 23,
+      "stale": false
+    },
+    "velocity": {
+      "linear_cm_s": 0.0,
+      "angular_deg_s": 0.0
+    }
+  },
+  {
+    "at": 1794650351.8605509,
+    "status": {
+      "online": true,
+      "last_heartbeat_age": 23.9,
+      "uptime_s": 33,
+      "stm32_connected": true,
+      "sensor_age_s": 0.2,
+      "imu_age_s": 0.1,
+      "yaw_deg": -0.1
+    },
+    "motion": {
+      "state": "idle",
+      "mode": 0,
+      "fault": false,
+      "lease_expired": false,
+      "error": 0,
+      "heading_source": "encoder",
+      "seq": 0,
+      "age_ms": 64,
+      "stale": false
+    },
+    "velocity": {
+      "linear_cm_s": 0.0,
+      "angular_deg_s": 0.0
+    }
+  },
+  {
+    "at": 1794650356.868578,
+    "status": {
+      "online": true,
+      "last_heartbeat_age": 28.9,
+      "uptime_s": 33,
+      "stm32_connected": true,
+      "sensor_age_s": 0.1,
+      "imu_age_s": 0.0,
+      "yaw_deg": 0.0
+    },
+    "motion": {
+      "state": "idle",
+      "mode": 0,
+      "fault": false,
+      "lease_expired": false,
+      "error": 0,
+      "heading_source": "encoder",
+      "seq": 0,
+      "age_ms": 103,
+      "stale": false
+    },
+    "velocity": {
+      "linear_cm_s": 0.0,
+      "angular_deg_s": 0.0
+    }
+  },
+  {
+    "at": 1794650361.8804228,
+    "status": {
+      "online": true,
+      "last_heartbeat_age": 3.9,
+      "uptime_s": 63,
+      "stm32_connected": true,
+      "sensor_age_s": 0.1,
+      "imu_age_s": 0.1,
+      "yaw_deg": 0.0
+    },
+    "motion": {
+      "state": "idle",
+      "mode": 0,
+      "fault": false,
+      "lease_expired": false,
+      "error": 0,
+      "heading_source": "encoder",
+      "seq": 0,
+      "age_ms": 112,
+      "stale": false
+    },
+    "velocity": {
+      "linear_cm_s": 0.0,
+      "angular_deg_s": 0.0
+    }
+  }
+]
