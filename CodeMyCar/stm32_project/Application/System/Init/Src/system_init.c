@@ -18,6 +18,7 @@
 #include "light_task.h"
 #include "display.h"
 #include "display_config.h"
+#include "display_eye.h"
 
 
 /**
@@ -325,7 +326,7 @@ int System_Initialize()
 #if DISPLAY_SELF_TEST
     else
     {
-        Display_SelfTest();
+        DisplayEye_Start();
     }
 #endif
 

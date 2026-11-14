@@ -298,30 +298,51 @@ void Display_FillRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t c
 
     write_cmd(0x2C);
 
-    /* 与商家例程一致：每个像素字节单独切换 CS。 */
-    HAL_GPIO_WritePin(DISPLAY_DC_PORT, DISPLAY_DC_PIN, GPIO_PIN_SET);
-#if DISPLAY_BITS_PER_PIXEL == 18
-    const uint8_t r5 = (uint8_t)((color >> 11) & 0x1Fu);
-    const uint8_t g6 = (uint8_t)((color >> 5) & 0x3Fu);
-    const uint8_t b5 = (uint8_t)(color & 0x1Fu);
-    const uint8_t r6 = (uint8_t)((r5 << 1) | (r5 >> 4));
-    const uint8_t b6 = (uint8_t)((b5 << 1) | (b5 >> 4));
-#else
+    /* 整行传输（CS 在整块期间保持低）：把逐字节开销降到一行一次。
+     * 若真机上出现花屏，说明该模块确实要求逐字节切 CS。 */
+    static uint8_t s_row[DISPLAY_WIDTH * 2u];
     const uint8_t hi = (uint8_t)(color >> 8);
     const uint8_t lo = (uint8_t)(color & 0xFFu);
-#endif
+    for (uint16_t i = 0u; i < w; ++i)
+    {
+        s_row[2u * i]      = hi;
+        s_row[2u * i + 1u] = lo;
+    }
 
+    cs_low();
+    HAL_GPIO_WritePin(DISPLAY_DC_PORT, DISPLAY_DC_PIN, GPIO_PIN_SET);
     for (uint16_t row = 0u; row < h; ++row)
     {
-        for (uint16_t col = 0u; col < w; ++col)
-        {
-#if DISPLAY_BITS_PER_PIXEL == 18
-            write_byte(r6); write_byte(g6); write_byte(b6);
-#else
-            write_byte(hi); write_byte(lo);
-#endif
-        }
+        (void)HAL_SPI_Transmit(&s_spi, s_row, (uint16_t)(w * 2u), 100u);
     }
+    cs_high();
+}
+
+void Display_BlitBuffer(const uint16_t *buf, uint16_t x, uint16_t y,
+                        uint16_t w, uint16_t h)
+{
+    if (buf == NULL || w == 0u || h == 0u) { return; }
+    if ((uint32_t)x + w > DISPLAY_WIDTH)  { w = (uint16_t)(DISPLAY_WIDTH - x); }
+    if ((uint32_t)y + h > DISPLAY_HEIGHT) { h = (uint16_t)(DISPLAY_HEIGHT - y); }
+
+    write_cmd(0x2A);
+    write_u8((uint8_t)(x >> 8)); write_u8((uint8_t)(x & 0xFFu));
+    write_u8((uint8_t)((x + w - 1u) >> 8)); write_u8((uint8_t)((x + w - 1u) & 0xFFu));
+
+    write_cmd(0x2B);
+    write_u8((uint8_t)(y >> 8)); write_u8((uint8_t)(y & 0xFFu));
+    write_u8((uint8_t)((y + h - 1u) >> 8)); write_u8((uint8_t)((y + h - 1u) & 0xFFu));
+
+    write_cmd(0x2C);
+
+    cs_low();
+    HAL_GPIO_WritePin(DISPLAY_DC_PORT, DISPLAY_DC_PIN, GPIO_PIN_SET);
+    for (uint16_t row = 0u; row < h; ++row)
+    {
+        const uint16_t *src = buf + (uint32_t)(y + row) * DISPLAY_WIDTH + x;
+        (void)HAL_SPI_Transmit(&s_spi, (uint8_t *)src, (uint16_t)(w * 2u), 100u);
+    }
+    cs_high();
 }
 
 void Display_Fill(uint16_t color)

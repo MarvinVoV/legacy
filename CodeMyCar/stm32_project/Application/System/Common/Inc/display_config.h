@@ -34,7 +34,7 @@
 #define DISPLAY_RST_PIN    GPIO_PIN_14
 
 /* APB1 = 125 MHz，/64 ≈ 2 MHz；低速保证接线验证可靠 */
-#define DISPLAY_SPI_PRESCALER  SPI_BAUDRATEPRESCALER_64
+#define DISPLAY_SPI_PRESCALER  SPI_BAUDRATEPRESCALER_16
 
 /* 像素色深：16 或 18。GC9A01 复位默认 18 位，若 0x3A=0x05 未生效
  * 会出现固定周期的彩色竖条纹，此时改用 18 位逐像素 3 字节发送。 */

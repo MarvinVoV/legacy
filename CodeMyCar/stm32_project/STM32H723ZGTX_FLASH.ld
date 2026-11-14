@@ -241,6 +241,18 @@ SECTIONS
   } >DMA_RAM
   ASSERT(SIZEOF(.dma_buffer) <= LENGTH(DMA_RAM), "DMA buffers exceed non-cacheable MPU region")
 
+  /* 显示帧缓冲：放在 RAM_D1（312K），避免占用 DTCM 的栈空间。
+     display_eye.c 通过 section(".fb_buffer") 放到这里。 */
+  .fb_buffer (NOLOAD) :
+  {
+    . = ALIGN(32);
+    __fb_start__ = .;
+    *(.fb_buffer)
+    *(.fb_buffer*)
+    . = ALIGN(32);
+    __fb_end__ = .;
+  } >RAM_D1
+
   PROVIDE( __bss_start = __tbss_start );
   PROVIDE( __bss_size = __bss_end - __bss_start );
 

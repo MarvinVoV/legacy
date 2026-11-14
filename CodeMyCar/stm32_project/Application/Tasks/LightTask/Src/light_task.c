@@ -11,6 +11,7 @@
 #include "freertos_os2.h"
 #include "stm32h7xx_hal.h"
 #include "log_manager.h"
+#include "display_eye.h"
 
 /* This adapter only tries the transaction mutex with timeout=0 and copies a
  * few scalars; it never waits on motion/servo locks or calls actuator APIs. */
@@ -65,6 +66,7 @@ static void light_run(void *arg)
         LightingRuntime_GetHints(&hints);
         LedRgb pixels[WS2812_LED_COUNT];
         Lighting_Render(&renderer,&hints,&local,now,pixels,&view);
+        DisplayEye_SetMood(view.mood);
         (void)LedStrip_Show(pixels);
         if (now-lastReport>=1000u || (view.mode!=lastReportedMode && now-lastReport>=100u)) {
             lastReport=now;lastReportedMode=view.mode;
