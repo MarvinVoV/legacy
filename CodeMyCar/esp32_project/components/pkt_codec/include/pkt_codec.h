@@ -47,6 +47,7 @@ typedef enum {
     PKT_TYPE_SESSION   = 0x08, /* ESP32 启动代次同步 */
     PKT_TYPE_BUILD_INFO = 0x09, /* STM32 build identity */
     PKT_TYPE_VISUAL     = 0x0A, /* Decoration only; independent of motion ACK/lease */
+    PKT_TYPE_CONFIG     = 0x0B, /* 运行期配置（超声波开关等） */
 } pkt_type_t;
 
 /** 完整帧结构（固定大小，可值传递） */

@@ -51,6 +51,7 @@ typedef enum
     PROTOCOL_TYPE_SESSION   = 0x08, /* ESP32 启动代次同步 */
     PROTOCOL_TYPE_BUILD_INFO = 0x09, /* STM32 build identity */
     PROTOCOL_TYPE_VISUAL    = 0x0A, /* Bounded display hints/status; never motion */
+    PROTOCOL_TYPE_CONFIG    = 0x0B, /* 运行期配置（超声波开关等） */
     PROTOCOL_TYPE_MAX
 } protocol_type_t;
 

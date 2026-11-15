@@ -22,6 +22,12 @@ void SonarTask_doTask(void* arg);
  */
 void Sonar_GetSafety(const SafetyChannel** front, const SafetyChannel** rear);
 
+/** 运行期开关：false 时不做测距、不上报、安全通道放行 */
+void SonarTask_SetEnabled(bool on);
+
+/** 当前运行期开关状态 */
+bool SonarTask_IsEnabled(void);
+
 /** Atomic published copies; no reader observes a partially updated window. */
 void Sonar_GetSafetySnapshot(SafetyChannel* front, SafetyChannel* rear);
 

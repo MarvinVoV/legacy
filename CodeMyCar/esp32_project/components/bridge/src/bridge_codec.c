@@ -561,6 +561,33 @@ bool bridge_json_is_lighting(const char *json,size_t len)
     const bool result=cJSON_IsString(cmd) && strcmp(cmd->valuestring,"lighting")==0;
     cJSON_Delete(root);return result;
 }
+bool bridge_json_is_config(const char *json,size_t len)
+{
+    cJSON *root=cJSON_ParseWithLength(json,len);
+    if (!root) return false;
+    const cJSON *cmd=cJSON_GetObjectItemCaseSensitive(root,"cmd");
+    const bool result=cJSON_IsString(cmd) && strcmp(cmd->valuestring,"config")==0;
+    cJSON_Delete(root);return result;
+}
+
+int bridge_json_to_config(const char *json,size_t len,
+                          uint8_t out[BRIDGE_CONFIG_CMD_SIZE])
+{
+    if (!json || !out) return 0;
+    cJSON *root=cJSON_ParseWithLength(json,len);
+    if (!root) return 0;
+    int result=0;
+    do {
+        if (!cJSON_IsObject(root)) break;
+        const cJSON *sonar=cJSON_GetObjectItemCaseSensitive(root,"sonar");
+        if (!cJSON_IsBool(sonar)) break;
+        out[0]=0x01u;                        /* 子命令：超声波开关 */
+        out[1]=cJSON_IsTrue(sonar) ? 1u : 0u;
+        result=BRIDGE_CONFIG_CMD_SIZE;
+    } while (0);
+    cJSON_Delete(root);return result;
+}
+
 int bridge_json_to_lighting(const char *json,size_t len,uint32_t session,uint32_t event,
                             uint8_t out[BRIDGE_LIGHTING_CMD_SIZE])
 {

@@ -85,6 +85,7 @@ typedef struct
     char payload[DOWNLINK_PAYLOAD_MAX];
     size_t len;
     uint32_t receivedMs;
+    uint8_t kind;   /* 0=control，1=lighting，2=config */
 } downlink_msg_t;
 
 static downlink_msg_t s_downlink_storage[DOWNLINK_QUEUE_DEPTH];
@@ -398,6 +399,19 @@ static void bridge_visual_task(void *argument)
     downlink_msg_t msg;
     for (;;) {
         if (xQueueReceive(s_visual_queue,&msg,portMAX_DELAY)!=pdTRUE) continue;
+        if (msg.kind == 2u)
+        {
+            /* 运行期配置：不参与运动 ACK/租约，只回一帧 ACK */
+            pkt_frame_t cfg={.type=PKT_TYPE_CONFIG,.seq=(uint8_t)(++s_visual_event),
+                             .flags=PKT_FLAG_ACK_REQ,.payload_len=BRIDGE_CONFIG_CMD_SIZE};
+            if (bridge_json_to_config(msg.payload,msg.len,cfg.payload)==BRIDGE_CONFIG_CMD_SIZE)
+            {
+                uint8_t wire[PKT_MAX_FRAME_SIZE];size_t length=0;
+                if (pkt_encode(&cfg,wire,sizeof(wire),&length)==ESP_OK)
+                    (void)uart_service_send(wire,length);
+            }
+            continue;
+        }
         pkt_frame_t frame={.type=PKT_TYPE_VISUAL,.payload_len=BRIDGE_LIGHTING_CMD_SIZE};
         if (!bridge_json_to_lighting(msg.payload,msg.len,s_session_id,++s_visual_event,frame.payload)) continue;
         const uint32_t age=now_ms()-msg.receivedMs;
@@ -433,8 +447,15 @@ static void on_mqtt_data(const char* topic, size_t topic_len,
     downlink_msg_t msg;
     msg.receivedMs=now_ms();
     msg.len = payload_len;
+    msg.kind = 0u;
     memcpy(msg.payload, payload, payload_len);
     if (bridge_json_is_lighting((const char*)payload,payload_len)) {
+        msg.kind = 1u;
+        (void)xQueueOverwrite(s_visual_queue,&msg);
+        return;
+    }
+    if (bridge_json_is_config((const char*)payload,payload_len)) {
+        msg.kind = 2u;
         (void)xQueueOverwrite(s_visual_queue,&msg);
         return;
     }

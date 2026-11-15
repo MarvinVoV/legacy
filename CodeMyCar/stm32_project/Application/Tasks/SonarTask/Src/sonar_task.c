@@ -24,6 +24,9 @@
 
 static osThreadId_t s_taskHandle = NULL;
 
+/* 运行期开关：上电默认开启（安全优先），服务端可通过 CONFIG 帧临时关闭 */
+static volatile bool s_runtime_enabled = true;
+
 static SafetyChannel s_frontSafety;
 static SafetyChannel s_rearSafety;
 static SafetyChannel s_publishedFront;
@@ -43,9 +46,9 @@ static void    log_status(void);
 
 void SonarTask_Init(void)
 {
-    safety_channel_init(&s_frontSafety, ULTRASONIC_FRONT_ENABLED,
+    safety_channel_init(&s_frontSafety, ULTRASONIC_FRONT_ENABLED && s_runtime_enabled,
                         FRONT_OFFSET_CM, SAFETY_STOP_CM, SAFETY_SLOW_CM);
-    safety_channel_init(&s_rearSafety, ULTRASONIC_REAR_ENABLED,
+    safety_channel_init(&s_rearSafety, ULTRASONIC_REAR_ENABLED && s_runtime_enabled,
                         REAR_OFFSET_CM, SAFETY_STOP_CM, SAFETY_SLOW_CM);
     s_frontSafety.startedMs = s_rearSafety.startedMs = HAL_GetTick();
     publish_safety();
@@ -60,6 +63,23 @@ void SonarTask_Init(void)
     {
         LOG_ERROR(LOG_MODULE_SENSOR, "Failed to create SonarTask");
     }
+}
+
+void SonarTask_SetEnabled(bool on)
+{
+    s_runtime_enabled = on;
+    safety_channel_init(&s_frontSafety, ULTRASONIC_FRONT_ENABLED && on,
+                        FRONT_OFFSET_CM, SAFETY_STOP_CM, SAFETY_SLOW_CM);
+    safety_channel_init(&s_rearSafety, ULTRASONIC_REAR_ENABLED && on,
+                        REAR_OFFSET_CM, SAFETY_STOP_CM, SAFETY_SLOW_CM);
+    s_frontSafety.startedMs = s_rearSafety.startedMs = HAL_GetTick();
+    publish_safety();
+    LOG_INFO(LOG_MODULE_SENSOR, "sonar runtime %s", on ? "enabled" : "disabled");
+}
+
+bool SonarTask_IsEnabled(void)
+{
+    return s_runtime_enabled;
 }
 
 void SonarTask_doTask(void* arg)
@@ -77,6 +97,15 @@ void SonarTask_doTask(void* arg)
     {
         const uint32_t now = HAL_GetTick();
         int16_t        distance;
+
+        /* 运行期关闭：不触发、不上报、安全通道保持放行 */
+        if (!s_runtime_enabled)
+        {
+            publish_safety();
+            tick++;
+            vTaskDelayUntil(&lastWake, period);
+            continue;
+        }
 
         /* 先取上一次结果（测量在 30 ms 内必然结束，50 ms 后肯定就绪） */
         if (ULTRASONIC_FRONT_ENABLED && Ultrasonic_Poll(front, now, &distance))

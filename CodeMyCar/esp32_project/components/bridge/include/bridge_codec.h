@@ -16,6 +16,12 @@
 #define BRIDGE_CONTROL_CMD_SIZE 9
 #define BRIDGE_LIGHTING_CMD_SIZE 20
 bool bridge_json_is_lighting(const char *json,size_t len);
+
+/* 运行期配置：{"cmd":"config","sonar":true|false} → [0x01, 0|1] */
+#define BRIDGE_CONFIG_CMD_SIZE 2
+bool bridge_json_is_config(const char *json,size_t len);
+int bridge_json_to_config(const char *json,size_t len,
+                          uint8_t out[BRIDGE_CONFIG_CMD_SIZE]);
 int bridge_json_to_lighting(const char *json,size_t len,uint32_t session,uint32_t event,
                             uint8_t out[BRIDGE_LIGHTING_CMD_SIZE]);
 int bridge_lighting_to_json(const uint8_t *payload,uint8_t len,char *out,size_t capacity);
