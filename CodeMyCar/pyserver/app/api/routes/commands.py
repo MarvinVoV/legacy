@@ -5,6 +5,8 @@ from fastapi import APIRouter, Depends
 from app.api.schemas import CommonResponse
 from app.api.deps import get_command_service, get_mqtt_client, get_device_manager
 from app.models.lighting import LightingRequest
+from app.models.device_config import SonarConfigRequest
+from app.mqtt.topics import cmd_topic
 from app.services.lighting_service import LightingService
 from app.services.device_manager import DeviceManager
 from app.mqtt.client import MQTTClient
@@ -42,3 +44,25 @@ async def set_lighting(
     sent = await LightingService(mqtt).send(device_id, hint)
     return CommonResponse(success=sent, message="Hint published" if sent else "MQTT disconnected",
                           data={"accepted": sent, "confirmed": False})
+
+
+@router.post("/devices/{device_id}/config/sonar", response_model=CommonResponse)
+async def set_sonar(
+    device_id: str,
+    req: SonarConfigRequest,
+    mqtt: MQTTClient = Depends(get_mqtt_client),
+    devices: DeviceManager = Depends(get_device_manager),
+):
+    """超声波运行期开关。
+
+    经 ESP32 翻译成 UART CONFIG 帧下发；设备重启后恢复为默认开启。
+    """
+    status = devices.get_status(device_id)
+    if not status.online or status.stm32_connected is False:
+        return CommonResponse(success=False, message="Device offline")
+    await mqtt.publish(cmd_topic(device_id), {"cmd": "config", "sonar": req.enabled})
+    return CommonResponse(
+        success=True,
+        message="Config published",
+        data={"sonar": req.enabled, "confirmed": False},
+    )
