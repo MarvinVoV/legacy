@@ -59,7 +59,7 @@ def json_events(sink: FakeSink) -> list[dict]:
     return [event[1] for event in sink.events if event[0] == "json"]
 
 
-async def make_runner(tmp_path, *, answer: str = "你好，我在。", asr_text: str = "你好"):
+async def make_runner(tmp_path, *, answer: str = "你好，我在。", asr_text: str = "你好", turn_phase: bool = False):
     asr = FakeAsr(asr_text)
     tts = FakeTts()
     player = FakeLocalPlayer()
@@ -72,7 +72,7 @@ async def make_runner(tmp_path, *, answer: str = "你好，我在。", asr_text:
         session,
         sink,
         agent_session=llm,
-        config=ConversationConfig(idle_s=5, turn_end_ms=200),
+        config=ConversationConfig(idle_s=5, turn_end_ms=200, turn_phase=turn_phase),
     )
     runner.start()
     return service, session, runner, sink, llm, tts, player
@@ -109,6 +109,25 @@ async def test_one_turn_streams_speech_and_assistant_done(tmp_path):
     assert player.played
     assert not hasattr(runner, "history")  # Only AgentSession owns context.
     await close_runner(service, session, runner)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("enabled", [True, False])
+async def test_negotiated_visual_phase_brackets_turn(tmp_path, enabled):
+    service, session, runner, sink, *_ = await make_runner(tmp_path, turn_phase=enabled)
+    try:
+        runner.feed(pcm(0.3, 3000) + pcm(0.3))
+        await asyncio.wait_for(sink.done.wait(), timeout=2)
+        events = json_events(sink)
+        phases = [e for e in events if e["type"] == "turn_phase"]
+        assert phases == ([
+            {"type": "turn_phase", "phase": "thinking", "turn": 1},
+            {"type": "turn_phase", "phase": "listening", "turn": 1},
+        ] if enabled else [])
+        if enabled:
+            assert events[0] == phases[0] and events[-1] == phases[-1]
+    finally:
+        await close_runner(service, session, runner)
 
 
 @pytest.mark.asyncio

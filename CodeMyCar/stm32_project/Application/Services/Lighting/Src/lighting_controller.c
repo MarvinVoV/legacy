@@ -12,6 +12,7 @@ static bool valid(const LightCommand *c)
     if (!c || !c->session || c->intensity>100u) return false;
     switch (c->kind) {
     case LIGHT_EXPRESSION: return c->value<LIGHT_MOOD_COUNT && c->ttlMs>=100u && c->ttlMs<=10000u;
+    case VISUAL_DEVICE_PHASE: if (c->epoch != 0) return false; /* fall through */
     case LIGHT_VOICE: return c->value<LIGHT_VOICE_COUNT && c->ttlMs>=100u && c->ttlMs<=1500u;
     case LIGHT_LEVEL: return c->value<=100u && c->ttlMs>=100u && c->ttlMs<=300u;
     case LIGHT_CLEAR: return !c->value && !c->intensity && !c->ttlMs;
@@ -38,8 +39,14 @@ void Lighting_NewSession(LightHints *h,uint32_t session)
 bool Lighting_Accept(LightHints *h,const LightCommand *c,uint32_t now)
 {
     if (!h) return false;
-    if (!valid(c) || c->session!=h->session ||
-        (h->epochKnown && c->epoch!=h->epoch && !newer(c->epoch,h->epoch))) goto reject;
+    if (!valid(c) || c->session!=h->session) goto reject;
+    if (c->kind==VISUAL_DEVICE_PHASE) {
+        if (h->devicePhase.seen && !newer(c->event,h->devicePhase.event)) goto reject;
+        h->devicePhase=(LightHint){.value=c->value,.receivedMs=now,.ttlMs=c->ttlMs,
+                                   .event=c->event,.seen=true};
+        return true; /* Never confirm an unrelated service/LLM hint. */
+    }
+    if (h->epochKnown && c->epoch!=h->epoch && !newer(c->epoch,h->epoch)) goto reject;
     if (!h->epochKnown || c->epoch!=h->epoch) {
         h->epoch=c->epoch;h->epochKnown=true;
         h->mood=(LightHint){0};h->voice=(LightHint){0};h->level=(LightHint){0};
@@ -94,10 +101,10 @@ static LedRgb mood_color(uint8_t mood, uint32_t phase, unsigned strength)
     /* Near the trough only the dominant hue glows (roughly one PWM count).
      * Endpoints are in the renderer's input space, before gamma correction. */
     static const LedRgb dim[LIGHT_MOOD_COUNT] = {
-        {0,48,0}, {76,0,0}, {0,0,76}, {76,0,0}, {0,0,76}
+        {0,48,0}, {76,0,0}, {0,0,76}, {76,0,0}, {0,0,76}, {76,0,0}
     };
     static const LedRgb peak[LIGHT_MOOD_COUNT] = {
-        {0,237,150}, {255,190,35}, {30,190,255}, {255,135,170}, {85,110,180}
+        {0,237,150}, {255,190,35}, {30,190,255}, {255,135,170}, {85,110,180}, {255,105,38}
     };
     const unsigned level = breath_level(phase, mood == LIGHT_HAPPY ? 2200u : 4000u);
     const LedRgb lo = dim[mood], hi = peak[mood];
@@ -245,7 +252,9 @@ void Lighting_Render(LightRenderer *r,const LightHints *h,const LightLocal *loca
         out[i]=(LedRgb){final[0],final[1],final[2]};
     }
     r->ready=true;r->lastMs=now;
-    *view=(LightView){.mode=(uint8_t)mode,.mood=mood,.voice=voice,.intensity=(uint8_t)strength,
+    /* Device conversation animates the screen independently of body/safety lights. */
+    const uint8_t faceVoice=remaining(&h->devicePhase,now) ? h->devicePhase.value : voice;
+    *view=(LightView){.mode=(uint8_t)mode,.mood=mood,.voice=faceVoice,.intensity=(uint8_t)strength,
         .moodRemainingMs=moodTtl,.flags=(uint8_t)((r->lowBattery?1u:0u)|(!fresh?2u:0u)|
                                                (moodTtl?4u:0u)|(voiceActive?8u:0u))};
 }

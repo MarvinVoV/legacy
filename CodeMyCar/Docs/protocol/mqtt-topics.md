@@ -18,10 +18,12 @@ ESP32 订阅自身设备 id：`cmd/<本机 device_id>/exec`（不使用 `+` 通�
 |---|---|---|
 | `data/{device_id}/sensor` | IMU、超声波、电量等传感器 | JSON `SensorData` |
 | `data/{device_id}/log` | 日志 | JSON `LogEntry` |
-| `data/{device_id}/heartbeat` | 心跳 | JSON `{"heap":N,"heap_min":N,"uptime_s":N,"stm32_connected":bool,"session_id":S,"esp_build":"...","esp_idf":"...","stm32_build":"<12位sha>","stm32_dirty":bool,"protocol_version":N}` |
+| `data/{device_id}/heartbeat` | 心跳 | JSON `{"heap":N,"heap_min":N,"uptime_s":N,"stm32_connected":bool,"session_id":S,"esp_build":"...","esp_idf":"...","stm32_build":"<12位sha>","stm32_dirty":bool,"protocol_version":N,"voice":{"startup":"ready","state":"idle","error_stage":null,"error_code":0}}` |
 | `data/{device_id}/status` | 设备状态（可选） | JSON `DeviceStatus` |
 | `data/{device_id}/pong` | ping 回执（ESP32 直接回复） | JSON `{"seq":N,"pong":true,"uptime_s":U,"heap":H}` |
 | `data/{device_id}/motion` | 运动状态（STM32 目标执行） | JSON `{"seq":N,"state":"idle|running|done|aborted|error","mode":0-5,"fault":bool,"lease_expired":bool,"x_mm":...,"goal_turn_mdeg":...,"session_id":S}` |
+
+S3 语音状态随 MQTT 连接、重连及周期心跳上报。启动结果与会话状态是两个字段；服务端保留最后一次收到的快照。字段语义、旧固件兼容性和查询命令见[运行手册](../DevOps.md)。
 
 pyserver 订阅：`data/+/sensor`、`data/+/log`、`data/+/heartbeat`、`data/+/status`、`data/+/ack`、`data/+/pong`、`data/+/motion`（均匹配 3 段 `data/X/kind`）。
 

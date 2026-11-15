@@ -19,6 +19,7 @@
 #include "safety_supervisor.h"
 #include "lighting_runtime.h"
 #include "sonar_task.h"
+#include "sonar_config.h"
 
 // 累积缓冲区大小
 #define ACCUMULATE_BUF_SIZE ( 5 * PROTOCOL_MAX_DATA_LEN)
@@ -136,19 +137,13 @@ static void dispatcher(uint8_t type, uint8_t seq, uint8_t flags,
         return;
     }
 
-    /* 运行期配置：目前只有超声波开关（payload = [subcmd, value]）。 */
-    if (type == PROTOCOL_TYPE_CONFIG)
+    if (type == PROTOCOL_TYPE_CONFIG || type == SONAR_STATUS_TYPE)
     {
-        uint8_t status = 2u; /* 无效参数 */
-        if (total_len >= 2u && cmd_payload[0] == 0x01u)
-        {
-            SonarTask_SetEnabled(cmd_payload[1] != 0u);
-            status = 0u;
-        }
-        if (ack_req)
-        {
-            send_ack(seq, status);
-        }
+        return; /* Unsafe legacy CONFIG and wrong-direction status never ACK. */
+    }
+    if (type == SONAR_REQUEST_TYPE)
+    {
+        if (flags == 0u) SonarTask_Submit(cmd_payload, total_len);
         return;
     }
 

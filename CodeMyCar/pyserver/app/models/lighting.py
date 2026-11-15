@@ -5,7 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field, StrictBool, model_validator
 
 UInt32 = Annotated[int, Field(strict=True, ge=0, le=0xFFFFFFFF)]
 Percent = Annotated[int, Field(strict=True, ge=0, le=100)]
-Emotion = Literal["calm", "happy", "curious", "comforting", "sad"]
+Emotion = Literal["calm", "happy", "curious", "comforting", "sad", "excited"]
 
 
 class LightingRequest(BaseModel):

@@ -1,4 +1,5 @@
 #include "display_face.h"
+#include "visual_phase.h"
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
@@ -51,12 +52,33 @@ static void test_animation(void) {
     for (unsigned t=50;t<=1000;t+=50) Face_Update(&b,&r,t);
     assert(fabsf(a.gaze_x-b.gaze_x)<.0001f && fabsf(a.height_left-b.height_left)<.0001f);
 }
+static void test_voice_overlay(void) {
+    FaceModel face; Face_Init(&face,0);
+    FaceRequest request={.mood=LIGHT_SAD,.voice=LIGHT_VOICE_LISTEN};
+    step(&face,&request,0,1800);
+    assert(fabsf(face.gaze_x)<0.01f && face.smile<0 && face.blue>face.red);
+    request.voice=LIGHT_VOICE_THINK;
+    step(&face,&request,1800,1000);
+    assert(face.gaze_x>0.6f && face.gaze_y < -0.6f);
+    request.voice=LIGHT_VOICE_SPEAK;
+    step(&face,&request,2800,200);
+    const float beat_height=face.height_left;
+    step(&face,&request,3000,970);
+    assert(beat_height>face.height_left+0.5f && face.smile<0);
+    request.voice=LIGHT_VOICE_LISTEN;
+    step(&face,&request,3970,1000);
+    assert(fabsf(face.gaze_x)<0.01f && fabsf(face.height_left-31.5f)<0.05f);
+    request.mood=LIGHT_EXCITED;
+    step(&face,&request,4970,1200);
+    assert(face.smile>0.5f && face.red>240 && face.mood_since_ms==4990);
+}
 static void test_rendering(void) {
     FaceModel f;Face_Init(&f,0);FaceRequest r={0};
     uint32_t now=0;
-    for (unsigned m=0;m<5;m++) {
+    for (unsigned m=0;m<LIGHT_MOOD_COUNT;m++) {
         r.mood=m;
         for (unsigned i=0;i<80;i++) {
+            r.voice=(uint8_t)((i/16)%LIGHT_VOICE_COUNT);
             now+=50;Face_Update(&f,&r,now);validate_dirty(&f);
         }
     }
@@ -84,21 +106,45 @@ static void write_ppm(const char *path) {
     }
     fclose(out);
 }
+static void test_cached_appearance(void) {
+    FaceModel f, previous;
+    FaceRequest req={0};
+    FaceRect dirty[FACE_REGION_COUNT];
+    Face_Init(&f,0);
+    memset(fb,0,sizeof(fb));
+    memset(before,0,sizeof(before));
+    unsigned skipped=0;
+    for (unsigned i=0;i<600;i++) {
+        req.mood=(uint8_t)((i/60)%LIGHT_MOOD_COUNT);
+        /* Include exact repeated poses, blink, automatic gaze and mood blends. */
+        Face_Update(&f,&req,(i/2)*50);
+        Face_Render(&f,fb,dirty);
+        if (i==0 || !Face_SameAppearance(&f,&previous)) {
+            Face_Render(&f,before,dirty);
+            previous=f;
+        } else {
+            skipped++;
+        }
+        assert(memcmp(fb,before,sizeof(fb))==0);
+    }
+    assert(skipped>200);
+}
+
 int main(int argc,char **argv) {
     if (argc>1) {
-        const char *names[]={"calm","happy","curious","comforting","sad"};
+        const char *names[]={"calm","happy","curious","comforting","sad","excited"};
         FaceRect dirty[3];char path[1024];
-        for (unsigned m=0;m<5;m++) {
+        for (unsigned m=0;m<LIGHT_MOOD_COUNT;m++) {
             FaceModel f;Face_Init(&f,0);FaceRequest r={.mood=m,.manual_gaze=true};
             memset(fb,0,sizeof(fb));step(&f,&r,0,1600);Face_Render(&f,fb,dirty);
             snprintf(path,sizeof(path),"%s/%s.ppm",argv[1],names[m]);write_ppm(path);
         }
         FaceModel f;Face_Init(&f,0);FaceRequest r={0};memset(fb,0,sizeof(fb));
-        for (unsigned i=0;i<220;i++) {
-            r.mood=(uint8_t)((i/44)%5);Face_Update(&f,&r,i*50u);Face_Render(&f,fb,dirty);
+        for (unsigned i=0;i<264;i++) {
+            r.mood=(uint8_t)((i/44)%LIGHT_MOOD_COUNT);Face_Update(&f,&r,i*50u);Face_Render(&f,fb,dirty);
             snprintf(path,sizeof(path),"%s/frame-%03u.ppm",argv[1],i);write_ppm(path);
         }
     }
-    test_animation();test_rendering();puts("display face: animation, overrides, wrap, RGB565 and dirty coverage passed");
+    test_animation();test_voice_overlay();test_rendering();test_cached_appearance();puts("display face: animation, overrides, wrap, RGB565 and dirty coverage passed");
     return 0;
 }

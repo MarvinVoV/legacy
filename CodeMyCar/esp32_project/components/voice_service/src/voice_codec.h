@@ -35,6 +35,7 @@ typedef struct {
     /* Play `frames` mono samples at `sample_rate`; optional. */
     esp_err_t (*write)(voice_codec_t *codec, const int16_t *src, size_t frames,
                        int sample_rate);
+    esp_err_t (*set_muted)(voice_codec_t *codec, bool muted);
     void (*set_volume)(voice_codec_t *codec, int volume);
     void (*destroy)(voice_codec_t *codec);
 } voice_codec_ops_t;
@@ -47,7 +48,7 @@ struct voice_codec {
 
 /* Select the board codec: legacy I2S mic by default, or a board-specific
  * implementation when CMCAR_VOICE_CODEC_BOARD is enabled. */
-esp_err_t voice_codec_init(voice_codec_t **out);
+esp_err_t voice_codec_init(voice_codec_t **out, const char **stage);
 void voice_codec_destroy(voice_codec_t *codec);
 bool voice_codec_has_output(const voice_codec_t *codec);
 
@@ -55,11 +56,12 @@ bool voice_codec_has_output(const voice_codec_t *codec);
 esp_err_t voice_codec_read(voice_codec_t *codec, int16_t *dst, size_t frames);
 esp_err_t voice_codec_write(voice_codec_t *codec, const int16_t *src,
                             size_t frames, int sample_rate);
+esp_err_t voice_codec_set_muted(voice_codec_t *codec, bool muted);
 void voice_codec_set_volume(voice_codec_t *codec, int volume);
 
 /* Implemented by the selected board profile. */
 esp_err_t voice_codec_i2s_init(voice_codec_t **out);
-esp_err_t voice_codec_board_init(voice_codec_t **out);
+esp_err_t voice_codec_board_init(voice_codec_t **out, const char **stage);
 /* Idle diagnostic only: changes one physical ADC's gain at a time, then
  * restores the configured gains. Never call during a live conversation. */
 esp_err_t voice_codec_board_probe_gains(voice_codec_t *codec);

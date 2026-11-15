@@ -19,6 +19,8 @@ HAL_StatusTypeDef HAL_SPI_Transmit(SPI_HandleTypeDef *s,uint8_t *data,uint16_t s
     if (size>1) { assert(rows<240);seen[rows]=data;sizes[rows++]=size; }
     return fail_call==calls ? HAL_ERROR:HAL_OK;
 }
+uint32_t osKernelGetTickFreq(void) { return 1000; }
+void osDelay(uint32_t ticks) { assert(ticks > 0); }
 static void reset(void) {calls=rows=fail_call=0;cs=1;}
 int main(void) {
     reset();assert(!Display_BlitBuffer(NULL,0,0,1,1));
@@ -30,6 +32,14 @@ int main(void) {
     reset();assert(Display_BlitBuffer(fb,23,61,3,2));
     assert(rows==2 && sizes[0]==6 && sizes[1]==6);
     assert(seen[0]==(uint8_t*)&fb[61*240+23] && seen[1]==(uint8_t*)&fb[62*240+23]);
+    reset();fail_call=2;assert(!Display_Init());assert(calls==2 && cs==1);
+    reset();assert(Display_Init());assert(calls>40 && cs==1);
+    for (unsigned i=1;i<=11;++i) {
+        reset();fail_call=i;assert(!Display_BlitBuffer(fb,0,0,20,20));
+        assert(rows==0 && calls==i && cs==1);
+    }
+    reset();fail_call=12;Display_Fill(DISPLAY_COLOR_BLACK);
+    assert(rows==1 && calls==12 && cs==1);
     reset();fail_call=12;assert(!Display_BlitBuffer(fb,0,0,20,20));
     assert(rows==1 && calls==12 && cs==1); /* early failure releases bus, no stale rows */
     reset();assert(Display_BlitBuffer(fb,0,0,240,240));assert(rows==240 && cs==1);

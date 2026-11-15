@@ -142,4 +142,16 @@ ControlCommand  ──JSON──►  cJSON 解析 + 组包 ──v2帧──► 
 
 ## 超声波运行期开关
 
-`POST /api/v1/devices/{id}/config/sonar` 接收布尔字段 `enabled`。pyserver 向设备的 exec 主题发布 `{"cmd":"config","sonar":false}` 或相应的 true 值。S3 将其转换为 CONFIG 帧（0x0B），负载为子命令 0x01 和单字节 0/1。服务端成功响应中的 `confirmed=false` 仅表示已发布。STM32 Release 上电默认开启；完整跨板开关仍待实机验收。[板级验收记录](../archive/hardware/Handoff-2026-11-15-Display-Sonar-Camera.md)
+路径为 `/api/v1/devices/{id}/config/sonar`。GET 读取实际状态，PUT 提交 `{"enabled":false}` 或 true。POST 保留兼容。HTTP 200 的写响应包含 `data.confirmed=true`、`effective_enabled`、`ready` 和 STM32 的请求号。设备重新上电时 Release 默认启用，NoSonar 报不支持。开启后，两侧有效采样就绪可从 GET 观察；关闭要求设备已停车。409 表示运行中、配置竞争或请求过期，501 表示固件不支持，503 表示无新鲜状态或无法确认发布，504 表示未收到匹配回执。超时后可 GET 核实，无需重放旧请求。
+
+pyserver 向 exec 主题发布 QoS 1、非保留的 `sonar_set`。设备会话、STM32 epoch、当前配置代数、请求号和设备采样时间用于拒绝陈旧请求。S3 与 STM32 的配置请求使用帧 0x0C，状态及回执使用 0x0D，两者 flags 均为 0；配置请求独立于运动 ACK。S3 收到 epoch=0 时绑定随机非零 epoch。STM32 每秒以及处理请求后公布状态，S3 转发至 sensor 主题的 `sonar_config` 类型。旧 0x0B 不再用于控制。完整字节布局及边界用例见[共享编解码定义](../../serial_pkt_protocol/shared/sonar_config.h)与[协议测试](../../serial_pkt_protocol/tests/test_sonar_config.c)。
+
+### 会话与圆屏表情
+
+情绪序号依次为 calm、happy、curious、comforting、sad、excited（0–5）。原有情绪命令、有效期和确认语义保持兼容。Agent 的 `express_emotion` 同时表达在圆屏和灯带上。
+
+支持会话阶段的 S3 在语音 WebSocket v2 的 start 中声明 `turn_phase: true`。pyserver 在一轮开始处理、恢复收音时发送 `{"type":"turn_phase","turn":1,"phase":"thinking"}` 或 `listening`。S3 根据成功写入音频和 DMA 尾音时间覆盖为 speak，本地打断取消覆盖。该阶段也适用于本地唤醒应答。
+
+S3 使用现有 20 字节 VISUAL v1 帧，kind=5 表示板端会话阶段。value 0–4 依次为待机、唤醒、倾听、思考、说话，epoch 固定为零，session 和 event 用于隔离重启、拒绝重复与旧事件。S3 在状态变化时发送，活动期间每 600 ms 续期。STM32 在 1200 ms 未收到续期后恢复本地表情行为。该通道只叠加圆屏动作，不占用运动 ACK，不改变灯带优先级、远程情绪 epoch 或确认计数。
+
+验收时在设备状态中同时观察 `lighting.emotion` 和 `lighting.voice`。后者报告圆屏有效阶段，flags 的提示位沿用原有远程灯效含义。可以先说“小鸭小鸭”，观察本地“我在”、倾听和等待回答，再说“做个激动的表情，讲个故事”，播报中打断。应核对表情、声音与遥测三者的时序。

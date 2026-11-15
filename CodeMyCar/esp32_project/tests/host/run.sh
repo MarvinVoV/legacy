@@ -9,14 +9,14 @@ stop_barrier() {
   cc -std=c11 -O2 -g -fsanitize=address,undefined -ffunction-sections -fdata-sections \
     -Istubs -I../../components/uart_service/include -I../../components/pkt_codec/include \
     -I../../components/ack_manager/include \
-    test_stop_barrier.c ../../components/ack_manager/src/ack_manager.c \
+    -I../../components/common/include test_stop_barrier.c ../../components/pkt_codec/src/pkt_codec.c ../../components/common/src/cmcar_crc16.c ../../components/ack_manager/src/ack_manager.c \
     "${flags[@]}" -o "$out/test_stop_barrier"
   "$out/test_stop_barrier"
 }
 
 motion_json() {
   cc -std=c11 -O2 -g -fsanitize=address,undefined \
-    -Istubs -I../../components/bridge/include -I../../components/pkt_codec/include \
+    -Istubs -I../../../serial_pkt_protocol/shared -I../../components/bridge/include -I../../components/pkt_codec/include \
     -I../../managed_components/espressif__cjson/cJSON \
     test_motion_json.c ../../components/bridge/src/bridge_codec.c \
     ../../components/pkt_codec/src/motion_status.c \

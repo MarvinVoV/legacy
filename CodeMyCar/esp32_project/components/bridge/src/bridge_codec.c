@@ -552,7 +552,7 @@ int bridge_ack_to_json(uint8_t seq, uint8_t status, char* out, size_t out_size)
 }
 
 /* Lighting uses semantic hints only. No GPIO, RGB, motion fields, or ACK table. */
-static const char *const lighting_moods[]={"calm","happy","curious","comforting","sad"};
+static const char *const lighting_moods[]={"calm","happy","curious","comforting","sad","excited"};
 bool bridge_json_is_lighting(const char *json,size_t len)
 {
     cJSON *root=cJSON_ParseWithLength(json,len);
@@ -561,31 +561,57 @@ bool bridge_json_is_lighting(const char *json,size_t len)
     const bool result=cJSON_IsString(cmd) && strcmp(cmd->valuestring,"lighting")==0;
     cJSON_Delete(root);return result;
 }
-bool bridge_json_is_config(const char *json,size_t len)
+bool bridge_json_is_config(const char *json, size_t len)
 {
     cJSON *root=cJSON_ParseWithLength(json,len);
-    if (!root) return false;
     const cJSON *cmd=cJSON_GetObjectItemCaseSensitive(root,"cmd");
-    const bool result=cJSON_IsString(cmd) && strcmp(cmd->valuestring,"config")==0;
-    cJSON_Delete(root);return result;
+    const bool result=cJSON_IsString(cmd) && strcmp(cmd->valuestring,"sonar_set")==0;
+    cJSON_Delete(root);
+    return result;
 }
 
-int bridge_json_to_config(const char *json,size_t len,
-                          uint8_t out[BRIDGE_CONFIG_CMD_SIZE])
+static bool config_uint32(const cJSON *root, const char *key, uint32_t *out)
 {
-    if (!json || !out) return 0;
+    const cJSON *v=cJSON_GetObjectItemCaseSensitive(root,key);
+    if (!cJSON_IsNumber(v) || !isfinite(v->valuedouble) || v->valuedouble<0 ||
+        v->valuedouble>UINT32_MAX || floor(v->valuedouble)!=v->valuedouble) return false;
+    *out=(uint32_t)v->valuedouble;
+    return true;
+}
+
+int bridge_json_to_config(const char *json, size_t len, uint32_t session, uint8_t out[SONAR_SET_SIZE])
+{
     cJSON *root=cJSON_ParseWithLength(json,len);
-    if (!root) return 0;
-    int result=0;
-    do {
-        if (!cJSON_IsObject(root)) break;
-        const cJSON *sonar=cJSON_GetObjectItemCaseSensitive(root,"sonar");
-        if (!cJSON_IsBool(sonar)) break;
-        out[0]=0x01u;                        /* 子命令：超声波开关 */
-        out[1]=cJSON_IsTrue(sonar) ? 1u : 0u;
-        result=BRIDGE_CONFIG_CMD_SIZE;
-    } while (0);
-    cJSON_Delete(root);return result;
+    const cJSON *cmd=cJSON_GetObjectItemCaseSensitive(root,"cmd");
+    const cJSON *enabled=cJSON_GetObjectItemCaseSensitive(root,"enabled");
+    uint32_t target,epoch,generation,id,stamp;
+    const bool valid=cJSON_IsString(cmd) && strcmp(cmd->valuestring,"sonar_set")==0 &&
+        cJSON_IsBool(enabled) && config_uint32(root,"session_id",&target) && target==session &&
+        config_uint32(root,"epoch",&epoch) && epoch && config_uint32(root,"generation",&generation) &&
+        config_uint32(root,"request_id",&id) && id && config_uint32(root,"observed_ms",&stamp);
+    if (valid) {
+        out[0]=SONAR_SET;
+        out[1]=cJSON_IsTrue(enabled)?1u:0u;
+        sonar_write32(out+2,epoch);
+        sonar_write32(out+6,generation);
+        sonar_write32(out+10,id);
+        sonar_write32(out+14,stamp);
+    }
+    cJSON_Delete(root);
+    return valid ? SONAR_SET_SIZE : 0;
+}
+
+int bridge_config_to_json(const uint8_t *p, size_t len, uint32_t session, char *out, size_t capacity)
+{
+    if (!p || len!=SONAR_STATUS_SIZE || p[0]!=1 || p[3] || (p[1]&~7u) || p[2]>SONAR_EXPIRED)
+        return 0;
+    const int n=snprintf(out,capacity,
+        "{\"type\":\"sonar_config\",\"data\":{\"supported\":%s,\"enabled\":%s,\"ready\":%s,"
+        "\"session_id\":%lu,\"epoch\":%lu,\"generation\":%lu,\"request_id\":%lu,\"result\":%u,\"uptime_ms\":%lu}}",
+        p[1]&SONAR_SUPPORTED?"true":"false",p[1]&SONAR_ENABLED?"true":"false",p[1]&SONAR_READY?"true":"false",
+        (unsigned long)session,(unsigned long)sonar_read32(p+4),(unsigned long)sonar_read32(p+8),
+        (unsigned long)sonar_read32(p+12),p[2],(unsigned long)sonar_read32(p+16));
+    return n>0 && (size_t)n<capacity ? n : 0;
 }
 
 int bridge_json_to_lighting(const char *json,size_t len,uint32_t session,uint32_t event,
@@ -611,7 +637,7 @@ int bridge_json_to_lighting(const char *json,size_t len,uint32_t session,uint32_
                 !get_required_int(root,"duration_ms",100,10000,&duration)) break;
             const cJSON *emotion=cJSON_GetObjectItemCaseSensitive(root,"emotion");
             if (!cJSON_IsString(emotion)) break;
-            for (unsigned i=0;i<5;++i) if (!strcmp(emotion->valuestring,lighting_moods[i])) mood=(int)i;
+            for (unsigned i=0;i<sizeof(lighting_moods)/sizeof(lighting_moods[0]);++i) if (!strcmp(emotion->valuestring,lighting_moods[i])) mood=(int)i;
             if (mood<0) break;
         }
         memset(out,0,BRIDGE_LIGHTING_CMD_SIZE);
@@ -626,7 +652,7 @@ int bridge_json_to_lighting(const char *json,size_t len,uint32_t session,uint32_
 }
 int bridge_lighting_to_json(const uint8_t *p,uint8_t len,char *out,size_t capacity)
 {
-    if (!p || !out || len!=44u || p[0]!=1u || p[1]>7u || p[2]>=5u || p[3]>4u || p[42] || p[43]) return 0;
+    if (!p || !out || len!=44u || p[0]!=1u || p[1]>7u || p[2]>=sizeof(lighting_moods)/sizeof(lighting_moods[0]) || p[3]>4u || p[42] || p[43]) return 0;
     uint32_t session=0,stamp=0,epoch=0;
     for (unsigned i=0;i<4;++i) { session|=(uint32_t)p[12+i]<<(8u*i);stamp|=(uint32_t)p[16+i]<<(8u*i);epoch|=(uint32_t)p[38+i]<<(8u*i); }
     const int n=snprintf(out,capacity,

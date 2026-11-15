@@ -29,6 +29,7 @@ from app.mqtt.topics import (
 from app.providers.config import load_provider_config
 from app.providers.factory import build_asr, build_tts, chat_model_kwargs
 from app.services.conversation import ConversationConfig
+from app.services.sonar_config_service import SonarConfigService
 from app.services.device_manager import DeviceManager
 from app.services.local_audio import LocalAudioPlayer
 from app.services.motion_service import AgentMotionService
@@ -55,6 +56,7 @@ async def lifespan(app: FastAPI):
 
     # 初始化设备管理器
     device_manager = DeviceManager(settings)
+    app.state.sonar_config_service = SonarConfigService()
     app.state.device_manager = device_manager
 
     # 初始化 MQTT 客户端

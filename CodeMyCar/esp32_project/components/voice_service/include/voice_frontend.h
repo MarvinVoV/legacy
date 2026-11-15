@@ -1,11 +1,12 @@
 #pragma once
 #include <stdbool.h>
+#include "esp_err.h"
 #include <stddef.h>
 #include <stdint.h>
 
 /* S3 only. One feed owner (capture) and one fetch/control owner. Never call
  * destroy while either task is running. Returned PCM expires on next fetch. */
-bool voice_frontend_init(void);
+esp_err_t voice_frontend_init(const char **stage);
 bool voice_frontend_feed(const int16_t *pcm, size_t samples);
 /* Feed owner only: abandon a partial input window and signal the fetch owner
  * to publish a continuity break and restart detector convergence. */

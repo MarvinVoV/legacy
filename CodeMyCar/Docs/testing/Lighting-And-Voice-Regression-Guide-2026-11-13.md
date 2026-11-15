@@ -11,7 +11,7 @@
 | ESP32编码/边界 | `esp32_project/tests/host/run.sh` | 语义JSON→20B、44B→JSON、越界拒绝、运动隔离 |
 | 服务端离线 | pytest全量或下述选择 | 缓存3秒/session隔离、API严格字段、单Agent路由、tool确认/身份/权限、打断回归 |
 | 真实LLM+模拟体 | `scripts/validate_agent_lighting.py --real-model` | 模型选择native工具、精确参数、关闭运动时不能动作；不碰真实MQTT |
-| 双板HIL | `lighting_state_smoke.py` | 五情绪、到期、旧代、clear、真实反馈；可选运动覆盖/洪峰STOP |
+| 双板HIL | `lighting_state_smoke.py` | 六种情绪、到期、旧代、clear、真实反馈；可选运动覆盖/洪峰STOP |
 | 运行HIL | `runtime_regression.py` / `power_telemetry_smoke.py` | 控制周期、栈堆、RX/log/DMA错误、IMU/电池新鲜度、可靠STOP |
 | 真实语音人工 | `scripts/fixtures/voice_lighting_acceptance.json` | 唤醒→ASR→工具→协议→设备终态+人眼；语音运动临时限幅后恢复关闭 |
 
@@ -22,7 +22,7 @@
 从 CodeMyCar 根目录执行。环境准备、完整基线和单项筛选见[回归测试入口](README.md)。
 
 ```bash
-python3 tools/regress.py lighting runtime motion_json voice pyserver
+python3 tools/regress.py lighting display runtime motion_json voice pyserver
 ```
 
 `test_agent_lighting.py`使用真实LangGraph、脚本模型与FakeLights；`test_voice_agent_route.py`检查真实WS路由注入唯一AgentSession。它们不验证云端模型听懂话。完整pytest本轮362项通过。STM32完整host使用ASAN/UBSAN（依脚本），S3测试有既有6个弃用警告，未导致失败。构建/烧录使用现有BuildAndFlash与S3 firmware.py流程；不能只测Python而跳过修改后的双板构建。
@@ -55,7 +55,7 @@ PYTHONPATH=. .venv/bin/python ../stm32_project/tests/hil/power_telemetry_smoke.p
   --seconds 30 --shunt-mohm 100 --output /tmp/power-hil.json
 ```
 
-灯光脚本退出码非0/`passed:false`必须检查失败。带悬空选项有13项：五情绪、TTL回退、旧epoch拒绝、前后左右运动覆盖、250Hz视觉提示洪峰期间STOP、clear；finally尽力发STOP且记录确认失败。检查RTOS miss=0、rx_drop/log_drop=0、LED errors=0及IMU/电池新鲜。人眼另外确认颜色、方向、动作，计算RGB上报不能代替真实发光。
+灯光脚本退出码非0/`passed:false`必须检查失败。带悬空选项有14项：六种情绪、TTL回退、旧epoch拒绝、前后左右运动覆盖、250Hz视觉提示洪峰期间STOP、clear；finally尽力发STOP且记录确认失败。检查RTOS miss=0、rx_drop/log_drop=0、LED errors=0及IMU/电池新鲜。人眼另外确认颜色、方向、动作，计算RGB上报不能代替真实发光。
 
 复位用例手工：仅复位STM32、保持S3在线，观察session0本地calm→下发短curious→绑定S3 session→TTL回calm→可靠STOP。不要为灯效调用运动会话重置。该路径本轮已经验证。
 
@@ -81,3 +81,21 @@ PYTHONPATH=. .venv/bin/python ../stm32_project/tests/hil/power_telemetry_smoke.p
 - Agent state新增`odometer_semantics`描述上述边界；模拟体已修正倒车减计数。`tests/test_odometer_semantics.py`固定该契约。
 
 TODO：如需“今天行驶多少/累计跑了多少”，另加非递减`trip_distance`（每采样周期累加`abs((dl+dr)/2)`），与signed odometer并存；定义转向/原地差速是否计入、停机噪声门限、重启/丢包边界、磨损总计数与用户清零语义。若需跨重启，采用限频/批量持久化及版本/校验保护，避免每5ms写Flash。只在服务端稀疏采样`abs(Δodometer)`会漏掉采样间往返，不作为精确里程方案。本次未实现终身总里程。
+
+
+## 6. 圆屏对话回归
+
+两块板均需支持 [VISUAL 会话阶段](../protocol/cmd-mapping.md#会话与圆屏表情)。以默认关闭语音运动的服务运行。观察设备状态 API 的 `lighting.voice` 及圆屏，另记听到的第一声、末字和打断时机。
+
+| 操作 | 预期结果 |
+|---|---|
+| 待机，说“小鸭小鸭” | 唤醒时抬眼，本地“我在”播放时出现讲话节奏，结束后集中视线听你说话 |
+| 说“做个激动的表情，讲一个小故事” | 等待识别、模型与合成时侧目思考，收到激动指令后双眼轻跃两次；音频开始才叠加讲话动作 |
+| 故事中说“停一下”，安静片刻再接一句 | 讲话动作收住，回到倾听。后续会话能重新思考和播报 |
+| 等会话退出 | 回到自然眨眼。主动情绪按自己的有效期过期，待机功放噪声单独记录 |
+
+`voice_playback` 的主机测试分别在 1 ms 和 10 ms tick 模拟实际写音频、DMA 尾音、打断、待机静音和下一轮解静音。人耳听感和圆屏光学效果由上板观察确认。
+
+2026-11-15 双板实测，TB6612 关闭。STM32 Release 经 ST-LINK 写入、完整校验并复位，S3 使用待机 DAC 静音固件。23:22:43 设备依次报告唤醒、本地应答和倾听；23:23:39 服务端 Agent 请求 excited、10000 ms。23:23:40 圆屏状态为 excited/thinking，23:23:42 为 excited/speaking，23:23:50 情绪到期后为 calm/speaking。23:23:59 打断后回到倾听，同一回合服务端收到 stop_ack 用时 142 ms，设备上报 DMA 排空 146 ms。激动期间两次圆屏日志为 19.7、19.8 fps，SPI 错误计数为零，该窗口运动任务周期为 5 ms、miss=0。以上来自实际日志，仅记录该次运行。
+
+人工反馈：待机安静，唤醒后能听到“我在”。打断时感觉响应偏慢，当时未分清是故事仍在播还是圆屏讲话动作仍在继续。打断事件与状态切换已有实机记录，人声起点到实际停声、停声到讲话动效收住的延迟均待复测。下次保持当前参数，用同一段故事，在画面和声音的同一时间轴上分别标记开口、喇叭停声、眼睛结束讲话动作三个时点。普通眨眼仍属于正常待机或倾听动作。

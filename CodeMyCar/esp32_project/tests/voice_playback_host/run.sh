@@ -7,9 +7,9 @@ trap 'rm -rf "$out"' EXIT
 for tick_ms in 10 1; do
 clang -std=c11 -Wall -Wextra -Werror -Wno-deprecated-declarations -O1 -g -fsanitize=address,undefined -pthread \
  -DHOST_TICK_MS="$tick_ms" \
- -I"$here/stubs" -I"$root/components/voice_service/src" \
+ -I"$root/../serial_pkt_protocol/shared" -I"$root/components/voice_service/include" -I"$here/stubs" -I"$root/components/voice_service/src" \
  -I"$root/managed_components/espressif__cjson/cJSON" \
- "$here/test_playback.c" "$root/components/voice_service/src/voice_output.c" \
+ "$root/components/voice_service/src/voice_visual.c" "$here/test_playback.c" "$root/components/voice_service/src/voice_output.c" \
  "$root/components/voice_service/src/voice_dtd.c" \
  "$root/components/voice_service/src/voice_transport.c" \
  "$root/components/voice_service/src/voice_protocol.c" \

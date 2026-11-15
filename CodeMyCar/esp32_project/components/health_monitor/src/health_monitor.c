@@ -15,6 +15,8 @@
 #include "cmcar_events.h"
 #include "cmcar_topics.h"
 #include "bridge.h"
+#include "voice_service.h"
+#include <string.h>
 #include "esp_event.h"
 #include "esp_app_desc.h"
 #include "esp_idf_version.h"
@@ -56,6 +58,7 @@ static void health_mon_task(void* arg)
 
     uint32_t last_heartbeat = 0;
     uint32_t announced_generation = 0;
+    const char *announced_startup = "";
 
     while (1)
     {
@@ -93,25 +96,30 @@ static void health_mon_task(void* arg)
         const uint32_t now_ms =
             (uint32_t)(esp_timer_get_time() / 1000);
         const uint32_t generation = s_connection_generation;
-        if (generation != announced_generation ||
+        const voice_health_t voice = voice_service_health();
+        if (generation != announced_generation || strcmp(voice.startup, announced_startup) != 0 ||
             now_ms - last_heartbeat >= HEARTBEAT_INTERVAL_MS)
         {
             if (mqtt_service_is_connected())
             {
-                char json[320];
+                /* Single writer; avoid growing the watchdog task stack. */
+                static char json[512];
                 const esp_app_desc_t* app = esp_app_get_description();
                 const int len = snprintf(
                     json, sizeof(json),
                     "{\"heap\":%zu,\"heap_min\":%zu,\"uptime_s\":%lld,\"stm32_connected\":%s,\"session_id\":%lu,"
                     "\"esp_build\":\"%s\",\"esp_idf\":\"%s\",\"stm32_build\":\"%s\","
-                    "\"stm32_dirty\":%s,\"protocol_version\":%u}",
+                    "\"stm32_dirty\":%s,\"protocol_version\":%u,"
+                    "\"voice\":{\"startup\":\"%s\",\"state\":\"%s\",\"error_stage\":%s%s%s,\"error_code\":%d}}",
                     heap_free, heap_min,
                     (long long)(esp_timer_get_time() / 1000000),
                     bridge_stm32_connected() ? "true" : "false",
                     (unsigned long)bridge_session_id(), app->version,
                     esp_get_idf_version(), bridge_stm32_build_sha(),
                     bridge_stm32_build_dirty() ? "true" : "false",
-                    (unsigned)bridge_stm32_protocol_version());
+                    (unsigned)bridge_stm32_protocol_version(), voice.startup, voice.state,
+                    voice.error_stage ? "\"" : "", voice.error_stage ? voice.error_stage : "null",
+                    voice.error_stage ? "\"" : "", (int)voice.error_code);
 
                 /* 用超时发布：broker 卡住时不能阻塞喂狗任务，否则 TWDT 自触 panic */
                 const esp_err_t pub = (len > 0 && (size_t)len < sizeof(json))
@@ -121,6 +129,7 @@ static void health_mon_task(void* arg)
                 if (pub == ESP_OK)
                 {
                     last_heartbeat = now_ms;
+                    announced_startup = voice.startup;
                     announced_generation = generation;
                     ESP_LOGI(TAG, "Session announced: %lu", (unsigned long)bridge_session_id());
                 }

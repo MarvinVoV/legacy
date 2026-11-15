@@ -27,7 +27,7 @@ class FakeLights:
         return True
 
 
-@pytest.mark.parametrize("emotion",["calm","happy","curious","comforting","sad"])
+@pytest.mark.parametrize("emotion",["calm","happy","curious","comforting","sad", "excited"])
 async def test_graph_uses_lighting_tool_even_when_motion_disabled(tmp_path, emotion):
     lights=FakeLights()
     gateway=LightingGateway(lights,lambda _:lights.state)

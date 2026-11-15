@@ -66,6 +66,20 @@ bool ImuService_GetSnapshot(ImuService* s,ImuSnapshot* o)
 void Sonar_GetSafetySnapshot(SafetyChannel* f,SafetyChannel* r){*f=front;*r=rear;}
 int main(void)
 {
+    MotionContext stationary={0};
+    stationary.motionTarget.mode=MOTION_EMERGENCY_STOP;
+    assert(!MotionService_IsParkedLocked(&stationary));
+    stationary.motorStateValid=true;
+    stationary.state.timestamp=now;
+    assert(MotionService_IsParkedLocked(&stationary));
+    stationary.state.drive.rightRpm=8;
+    assert(!MotionService_IsParkedLocked(&stationary));
+    stationary.state.drive.rightRpm=0;
+    stationary.goal.active=true;
+    assert(!MotionService_IsParkedLocked(&stationary));
+    stationary.goal.active=false;
+    stationary.motionTarget.mode=MOTION_GOAL;
+    assert(!MotionService_IsParkedLocked(&stationary));
     MotionContext c;MotorService motor={0};SteerInstance steer={0};
     ChassisConfig cfg={.wheelbaseMM=141,.trackWidthMM=167,.wheelRadiusMM=32.5f,
         .maxSteerAngleDeg=28.5f,.minTurnRadiusMM=260,.maxLinearVelocityMPS=1,

@@ -51,6 +51,8 @@ def _parse_start(meta: Any) -> tuple[str | None, str | None, str | None]:
         return None, None, "local_ack must be boolean"
     if not isinstance(meta.get("playback_ack", False), bool):
         return None, None, "playback_ack must be boolean"
+    if not isinstance(meta.get("turn_phase", False), bool):
+        return None, None, "turn_phase must be boolean"
     if not isinstance(meta.get("barge_audio", False), bool):
         return None, None, "barge_audio must be boolean"
     if type(meta.get("protocol", 1)) is not int or meta.get("protocol", 1) not in (1, 2):
@@ -74,6 +76,7 @@ async def _run_conversation(
     barge_in: bool = False,
     playback_ack: bool = False,
     barge_audio: bool = False,
+    turn_phase: bool = False,
 ) -> None:
     """Own one long-conversation socket; command mode never enters this path."""
     runtime = getattr(ws.app.state, "agent_runtime", None)
@@ -84,7 +87,7 @@ async def _run_conversation(
         await ws.close(code=1011)
         return
     config = getattr(ws.app.state, "voice_conversation_config", ConversationConfig())
-    config = replace(config, barge_in=barge_in, playback_ack=playback_ack, barge_audio=barge_audio)
+    config = replace(config, barge_in=barge_in, playback_ack=playback_ack, barge_audio=barge_audio, turn_phase=turn_phase)
     try:
         agent_session = runtime.new_session(session.device_id, session.id)
     except Exception:
@@ -287,6 +290,7 @@ async def voice_stream(ws: WebSocket) -> None:
             barge_in=barge_enabled,
             playback_ack=ack_enabled,
             barge_audio=capture_enabled,
+            turn_phase=v2 and meta.get("turn_phase", False),
         )
         return
 

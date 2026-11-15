@@ -37,6 +37,7 @@ void heap_caps_free(void *);
 int64_t esp_timer_get_time(void);
 const char *esp_err_to_name(esp_err_t);
 #define ESP_LOGI(tag,...) ((void)(tag))
+#define ESP_LOGE(tag,...) ((void)(tag))
 #define ESP_LOGW(tag,...) ((void)(tag))
 SemaphoreHandle_t xSemaphoreCreateMutex(void);
 void xSemaphoreTake(SemaphoreHandle_t,unsigned);

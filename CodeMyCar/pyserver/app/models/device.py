@@ -5,7 +5,8 @@ from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from app.models.telemetry import HeartbeatData, MotionStatus, SensorData
+from app.models.device_config import SonarReport, SonarStatus
+from app.models.telemetry import HeartbeatData, MotionStatus, SensorData, VoiceHealth
 from app.models.battery import BatteryTelemetry, BatteryStatus
 from app.models.lighting import LightingTelemetry
 
@@ -18,6 +19,8 @@ class DeviceState(BaseModel):
     last_sensor: float = 0.0
     heartbeat_data: Optional[HeartbeatData] = None
     latest_sensor: Optional[SensorData] = None
+    sonar_report: Optional[SonarReport] = None
+    sonar_received: float = 0.0
     latest_ultrasonic: Optional[SensorData] = None
     last_ultrasonic: float = 0.0
     latest_battery: Optional[BatteryTelemetry] = None
@@ -45,7 +48,9 @@ class DeviceStatus(BaseModel):
     last_heartbeat_age: Optional[float] = None  # 距上次心跳的秒数
     uptime_s: Optional[int] = None
     heap_free: Optional[int] = None
+    voice: VoiceHealth | None = None
     stm32_connected: Optional[bool] = None
+    sonar: SonarStatus = Field(default_factory=SonarStatus)
     battery: BatteryStatus = Field(default_factory=BatteryStatus)
     lighting: Optional[LightingTelemetry] = None
     lighting_age_s: Optional[float] = None

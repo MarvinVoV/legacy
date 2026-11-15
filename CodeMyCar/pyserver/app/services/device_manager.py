@@ -3,6 +3,7 @@
 import time
 
 from app.config import Settings
+from app.models.device_config import SonarStatus
 from app.models.device import DeviceState, DeviceStatus
 from app.services.battery_status import battery_status
 
@@ -29,6 +30,21 @@ class DeviceManager:
             return False
         return (time.time() - state.last_heartbeat) < self._timeout
 
+    def sonar_status(self, device_id: str) -> SonarStatus:
+        state = self._devices.get(device_id)
+        if not state or not state.sonar_report:
+            return SonarStatus()
+        report = state.sonar_report
+        age = time.monotonic() - state.sonar_received
+        if (age > 2.5 or not self.check_online(device_id) or not state.heartbeat_data
+                or state.heartbeat_data.stm32_connected is not True
+                or state.session_id != report.session_id or not report.epoch):
+            return SonarStatus(age_s=round(age, 2))
+        return SonarStatus(stale=False, age_s=round(age, 2), supported=report.supported,
+                           effective_enabled=report.enabled, ready=report.ready,
+                           session_id=report.session_id, epoch=report.epoch,
+                           generation=report.generation, request_id=report.request_id)
+
     def get_status(self, device_id: str) -> DeviceStatus:
         state = self._devices.get(device_id)
         if state is None:
@@ -38,6 +54,7 @@ class DeviceManager:
         age = time.time() - state.last_heartbeat if state.last_heartbeat > 0 else None
 
         # 超声波障碍物距离（不是里程计）；只取 ultrasonic 类型的最近一帧
+        sonar = self.sonar_status(device_id)
         front_cm = None
         rear_cm = None
         sensor_age = None
@@ -47,28 +64,16 @@ class DeviceManager:
             front = data.get("distance")
             rear = data.get("distance_rear")
             # 防御异常 payload：只有整数才透出，避免状态接口 500
-            front_cm = front if isinstance(front, int) else None
-            rear_cm = rear if isinstance(rear, int) else None
+            front_cm = front if type(front) is int and 1 <= front <= 400 else None
+            rear_cm = rear if type(rear) is int and 1 <= rear <= 400 else None
             last_ultrasonic = state.last_ultrasonic or state.last_sensor
             if last_ultrasonic > 0:
                 sensor_age = round(time.time() - last_ultrasonic, 1)
 
-        # IMU 航向
-        yaw_deg = None
-        yaw_rate_dps = None
-        imu_status = None
-        imu_age_s = None
-        heading = state.latest_heading
-        if heading is not None:
-            hdata = heading.data or {}
-            yaw_mdeg = hdata.get("yaw_mdeg")
-            rate_mdps = hdata.get("yaw_rate_mdps")
-            yaw_deg = round(yaw_mdeg / 1000.0, 3) if isinstance(yaw_mdeg, int) else None
-            yaw_rate_dps = round(rate_mdps / 1000.0, 3) if isinstance(rate_mdps, int) else None
-            st = hdata.get("status")
-            imu_status = st if isinstance(st, int) else None
-            if state.last_heading > 0:
-                imu_age_s = round(time.time() - state.last_heading, 1)
+            if (not online or sensor_age is None or sensor_age > 2
+                    or (state.heartbeat_data and state.heartbeat_data.stm32_connected is False)
+                    or (state.sonar_report and not sonar.ready)):
+                front_cm = rear_cm = None
 
         # IMU 航向
         yaw_deg = None
@@ -114,9 +119,11 @@ class DeviceManager:
             device_id=device_id,
             online=online,
             lighting=lighting,
+            sonar=sonar,
             lighting_age_s=round(light_age, 2) if light_age is not None else None,
             last_heartbeat_age=round(age, 1) if age else None,
             uptime_s=state.heartbeat_data.uptime_s if state.heartbeat_data else None,
+            voice=state.heartbeat_data.voice if state.heartbeat_data else None,
             heap_free=state.heartbeat_data.heap if state.heartbeat_data else None,
             stm32_connected=state.heartbeat_data.stm32_connected if state.heartbeat_data else None,
             battery=battery_status(

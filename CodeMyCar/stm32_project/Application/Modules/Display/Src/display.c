@@ -10,33 +10,21 @@
 #include <stddef.h>
 
 #include "display_config.h"
-#include "log_manager.h"
+#include "cmsis_os2.h"
 #include "stm32h7xx_hal.h"
 
 #if DISPLAY_ENABLED
 
 static SPI_HandleTypeDef s_spi;
 
-/* ==================== 延时（不依赖 HAL 时基） ==================== */
-
-static void display_dwt_init(void)
-{
-    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
-    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
-}
-
-static void display_delay_us(uint32_t us)
-{
-    const uint32_t start = DWT->CYCCNT;
-    const uint32_t ticks = us * (SystemCoreClock / 1000000u);
-    while ((uint32_t)(DWT->CYCCNT - start) < ticks)
-    {
-    }
-}
+/* The display task is the sole owner. Stop issuing SPI transfers after the
+ * first error in each register sequence or frame window. */
+static bool s_command_ok;
+enum { SPI_TIMEOUT_MS = 100 };
 
 static void display_delay_ms(uint32_t ms)
 {
-    display_delay_us(ms * 1000u);
+    osDelay((ms * osKernelGetTickFreq() + 999u) / 1000u);
 }
 
 /* ==================== 片选 / 数据指令 ==================== */
@@ -47,8 +35,9 @@ static void cs_high(void) { HAL_GPIO_WritePin(DISPLAY_CS_PORT, DISPLAY_CS_PIN, G
 /* 商家例程对每个字节都切换 CS，本模块对 CS 行为敏感，照此实现。 */
 static void write_byte(const uint8_t value)
 {
+    if (!s_command_ok) return;
     cs_low();
-    (void)HAL_SPI_Transmit(&s_spi, (uint8_t *)&value, 1u, 100u);
+    s_command_ok = HAL_SPI_Transmit(&s_spi, (uint8_t *)&value, 1u, SPI_TIMEOUT_MS) == HAL_OK;
     cs_high();
 }
 
@@ -265,7 +254,7 @@ static void gc9a01_init_sequence(void)
 
 bool Display_Init(void)
 {
-    display_dwt_init();
+    s_command_ok = true;
     display_gpio_init();
     if (!display_spi_init())
     {
@@ -275,7 +264,22 @@ bool Display_Init(void)
     /* 初始化命令必须在片选有效期间发送；此前漏了 cs_low()，
      * 面板会忽略整段初始化序列，只显示未初始化的 GRAM 噪声。 */
     gc9a01_init_sequence();
-    return true;
+    return s_command_ok;
+}
+
+static bool display_window(uint16_t x, uint16_t y, uint16_t w, uint16_t h)
+{
+    s_command_ok = true;
+    write_cmd(0x2A);
+    write_u8((uint8_t)(x >> 8)); write_u8((uint8_t)(x & 0xFFu));
+    write_u8((uint8_t)((x + w - 1u) >> 8)); write_u8((uint8_t)((x + w - 1u) & 0xFFu));
+
+    write_cmd(0x2B);
+    write_u8((uint8_t)(y >> 8)); write_u8((uint8_t)(y & 0xFFu));
+    write_u8((uint8_t)((y + h - 1u) >> 8)); write_u8((uint8_t)((y + h - 1u) & 0xFFu));
+
+    write_cmd(0x2C);
+    return s_command_ok;
 }
 
 void Display_FillRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color)
@@ -287,15 +291,7 @@ void Display_FillRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t c
     if ((uint32_t)x + w > DISPLAY_WIDTH)  { w = (uint16_t)(DISPLAY_WIDTH - x); }
     if ((uint32_t)y + h > DISPLAY_HEIGHT) { h = (uint16_t)(DISPLAY_HEIGHT - y); }
 
-    write_cmd(0x2A);
-    write_u8((uint8_t)(x >> 8)); write_u8((uint8_t)(x & 0xFFu));
-    write_u8((uint8_t)((x + w - 1u) >> 8)); write_u8((uint8_t)((x + w - 1u) & 0xFFu));
-
-    write_cmd(0x2B);
-    write_u8((uint8_t)(y >> 8)); write_u8((uint8_t)(y & 0xFFu));
-    write_u8((uint8_t)((y + h - 1u) >> 8)); write_u8((uint8_t)((y + h - 1u) & 0xFFu));
-
-    write_cmd(0x2C);
+    if (!display_window(x, y, w, h)) return;
 
     /* 整行传输（CS 在整块期间保持低）：把逐字节开销降到一行一次。
      * 若真机上出现花屏，说明该模块确实要求逐字节切 CS。 */
@@ -312,7 +308,7 @@ void Display_FillRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t c
     HAL_GPIO_WritePin(DISPLAY_DC_PORT, DISPLAY_DC_PIN, GPIO_PIN_SET);
     for (uint16_t row = 0u; row < h; ++row)
     {
-        (void)HAL_SPI_Transmit(&s_spi, s_row, (uint16_t)(w * 2u), 100u);
+        if (HAL_SPI_Transmit(&s_spi, s_row, (uint16_t)(w * 2u), SPI_TIMEOUT_MS) != HAL_OK) break;
     }
     cs_high();
 }
@@ -324,22 +320,14 @@ bool Display_BlitBuffer(const uint16_t *buf, uint16_t x, uint16_t y,
     if ((uint32_t)x + w > DISPLAY_WIDTH)  { w = (uint16_t)(DISPLAY_WIDTH - x); }
     if ((uint32_t)y + h > DISPLAY_HEIGHT) { h = (uint16_t)(DISPLAY_HEIGHT - y); }
 
-    write_cmd(0x2A);
-    write_u8((uint8_t)(x >> 8)); write_u8((uint8_t)(x & 0xFFu));
-    write_u8((uint8_t)((x + w - 1u) >> 8)); write_u8((uint8_t)((x + w - 1u) & 0xFFu));
-
-    write_cmd(0x2B);
-    write_u8((uint8_t)(y >> 8)); write_u8((uint8_t)(y & 0xFFu));
-    write_u8((uint8_t)((y + h - 1u) >> 8)); write_u8((uint8_t)((y + h - 1u) & 0xFFu));
-
-    write_cmd(0x2C);
+    if (!display_window(x, y, w, h)) return false;
 
     cs_low();
     HAL_GPIO_WritePin(DISPLAY_DC_PORT, DISPLAY_DC_PIN, GPIO_PIN_SET);
     for (uint16_t row = 0u; row < h; ++row)
     {
         const uint16_t *src = buf + (uint32_t)(y + row) * DISPLAY_WIDTH + x;
-        if (HAL_SPI_Transmit(&s_spi, (uint8_t *)src, (uint16_t)(w * 2u), 100u) != HAL_OK)
+        if (HAL_SPI_Transmit(&s_spi, (uint8_t *)src, (uint16_t)(w * 2u), SPI_TIMEOUT_MS) != HAL_OK)
         {
             cs_high();
             return false;

@@ -4,6 +4,7 @@ import logging
 import time
 from dataclasses import dataclass
 
+from app.models.device_config import SonarReport
 from app.models.device import DeviceState
 from app.models.battery import BatteryTelemetry
 from app.models.lighting import LightingTelemetry
@@ -68,8 +69,10 @@ def create_handlers(
         state.last_heartbeat = time.time()
         state.heartbeat_data = data
         logger.info(
-            "Heartbeat from %s: heap=%d, heap_min=%d, uptime=%ds, stm32_connected=%s",
+            "Heartbeat from %s: heap=%d, heap_min=%d, uptime=%ds, stm32_connected=%s voice=%s/%s stage=%s code=%s",
             device_id, data.heap, data.heap_min, data.uptime_s, data.stm32_connected,
+            data.voice.startup if data.voice else None, data.voice.state if data.voice else None,
+            data.voice.error_stage if data.voice else None, data.voice.error_code if data.voice else None,
         )
 
     async def on_sensor(topic: str, payload: bytes) -> None:
@@ -84,6 +87,23 @@ def create_handlers(
         if device_id not in devices:
             devices[device_id] = DeviceState(device_id=device_id)
         state = devices[device_id]
+        if data.type == "sonar_config":
+            try:
+                report = SonarReport.model_validate(data.data)
+            except ValueError:
+                logger.warning("Invalid sonar report from %s", device_id)
+                return
+            if report.session_id != state.session_id:
+                return
+            old = state.sonar_report
+            if not old or old.epoch != report.epoch or old.session_id != report.session_id or not report.enabled:
+                state.latest_ultrasonic = None
+                state.last_ultrasonic = 0
+                if state.latest_sensor and state.latest_sensor.type == "ultrasonic":
+                    state.latest_sensor = None
+            state.sonar_report = report
+            state.sonar_received = time.monotonic()
+            return
         if data.type == "lighting":
             try:
                 lighting = LightingTelemetry.model_validate(data.data)

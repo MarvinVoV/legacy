@@ -3,14 +3,14 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 OUT=$(mktemp -d)
 trap 'rm -rf "$OUT"' EXIT
-clang -std=c11 -Wall -Wextra -Werror -g -fsanitize=address,undefined \
+clang -I "$ROOT/../serial_pkt_protocol/shared" -std=c11 -Wall -Wextra -Werror -g -fsanitize=address,undefined \
   -I "$ROOT/Application/Modules/LedStrip/Inc" -I "$ROOT/Application/Services/Lighting/Inc" \
   "$ROOT/tests/host/ws2812_test.c" \
   "$ROOT/Application/Modules/LedStrip/Src/ws2812_encoder.c" \
   "$ROOT/Application/Services/Lighting/Src/lighting_service.c" \
   "$ROOT/Application/Services/Lighting/Src/lighting_controller.c" -o "$OUT/lighting"
 "$OUT/lighting"
-clang -std=c11 -Wall -Wextra -Werror -g -fsanitize=address,undefined \
+clang -I "$ROOT/../serial_pkt_protocol/shared" -std=c11 -Wall -Wextra -Werror -g -fsanitize=address,undefined \
   -I "$ROOT/Application/Modules/LedStrip/Inc" -I "$ROOT/Application/Services/Lighting/Inc" \
   "$ROOT/tests/host/lighting_controller_test.c" \
   "$ROOT/Application/Services/Lighting/Src/lighting_controller.c" -o "$OUT/controller"

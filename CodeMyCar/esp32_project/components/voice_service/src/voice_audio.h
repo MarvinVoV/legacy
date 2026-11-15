@@ -17,8 +17,8 @@ typedef struct {
 /* Single hardware pipeline, one frame consumer (session owner).
  * init allocates only; start releases tasks only after both were created.
  * destroy is for startup rollback, never while the pipeline is running. */
-esp_err_t voice_audio_init(void);
-esp_err_t voice_audio_start(void);
+esp_err_t voice_audio_init(const char **stage);
+esp_err_t voice_audio_start(const char **stage);
 void voice_audio_destroy(void);
 bool voice_audio_receive(voice_frame_t *frame, unsigned timeout_ms);
 void voice_audio_flush(void);

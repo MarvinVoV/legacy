@@ -14,6 +14,8 @@ enum {
     VOICE_PEER_SPEAK = 1u << 7,
     VOICE_PEER_STOP = 1u << 8,
     VOICE_PEER_PLAYBACK_END = 1u << 9,
+    VOICE_PEER_THINK = 1u << 10,
+    VOICE_PEER_LISTEN = 1u << 11,
 };
 
 /* One parser per connection; no shared/global callback buffer. */

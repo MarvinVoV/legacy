@@ -9,6 +9,7 @@ typedef int esp_err_t;
 #define ESP_ERR_TIMEOUT 2
 #define ESP_ERR_INVALID_STATE 3
 #define ESP_ERR_NO_MEM 4
+#define ESP_ERR_INVALID_SIZE 6
 #define CMCAR_ERR_QUEUE_FULL 5
 #define ESP_LOGE(...) ((void)0)
 #define ESP_LOGW(...) ((void)0)

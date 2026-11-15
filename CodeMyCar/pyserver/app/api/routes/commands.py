@@ -1,12 +1,12 @@
 """控制命令 API"""
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.api.schemas import CommonResponse
 from app.api.deps import get_command_service, get_mqtt_client, get_device_manager
 from app.models.lighting import LightingRequest
-from app.models.device_config import SonarConfigRequest
-from app.mqtt.topics import cmd_topic
+from app.models.device_config import SonarConfigRequest, SonarResponse, SonarStatus
+from app.services.sonar_config_service import SonarError
 from app.services.lighting_service import LightingService
 from app.services.device_manager import DeviceManager
 from app.mqtt.client import MQTTClient
@@ -46,23 +46,27 @@ async def set_lighting(
                           data={"accepted": sent, "confirmed": False})
 
 
-@router.post("/devices/{device_id}/config/sonar", response_model=CommonResponse)
+@router.get("/devices/{device_id}/config/sonar", response_model=SonarStatus)
+async def get_sonar(device_id: str, devices: DeviceManager = Depends(get_device_manager)):
+    """Read the most recent device-confirmed sonar state. Stale fields are null."""
+    return devices.sonar_status(device_id)
+
+
+@router.post("/devices/{device_id}/config/sonar", response_model=SonarResponse, deprecated=True)
+@router.put("/devices/{device_id}/config/sonar", response_model=SonarResponse)
 async def set_sonar(
     device_id: str,
     req: SonarConfigRequest,
+    request: Request,
     mqtt: MQTTClient = Depends(get_mqtt_client),
     devices: DeviceManager = Depends(get_device_manager),
 ):
-    """超声波运行期开关。
+    """设置超声波保护，关闭要求车辆已停车。收到本次 STM32 回执才返回成功。
 
-    经 ESP32 翻译成 UART CONFIG 帧下发；设备重启后恢复为默认开启。
+    409 表示设备忙或版本冲突，501 表示固件不支持，503 表示链路不可用。
+    504 表示结果未确认，可用 GET 读取实际状态。
     """
-    status = devices.get_status(device_id)
-    if not status.online or status.stm32_connected is False:
-        return CommonResponse(success=False, message="Device offline")
-    await mqtt.publish(cmd_topic(device_id), {"cmd": "config", "sonar": req.enabled})
-    return CommonResponse(
-        success=True,
-        message="Config published",
-        data={"sonar": req.enabled, "confirmed": False},
-    )
+    try:
+        return await request.app.state.sonar_config_service.set(device_id, req.enabled, devices, mqtt)
+    except SonarError as exc:
+        raise HTTPException(exc.status, detail={"code": exc.code}) from exc

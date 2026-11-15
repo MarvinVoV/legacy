@@ -60,6 +60,7 @@ class ConversationConfig:
     # Prefer the device's double-talk detector; the energy detector is only a
     # fallback for boards without a reference channel.
     barge_in_device_events: bool = True
+    turn_phase: bool = False
     playback_ack: bool = False
     barge_audio: bool = False
     barge_buffer_ms: int = 4000
@@ -541,6 +542,8 @@ class ConversationRunner:
                 self._playback_key = None
                 self._playback_done = None
                 try:
+                    if self.config.turn_phase:
+                        await self._safe_send({"type": "turn_phase", "phase": "thinking", "turn": self.turn})
                     await self._handle_turn(segment)
                 except asyncio.CancelledError:
                     raise
@@ -551,6 +554,8 @@ class ConversationRunner:
                     self._queue.task_done()
                 if not self.ended.is_set():
                     self.state = "listening"
+                    if self.config.turn_phase:
+                        await self._safe_send({"type": "turn_phase", "phase": "listening", "turn": self.turn})
                     self._last_activity = time.monotonic()
         except asyncio.CancelledError:
             return

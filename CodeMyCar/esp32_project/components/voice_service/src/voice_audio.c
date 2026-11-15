@@ -218,11 +218,12 @@ void voice_audio_destroy(void)
     s_codec = NULL;
 }
 
-esp_err_t voice_audio_init(void)
+esp_err_t voice_audio_init(const char **stage)
 {
     if (s_codec != NULL) return ESP_ERR_INVALID_STATE;
-    esp_err_t err = voice_codec_init(&s_codec);
+    esp_err_t err = voice_codec_init(&s_codec, stage);
     if (err != ESP_OK) return err;
+    *stage = "capture_format";
     if (s_codec->caps.input_sample_rate != VOICE_SAMPLE_RATE ||
         (s_codec->caps.input_channels != 1 && s_codec->caps.input_channels != 2)) {
         ESP_LOGE(TAG, "unsupported codec input %d Hz / %d ch",
@@ -237,6 +238,8 @@ esp_err_t voice_audio_init(void)
         return ESP_ERR_NOT_SUPPORTED;
     }
 #endif
+    *stage = "capture_buffers";
+    err = ESP_ERR_NO_MEM;
     s_in_channels = s_codec->caps.input_channels;
     s_gate = xEventGroupCreateStatic(&s_gate_control);
     s_pcm_buffer = heap_caps_malloc(sizeof(int16_t) * VOICE_CHUNK_FRAMES * s_in_channels,
@@ -252,27 +255,31 @@ esp_err_t voice_audio_init(void)
                                 s_ring_storage, &s_ring_control);
     if (!s_ring) goto fail;
 #if CONFIG_IDF_TARGET_ESP32S3
-    if (!voice_frontend_init()) goto fail;
+    err = voice_frontend_init(stage);
+    if (err != ESP_OK) goto fail;
 #else
-    if (!voice_wake_init()) goto fail;
+    *stage = "wake_model_init";
+    if (!voice_wake_init()) { err = ESP_FAIL; goto fail; }
 #endif
     ESP_LOGI(TAG, "codec input=%d Hz queue_bytes=%u",
              s_codec->caps.input_sample_rate, (unsigned)queue_bytes);
     return ESP_OK;
 fail:
     voice_audio_destroy();
-    return ESP_ERR_NO_MEM;
+    return err;
 }
 
 voice_codec_t *voice_audio_codec(void) { return s_codec; }
 
-esp_err_t voice_audio_start(void)
+esp_err_t voice_audio_start(const char **stage)
 {
     if (!s_gate || !s_ring || s_capture_task) return ESP_ERR_INVALID_STATE;
 #if CONFIG_IDF_TARGET_ESP32S3
+    *stage = "frontend_task";
     if (xTaskCreate(frontend_task, "voice_afe_out", 6144, NULL,
                     TASK_PRIO_VOICE_FRONTEND, &s_frontend_task) != pdPASS) return ESP_ERR_NO_MEM;
 #endif
+    *stage = "capture_task";
     if (xTaskCreate(capture_task, "voice_capture", 4096, NULL,
                     TASK_PRIO_VOICE_CAPTURE, &s_capture_task) != pdPASS) return ESP_ERR_NO_MEM;
     xEventGroupSetBits(s_gate, BIT0);

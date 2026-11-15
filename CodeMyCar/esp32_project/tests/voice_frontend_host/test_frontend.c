@@ -61,10 +61,11 @@ void heap_caps_free(void *p) { free(p); }
 int main(void)
 {
  const int16_t *pcm; size_t samples; bool wake, speech;
- missing_models=true; assert(!voice_frontend_init()); assert(deinit==0);
- missing_models=false; missing_wake=true; assert(!voice_frontend_init()); assert(deinit==1);
- missing_wake=false; channels=CONFIG_CMCAR_VOICE_AEC ? 1 : 2; assert(!voice_frontend_init()); assert(destroyed==1);
- channels=CONFIG_CMCAR_VOICE_AEC ? 2 : 1; assert(voice_frontend_init()); assert(voice_frontend_init()); assert(created==2);
+ const char *stage = NULL;
+ missing_models=true; assert(voice_frontend_init(&stage)==ESP_ERR_NOT_FOUND); assert(strcmp(stage,"model_partition")==0); assert(deinit==0);
+ missing_models=false; missing_wake=true; assert(voice_frontend_init(&stage)==ESP_ERR_NOT_FOUND); assert(strcmp(stage,"wake_model")==0); assert(deinit==1);
+ missing_wake=false; channels=CONFIG_CMCAR_VOICE_AEC ? 1 : 2; assert(voice_frontend_init(&stage)==ESP_ERR_INVALID_SIZE); assert(strcmp(stage,"afe_format")==0); assert(destroyed==1);
+ channels=CONFIG_CMCAR_VOICE_AEC ? 2 : 1; assert(voice_frontend_init(&stage)==ESP_OK); assert(voice_frontend_init(&stage)==ESP_OK); assert(created==2);
  int16_t input[2048]; for(int i=0;i<1024*channels;i++) input[i]=i;
  assert(voice_frontend_feed(input,320*channels)); assert(fed==0);
  assert(voice_frontend_feed(input+320*channels,320*channels)); assert(fed==1);

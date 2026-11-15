@@ -22,8 +22,8 @@ void DisplayEye_SetGaze(float x, float y);
 /** 设置开合度（0=闭眼，1=睁眼） */
 void DisplayEye_SetOpenness(float openness);
 
-/** 设置情绪（0 calm / 1 happy / 2 curious / 3 comforting / 4 sad） */
-void DisplayEye_SetMood(uint8_t mood);
+/** Atomically update the semantic mood and conversation phase. */
+void DisplayEye_SetExpression(uint8_t mood, uint8_t voice);
 
 /** 设置双眼主色（RGB565，兼容原虹膜接口） */
 void DisplayEye_SetIrisColor(uint16_t color);

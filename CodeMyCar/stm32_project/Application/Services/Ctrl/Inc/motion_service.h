@@ -281,6 +281,8 @@ void MotionService_AbortGoal(MotionContext* ctx, uint8_t newState);
 /**
  * @brief 填充 36 字节状态帧
  */
+/* Caller holds targetMutex across the check and protection-state publication. */
+bool MotionService_IsParkedLocked(const MotionContext *ctx);
 void MotionService_GetStatus(const MotionContext* ctx, motion_status_t* out);
 
 /** 原子消费一次即时状态上报请求。 */

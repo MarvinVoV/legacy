@@ -126,6 +126,7 @@ if (NOT CMCAR_SONAR_ENABLED)
     target_compile_definitions(${PROJECT_NAME}.elf PRIVATE CMCAR_SONAR_DISABLED=1)
 endif ()
 
+target_include_directories(${PROJECT_NAME}.elf PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../serial_pkt_protocol/shared")
 target_link_libraries(${PROJECT_NAME}.elf m)
 
 set(HEX_FILE ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.hex)

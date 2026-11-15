@@ -28,4 +28,4 @@
 当前没有说话人识别，默认household是家庭共享记忆，不会自动区分不同小朋友。ROLE/AGENTS和技能只由维护者修改；自进化是长期事实与经验的更新，不允许模型自行改变车辆权限、代码或角色规则。模板和规则可以进Git，实际家庭记忆不能进Git。
 
 
-灯光表达已接入同一个小鸭Agent：`express_emotion` / `clear_emotion`为本地Tools，不经MCP；流程见[lighting-emotion](skills/lighting-emotion/SKILL.md)。五种情绪为calm/happy/curious/comforting/sad。运动权限关闭时仍可表达情绪；车辆安全和状态灯效始终由STM32覆盖。
+灯光表达已接入同一个小鸭Agent：`express_emotion` / `clear_emotion`为本地Tools，不经MCP；流程见[lighting-emotion](skills/lighting-emotion/SKILL.md)。六种情绪为calm/happy/curious/comforting/sad/excited。运动权限关闭时仍可表达情绪；车辆安全和状态灯效始终由STM32覆盖。

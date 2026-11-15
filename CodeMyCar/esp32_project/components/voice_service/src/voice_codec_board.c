@@ -130,6 +130,19 @@ static esp_err_t board_write(voice_codec_t *codec, const int16_t *src,
     return ESP_OK;
 }
 
+static esp_err_t board_set_muted(voice_codec_t *codec, bool muted)
+{
+    board_impl_t *impl = codec->impl;
+    /* The codec wrapper returns OK even if the chip driver write fails.
+     * Verify ES8311 DAC_REG31 mute bits on each transition. */
+    const int mask = 0x60;
+    int reg = 0;
+    if (esp_codec_dev_set_out_mute(impl->out, muted) != ESP_CODEC_DEV_OK ||
+        esp_codec_dev_read_reg(impl->out, 0x31, &reg) != ESP_CODEC_DEV_OK ||
+        (reg & mask) != (muted ? mask : 0)) return ESP_FAIL;
+    return ESP_OK;
+}
+
 static void board_set_volume(voice_codec_t *codec, int volume)
 {
     if (codec == NULL) return;
@@ -190,6 +203,7 @@ static void board_destroy(voice_codec_t *codec)
 static const voice_codec_ops_t s_board_ops = {
     .read = board_read,
     .write = board_write,
+    .set_muted = board_set_muted,
     .set_volume = board_set_volume,
     .destroy = board_destroy,
 };
@@ -271,7 +285,7 @@ static esp_err_t board_init_i2s(board_impl_t *impl)
     return i2s_channel_enable(impl->tx);
 }
 
-static esp_err_t board_init_codecs(board_impl_t *impl)
+static esp_err_t board_init_codecs(board_impl_t *impl, const char **stage)
 {
     audio_codec_i2s_cfg_t i2s_cfg = {
         .port = BOARD_I2S_PORT,
@@ -288,6 +302,7 @@ static esp_err_t board_init_codecs(board_impl_t *impl)
         .bus_handle = impl->bus,
         .clock_speed_hz = BOARD_I2C_HZ,
     };
+    *stage = "es8311_create";
     impl->out_ctrl = audio_codec_new_i2c_ctrl(&out_i2c);
     if (impl->out_ctrl == NULL) return ESP_ERR_NO_MEM;
     impl->gpio_if = audio_codec_new_gpio();
@@ -318,6 +333,7 @@ static esp_err_t board_init_codecs(board_impl_t *impl)
         .bus_handle = impl->bus,
         .clock_speed_hz = BOARD_I2C_HZ,
     };
+    *stage = "es7210_create";
     impl->in_ctrl = audio_codec_new_i2c_ctrl(&in_i2c);
     if (impl->in_ctrl == NULL) return ESP_ERR_NO_MEM;
     es7210_codec_cfg_t in_cfg = {
@@ -339,7 +355,7 @@ static esp_err_t board_init_codecs(board_impl_t *impl)
     return ESP_OK;
 }
 
-static esp_err_t board_open_streams(board_impl_t *impl)
+static esp_err_t board_open_streams(board_impl_t *impl, const char **stage)
 {
     /* 32-bit slots are mandatory: the TDM RX frame is 64 bits and forces the
      * paired TX to 32-bit slots; ES8311 must agree or it plays at 2x rate. */
@@ -350,12 +366,14 @@ static esp_err_t board_open_streams(board_impl_t *impl)
         .sample_rate = BOARD_RATE,
         .mclk_multiple = 0,
     };
+    *stage = "es8311_open";
     int ret = esp_codec_dev_open(impl->out, &out_fs);
     if (ret != ESP_CODEC_DEV_OK) {
         ESP_LOGE(TAG, "ES8311 open failed: %d", ret);
         return ESP_FAIL;
     }
-    (void)esp_codec_dev_set_out_mute(impl->out, false);
+    /* Leave the DAC silent through input setup and AFE/model startup. */
+    (void)esp_codec_dev_set_out_mute(impl->out, true);
     esp_err_t err = esp_codec_dev_set_out_vol(impl->out,
                                               CONFIG_CMCAR_VOICE_BOARD_VOLUME) ==
                             ESP_CODEC_DEV_OK
@@ -370,11 +388,13 @@ static esp_err_t board_open_streams(board_impl_t *impl)
         .sample_rate = BOARD_RATE,
         .mclk_multiple = 0,
     };
+    *stage = "es7210_open";
     ret = esp_codec_dev_open(impl->in, &in_fs);
     if (ret != ESP_CODEC_DEV_OK) {
         ESP_LOGE(TAG, "ES7210 open failed: %d", ret);
         return ESP_FAIL;
     }
+    *stage = "es7210_mic_gain";
     ret = impl->in_codec->set_mic_gain(impl->in_codec,
                                     (float)CONFIG_CMCAR_VOICE_BOARD_INPUT_GAIN_DB);
     if (ret != ESP_CODEC_DEV_OK) {
@@ -382,11 +402,13 @@ static esp_err_t board_open_streams(board_impl_t *impl)
         return ESP_FAIL;
     }
 #if CONFIG_CMCAR_VOICE_AEC
+    *stage = "es7210_reference_gain";
     ret = impl->in_codec->set_mic_channel_gain(impl->in_codec,
         1u << CONFIG_CMCAR_VOICE_BOARD_REFERENCE_ADC_CHANNEL,
         (float)CONFIG_CMCAR_VOICE_BOARD_REFERENCE_GAIN_DB);
     if (ret != ESP_CODEC_DEV_OK) return ESP_FAIL;
 #endif
+    if (err != ESP_OK) *stage = "es8311_volume";
     return err;
 }
 
@@ -413,10 +435,11 @@ esp_err_t voice_codec_board_probe_gains(voice_codec_t *codec)
     return ret ? ESP_FAIL : ESP_OK;
 }
 
-esp_err_t voice_codec_board_init(voice_codec_t **out)
+esp_err_t voice_codec_board_init(voice_codec_t **out, const char **stage)
 {
     if (out == NULL) return ESP_ERR_INVALID_ARG;
     *out = NULL;
+    *stage = "codec_pins";
     if (!board_pins_valid()) {
         ESP_LOGE(TAG, "Invalid board pins or collision with control UART");
         return ESP_ERR_INVALID_ARG;
@@ -424,6 +447,7 @@ esp_err_t voice_codec_board_init(voice_codec_t **out)
     if (CONFIG_CMCAR_VOICE_BOARD_MIC_CHANNEL != 0 &&
         CONFIG_CMCAR_VOICE_BOARD_MIC_CHANNEL != 2) return ESP_ERR_INVALID_ARG;
 
+    *stage = "codec_allocation";
     voice_codec_t *codec = calloc(1, sizeof(*codec));
     board_impl_t *impl = calloc(1, sizeof(*impl));
     if (codec == NULL || impl == NULL) {
@@ -443,6 +467,7 @@ esp_err_t voice_codec_board_init(voice_codec_t **out)
         .pull_down_en = GPIO_PULLDOWN_DISABLE,
         .intr_type = GPIO_INTR_DISABLE,
     };
+    *stage = "amplifier_gpio";
     err = gpio_config(&pa_cfg);
     if (err != ESP_OK) goto fail;
     gpio_set_level(PIN_PA, 0);
@@ -457,15 +482,19 @@ esp_err_t voice_codec_board_init(voice_codec_t **out)
         .glitch_ignore_cnt = 7,
         .flags.enable_internal_pullup = true,
     };
+    *stage = "codec_i2c_bus";
     err = i2c_new_master_bus(&bus_cfg, &impl->bus);
     if (err != ESP_OK) goto fail;
 
+    *stage = "codec_i2s_bus";
     err = board_init_i2s(impl);
     if (err != ESP_OK) goto fail;
 
-    err = board_init_codecs(impl);
+    *stage = "codec_i2s_interface";
+    err = board_init_codecs(impl, stage);
     if (err != ESP_OK) goto fail;
 
+    *stage = "codec_dma_buffers";
     impl->in_buf = heap_caps_malloc(
         BOARD_FRAMES * BOARD_IN_CHANNELS * sizeof(int16_t),
         MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
@@ -477,7 +506,11 @@ esp_err_t voice_codec_board_init(voice_codec_t **out)
         goto fail;
     }
 
-    err = board_open_streams(impl);
+    err = board_open_streams(impl, stage);
+    if (err != ESP_OK) goto fail;
+
+    *stage = "es8311_idle_mute";
+    err = board_set_muted(codec, true);
     if (err != ESP_OK) goto fail;
 
     /* The amplifier is enabled only after the codec is configured, so a reset
@@ -518,8 +551,9 @@ fail:
 
 #else /* !ESP32S3 */
 
-esp_err_t voice_codec_board_init(voice_codec_t **out)
+esp_err_t voice_codec_board_init(voice_codec_t **out, const char **stage)
 {
+    *stage = "board_unsupported";
     if (out != NULL) *out = NULL;
     return ESP_ERR_NOT_SUPPORTED;
 }

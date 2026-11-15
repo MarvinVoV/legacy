@@ -58,7 +58,7 @@ static void light_run(void *arg)
     LightRenderer renderer={0};
     LightLocal local={0};
     uint32_t lastReport=0u,lastLog=0u;
-    uint8_t lastReportedMode=255u;
+    uint8_t lastReportedMode=255u,lastReportedVoice=255u;
     for (;;) {
         const uint32_t wake=osKernelGetTickCount(),now=HAL_GetTick();
         read_local(&local,now);
@@ -66,10 +66,10 @@ static void light_run(void *arg)
         LightingRuntime_GetHints(&hints);
         LedRgb pixels[WS2812_LED_COUNT];
         Lighting_Render(&renderer,&hints,&local,now,pixels,&view);
-        DisplayEye_SetMood(view.mood);
+        DisplayEye_SetExpression(view.mood,view.voice);
         (void)LedStrip_Show(pixels);
-        if (now-lastReport>=1000u || (view.mode!=lastReportedMode && now-lastReport>=100u)) {
-            lastReport=now;lastReportedMode=view.mode;
+        if (now-lastReport>=1000u || ((view.mode!=lastReportedMode || view.voice!=lastReportedVoice) && now-lastReport>=100u)) {
+            lastReport=now;lastReportedMode=view.mode;lastReportedVoice=view.voice;
             uint8_t status[LIGHTING_STATUS_SIZE];
             Lighting_PackStatus(&hints,&view,pixels,now,status);
             (void)UART_Send_Frame(PROTOCOL_TYPE_VISUAL,0u,0u,status,sizeof(status));

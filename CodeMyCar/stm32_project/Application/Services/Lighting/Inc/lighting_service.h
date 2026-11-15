@@ -7,9 +7,7 @@
 #define LIGHTING_COMMAND_SIZE 20u
 #define LIGHTING_STATUS_SIZE 44u
 
-typedef enum { LIGHT_CALM, LIGHT_HAPPY, LIGHT_CURIOUS, LIGHT_COMFORTING, LIGHT_SAD, LIGHT_MOOD_COUNT } LightMood;
-typedef enum { LIGHT_VOICE_IDLE, LIGHT_VOICE_WAKE, LIGHT_VOICE_LISTEN, LIGHT_VOICE_THINK,
-               LIGHT_VOICE_SPEAK, LIGHT_VOICE_COUNT } LightVoice;
+#include "visual_phase.h"
 typedef enum { LIGHT_EXPRESSION=1, LIGHT_VOICE=2, LIGHT_LEVEL=3, LIGHT_CLEAR=4 } LightHintKind;
 typedef enum { LIGHT_IDLE, LIGHT_FORWARD, LIGHT_REVERSE, LIGHT_LEFT, LIGHT_RIGHT,
                LIGHT_BRAKE, LIGHT_FAULT, LIGHT_WARNING } LightMode;
@@ -28,7 +26,7 @@ typedef struct {
 typedef struct {
     uint32_t session, epoch;
     bool epochKnown;
-    LightHint mood, voice, level;
+    LightHint mood, voice, level, devicePhase;
     uint16_t accepted, rejected;
 } LightHints;
 typedef struct {

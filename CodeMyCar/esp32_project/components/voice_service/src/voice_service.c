@@ -4,6 +4,7 @@
 #include "voice_service.h"
 #include "voice_audio.h"
 #include "voice_output.h"
+#include "voice_visual_state.h"
 #include "voice_state.h"
 #include "voice_transport.h"
 #include "voice_wake_ack.h"
@@ -34,6 +35,25 @@
 
 static const char *TAG = "voice";
 static atomic_int s_state = VOICE_STARTING;
+/* Single startup writer publishes the immutable error detail before this flag. */
+static atomic_bool s_startup_finished;
+static const char *s_error_stage;
+static esp_err_t s_error_code;
+
+voice_health_t voice_service_health(void)
+{
+#if !CONFIG_CMCAR_VOICE_ENABLED
+    return (voice_health_t){.startup="disabled", .state="disabled"};
+#else
+    if (!atomic_load(&s_startup_finished))
+        return (voice_health_t){.startup="starting", .state="starting"};
+    voice_state_t state = atomic_load(&s_state);
+    const char *startup = state == VOICE_DISABLED ? "failed" :
+                          s_error_code != ESP_OK ? "degraded" : "ready";
+    return (voice_health_t){startup, voice_state_name(state), s_error_stage, s_error_code};
+#endif
+}
+
 static atomic_bool s_manual_trigger;
 #if CONFIG_CMCAR_VOICE_CODEC_BOARD
 static atomic_bool s_gain_probe;
@@ -48,6 +68,12 @@ static bool set_state(voice_state_t next)
         return false;
     }
     atomic_store(&s_state, next);
+    switch (next) {
+    case VOICE_CONNECTING: voice_visual_set_base(LIGHT_VOICE_WAKE); break;
+    case VOICE_LISTENING: voice_visual_set_base(LIGHT_VOICE_LISTEN); break;
+    case VOICE_PROCESSING: voice_visual_set_base(LIGHT_VOICE_THINK); break;
+    default: voice_visual_set_base(LIGHT_VOICE_IDLE); break;
+    }
     voice_audio_set_active(next != VOICE_IDLE);
     ESP_LOGI(TAG, "state %s -> %s", voice_state_name(previous), voice_state_name(next));
     return true;
@@ -361,7 +387,7 @@ static void perform_conversation(void)
 static void voice_task(void *arg)
 {
     (void)arg;
-    (void)set_state(VOICE_IDLE);
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 #if CONFIG_CMCAR_VOICE_WAKE_ENABLED
     voice_frame_t frame;
     unsigned received = 0;
@@ -496,13 +522,17 @@ static void console_task(void *arg)
 esp_err_t voice_service_start(void)
 {
     if (atomic_load(&s_state) != VOICE_STARTING) return ESP_ERR_INVALID_STATE;
-    esp_err_t err = voice_audio_init();
+    const char *stage = "audio_init";
+    esp_err_t err = voice_audio_init(&stage);
     if (err != ESP_OK) goto disabled;
     err = voice_output_init(voice_audio_codec());
     if (err != ESP_OK) {
+        s_error_stage = "playback_init";
+        s_error_code = err;
         ESP_LOGW(TAG, "Playback unavailable (%s); ASR/control continue",
                  esp_err_to_name(err));
     }
+    stage = "session_task";
     TaskHandle_t supervisor = NULL;
     if (xTaskCreate(voice_task, "voice_session", VOICE_TASK_STACK, NULL,
                     TASK_PRIO_VOICE_NETWORK, &supervisor) != pdPASS) {
@@ -511,7 +541,8 @@ esp_err_t voice_service_start(void)
         voice_audio_destroy();
         goto disabled;
     }
-    err = voice_audio_start();
+    stage = "audio_start";
+    err = voice_audio_start(&stage);
     if (err != ESP_OK) {
         vTaskDelete(supervisor);
         voice_output_destroy();
@@ -521,9 +552,15 @@ esp_err_t voice_service_start(void)
     if (xTaskCreate(console_task, "voice_console", 4096, NULL,
                     TASK_PRIO_VOICE_CONSOLE, NULL) != pdPASS)
         ESP_LOGW(TAG, "Serial bypass unavailable; voice remains operational");
+    (void)set_state(VOICE_IDLE);
+    atomic_store(&s_startup_finished, true);
+    xTaskNotifyGive(supervisor);
     return ESP_OK;
 disabled:
+    s_error_stage = stage;
+    s_error_code = err;
     atomic_store(&s_state, VOICE_DISABLED);
+    atomic_store(&s_startup_finished, true);
     ESP_LOGE(TAG, "Voice disabled (%s); control bridge remains available", esp_err_to_name(err));
     return err;
 }

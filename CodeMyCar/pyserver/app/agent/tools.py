@@ -38,7 +38,7 @@ def build_lighting_tools(gateway: LightingGateway) -> list:
     async def express_emotion(
         emotion: str, runtime: ToolRuntime[AgentContext], intensity: int = 100, duration_ms: int = 3000
     ) -> dict:
-        """Express a mood using body lights: calm, happy, curious, comforting or sad.
+        """Express a mood with facial expression and body lights: calm, happy, curious, comforting, sad or excited.
 
         Decorative only; no movement. Intensity 0..100, duration 100..10000ms.
         STM32 owns colors/brightness and local motion/brake/fault indications win.

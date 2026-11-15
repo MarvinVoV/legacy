@@ -66,7 +66,7 @@ def main():
             else:raise AssertionError("lighting/device readiness timeout")
             report["initial_stop"]=stop()
             epoch=(state["lighting"]["epoch"]+1)&0xFFFFFFFF
-            for mood in ("happy","curious","comforting","sad","calm"):
+            for mood in ("happy","curious","comforting","sad","excited","calm"):
                 since=time.monotonic()
                 hint({"emotion":mood,"duration_ms":2000,"epoch":epoch})
                 data=light(lambda d:d["emotion"]==mood and d["flags"]&4,since)

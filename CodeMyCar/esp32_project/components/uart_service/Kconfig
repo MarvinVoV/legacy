@@ -27,11 +27,6 @@ menu "UART Configuration"
         default 512
         range 0 4096
 
-    config CMCAR_UART_RINGBUF_SIZE
-        int "Raw data ring buffer size (bytes)"
-        default 1024
-        range 256 4096
-
     config CMCAR_UART_TX_QUEUE_DEPTH
         int "TX queue depth (frames)"
         default 8

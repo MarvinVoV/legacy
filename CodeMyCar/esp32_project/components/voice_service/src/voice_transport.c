@@ -13,6 +13,7 @@
 #include "sdkconfig.h"
 #include "task_priorities.h"
 #include "voice_output.h"
+#include "voice_visual_state.h"
 
 struct voice_transport {
     esp_websocket_client_handle_t client;
@@ -28,7 +29,7 @@ struct voice_transport {
     int64_t barge_started;
     int local_stop_ms;
     bool barge_tail_pending;
-    uint32_t turn, seq, cancelled_turn, epoch;
+    uint32_t turn, seq, cancelled_turn, epoch, visual_turn;
     bool dropping, reply_active, ack_enabled, finish_pending, stop_pending;
     int16_t speak_pcm[1025];
 };
@@ -79,6 +80,14 @@ static void on_event(void *arg, esp_event_base_t base, int32_t id, void *payload
             data->payload_offset, data->payload_len, &binary);
         if (events) {
             xSemaphoreTake(t->guard, portMAX_DELAY);
+            if (events & (VOICE_PEER_THINK | VOICE_PEER_LISTEN)) {
+                if (t->message.turn >= t->visual_turn && t->message.turn >= t->turn &&
+                    t->message.turn > t->cancelled_turn) {
+                    t->visual_turn = t->message.turn;
+                    voice_visual_set_base(events & VOICE_PEER_THINK ? LIGHT_VOICE_THINK : LIGHT_VOICE_LISTEN);
+                }
+                events &= ~(VOICE_PEER_THINK | VOICE_PEER_LISTEN);
+            }
             if (events & VOICE_PEER_READY) {
                 atomic_store(&t->barge_enabled, t->message.barge_in);
                 t->ack_enabled = t->message.playback_ack;
@@ -117,6 +126,7 @@ static void on_event(void *arg, esp_event_base_t base, int32_t id, void *payload
                 t->reply_active = t->finish_pending = false;
                 atomic_store(&t->speaking, false);
                 voice_output_flush();
+                voice_visual_set_base(LIGHT_VOICE_LISTEN);
                 t->stop_pending = t->ack_enabled;
             } else if (events & VOICE_PEER_STOP) {
                 events &= ~VOICE_PEER_STOP; /* stale response: no mic reset either */
@@ -196,6 +206,7 @@ esp_err_t voice_transport_open(voice_transport_t **out, bool continuous, bool on
         cJSON_AddStringToObject(start, "device", CONFIG_CMCAR_DEVICE_ID) &&
         cJSON_AddNumberToObject(start, "rate", 16000) &&
         cJSON_AddNumberToObject(start, "protocol", 2) &&
+        cJSON_AddBoolToObject(start, "turn_phase", mode == VOICE_SESSION_CONVERSATION) &&
         cJSON_AddBoolToObject(start, "playback_ack", voice_output_enabled()) &&
         cJSON_AddNumberToObject(start, "ch", 1) &&
         cJSON_AddNumberToObject(start, "bits", 16) &&
@@ -280,6 +291,7 @@ esp_err_t voice_transport_barge_in(voice_transport_t *t)
     t->reply_active = t->finish_pending = false;
     atomic_store(&t->speaking, false);
     voice_output_flush();
+    voice_visual_set_base(LIGHT_VOICE_LISTEN);
     uint32_t turn = t->turn;
     xSemaphoreGive(t->guard);
     char message[96];

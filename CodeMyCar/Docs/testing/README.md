@@ -37,6 +37,7 @@ python3 tools/regress.py lighting display   # 只测 STM32 灯带和圆屏
 | 入口 | 执行条件与用途 |
 |---|---|
 | [STM32 实机脚本](../../stm32_project/tests/hil) | 先确认板子、接线和供电状态。control/goal/stop-burst 涉及执行器，session-restart 涉及复位；power、lighting 和 runtime 的默认模式也会发 STOP。检查同一会话的 ACK、随后到达的遥测以及实物动作。详见[控制 HIL](Control-Test-Guide-For-Agents.md)与[灯光及语音 HIL](Lighting-And-Voice-Regression-Guide-2026-11-13.md) |
+| [STOP 尾延迟与圆屏 CPU 基准](Dual-MCU-Performance-Review-2026-11-15.md) | 拥塞探针发送 ping 与 STOP；圆屏性能脚本只读已有 pyserver 日志，按同一动效窗口统计，分别复用 |
 | [圆屏观察工具](../../stm32_project/tools/display_regression.py) | 默认观察遥测，选择 `--cycle-moods` 会实际改变表情；帧率、残影和闪烁另在板上验收 |
 | [服务端脚本与 fixtures](../../pyserver/scripts) | 真实模型+模拟车体会访问付费 API。语音探针、麦克风、喇叭、真实 ASR/TTS、UART 压测、电机脚本按对应目的独立运行 |
 | [前端 mock 浏览器冒烟](../../frontend/e2e/vue.spec.ts) | 在 frontend 首次执行 `npx playwright install chromium`，构建后执行 `CI=1 npm run test:e2e -- --project=chromium`，需可用浏览器和本机端口 4173。复用已安装的 Google Chrome 时可设置 `PLAYWRIGHT_CHROMIUM_CHANNEL=chrome` |

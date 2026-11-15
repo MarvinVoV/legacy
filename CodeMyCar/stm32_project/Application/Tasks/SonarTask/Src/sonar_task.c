@@ -21,11 +21,17 @@
 #include "ultrasonic_config.h"
 #include "buzzer.h"
 #include "control_critical.h"
+#include "sonar_config.h"
+#include "system_init.h"
+#include "queue.h"
 
 static osThreadId_t s_taskHandle = NULL;
 
-/* 运行期开关：上电默认开启（安全优先），服务端可通过 CONFIG 帧临时关闭 */
-static volatile bool s_runtime_enabled = true;
+#define HAS_SONAR (ULTRASONIC_FRONT_ENABLED || ULTRASONIC_REAR_ENABLED)
+static SonarConfig config = {.enabled = HAS_SONAR};
+static StaticQueue_t request_queue_storage;
+static SonarRequest request_slots[4];
+static QueueHandle_t request_queue;
 
 static SafetyChannel s_frontSafety;
 static SafetyChannel s_rearSafety;
@@ -37,6 +43,11 @@ static void publish_safety(void)
     const uint32_t key = control_critical_enter();
     s_publishedFront = s_frontSafety;
     s_publishedRear = s_rearSafety;
+    /* Until the first new sample outside the startup path, preserve hard braking. */
+    if (config.enabled && config.generation) {
+        if (s_publishedFront.enabled && !s_publishedFront.everValid) s_publishedFront.fault = 1;
+        if (s_publishedRear.enabled && !s_publishedRear.everValid) s_publishedRear.fault = 1;
+    }
     control_critical_exit(key);
 }
 
@@ -44,15 +55,21 @@ static uint8_t s_txSeq = 0u;
 static void    send_sensor_frame(void);
 static void    log_status(void);
 
-void SonarTask_Init(void)
+static void reset_windows(void)
 {
-    safety_channel_init(&s_frontSafety, ULTRASONIC_FRONT_ENABLED && s_runtime_enabled,
+    safety_channel_init(&s_frontSafety, ULTRASONIC_FRONT_ENABLED && config.enabled,
                         FRONT_OFFSET_CM, SAFETY_STOP_CM, SAFETY_SLOW_CM);
-    safety_channel_init(&s_rearSafety, ULTRASONIC_REAR_ENABLED && s_runtime_enabled,
+    safety_channel_init(&s_rearSafety, ULTRASONIC_REAR_ENABLED && config.enabled,
                         REAR_OFFSET_CM, SAFETY_STOP_CM, SAFETY_SLOW_CM);
     s_frontSafety.startedMs = s_rearSafety.startedMs = HAL_GetTick();
     publish_safety();
 
+}
+
+void SonarTask_Init(void)
+{
+    reset_windows();
+    request_queue = xQueueCreateStatic(4, sizeof(SonarRequest), (uint8_t *)request_slots, &request_queue_storage);
     const osThreadAttr_t attrs = {
         .name       = "SonarTask",
         .stack_size = 512 * 4,
@@ -65,21 +82,50 @@ void SonarTask_Init(void)
     }
 }
 
-void SonarTask_SetEnabled(bool on)
+void SonarTask_Submit(const uint8_t *payload, uint16_t len)
 {
-    s_runtime_enabled = on;
-    safety_channel_init(&s_frontSafety, ULTRASONIC_FRONT_ENABLED && on,
-                        FRONT_OFFSET_CM, SAFETY_STOP_CM, SAFETY_SLOW_CM);
-    safety_channel_init(&s_rearSafety, ULTRASONIC_REAR_ENABLED && on,
-                        REAR_OFFSET_CM, SAFETY_STOP_CM, SAFETY_SLOW_CM);
-    s_frontSafety.startedMs = s_rearSafety.startedMs = HAL_GetTick();
-    publish_safety();
-    LOG_INFO(LOG_MODULE_SENSOR, "sonar runtime %s", on ? "enabled" : "disabled");
+    SonarRequest request;
+    if (request_queue && sonar_decode_request(payload, len, &request) &&
+        xQueueSend(request_queue, &request, 0) != pdPASS) {
+        LOG_WARN(LOG_MODULE_SENSOR, "sonar config queue full");
+    }
 }
 
-bool SonarTask_IsEnabled(void)
+static void apply_request(const SonarRequest *request, UltrasonicSensor *front, UltrasonicSensor *rear)
 {
-    return s_runtime_enabled;
+    MotionContext *motion = System_GetContext()->motionContext;
+    bool locked = false;
+    bool parked = false;
+    if (request->op == SONAR_SET && !request->enable && config.enabled && motion) {
+        locked = osMutexAcquire(motion->targetMutex, 0) == osOK;
+        if (locked) parked = MotionService_IsParkedLocked(motion);
+    }
+    if (sonar_apply(&config, request, HAL_GetTick(), HAS_SONAR, parked)) {
+        const uint32_t key = control_critical_enter();
+        front->phase = rear->phase = US_PHASE_IDLE;
+        front->result = rear->result = 0;
+        control_critical_exit(key);
+        Buzzer_Set(false);
+        reset_windows();
+    }
+    if (locked) osMutexRelease(motion->targetMutex);
+}
+
+static bool channel_ready(const SafetyChannel *ch, uint32_t now)
+{
+    return !ch->enabled || (ch->everValid && !ch->fault && now-ch->lastValidMs <= SAFETY_DATA_TIMEOUT_MS);
+}
+
+static void send_config_status(uint32_t now)
+{
+    const bool ready = config.enabled && channel_ready(&s_frontSafety, now) && channel_ready(&s_rearSafety, now);
+    uint8_t payload[SONAR_STATUS_SIZE] = {1u, (HAS_SONAR ? SONAR_SUPPORTED : 0u) |
+        (config.enabled ? SONAR_ENABLED : 0u) | (ready ? SONAR_READY : 0u), config.result, 0u};
+    sonar_write32(payload+4, config.epoch);
+    sonar_write32(payload+8, config.generation);
+    sonar_write32(payload+12, config.request_id);
+    sonar_write32(payload+16, now);
+    UART_Send_Frame(SONAR_STATUS_TYPE, 0, 0, payload, sizeof(payload));
 }
 
 void SonarTask_doTask(void* arg)
@@ -97,11 +143,14 @@ void SonarTask_doTask(void* arg)
     {
         const uint32_t now = HAL_GetTick();
         int16_t        distance;
+        SonarRequest request;
+        const bool received = request_queue && xQueueReceive(request_queue, &request, 0) == pdPASS;
+        if (received) apply_request(&request, front, rear);
+        if (received || tick % US_LOG_DIVIDER == 0) send_config_status(now);
 
         /* 运行期关闭：不触发、不上报、安全通道保持放行 */
-        if (!s_runtime_enabled)
+        if (!config.enabled)
         {
-            publish_safety();
             tick++;
             vTaskDelayUntil(&lastWake, period);
             continue;
@@ -156,18 +205,6 @@ void SonarTask_doTask(void* arg)
 
         tick++;
         vTaskDelayUntil(&lastWake, period);
-    }
-}
-
-void Sonar_GetSafety(const SafetyChannel** front, const SafetyChannel** rear)
-{
-    if (front != NULL)
-    {
-        *front = &s_frontSafety;
-    }
-    if (rear != NULL)
-    {
-        *rear = &s_rearSafety;
     }
 }
 

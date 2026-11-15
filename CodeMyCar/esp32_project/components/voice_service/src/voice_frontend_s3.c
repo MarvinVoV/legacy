@@ -53,14 +53,18 @@ void voice_frontend_destroy(void)
     models = NULL;
 }
 
-bool voice_frontend_init(void)
+esp_err_t voice_frontend_init(const char **stage)
 {
-    if (afe) return true;
+    if (afe) return ESP_OK;
+    esp_err_t err = ESP_ERR_NOT_FOUND;
+    *stage = "model_partition";
     models = esp_srmodel_init("model");
     /* Match the configured pretrained phrase exactly. Never fall back to an
      * unrelated model if the model partition and application disagree. */
     char *wake = models ? esp_srmodel_filter(models, "wn9l_", CONFIG_CMCAR_VOICE_S3_WAKE_MODEL) : NULL;
     if (!wake && models) wake = esp_srmodel_filter(models, "wn9_", CONFIG_CMCAR_VOICE_S3_WAKE_MODEL);
+    if (!models) goto fail;
+    *stage = "wake_model";
     if (!wake) goto fail;
 #if CONFIG_CMCAR_VOICE_AEC
     const char *input_format = "MR"; /* microphone, playback reference */
@@ -78,6 +82,8 @@ bool voice_frontend_init(void)
     /* Full-duplex AFE: AEC NLP (residual echo suppression) is only effective
      * in the FD AEC modes; SR modes leave NLP_OFF and the echo keeps
      * false-triggering VAD/wake during playback. */
+    *stage = "afe_config";
+    err = ESP_ERR_NO_MEM;
     afe_config_t *cfg = afe_config_init(input_format, models, AFE_TYPE_FD, mode);
     if (!cfg) goto fail;
 #if CONFIG_CMCAR_VOICE_AEC
@@ -112,7 +118,12 @@ bool voice_frontend_init(void)
     iface = esp_afe_handle_from_config(cfg);
     if (iface) afe = iface->create_from_config(cfg);
     afe_config_free(cfg);
-    if (!afe || iface->get_samp_rate(afe) != 16000) goto fail;
+    *stage = "afe_create";
+    err = ESP_FAIL;
+    if (!afe) goto fail;
+    *stage = "afe_format";
+    err = ESP_ERR_INVALID_SIZE;
+    if (iface->get_samp_rate(afe) != 16000) goto fail;
     int nch = iface->get_feed_channel_num(afe);
 #if CONFIG_CMCAR_VOICE_AEC
     if (nch != 2) goto fail;
@@ -125,6 +136,8 @@ bool voice_frontend_init(void)
     feed_samples = (size_t)count;
     feed_buffer = heap_caps_malloc(feed_samples * (size_t)feed_nch * sizeof(int16_t),
                                    MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    *stage = "afe_feed_buffer";
+    err = ESP_ERR_NO_MEM;
     if (!feed_buffer) goto fail;
     /* NS is bypassed while waiting for wake; enable only for the utterance. */
     if (DENOISE_ENABLED) iface->disable_ns(afe);
@@ -140,11 +153,11 @@ bool voice_frontend_init(void)
     ESP_LOGI(TAG, "ready 16kHz wake=%s feed=%u x %dch AEC=%s; workspace prefers PSRAM",
              wake, (unsigned)feed_samples, feed_nch,
              CONFIG_CMCAR_VOICE_AEC ? "on" : "off");
-    return true;
+    return ESP_OK;
 fail:
     ESP_LOGE(TAG, "AFE init failed: voice closed, control bridge remains available");
     voice_frontend_destroy();
-    return false;
+    return err;
 }
 
 bool voice_frontend_feed(const int16_t *pcm, size_t samples)

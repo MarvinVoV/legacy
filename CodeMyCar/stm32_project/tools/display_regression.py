@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Observe display telemetry; --cycle-moods explicitly switches five expressions.
+"""Observe display telemetry; --cycle-moods explicitly switches six expressions.
 Run from pyserver using its venv and PYTHONPATH=.; never sends motion commands.
 """
 import argparse
@@ -78,7 +78,7 @@ def main():
             if not ready.wait(5):
                 raise RuntimeError('MQTT subscription timeout')
             if args.cycle_moods:
-                for emotion in ('calm', 'happy', 'curious', 'comforting', 'sad'):
+                for emotion in ('calm', 'happy', 'curious', 'comforting', 'sad', 'excited'):
                     print(f'Expression: {emotion} (6 seconds)', flush=True)
                     hint({'emotion': emotion, 'duration_ms': 8000})
                     time.sleep(6)
@@ -103,7 +103,7 @@ def main():
             if args.cycle_moods:
                 observed = {int(match[1]) for line in logs
                             if (match := re.search(r'mood=(\d+)', line))}
-                if not set(range(5)).issubset(observed):
+                if not set(range(6)).issubset(observed):
                     raise RuntimeError(f'Missing firmware mood confirmations: {observed}')
             report['display_logs'], report['passed'] = logs, True
         except Exception as exc:

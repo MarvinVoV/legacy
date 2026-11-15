@@ -13,8 +13,10 @@
 #include "bridge.h"
 
 #include <string.h>
+#include <stdatomic.h>
 
 #include "bridge_codec.h"
+#include "bridge_receipts.h"
 #include "ack_manager.h"
 #include "cmcar_events.h"
 #include "cmcar_topics.h"
@@ -31,6 +33,7 @@
 #include "pkt_codec.h"
 #include "task_priorities.h"
 #include "uart_service.h"
+#include "voice_visual.h"
 
 static const char* TAG = "bridge";
 
@@ -54,18 +57,23 @@ static uint8_t s_stm32_protocol_version = 0;
 
 #define FRAME_QUEUE_DEPTH 64
 
-typedef struct
-{
-    pkt_frame_t frame;
-    uint32_t timestamp;
-    bool is_ack_echo;   /* true：本条是 ACK 回执（ack_seq 有效），非上行帧 */
-    uint8_t ack_seq;   /* 被确认的 seq */
-    uint8_t ack_status; /* STM32 返回的命令状态码（0=接受） */
-} bridge_frame_msg_t;
-
-static bridge_frame_msg_t s_frame_queue_storage[FRAME_QUEUE_DEPTH];
+static bridge_receipts_t s_receipts;
+static pkt_frame_t s_frame_queue_storage[FRAME_QUEUE_DEPTH];
 static StaticQueue_t s_frame_queue_struct;
-static QueueHandle_t s_frame_queue = NULL;
+static QueueHandle_t s_frame_queue;
+static uint8_t s_pong_storage[64];
+static StaticQueue_t s_pong_queue_struct;
+static QueueHandle_t s_pong_queue;
+static _Atomic(TaskHandle_t) s_uplink_handle;
+static atomic_bool s_status_due;
+static atomic_uint s_echo_full, s_stop_full, s_echo_pub_failed, s_pong_full;
+static atomic_uint s_frame_high_water;
+
+static void wake_uplink(void)
+{
+    TaskHandle_t worker = atomic_load(&s_uplink_handle);
+    if (worker) xTaskNotifyGive(worker);
+}
 
 /* 上行任务（静态分配） */
 #define BRIDGE_UP_STACK 3072
@@ -85,7 +93,7 @@ typedef struct
     char payload[DOWNLINK_PAYLOAD_MAX];
     size_t len;
     uint32_t receivedMs;
-    uint8_t kind;   /* 0=control，1=lighting，2=config */
+
 } downlink_msg_t;
 
 static downlink_msg_t s_downlink_storage[DOWNLINK_QUEUE_DEPTH];
@@ -100,10 +108,16 @@ static StaticQueue_t s_visual_queue_struct;
 static QueueHandle_t s_visual_queue;
 static StackType_t s_visual_stack[BRIDGE_DOWN_STACK/sizeof(StackType_t)];
 static StaticTask_t s_visual_tcb;
+static downlink_msg_t s_config_storage[4];
+static StaticQueue_t s_config_queue_struct;
+static QueueHandle_t s_config_queue;
 static uint32_t s_visual_event;
 
 /* ACK 重传扫描定时器（esp_timer，从 uplink 任务剥离，避免 publish 阻塞拖累重传时序） */
 static esp_timer_handle_t s_retransmit_timer = NULL;
+static TaskHandle_t s_retry_handle;
+static StackType_t s_retry_stack[BRIDGE_DOWN_STACK / sizeof(StackType_t)];
+static StaticTask_t s_retry_tcb;
 
 /* 状态上报定时器（周期发 CMCAR_TOPIC_STATUS） */
 static esp_timer_handle_t s_status_timer = NULL;
@@ -225,12 +239,12 @@ static void ack_collect_retry(const uint8_t* frame, size_t len, bool priority, v
 }
 
 /** 收到 ACK：清除对应 seq 的在途槽位 */
-static bool pending_clear(uint8_t wire_seq, uint8_t* out_client_seq)
+static bool pending_clear(uint8_t wire_seq, uint8_t* out_client_seq, bool* priority)
 {
     bool found = false;
     if (xSemaphoreTake(s_ack_mutex, pdMS_TO_TICKS(10)) == pdTRUE)
     {
-        found = ackmgr_clear_mapped(&s_ackmgr, wire_seq, out_client_seq);
+        found = ackmgr_take(&s_ackmgr, wire_seq, out_client_seq, priority);
         xSemaphoreGive(s_ack_mutex);
     }
     return found;
@@ -299,14 +313,6 @@ static void publish_pong(uint8_t seq)
 static void process_downlink(const char* payload, size_t payload_len)
 {
     ESP_LOGI(TAG, "CMD downlink len=%zu", payload_len);
-
-    /* ping：MQTT 链路自检，直接回 pong，不进入 UART/STM32 路径 */
-    uint8_t ping_seq = 0;
-    if (bridge_json_is_ping(payload, payload_len, &ping_seq))
-    {
-        publish_pong(ping_seq);
-        return;
-    }
 
     /* JSON → 9 字节 ControlCmd */
     uint8_t cmd_payload[BRIDGE_CONTROL_CMD_SIZE];
@@ -393,25 +399,43 @@ static void process_downlink(const char* payload, size_t payload_len)
     }
 }
 
+/* No ACK_REQ and no reservation in the motion retransmission table. */
+static void send_sonar_frame(const pkt_frame_t *frame)
+{
+    uint8_t wire[PKT_MAX_FRAME_SIZE];
+    size_t length=0;
+    if (pkt_encode(frame,wire,sizeof(wire),&length)!=ESP_OK ||
+        uart_service_send(wire,length)!=ESP_OK)
+        ESP_LOGW(TAG,"Sonar UART enqueue failed");
+}
+
 static void bridge_visual_task(void *argument)
 {
     (void)argument;
     downlink_msg_t msg;
+    LightVoice previous = LIGHT_VOICE_IDLE;
+    uint32_t last_phase_ms = 0;
     for (;;) {
-        if (xQueueReceive(s_visual_queue,&msg,portMAX_DELAY)!=pdTRUE) continue;
-        if (msg.kind == 2u)
-        {
-            /* 运行期配置：不参与运动 ACK/租约，只回一帧 ACK */
-            pkt_frame_t cfg={.type=PKT_TYPE_CONFIG,.seq=(uint8_t)(++s_visual_event),
-                             .flags=PKT_FLAG_ACK_REQ,.payload_len=BRIDGE_CONFIG_CMD_SIZE};
-            if (bridge_json_to_config(msg.payload,msg.len,cfg.payload)==BRIDGE_CONFIG_CMD_SIZE)
-            {
-                uint8_t wire[PKT_MAX_FRAME_SIZE];size_t length=0;
-                if (pkt_encode(&cfg,wire,sizeof(wire),&length)==ESP_OK)
-                    (void)uart_service_send(wire,length);
+        const LightVoice phase = voice_visual_current();
+        const uint32_t now = now_ms();
+        if (phase != previous || (phase != LIGHT_VOICE_IDLE && now-last_phase_ms >= VISUAL_PHASE_REFRESH_MS)) {
+            pkt_frame_t frame = {.type=PKT_TYPE_VISUAL,.payload_len=BRIDGE_LIGHTING_CMD_SIZE};
+            visual_pack_phase(frame.payload,phase,s_session_id,++s_visual_event);
+            uint8_t wire[PKT_MAX_FRAME_SIZE];
+            size_t length=0;
+            if (pkt_encode(&frame,wire,sizeof(wire),&length)==ESP_OK &&
+                uart_service_send(wire,length)==ESP_OK) {
+                previous=phase;
+                last_phase_ms=now;
             }
-            continue;
         }
+        if (xQueueReceive(s_config_queue,&msg,0)==pdTRUE) {
+            pkt_frame_t cfg={.type=SONAR_REQUEST_TYPE,.payload_len=SONAR_SET_SIZE};
+            if (now_ms()-msg.receivedMs < SONAR_MAX_AGE_MS &&
+                bridge_json_to_config(msg.payload,msg.len,s_session_id,cfg.payload)==SONAR_SET_SIZE)
+                send_sonar_frame(&cfg);
+        }
+        if (xQueueReceive(s_visual_queue,&msg,pdMS_TO_TICKS(50))!=pdTRUE) continue;
         pkt_frame_t frame={.type=PKT_TYPE_VISUAL,.payload_len=BRIDGE_LIGHTING_CMD_SIZE};
         if (!bridge_json_to_lighting(msg.payload,msg.len,s_session_id,++s_visual_event,frame.payload)) continue;
         const uint32_t age=now_ms()-msg.receivedMs;
@@ -444,19 +468,24 @@ static void on_mqtt_data(const char* topic, size_t topic_len,
         return;
     }
 
+    uint8_t ping_seq;
+    if (bridge_json_is_ping((const char*)payload, payload_len, &ping_seq)) {
+        if (xQueueSend(s_pong_queue, &ping_seq, 0) == pdPASS) wake_uplink();
+        else atomic_fetch_add(&s_pong_full, 1);
+        return;
+    }
     downlink_msg_t msg;
     msg.receivedMs=now_ms();
     msg.len = payload_len;
-    msg.kind = 0u;
     memcpy(msg.payload, payload, payload_len);
     if (bridge_json_is_lighting((const char*)payload,payload_len)) {
-        msg.kind = 1u;
         (void)xQueueOverwrite(s_visual_queue,&msg);
         return;
     }
     if (bridge_json_is_config((const char*)payload,payload_len)) {
-        msg.kind = 2u;
-        (void)xQueueOverwrite(s_visual_queue,&msg);
+        if (xQueueSend(s_config_queue,&msg,0)!=pdPASS) {
+            ESP_LOGW(TAG, "Sonar config queue full");
+        }
         return;
     }
     uint8_t control[BRIDGE_CONTROL_CMD_SIZE], seq;
@@ -518,31 +547,26 @@ static void on_uart_frame(const pkt_frame_t* frame, void* user_ctx)
         const uint8_t wire_seq = frame->seq;
         uint8_t client_seq = 0;
         const uint8_t ack_status = (frame->payload_len >= 1) ? frame->payload[0] : 0;
-        if (!pending_clear(wire_seq, &client_seq))
+        bool stop = false;
+        if (!pending_clear(wire_seq, &client_seq, &stop))
         {
             ESP_LOGD(TAG, "Ignoring unknown/late ACK seq=%u", (unsigned)wire_seq);
             return;
         }
-        bridge_frame_msg_t echo = {
-            .timestamp = now_ms(),
-            .is_ack_echo = true,
-            .ack_seq = client_seq,
-            .ack_status = ack_status,
-        };
-        if (xQueueSendToFront(s_frame_queue, &echo, 0) != pdPASS)
-        {
-            ESP_LOGW(TAG, "ACK echo queue full, dropping ack seq=%u", client_seq);
+        const ack_echo_t echo = {.seq = client_seq, .status = ack_status};
+        if (bridge_receipts_put(&s_receipts, stop, &echo)) {
+            wake_uplink();
+        } else {
+            atomic_fetch_add(stop ? &s_stop_full : &s_echo_full, 1);
         }
         return;
     }
 
-    bridge_frame_msg_t msg = {
-        .frame = *frame,
-        .timestamp = now_ms(),
-    };
-    if (xQueueSend(s_frame_queue, &msg, 0) != pdPASS)
-    {
-        ESP_LOGW(TAG, "Frame queue full, dropping type=%d", frame->type);
+    if (xQueueSend(s_frame_queue, frame, 0) == pdPASS) {
+        unsigned depth = uxQueueMessagesWaiting(s_frame_queue);
+        if (depth > atomic_load(&s_frame_high_water)) atomic_store(&s_frame_high_water, depth);
+        wake_uplink();
+    } else {
         s_uplink_dropped++;
     }
 }
@@ -552,6 +576,7 @@ static void publish_ack_echo(uint8_t seq, uint8_t status)
 {
     if (!mqtt_service_is_connected())
     {
+        atomic_fetch_add(&s_echo_pub_failed, 1);
         return;
     }
     char json[80];
@@ -563,6 +588,7 @@ static void publish_ack_echo(uint8_t seq, uint8_t status)
             CMCAR_TOPIC_ACK, json, json_len, 0, 100);
         if (err != ESP_OK)
         {
+            atomic_fetch_add(&s_echo_pub_failed, 1);
             ESP_LOGD(TAG, "ACK echo publish skipped: %s", esp_err_to_name(err));
         }
     }
@@ -591,6 +617,17 @@ static void publish_uplink_frame(const pkt_frame_t* frame)
             n = bridge_log_to_json(frame->payload, frame->payload_len,
                                    json, sizeof(json));
             topic = CMCAR_TOPIC_LOG;
+            break;
+        case SONAR_STATUS_TYPE:
+            n=bridge_config_to_json(frame->payload,frame->payload_len,s_session_id,json,sizeof(json));
+            if (n>0 && !sonar_read32(frame->payload+4)) {
+                pkt_frame_t bind={.type=SONAR_REQUEST_TYPE,.payload_len=SONAR_BIND_SIZE,.payload={SONAR_BIND}};
+                uint32_t epoch;
+                do { epoch=esp_random(); } while (!epoch);
+                sonar_write32(bind.payload+1,epoch);
+                send_sonar_frame(&bind);
+            }
+            topic=CMCAR_TOPIC_SENSOR;
             break;
         case PKT_TYPE_VISUAL:
             n=bridge_lighting_to_json(frame->payload,frame->payload_len,json,sizeof(json));
@@ -627,32 +664,53 @@ static void publish_uplink_frame(const pkt_frame_t* frame)
     }
 }
 
-/* ACK 重传扫描定时器回调（esp_timer 任务上下文）：锁内只做表扫描和复制，
-   UART 投队在解锁后执行，避免 UART 队列等待阻塞 ACK clear/add。 */
+/* No socket, UART, mutex or log operations on the shared esp_timer task. */
 static void on_retransmit_timer(void* arg)
 {
     (void)arg;
-    pending_retransmit_scan();
+    xTaskNotifyGive(s_retry_handle);
 }
 
-/* 上行任务：frame_queue → JSON → MQTT（重传扫描由 esp_timer 负责，不在此） */
+static void retry_worker(void* arg)
+{
+    (void)arg;
+    for (;;) {
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        pending_retransmit_scan();
+    }
+}
+
+static void on_status_timer(void* arg)
+{
+    (void)arg;
+    atomic_store(&s_status_due, true);
+    wake_uplink();
+}
+
+static void publish_status(void);
+
 static void bridge_uplink_task(void* arg)
 {
     (void)arg;
-    bridge_frame_msg_t msg;
-
-    while (1)
-    {
-        if (xQueueReceive(s_frame_queue, &msg, portMAX_DELAY) == pdTRUE)
-        {
-            if (msg.is_ack_echo)
-            {
-                publish_ack_echo(msg.ack_seq, msg.ack_status);
-            }
-            else
-            {
-                publish_uplink_frame(&msg.frame);
-            }
+    pkt_frame_t frame;
+    ack_echo_t echo;
+    uint8_t ping_seq;
+    bool prefer_pong = true;
+    for (;;) {
+        if (bridge_receipts_take(&s_receipts, &echo)) {
+            publish_ack_echo(echo.seq, echo.status);
+        } else if (atomic_exchange(&s_status_due, false)) {
+            publish_status();
+        } else if (prefer_pong && xQueueReceive(s_pong_queue, &ping_seq, 0)) {
+            publish_pong(ping_seq);
+            prefer_pong = false;
+        } else if (xQueueReceive(s_frame_queue, &frame, 0)) {
+            publish_uplink_frame(&frame);
+            prefer_pong = true;
+        } else if (xQueueReceive(s_pong_queue, &ping_seq, 0)) {
+            publish_pong(ping_seq);
+        } else {
+            ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
         }
     }
 }
@@ -667,12 +725,13 @@ int bridge_get_status(char* out, size_t n)
     }
     const int len = snprintf(
         out, n,
-        "{\"state\":\"%s\",\"up_drop\":%lu,\"dn_drop\":%lu,\"ack_lost\":%lu,\"pub_fail\":%lu}",
+        "{\"state\":\"%s\",\"up_drop\":%lu,\"dn_drop\":%lu,\"ack_lost\":%lu,\"pub_fail\":%lu,\"ack_full\":%u,\"stop_full\":%u,\"ack_pub_fail\":%u,\"pong_full\":%u,\"frame_peak\":%u}",
         state_name(s_state),
         (unsigned long)s_uplink_dropped,
         (unsigned long)s_downlink_dropped,
         (unsigned long)s_ack_lost,
-        (unsigned long)s_pub_failed);
+        (unsigned long)s_pub_failed, atomic_load(&s_echo_full), atomic_load(&s_stop_full),
+        atomic_load(&s_echo_pub_failed), atomic_load(&s_pong_full), atomic_load(&s_frame_high_water));
     if (len < 0 || (size_t)len >= n)
     {
         return 0; /* 截断则不上报（下次再来） */
@@ -680,15 +739,13 @@ int bridge_get_status(char* out, size_t n)
     return len;
 }
 
-/** 周期上报 status JSON 到 CMCAR_TOPIC_STATUS（超时发布，不阻塞 timer 任务） */
-static void on_status_timer(void* arg)
+static void publish_status(void)
 {
-    (void)arg;
     if (!mqtt_service_is_connected())
     {
         return;
     }
-    char json[128];
+    char json[256];
     const int n = bridge_get_status(json, sizeof(json));
     if (n > 0)
     {
@@ -745,13 +802,17 @@ esp_err_t bridge_init(void)
     } while (s_session_id == 0);
 
     s_frame_queue = xQueueCreateStatic(
-        FRAME_QUEUE_DEPTH, sizeof(bridge_frame_msg_t),
+        FRAME_QUEUE_DEPTH, sizeof(pkt_frame_t),
         (uint8_t*)s_frame_queue_storage, &s_frame_queue_struct);
+
+    bridge_receipts_init(&s_receipts);
+    s_pong_queue = xQueueCreateStatic(sizeof(s_pong_storage), sizeof(uint8_t), s_pong_storage, &s_pong_queue_struct);
 
     s_downlink_queue = xQueueCreateStatic(
         DOWNLINK_QUEUE_DEPTH, sizeof(downlink_msg_t),
         (uint8_t*)s_downlink_storage, &s_downlink_queue_struct);
 
+    s_config_queue=xQueueCreateStatic(4u,sizeof(downlink_msg_t),(uint8_t*)s_config_storage,&s_config_queue_struct);
     s_visual_queue=xQueueCreateStatic(1u,sizeof(downlink_msg_t),
         (uint8_t*)s_visual_storage,&s_visual_queue_struct);
     s_ack_mutex = xSemaphoreCreateMutex();
@@ -804,6 +865,11 @@ esp_err_t bridge_start(void)
         BRIDGE_UP_STACK / sizeof(StackType_t),
         NULL, TASK_PRIO_BRIDGE_UPLINK, s_uplink_stack, &s_uplink_tcb);
 
+    atomic_store(&s_uplink_handle, up_handle);
+    if (up_handle) xTaskNotifyGive(up_handle); /* drain frames received during startup */
+    s_retry_handle = xTaskCreateStatic(retry_worker, "bridge_retry", BRIDGE_DOWN_STACK / sizeof(StackType_t),
+                                       NULL, TASK_PRIO_BRIDGE_DOWNLINK, s_retry_stack, &s_retry_tcb);
+
     TaskHandle_t dn_handle = xTaskCreateStatic(
         bridge_downlink_task, "bridge_dn",
         BRIDGE_DOWN_STACK / sizeof(StackType_t),
@@ -811,7 +877,7 @@ esp_err_t bridge_start(void)
 
     TaskHandle_t visual_handle=xTaskCreateStatic(bridge_visual_task,"bridge_visual",
         BRIDGE_DOWN_STACK/sizeof(StackType_t),NULL,TASK_PRIO_VISUAL,s_visual_stack,&s_visual_tcb);
-    if (!visual_handle) return ESP_ERR_NO_MEM;
+    if (!visual_handle || !s_retry_handle || !up_handle || !dn_handle) return ESP_ERR_NO_MEM;
 
     (void)esp_timer_start_periodic(
         s_retransmit_timer, BRIDGE_RETRANSMIT_PERIOD_MS * 1000ULL);

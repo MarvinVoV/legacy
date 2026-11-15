@@ -1,6 +1,7 @@
 #define _POSIX_C_SOURCE 200809L
 #include "host.h"
 #include "voice_output.h"
+#include "voice_visual_state.h"
 #include "voice_dtd.h"
 #include "voice_transport.h"
 #include "esp_websocket_client.h"
@@ -29,7 +30,16 @@ QueueHandle_t xQueueCreateStatic(unsigned n,unsigned item,uint8_t *storage,Stati
 }
 int xQueueReceive(QueueHandle_t q,void *p,unsigned wait) {
  pthread_mutex_lock(&q->mutex);
- while(!q->count) { if(!wait) {pthread_mutex_unlock(&q->mutex);return 0;} pthread_cond_wait(&q->readable,&q->mutex); }
+ struct timespec deadline;
+ clock_gettime(CLOCK_REALTIME,&deadline);
+ const uint64_t nanos=(uint64_t)deadline.tv_nsec+(uint64_t)wait*HOST_TICK_MS*1000000;
+ deadline.tv_sec+=nanos/1000000000;
+ deadline.tv_nsec=nanos%1000000000;
+ while(!q->count) {
+     int status=wait==portMAX_DELAY ? pthread_cond_wait(&q->readable,&q->mutex)
+                                   : pthread_cond_timedwait(&q->readable,&q->mutex,&deadline);
+     if (status) {pthread_mutex_unlock(&q->mutex);return 0;}
+ }
  memcpy(p,q->storage+q->head*q->item_size,q->item_size);q->head=(q->head+1)%q->capacity;--q->count;
  pthread_mutex_unlock(&q->mutex);return pdTRUE;
 }
@@ -50,9 +60,13 @@ int xTaskCreate(void (*fn)(void*),const char *name,unsigned stack,void *arg,unsi
 void vTaskDelete(TaskHandle_t t) { pthread_cancel(*t);pthread_join(*t,NULL);free(t); }
 static atomic_bool blocked,release_write,flushed;
 static atomic_int writes;
+static atomic_bool dac_muted=true;
+esp_err_t voice_codec_set_muted(voice_codec_t *codec, bool muted) {
+    assert(codec); atomic_store(&dac_muted,muted); return ESP_OK;
+}
 bool voice_codec_has_output(const voice_codec_t *c) {return c->caps.output_channels>0;}
 esp_err_t voice_codec_write(voice_codec_t *c,const int16_t *pcm,size_t n,int rate) {
- (void)c;assert(n>0 && rate==16000);
+ (void)c;assert(n>0 && rate==16000 && !atomic_load(&dac_muted));
  if(pcm[0]==111) {atomic_store(&blocked,true);while(!atomic_load(&release_write)) vTaskDelay(1);}
  atomic_fetch_add(&writes,1);return ESP_OK;
 }
@@ -104,8 +118,14 @@ static void transport_test(void) {
  assert(voice_transport_open(&t,true,false,VOICE_SESSION_CONVERSATION)==ESP_OK);
  voice_transport_set_audio_callback(t,receive_audio,NULL);
  assert(voice_transport_barge_enabled(t));
+ voice_visual_set_base(LIGHT_VOICE_LISTEN);
+ text_event("{\"type\":\"turn_phase\",\"turn\":1,\"phase\":\"thinking\"}");
+ assert(voice_visual_current()==LIGHT_VOICE_THINK);
  text_event("{\"type\":\"speak\",\"turn\":1,\"seq\":1,\"bytes\":640}");
+ assert(voice_visual_current()==LIGHT_VOICE_THINK); /* Header alone produces no sound. */
  assert(voice_transport_barge_in(t)==ESP_OK);
+ text_event("{\"type\":\"turn_phase\",\"turn\":1,\"phase\":\"thinking\"}");
+ assert(voice_visual_current()==LIGHT_VOICE_LISTEN);
  int before=atomic_load(&writes);
  text_event("{\"type\":\"speak\",\"turn\":1,\"seq\":2,\"bytes\":640}");
  char raw[640]={0};binary_event(raw,sizeof(raw));vTaskDelay(60);
@@ -117,10 +137,16 @@ static void transport_test(void) {
  text_event("{\"type\":\"stop\",\"turn\":1}");
  assert(voice_output_epoch()==epoch && voice_transport_is_speaking(t));
  binary_event(raw,1);binary_event(raw+1,639);
+ const int64_t deadline=esp_timer_get_time()+500000;
+ while (voice_visual_current()!=LIGHT_VOICE_SPEAK) {
+     assert(esp_timer_get_time()<deadline);
+     vTaskDelay(1);
+ }
  text_event("{\"type\":\"playback_end\",\"turn\":2,\"seq\":3}");
  assert(voice_output_wait_drained(1000)==ESP_OK);
  assert(voice_transport_poll(t)==ESP_OK && strstr(last_sent,"playback_finished"));
  assert(!voice_transport_is_speaking(t));
+ assert(voice_visual_current()==LIGHT_VOICE_LISTEN);
  assert(!(voice_transport_events(t)&VOICE_PEER_FAILED));
  voice_transport_close(t);
  enable_barge=false;
@@ -153,6 +179,7 @@ int main(void) {
  assert(voice_output_wait_drained(10)==ESP_ERR_TIMEOUT);
  assert(voice_output_wait_drained(1000)==ESP_OK);
  assert(atomic_load(&writes)==completed+1);
+ wait_flag(&dac_muted); /* Worker sleeps after the tail; the next turn must unmute. */
  transport_test();
  voice_output_destroy();
  puts("Playback epochs, in-flight cancellation fence, DMA tail guard, and fresh-window DTD passed");

@@ -10,8 +10,8 @@ from PIL import Image, ImageDraw
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('directory',type=Path)
 p=parser.parse_args().directory
-names=['calm','happy','curious','comforting','sad']
-out=Image.new('RGB',(1200,290),'#10151f')
+names=['calm','happy','curious','comforting','sad','excited']
+out=Image.new('RGB',(240*len(names),290),'#10151f')
 draw=ImageDraw.Draw(out)
 for i,name in enumerate(names):
     im=Image.open(p/f'{name}.ppm').convert('RGB')

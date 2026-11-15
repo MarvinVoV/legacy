@@ -62,6 +62,26 @@ int main(void)
     assert(strstr(json,"\"type\":\"lighting\"") && strstr(json,"\"emotion\":\"happy\""));
     assert(!bridge_lighting_to_json(lightStatus,43,json,sizeof(json)));
     assert(!bridge_lighting_to_json(lightStatus,44,json,20));
-    lightStatus[2]=5;assert(!bridge_lighting_to_json(lightStatus,44,json,sizeof(json)));
+    lightStatus[2]=5;
+    assert(bridge_lighting_to_json(lightStatus,44,json,sizeof(json))>0 && strstr(json,"excited"));
+    const char *excited="{\"cmd\":\"lighting\",\"emotion\":\"excited\",\"intensity\":100,\"duration_ms\":3000,\"epoch\":1}";
+    assert(bridge_json_to_lighting(excited,strlen(excited),1,11,visual)==20 && visual[2]==5);
+    lightStatus[2]=6;assert(!bridge_lighting_to_json(lightStatus,44,json,sizeof(json)));
     puts("lighting JSON: semantic bounds, independent frame, session/epoch/event and status passed");
+    uint8_t cfg[SONAR_SET_SIZE];
+    const char *set="{\"cmd\":\"sonar_set\",\"enabled\":false,\"session_id\":42,\"epoch\":9,"
+                    "\"generation\":3,\"request_id\":255,\"observed_ms\":100}";
+    assert(bridge_json_is_config(set,strlen(set)));
+    assert(bridge_json_to_config(set,strlen(set),42,cfg)==SONAR_SET_SIZE);
+    SonarRequest req;
+    assert(sonar_decode_request(cfg,sizeof(cfg),&req));
+    assert(!req.enable && req.epoch==9 && req.generation==3 && req.request_id==255 && req.observed_ms==100);
+    assert(!bridge_json_to_config(set,strlen(set),43,cfg));
+    const char *legacy="{\"cmd\":\"config\",\"sonar\":false}";
+    assert(!bridge_json_is_config(legacy,strlen(legacy)));
+    uint8_t receipt[SONAR_STATUS_SIZE]={1,SONAR_SUPPORTED|SONAR_ENABLED|SONAR_READY};
+    sonar_write32(receipt+4,9);
+    assert(bridge_config_to_json(receipt,sizeof(receipt),42,json,sizeof(json))>0);
+    assert(strstr(json,"\"session_id\":42") && strstr(json,"\"ready\":true"));
+    assert(!bridge_config_to_json(receipt,sizeof(receipt)-1,42,json,sizeof(json)));
 }

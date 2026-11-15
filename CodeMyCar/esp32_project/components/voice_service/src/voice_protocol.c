@@ -51,6 +51,13 @@ static uint32_t parse_message(voice_message_t *m)
     }
     else if (!strcmp(type->valuestring, "final")) event = VOICE_PEER_FINAL;
     else if (!strcmp(type->valuestring, "recognizing")) event = VOICE_PEER_RECOGNIZING;
+    else if (!strcmp(type->valuestring, "turn_phase") && m->turn) {
+        const cJSON *phase = cJSON_GetObjectItemCaseSensitive(root, "phase");
+        if (cJSON_IsString(phase)) {
+            if (!strcmp(phase->valuestring, "thinking")) event = VOICE_PEER_THINK;
+            else if (!strcmp(phase->valuestring, "listening")) event = VOICE_PEER_LISTEN;
+        }
+    }
     else if (!strcmp(type->valuestring, "end")) event = VOICE_PEER_END;
     else if (!strcmp(type->valuestring, "stop")) event = VOICE_PEER_STOP;
     else if (!strcmp(type->valuestring, "playback_end"))

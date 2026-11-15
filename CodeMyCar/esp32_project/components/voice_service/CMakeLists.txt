@@ -10,6 +10,7 @@ set(voice_sources
     "src/voice_transport.c"
     "src/voice_protocol.c"
     "src/voice_state.c"
+    "src/voice_visual.c"
     "src/voice_wake_ack.c")
 if(IDF_TARGET STREQUAL "esp32s3")
     list(APPEND voice_sources "src/voice_frontend_s3.c")
@@ -18,7 +19,7 @@ else()
 endif()
 idf_component_register(
     SRCS ${voice_sources}
-    INCLUDE_DIRS "include"
+    INCLUDE_DIRS "include" "../../../serial_pkt_protocol/shared"
     EMBED_FILES "assets/wake_ack.pcm"
     REQUIRES
         esp_timer

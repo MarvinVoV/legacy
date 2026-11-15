@@ -895,6 +895,12 @@ static bool drive_is_stopped(const MotionContext* ctx)
            fabsf(ctx->state.drive.rightRpm) <= MOTION_STOP_RPM_EPSILON;
 }
 
+bool MotionService_IsParkedLocked(const MotionContext *ctx)
+{
+    return ctx->motionTarget.mode == MOTION_EMERGENCY_STOP && !ctx->stopPending &&
+           !ctx->goal.active && !ctx->goalSettling && drive_is_stopped(ctx);
+}
+
 static bool can_accept_motion_locked(const MotionContext* ctx)
 {
     if (ctx->stopPending || ctx->goalSettling) { return false; }

@@ -2,13 +2,14 @@
 
 #include "sdkconfig.h"
 
-esp_err_t voice_codec_init(voice_codec_t **out)
+esp_err_t voice_codec_init(voice_codec_t **out, const char **stage)
 {
     if (out == NULL) return ESP_ERR_INVALID_ARG;
     *out = NULL;
 #if CONFIG_CMCAR_VOICE_CODEC_BOARD
-    return voice_codec_board_init(out);
+    return voice_codec_board_init(out, stage);
 #else
+    *stage = "i2s_microphone";
     return voice_codec_i2s_init(out);
 #endif
 }
@@ -40,6 +41,12 @@ esp_err_t voice_codec_write(voice_codec_t *codec, const int16_t *src,
         return ESP_ERR_NOT_SUPPORTED;
     }
     return codec->ops->write(codec, src, frames, sample_rate);
+}
+
+esp_err_t voice_codec_set_muted(voice_codec_t *codec, bool muted)
+{
+    if (!codec || !codec->ops || !codec->ops->set_muted) return ESP_ERR_NOT_SUPPORTED;
+    return codec->ops->set_muted(codec, muted);
 }
 
 void voice_codec_set_volume(voice_codec_t *codec, int volume)

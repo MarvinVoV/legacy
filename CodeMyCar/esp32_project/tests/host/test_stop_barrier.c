@@ -7,6 +7,7 @@
 #include "mock_idf.h"
 #include "../../components/uart_service/src/uart_service.c"
 #include "ack_manager.h"
+#include "../../components/bridge/src/bridge_receipts.h"
 
 static unsigned writes;
 static uint8_t written[32];
@@ -49,8 +50,57 @@ static bool retryPriority;
 static void retry(const uint8_t* frame,size_t len,bool priority,void* ctx)
 { (void)ctx;assert(len==1 && *frame==0);retryCount++;retryPriority=priority; }
 
+static uint8_t input[RX_BUF_SIZE];
+static size_t available, cursor;
+static unsigned parsed;
+
+int uart_read_bytes(int port, void *out, size_t want, uint32_t ticks)
+{
+    assert(port == UART_PORT && ticks == 0);
+    size_t n = available - cursor;
+    if (n > want) n = want;
+    memcpy(out, input + cursor, n);
+    cursor += n;
+    return (int)n;
+}
+
+static void observe(const pkt_frame_t *frame, void *ctx)
+{
+    (void)ctx;
+    assert(frame->type == PKT_TYPE_ACK && frame->seq == 17);
+    parsed++;
+}
+
+static void test_rx_and_receipts(void)
+{
+    pkt_frame_t frame = {.type=PKT_TYPE_ACK,.seq=17,.payload_len=1};
+    uint8_t wire[PKT_MAX_FRAME_SIZE];
+    size_t n;
+    assert(pkt_encode(&frame, wire, sizeof(wire), &n) == ESP_OK);
+    s_rx_cb = observe;
+    pkt_parser_init(&s_parser);
+    for (unsigned i=0; i<50; i++) memcpy(input+i*n, wire, n);
+    available = 3; drain_rx(); assert(parsed == 0);
+    available = n; drain_rx(); assert(parsed == 1); /* no second UART event needed */
+    available = 50*n; drain_rx(); assert(parsed == 50);
+    drain_rx(); assert(parsed == 50); /* stale notification */
+
+    bridge_receipts_t receipts;
+    bridge_receipts_init(&receipts);
+    ack_echo_t echo = {0};
+    for (unsigned i=0;i<16;i++) {
+        echo.seq=i;
+        assert(bridge_receipts_put(&receipts,false,&echo));
+    }
+    assert(!bridge_receipts_put(&receipts,false,&echo));
+    echo.seq=99; assert(bridge_receipts_put(&receipts,true,&echo));
+    assert(bridge_receipts_take(&receipts,&echo) && echo.seq==99);
+    for (unsigned i=0;i<16;i++) assert(bridge_receipts_take(&receipts,&echo) && echo.seq==i);
+}
+
 int main(void)
 {
+    test_rx_and_receipts();
     s_tx_queue=xQueueCreateStatic(TX_QUEUE_DEPTH,sizeof(uart_tx_msg_t),
         (uint8_t*)s_tx_queue_storage,&s_tx_queue_struct);
     s_tx_gate=xSemaphoreCreateMutexStatic(&s_tx_gate_storage);

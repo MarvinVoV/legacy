@@ -65,3 +65,7 @@ target_include_directories(${MOTION_TEST_TARGET} PRIVATE
         ${CMAKE_SOURCE_DIR}/include
 )
 add_test(NAME ${MOTION_TEST_TARGET} COMMAND ${MOTION_TEST_TARGET})
+
+add_executable(sonar_config_tests test_sonar_config.c)
+target_include_directories(sonar_config_tests PRIVATE ../shared)
+add_test(NAME sonar_config_tests COMMAND sonar_config_tests)

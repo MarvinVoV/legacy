@@ -145,8 +145,7 @@ bool ackmgr_add_mapped(ack_manager_t* m, uint8_t wire_seq, uint8_t client_seq,
     return add_internal(m, wire_seq, client_seq, frame, len, now_ms, priority);
 }
 
-bool ackmgr_clear_mapped(ack_manager_t* m, uint8_t seq,
-                         uint8_t* out_client_seq)
+bool ackmgr_take(ack_manager_t* m, uint8_t seq, uint8_t* out_client_seq, bool* priority)
 {
     if (m == NULL)
     {
@@ -160,11 +159,17 @@ bool ackmgr_clear_mapped(ack_manager_t* m, uint8_t seq,
             {
                 *out_client_seq = m->slots[i].client_seq;
             }
+            if (priority) *priority = m->slots[i].priority;
             m->slots[i].active = false;
             return true;
         }
     }
     return false;
+}
+
+bool ackmgr_clear_mapped(ack_manager_t* m, uint8_t seq, uint8_t* out_client_seq)
+{
+    return ackmgr_take(m, seq, out_client_seq, NULL);
 }
 
 bool ackmgr_clear(ack_manager_t* m, uint8_t seq)

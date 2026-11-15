@@ -15,18 +15,8 @@ void SonarTask_Init(void);
 /** 任务体（由 osThreadNew 调用） */
 void SonarTask_doTask(void* arg);
 
-/**
- * @brief 取前/后安全通道（运动层限速使用）
- *
- * 初始化前返回的通道 enabled=0、scale=1.0，即完全放行。
- */
-void Sonar_GetSafety(const SafetyChannel** front, const SafetyChannel** rear);
-
-/** 运行期开关：false 时不做测距、不上报、安全通道放行 */
-void SonarTask_SetEnabled(bool on);
-
-/** 当前运行期开关状态 */
-bool SonarTask_IsEnabled(void);
+/** Validate and queue a typed request from CtrlTask. */
+void SonarTask_Submit(const uint8_t *payload, uint16_t len);
 
 /** Atomic published copies; no reader observes a partially updated window. */
 void Sonar_GetSafetySnapshot(SafetyChannel* front, SafetyChannel* rear);

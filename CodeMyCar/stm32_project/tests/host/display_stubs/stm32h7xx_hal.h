@@ -48,3 +48,7 @@ HAL_StatusTypeDef HAL_SPI_Init(SPI_HandleTypeDef *spi);
 HAL_StatusTypeDef HAL_SPI_Transmit(SPI_HandleTypeDef *spi,uint8_t *data,uint16_t size,uint32_t timeout);
 void HAL_GPIO_Init(void *port,GPIO_InitTypeDef *init);
 void HAL_GPIO_WritePin(void *port,uint32_t pin,uint32_t value);
+uint32_t HAL_GetTick(void);
+uint32_t __get_PRIMASK(void);
+void __disable_irq(void);
+void __set_PRIMASK(uint32_t key);

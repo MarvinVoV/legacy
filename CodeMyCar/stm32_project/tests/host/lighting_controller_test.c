@@ -108,6 +108,29 @@ static void test_turn_sweep(void)
 
 int main(void)
 {
+    /* Feed real S3 wire bytes. Mood clear/new epoch must leave the face phase
+     * alive, and phase refresh must not acknowledge an unrelated mood. */
+    LightHints layered={0};
+    Lighting_NewSession(&layered,42);
+    uint8_t phaseWire[20];
+    visual_pack_phase(phaseWire,LIGHT_VOICE_THINK,42,15);
+    LightCommand decoded;
+    assert(Lighting_UnpackCommand(phaseWire,sizeof(phaseWire),&decoded));
+    assert(Lighting_Accept(&layered,&decoded,10));
+    assert(!layered.epochKnown && layered.accepted==0);
+    assert(!Lighting_Accept(&layered,&decoded,11));
+    LightCommand emotion=mood(1);
+    emotion.value=LIGHT_EXCITED;
+    assert(Lighting_Accept(&layered,&emotion,12));
+    Lighting_Render(&renderer,&layered,&local,20,pixels,&view);
+    assert(view.voice==LIGHT_VOICE_THINK && view.mood==LIGHT_EXCITED);
+    emotion=(LightCommand){.kind=LIGHT_CLEAR,.epoch=2,.session=42,.event=2};
+    assert(Lighting_Accept(&layered,&emotion,25));
+    Lighting_Render(&renderer,&layered,&local,30,pixels,&view);
+    assert(view.voice==LIGHT_VOICE_THINK && view.mood==LIGHT_CALM);
+    Lighting_Render(&renderer,&layered,&local,1210,pixels,&view);
+    assert(view.voice==LIGHT_VOICE_IDLE);
+    renderer=(LightRenderer){0};
     test_calm_breath();
     test_turn_sweep();
     local.motionValid=true;Lighting_NewSession(&hints,42);step(0);

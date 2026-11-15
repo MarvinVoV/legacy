@@ -1,8 +1,16 @@
 """遥测数据模型（上行 JSON）"""
 
-from typing import Optional
+from typing import Literal, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError, field_validator
+
+
+class VoiceHealth(BaseModel):
+    """Device startup outcome and session state sampled at the last heartbeat."""
+    startup: Literal["starting", "ready", "degraded", "failed", "disabled"]
+    state: str
+    error_stage: str | None = None
+    error_code: int = 0
 
 
 class HeartbeatData(BaseModel):
@@ -13,6 +21,16 @@ class HeartbeatData(BaseModel):
     wifi_rssi: Optional[int] = None
     stm32_connected: Optional[bool] = None
     session_id: Optional[int] = None
+    voice: VoiceHealth | None = None
+
+    @field_validator("voice", mode="before")
+    @classmethod
+    def parse_optional_voice(cls, value):
+        # A malformed optional diagnostic must not discard the vehicle heartbeat.
+        try:
+            return VoiceHealth.model_validate(value) if value is not None else None
+        except ValidationError:
+            return None
 
 
 class SensorData(BaseModel):

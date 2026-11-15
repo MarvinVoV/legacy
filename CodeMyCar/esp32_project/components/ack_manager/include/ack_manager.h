@@ -67,6 +67,8 @@ bool ackmgr_add_mapped(ack_manager_t* m, uint8_t wire_seq, uint8_t client_seq,
 /** 收到 ACK：清除对应 seq 的在途槽位 */
 bool ackmgr_clear(ack_manager_t* m, uint8_t seq);
 
+bool ackmgr_take(ack_manager_t* m, uint8_t wire_seq, uint8_t* out_client_seq, bool* priority);
+
 bool ackmgr_clear_mapped(ack_manager_t* m, uint8_t wire_seq,
                          uint8_t* out_client_seq);
 

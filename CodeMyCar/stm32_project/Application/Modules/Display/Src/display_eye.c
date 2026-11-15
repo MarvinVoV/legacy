@@ -4,16 +4,25 @@
 #include "display.h"
 #include "display_config.h"
 #include "cmsis_os2.h"
+#include "FreeRTOS.h"
+#include "task.h"
 #include "stm32h7xx_hal.h"
 #include "log_manager.h"
 #include <math.h>
 #include <string.h>
 
 #if DISPLAY_ENABLED
-static uint16_t __attribute__((section(".fb_buffer"), aligned(32))) s_fb[FACE_WIDTH*FACE_HEIGHT];
+#if defined(__arm__)
+__attribute__((section(".fb_buffer")))
+#endif
+_Alignas(32) static uint16_t s_fb[FACE_WIDTH*FACE_HEIGHT];
 static FaceRequest s_request;
 static volatile bool s_running;
 static osThreadId_t s_thread;
+static StaticTask_t s_tcb;
+static StackType_t s_stack[3072u / sizeof(StackType_t)];
+enum { DISPLAY_RETRY_MS = 2000 };
+
 
 /* Only a few scalar request fields cross task boundaries. No SPI or rendering
  * inside this short critical section. The render model belongs to DisplayEye. */
@@ -27,15 +36,24 @@ static void eye_task(void *arg)
     FaceModel face;
     Face_Init(&face,HAL_GetTick());
     memset(s_fb,0,sizeof(s_fb));
-    Display_Fill(DISPLAY_COLOR_BLACK);
     uint32_t frames=0,failed=0,render_max=0,transfer_max=0,bytes=0,last_log=HAL_GetTick();
-    bool visible=true,full_refresh=true;
+    FaceModel rendered = {0};
+    bool visible=false, initialized=false, full_refresh=true;
     for (;;) {
         if (!s_running) {
             if (visible) { Display_Fill(DISPLAY_COLOR_BLACK); visible=false; }
             osDelay(20u);
             full_refresh=true;
             continue;
+        }
+        if (!initialized) {
+            initialized = Display_Init();
+            if (!initialized) {
+                failed++;
+                osDelay((DISPLAY_RETRY_MS * osKernelGetTickFreq() + 999u) / 1000u);
+                continue;
+            }
+            full_refresh = true;
         }
         visible=true;
         const uint32_t begin=HAL_GetTick();
@@ -44,7 +62,11 @@ static void eye_task(void *arg)
         request_unlock(key);
         Face_Update(&face,&request,begin);
         FaceRect dirty[FACE_REGION_COUNT];
-        const size_t count=Face_Render(&face,s_fb,dirty);
+        size_t count=0;
+        if (full_refresh || !Face_SameAppearance(&face,&rendered)) {
+            count=Face_Render(&face,s_fb,dirty);
+            rendered=face;
+        }
         uint32_t render_ms=HAL_GetTick()-begin;
         if (render_ms>render_max) render_max=render_ms;
         const uint32_t transfer_begin=HAL_GetTick();
@@ -52,14 +74,17 @@ static void eye_task(void *arg)
          * iteration; the model/framebuffer may already have advanced. */
         if (full_refresh) {
             full_refresh=!Display_BlitBuffer(s_fb,0,0,FACE_WIDTH,FACE_HEIGHT);
-            bytes+=FACE_WIDTH*FACE_HEIGHT*2u;
-            if (full_refresh) failed++;
+            if (!full_refresh) bytes+=FACE_WIDTH*FACE_HEIGHT*2u;
         } else {
             for (size_t i=0;i<count;i++) {
                 FaceRect r=dirty[i];
-                if (!Display_BlitBuffer(s_fb,r.x,r.y,r.w,r.h)) { full_refresh=true;failed++;break; }
+                if (!Display_BlitBuffer(s_fb,r.x,r.y,r.w,r.h)) { full_refresh=true;break; }
                 bytes+=(uint32_t)r.w*r.h*2u;
             }
+        }
+        if (full_refresh) {
+            failed++;
+            initialized = false;
         }
         uint32_t transfer_ms=HAL_GetTick()-transfer_begin;
         if (transfer_ms>transfer_max) transfer_max=transfer_ms;
@@ -75,6 +100,7 @@ static void eye_task(void *arg)
         /* Always yield, even if a full recovery frame exceeded the 50ms budget. */
         uint32_t spent=HAL_GetTick()-begin;
         uint32_t delay_ms=spent<50u ? 50u-spent : 1u;
+        if (!initialized) delay_ms = DISPLAY_RETRY_MS;
         uint32_t ticks=(delay_ms*osKernelGetTickFreq()+999u)/1000u;
         osDelay(ticks ? ticks : 1u);
     }
@@ -89,7 +115,8 @@ void DisplayEye_Start(void)
     int32_t lock=osKernelLock();
     s_running=true;
     if (!s_thread) {
-        const osThreadAttr_t attrs={.name="DisplayEye",.stack_size=3072,.priority=osPriorityLow};
+        const osThreadAttr_t attrs={.name="DisplayEye",.priority=osPriorityLow,
+            .cb_mem=&s_tcb,.cb_size=sizeof(s_tcb),.stack_mem=s_stack,.stack_size=sizeof(s_stack)};
         s_thread=osThreadNew(eye_task,NULL,&attrs);
         if (!s_thread) { s_running=false; LOG_ERROR(LOG_MODULE_SYSTEM,"Failed to create DisplayEye task"); }
     }
@@ -117,11 +144,13 @@ void DisplayEye_SetOpenness(float openness) {
     (void)openness;
 #endif
 }
-void DisplayEye_SetMood(uint8_t mood) {
+void DisplayEye_SetExpression(uint8_t mood, uint8_t voice) {
 #if DISPLAY_ENABLED
-    uint32_t key=request_lock();s_request.mood=mood<5u ? mood : 0u;request_unlock(key);
+    uint32_t key=request_lock();
+    s_request.mood=mood; s_request.voice=voice;
+    request_unlock(key);
 #else
-    (void)mood;
+    (void)mood; (void)voice;
 #endif
 }
 void DisplayEye_SetIrisColor(uint16_t color) {

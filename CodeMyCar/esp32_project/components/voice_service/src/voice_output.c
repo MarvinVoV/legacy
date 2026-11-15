@@ -3,6 +3,7 @@
  * The tail guard covers this board's DMA capacity without stopping RX clocks. */
 
 #include "voice_output.h"
+#include "voice_visual_state.h"
 
 #include <stdatomic.h>
 #include <stdlib.h>
@@ -53,8 +54,15 @@ static void output_task(void *arg)
 {
     (void)arg;
     output_frame_t frame;
+    bool muted = true; /* Board init verifies the DAC starts muted. */
     while (true) {
-        if (xQueueReceive(s_queue, &frame, portMAX_DELAY) != pdTRUE) continue;
+        /* Several DMA tails of silence avoid gating between adjacent chunks.
+         * Once muted, sleep indefinitely until the next real playback. */
+        if (xQueueReceive(s_queue, &frame, muted ? portMAX_DELAY : wait_ticks(350)) != pdTRUE) {
+            if (voice_codec_set_muted(s_codec, true) == ESP_OK) muted = true;
+            else if (!atomic_exchange(&s_failed, true)) ESP_LOGE(TAG, "Idle DAC mute failed");
+            continue;
+        }
         xSemaphoreTake(s_guard, portMAX_DELAY);
         bool idle = s_tail_until <= esp_timer_get_time();
         xSemaphoreGive(s_guard);
@@ -63,13 +71,19 @@ static void output_task(void *arg)
         if (frame.epoch == s_epoch) {
             /* Flush takes the same guard. Once it returns no old dequeued
              * frame can reach the codec; hardware tail remains bounded. */
-            esp_err_t err = voice_codec_write(s_codec, frame.pcm, frame.frames,
-                                              frame.sample_rate);
+            esp_err_t err = ESP_OK;
+            if (muted) {
+                err = voice_codec_set_muted(s_codec, false);
+                if (err == ESP_OK) muted = false;
+            }
+            if (err == ESP_OK)
+                err = voice_codec_write(s_codec, frame.pcm, frame.frames, frame.sample_rate);
             s_tail_until = esp_timer_get_time() + OUTPUT_DMA_TAIL_US;
             if (err != ESP_OK) {
                 atomic_store(&s_failed, true);
                 ESP_LOGW(TAG, "codec write failed: %s", esp_err_to_name(err));
             }
+            if (err == ESP_OK) voice_visual_play_until(s_tail_until);
             --s_pending;
         }
         xSemaphoreGive(s_guard);
@@ -133,6 +147,7 @@ void voice_output_flush(void)
     if (!s_enabled) return;
     xSemaphoreTake(s_guard, portMAX_DELAY);
     ++s_epoch;
+    voice_visual_play_until(0);
     xQueueReset(s_queue);
     s_pending = 0;
     xSemaphoreGive(s_guard);
@@ -201,6 +216,7 @@ void voice_output_destroy(void)
     s_pending = 0;
     s_tail_until = 0;
     ++s_epoch;
+    voice_visual_play_until(0);
     atomic_store(&s_failed, false);
     s_codec = NULL;
     s_enabled = false;

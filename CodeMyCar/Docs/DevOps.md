@@ -4,11 +4,13 @@
 
 ## 1. 启动服务
 
-| 进程 | 默认端口 | 何时需要 |
+| 进程 | 整车开发基线端口 | 何时需要 |
 |---|---|---|
 | Mosquitto | TCP 1883 | 设备心跳、状态、控制、ACK |
 | pyserver / Uvicorn | TCP 8000 | HTTP API、设备状态缓存和语音 WebSocket。语音、Agent 与控制 API 在同一服务内 |
 | frontend / Vite | TCP 5173 | 使用手机控制台或 mock 预览时启动 |
+
+**所有 Agent 复用同一套整车服务。** 电脑访问 HTTP 用 `http://127.0.0.1:8000/api/v1`，本机 pyserver 访问 broker 用 `127.0.0.1:1883`。ESP32 访问电脑局域网 IP 的相同端口。HTTP 和语音 WebSocket 共用 8000；1883 只承载 MQTT。端口占用时先确认监听进程、API 版本和 broker 配置；若为旧实例，在原端口更新服务。另起端口会让设备继续访问旧实例，并使调试结果与实际固件脱节。
 
 先用 `lsof -nP -iTCP:1883 -iTCP:8000 -iTCP:5173 -sTCP:LISTEN` 查看已有监听。记录监听进程和日志终端，复用已确认配置的实例。开发 broker 使用仓库的配置，允许设备从局域网连接。
 
@@ -22,7 +24,7 @@ mosquitto -c pyserver/mosquitto.dev.conf
 ```bash
 # 终端 B：API、设备 MQTT 客户端和语音 WebSocket
 cd pyserver
-CMCAR_MQTT_HOST=127.0.0.1 CMCAR_VOICE_EXECUTE_COMMANDS=0 \
+CMCAR_MQTT_HOST=127.0.0.1 CMCAR_MQTT_PORT=1883 CMCAR_VOICE_EXECUTE_COMMANDS=0 \
   .venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
@@ -85,6 +87,13 @@ curl -fsS "$api/agent/devices/DEV_1/state"
 | 3. STM32 与 UART | stm32_connected，原始 heartbeat 的 stm32_build、protocol_version；motion.age_ms、motion.stale 和原始 motion 帧 | SPI 屏和指示灯只能说明局部状态。应看到本次会话的新数据且 age_ms 有值，默认超过 2 秒标为 stale；停车时 left_mmps、right_mmps 约 0，fault=false |
 | 4. 传感器 | imu_age_s、yaw_deg、yaw_rate_dps；sensor_age_s、前后距离；battery.available、stale、error | 连续读取，新鲜度应随新帧刷新。电量百分比是电压估算。按实物安装和固件开关解释声呐值；缺数据记录为未知 |
 | 5. 外设与运行余量 | lighting_age_s、灯带、圆屏；日志中的周期 miss、UART/log 丢包、DMA 错误 | 观察计数持续增长与否。灯色、流畅度及摆臂归中需目视。需要定量验收时见[运行与灯光回归](testing/Lighting-And-Voice-Regression-Guide-2026-11-13.md) |
+| 6. S3 语音 | 设备状态的 `data.voice`，MQTT 心跳中的 `voice` | `startup=ready` 表示启动成功，`state=idle` 表示采样时待机。`failed` 查看 `error_stage` 和数值 `error_code`，例如 `es8311_open`、`model_partition`、`wake_model`。启动时播放模块单独失败报告 `degraded`；编译关闭报告 `disabled`。旧固件此字段为 null。 |
+
+首次连接 MQTT、重连和约 30 秒一次的心跳都携带该快照。若首次心跳时为 `starting`，启动结果确定后也会补发。离线时 API 可保留末次快照，需与 `online` 和 `last_heartbeat_age` 一起判断；待机、连接、监听等会话状态按心跳采样。硬件启动成功后是否听到提示仍需独立验收。
+
+```sh
+curl -fsS http://127.0.0.1:8000/api/v1/devices/DEV_1/status | jq '.data | {online,last_heartbeat_age,voice}'
+```
 
 从 broker 取**上电后新到达的帧**可区分服务端缓存和设备问题。下例分别等待两次心跳和三次运动遥测，超时应记录缺少的是哪类帧。
 

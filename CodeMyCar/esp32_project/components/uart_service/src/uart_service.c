@@ -3,7 +3,7 @@
  * @brief UART 硬件服务实现
  *
  * 架构：
- *   uart_rx_task: UART ISR → event queue → read → RingBuf → pkt_parser → rx_cb
+ *   uart_rx_task: UART ISR → event queue → read → pkt_parser → rx_cb
  *   uart_tx_task: tx_queue → uart_write_bytes
  *
  * 所有资源静态分配，热路径零 malloc。
@@ -21,7 +21,6 @@
 #include "esp_intr_alloc.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
-#include "freertos/ringbuf.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "task_priorities.h"
@@ -34,7 +33,6 @@ static const char* TAG = "uart_svc";
 #define UART_RX_PIN    CONFIG_CMCAR_UART_RX_PIN
 #define RX_BUF_SIZE    CONFIG_CMCAR_UART_RX_BUF_SIZE
 #define TX_BUF_SIZE    CONFIG_CMCAR_UART_TX_BUF_SIZE
-#define RINGBUF_SIZE   CONFIG_CMCAR_UART_RINGBUF_SIZE
 #define TX_QUEUE_DEPTH CONFIG_CMCAR_UART_TX_QUEUE_DEPTH
 
 #define UART_EVENT_QUEUE_SIZE 10
@@ -49,11 +47,6 @@ static StackType_t s_rx_stack[UART_RX_TASK_STACK / sizeof(StackType_t)];
 static StaticTask_t s_rx_tcb;
 static StackType_t s_tx_stack[UART_TX_TASK_STACK / sizeof(StackType_t)];
 static StaticTask_t s_tx_tcb;
-
-/* RingBuf（原始 RX 字节） */
-static uint8_t s_ringbuf_storage[RINGBUF_SIZE];
-static StaticRingbuffer_t s_ringbuf_struct;
-static RingbufHandle_t s_ringbuf = NULL;
 
 /* UART 事件队列 */
 static QueueHandle_t s_uart_event_queue = NULL;
@@ -91,9 +84,23 @@ static void uart_frame_dispatch(const pkt_frame_t* frame, void* ctx)
 
 /* ==================== 任务实现 ==================== */
 
+static void drain_rx(void)
+{
+    uint8_t chunk[UART_TMP_BUF_SIZE];
+    /* Drain at most one driver buffer per event, including bytes whose
+     * notifications coalesced. Never wait to fill a partial frame. */
+    for (size_t budget = RX_BUF_SIZE; budget > 0;) {
+        const size_t want = budget < sizeof(chunk) ? budget : sizeof(chunk);
+        const int n = uart_read_bytes(UART_PORT, chunk, want, 0);
+        if (n <= 0) break;
+        pkt_parser_feed_stream(&s_parser, chunk, (size_t)n, uart_frame_dispatch, NULL);
+        budget -= (size_t)n;
+        if ((size_t)n < want) break;
+    }
+}
+
 static void uart_rx_task(void* arg)
 {
-    static uint8_t tmp_buf[UART_TMP_BUF_SIZE];
     uart_event_t event;
 
     while (1)
@@ -106,48 +113,20 @@ static void uart_rx_task(void* arg)
         switch (event.type)
         {
             case UART_DATA:
-            {
-                /* 从 UART FIFO 读取数据 */
-                const int len = uart_read_bytes(
-                    UART_PORT, tmp_buf, sizeof(tmp_buf), pdMS_TO_TICKS(100));
-                if (len <= 0)
-                {
-                    break;
-                }
-
-                /* 写入 RingBuf */
-                if (xRingbufferSend(s_ringbuf, tmp_buf, (size_t)len,
-                                    pdMS_TO_TICKS(10)) != pdTRUE)
-                {
-                    ESP_LOGW(TAG, "RingBuf full, dropping %d bytes", len);
-                    esp_event_post(CMCAR_EVENTS, CMCAR_UART_ERROR, NULL, 0, 0);
-                    break;
-                }
-
-                /* 从 RingBuf 取出并解析 */
-                size_t item_size;
-                uint8_t* item = xRingbufferReceive(s_ringbuf, &item_size, 0);
-                if (item != NULL && item_size > 0)
-                {
-                    /* 整个 chunk 都要解析：一次读取可能聚合多帧（ACK + sensor），
-                       feed_stream 会逐字节喂入并对每一帧回调 */
-                    pkt_parser_feed_stream(
-                        &s_parser, item, item_size, uart_frame_dispatch, NULL);
-
-                    vRingbufferReturnItem(s_ringbuf, item);
-                }
+                drain_rx();
                 break;
-            }
 
             case UART_FIFO_OVF:
                 ESP_LOGE(TAG, "FIFO overflow");
                 uart_flush_input(UART_PORT);
+                pkt_parser_init(&s_parser);
                 esp_event_post(CMCAR_EVENTS, CMCAR_UART_ERROR, NULL, 0, 0);
                 break;
 
             case UART_BUFFER_FULL:
                 ESP_LOGW(TAG, "Ring buffer full");
                 uart_flush_input(UART_PORT);
+                pkt_parser_init(&s_parser);
                 break;
 
             case UART_PARITY_ERR:
@@ -157,6 +136,7 @@ static void uart_rx_task(void* arg)
             case UART_FRAME_ERR:
                 ESP_LOGW(TAG, "Frame error");
                 uart_flush_input(UART_PORT);
+                pkt_parser_init(&s_parser);
                 break;
 
             default:
@@ -232,16 +212,6 @@ esp_err_t uart_service_init(void)
     {
         ESP_LOGE(TAG, "driver_install failed: %s", esp_err_to_name(ret));
         return ret;
-    }
-
-    /* 创建静态 RingBuf */
-    s_ringbuf = xRingbufferCreateStatic(RINGBUF_SIZE, RINGBUF_TYPE_BYTEBUF,
-                                        s_ringbuf_storage, &s_ringbuf_struct);
-    if (s_ringbuf == NULL)
-    {
-        ESP_LOGE(TAG, "Failed to create RingBuf");
-        uart_driver_delete(UART_PORT);
-        return ESP_ERR_NO_MEM;
     }
 
     /* 创建静态 TX 队列 */
@@ -357,10 +327,5 @@ esp_err_t uart_service_send_stop(const uint8_t* data, size_t len)
 esp_err_t uart_service_stop(void)
 {
     uart_driver_delete(UART_PORT);
-    if (s_ringbuf != NULL)
-    {
-        vRingbufferDelete(s_ringbuf);
-        s_ringbuf = NULL;
-    }
     return ESP_OK;
 }
