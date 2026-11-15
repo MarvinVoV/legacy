@@ -21,8 +21,95 @@ static LightCommand mood(uint32_t event)
     return (LightCommand){.session=42,.epoch=1,.event=event,.kind=LIGHT_EXPRESSION,
         .value=LIGHT_HAPPY,.intensity=100,.ttlMs=3000};
 }
+/* Sample two steady cycles so a hold spanning the trough is counted once. */
+static void test_calm_breath(void)
+{
+    LightRenderer state = {0};
+    LightHints noHints = {0};
+    LightLocal parked = {.motionValid = true};
+    LightView status;
+    LedRgb frame[WS2812_LED_COUNT], previous[WS2812_LED_COUNT] = {0};
+    unsigned holdMs = 0, longestMs = 0;
+    unsigned greenMin = 255, greenMax = 0;
+    bool dark = false, peak = false, intermediate = false;
+    for (uint32_t time = 0; time < 12000; time += 40) {
+        parked.sampledMs = time;
+        Lighting_Render(&state, &noHints, &parked, time, frame, &status);
+        if (time < 4000) continue;
+        assert(status.mode == LIGHT_IDLE);
+        unsigned greenSum = 0, blueSum = 0;
+        for (unsigned i = 0; i < WS2812_LED_COUNT; ++i) {
+            const LedRgb a = frame[i], b = frame[WS2812_LED_COUNT - 1u - i];
+            assert(a.r == 0 && a.g == b.g && a.b == b.b);
+            assert(a.g <= 10 && a.b <= 4);
+            greenSum += a.g;
+            blueSum += a.b;
+        }
+        assert(greenSum >= 2);
+        dark |= greenSum == 2 && blueSum == 0 && frame[2].g == 1 && frame[3].g == 1;
+        peak |= greenSum == 60 && blueSum == 24;
+        intermediate |= greenSum % WS2812_LED_COUNT != 0;
+        if (greenSum < greenMin) greenMin = greenSum;
+        if (greenSum > greenMax) greenMax = greenSum;
+        holdMs = memcmp(frame, previous, sizeof(frame)) == 0 ? holdMs + 40 : 40;
+        if (holdMs > longestMs) longestMs = holdMs;
+        memcpy(previous, frame, sizeof(frame));
+    }
+    assert(dark && peak && intermediate && longestMs <= 240);
+    printf("calm breath: green sum %u..%u, longest steady frame %u ms\n",
+           greenMin, greenMax, longestMs);
+}
+
+static void test_turn_sweep(void)
+{
+    LightRenderer left = {0}, right = {0};
+    LightHints noHints = {0};
+    LightLocal car = {.motionValid = true};
+    LightView status;
+    LedRgb lhs[6], rhs[6];
+    /* An arbitrary entry time just before uint32 wrap tests phase ownership. */
+    const uint32_t start = UINT32_MAX - 91u;
+    for (unsigned elapsed = 0; elapsed <= 680; elapsed += 40) {
+        car.sampledMs = start + elapsed;
+        car.steering = -1;
+        Lighting_Render(&left, &noHints, &car, car.sampledMs, lhs, &status);
+        assert(status.mode == LIGHT_LEFT);
+        car.steering = 1;
+        Lighting_Render(&right, &noHints, &car, car.sampledMs, rhs, &status);
+        assert(status.mode == LIGHT_RIGHT);
+        for (unsigned i = 0; i < 6; ++i) {
+            assert(memcmp(&lhs[i], &rhs[5 - i], sizeof(LedRgb)) == 0);
+            assert(lhs[i].r <= LIGHTING_MAX_CHANNEL);
+            if (i >= 3) assert(lhs[i].r == 0);
+            else assert(lhs[i].b == 0 && lhs[i].r >= lhs[i].g);
+        }
+        if (elapsed == 0 || elapsed == 680)
+            assert(lhs[2].r > 0 && !lhs[1].r && !lhs[0].r);
+        if (elapsed == 160) assert(lhs[2].r > lhs[1].r && lhs[1].r > 0);
+        if (elapsed == 320) assert(lhs[1].r > lhs[0].r && lhs[0].r > 0);
+        if (elapsed == 480) assert(!lhs[2].r && lhs[0].r > lhs[1].r);
+        if (elapsed == 640) assert(!lhs[2].r && !lhs[1].r && !lhs[0].r);
+    }
+    car.sampledMs += 40;
+    Lighting_Render(&left, &noHints, &car, car.sampledMs, lhs, &status);
+    assert(status.mode == LIGHT_RIGHT && lhs[3].r > 0 && !lhs[4].r && !lhs[5].r);
+    assert(!lhs[0].r && !lhs[1].r && !lhs[2].r);
+    car.braking = true;
+    car.sampledMs += 40;
+    Lighting_Render(&left, &noHints, &car, car.sampledMs, lhs, &status);
+    assert(status.mode == LIGHT_BRAKE && lhs[0].r == 12 && lhs[5].r == 12);
+    assert(!lhs[3].r);
+    car.fault = true;
+    Lighting_Render(&left, &noHints, &car, car.sampledMs, lhs, &status);
+    assert(status.mode == LIGHT_FAULT);
+    for (unsigned i = 0; i < 6; ++i)
+        assert(lhs[i].r > 0 && !lhs[i].g && !lhs[i].b);
+}
+
 int main(void)
 {
+    test_calm_breath();
+    test_turn_sweep();
     local.motionValid=true;Lighting_NewSession(&hints,42);step(0);
     assert(view.mode==LIGHT_IDLE && !(view.flags&4));
     LightCommand command=mood(1);

@@ -74,6 +74,56 @@ static LedRgb scale(LedRgb color,unsigned value)
 {
     return (LedRgb){(uint8_t)(color.r*value/255u),(uint8_t)(color.g*value/255u),(uint8_t)(color.b*value/255u)};
 }
+/* Round the first and last eighth of each half-cycle. Most of the ramp stays
+ * linear so a soft turnaround does not become a long pause in the dark. */
+static unsigned breath_level(uint32_t phase, uint32_t period)
+{
+    const unsigned ramp = triangle(phase, period);
+    const unsigned edge = 32u;
+    const unsigned distance = ramp < 128u ? ramp : 255u - ramp;
+    unsigned eased;
+    if (distance < edge)
+        eased = distance * distance * 255u / (2u * edge * (255u - edge));
+    else
+        eased = (2u * distance - edge) * 255u / (2u * (255u - edge));
+    return ramp < 128u ? eased : 255u - eased;
+}
+
+static LedRgb mood_color(uint8_t mood, uint32_t phase, unsigned strength)
+{
+    /* Near the trough only the dominant hue glows (roughly one PWM count).
+     * Endpoints are in the renderer's input space, before gamma correction. */
+    static const LedRgb dim[LIGHT_MOOD_COUNT] = {
+        {0,48,0}, {76,0,0}, {0,0,76}, {76,0,0}, {0,0,76}
+    };
+    static const LedRgb peak[LIGHT_MOOD_COUNT] = {
+        {0,237,150}, {255,190,35}, {30,190,255}, {255,135,170}, {85,110,180}
+    };
+    const unsigned level = breath_level(phase, mood == LIGHT_HAPPY ? 2200u : 4000u);
+    const LedRgb lo = dim[mood], hi = peak[mood];
+    const LedRgb color = {
+        (uint8_t)(lo.r + (hi.r - lo.r) * level / 255u),
+        (uint8_t)(lo.g + (hi.g - lo.g) * level / 255u),
+        (uint8_t)(lo.b + (hi.b - lo.b) * level / 255u)
+    };
+    return scale(color, strength * 255u / 100u);
+}
+
+/* A 680 ms sweep: the next LED starts rising while the previous one is
+ * still lit. A 40 ms head start makes the first rendered frame visible. */
+static LedRgb turn_pixel(unsigned phaseMs, unsigned distance)
+{
+    const unsigned start = distance * 140u;
+    const unsigned time = phaseMs + 40u;
+    if (time < start || time >= start + 400u) return (LedRgb){0};
+
+    const unsigned age = time - start;
+    unsigned level = 255u;
+    if (age < 120u) level = age * 255u / 120u;
+    else if (age > 200u) level = (400u - age) * 255u / 200u;
+    return scale((LedRgb){255,155,0}, level);
+}
+
 static void battery_update(LightRenderer *r,const LightLocal *local,uint32_t now)
 {
     if (!local->batteryValid || now-local->batteryMs>2000u || local->batteryPercent>100u) {
@@ -112,10 +162,7 @@ void Lighting_Render(LightRenderer *r,const LightHints *h,const LightLocal *loca
     const uint8_t key=(uint8_t)(voice*LIGHT_MOOD_COUNT+mood);
     if (!r->ready || key!=r->baseKey) { r->phaseMs=now;r->baseKey=key; }
     const uint32_t phase=now-r->phaseMs;
-    static const LedRgb palette[LIGHT_MOOD_COUNT]={
-        {0,240,150},{255,190,35},{30,190,255},{255,135,170},{85,110,180}};
-    unsigned breath=100u+triangle(phase,mood==LIGHT_HAPPY ? 2200u : 4000u)*155u/255u;
-    LedRgb base=scale(palette[mood],breath*strength/100u);
+    const LedRgb base = mood_color(mood, phase, strength);
     LedRgb target[WS2812_LED_COUNT];
     for (unsigned i=0;i<WS2812_LED_COUNT;++i) target[i]=base;
     if (voice!=LIGHT_VOICE_IDLE) {
@@ -141,12 +188,17 @@ void Lighting_Render(LightRenderer *r,const LightHints *h,const LightLocal *loca
         target[0]=target[5]=local->speedMmps>0 ? (LedRgb){15,210,45}
                                               : scale((LedRgb){255,220,175},100u+triangle(now,1800u)*155u/255u);
     }
-    if (fresh && local->steering && !local->stopRequested) {
-        mode=local->steering<0 ? LIGHT_LEFT : LIGHT_RIGHT;
-        const unsigned slot=(now/170u)%4u;
-        for (unsigned distance=0;distance<3;++distance) {
-            const unsigned pixel=local->steering<0 ? 2u-distance : 3u+distance;
-            target[pixel]=slot<3u && distance<=slot ? (LedRgb){255,155,0} : (LedRgb){0};
+    const int8_t previousTurn = r->turnDirection;
+    const bool turnVisible = fresh && !local->stopRequested && !braking &&
+                             !r->brakeActive && !local->fault;
+    r->turnDirection = turnVisible ? local->steering : 0;
+    if (r->turnDirection != previousTurn) r->turnStartMs = now;
+    if (r->turnDirection) {
+        mode = r->turnDirection < 0 ? LIGHT_LEFT : LIGHT_RIGHT;
+        const unsigned sweepMs = (now - r->turnStartMs) % 680u;
+        for (unsigned distance = 0; distance < 3; ++distance) {
+            const unsigned pixel = r->turnDirection < 0 ? 2u - distance : 3u + distance;
+            target[pixel] = turn_pixel(sweepMs, distance);
         }
     }
     const bool warning=!fresh || r->lowBattery;
@@ -163,20 +215,32 @@ void Lighting_Render(LightRenderer *r,const LightHints *h,const LightLocal *loca
             target[i]=scale((LedRgb){255,0,0},150u+triangle(now,2400u)*105u/255u);
     }
 
+    /* A fixed rounding threshold per mirror pair adds intermediate whole-strip
+     * brightness levels without alternating LEDs between frames. Overlays retain
+     * their original per-channel rounding and immediate fault/brake handling. */
+    static const uint16_t breathRounding[WS2812_LED_COUNT] = {
+        10837u, 32512u, 54187u, 54187u, 32512u, 10837u
+    }; /* 1/6, 1/2 and 5/6 of 255 squared */
+    const bool idleBreath = mode == LIGHT_IDLE && voice == LIGHT_VOICE_IDLE;
     uint32_t dt=r->ready ? now-r->lastMs : 0u;
     if (dt>250u) dt=250u;
     for (unsigned i=0;i<WS2812_LED_COUNT;++i) {
         const uint8_t colors[3]={target[i].r,target[i].g,target[i].b};
         uint8_t final[3];
+        /* The sweep has its own fade. On exit, release that half-strip
+         * immediately so the previous direction cannot leave an amber trail. */
+        const int8_t side = i < 3u ? -1 : 1;
+        const bool turnPixel = side == r->turnDirection || side == previousTurn;
+        const unsigned rounding = idleBreath ? breathRounding[i] : 32512u;
         for (unsigned j=0;j<3;++j) {
             const int32_t desired=(int32_t)colors[j]*256;
-            if (!r->ready || mode==LIGHT_FAULT || (mode==LIGHT_BRAKE && (i==0u || i==5u)))
+            if (!r->ready || turnPixel || mode==LIGHT_FAULT || (mode==LIGHT_BRAKE && (i==0u || i==5u)))
                 r->smooth[i][j]=(uint16_t)desired;
             else r->smooth[i][j]=(uint16_t)((int32_t)r->smooth[i][j]+
                          (desired-r->smooth[i][j])*(int32_t)dt/(int32_t)(120u+dt));
             const uint32_t linear=r->smooth[i][j]/256u;
             /* Approximate gamma 2, with a single final current/brightness cap. */
-            final[j]=(uint8_t)((linear*linear*LIGHTING_MAX_CHANNEL+32512u)/65025u);
+            final[j]=(uint8_t)((linear*linear*LIGHTING_MAX_CHANNEL+rounding)/65025u);
         }
         out[i]=(LedRgb){final[0],final[1],final[2]};
     }

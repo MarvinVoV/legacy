@@ -41,6 +41,8 @@ typedef struct {
 typedef struct {
     uint32_t lastMs, phaseMs, brakeMs, batterySinceMs;
     uint16_t smooth[WS2812_LED_COUNT][3]; /* Q8 internal channel values */
+    uint32_t turnStartMs;
+    int8_t turnDirection;
     uint8_t baseKey;
     bool ready, wasMoving, wasBraking, brakeActive;
     bool batteryTimer, lowBattery, recoveringBattery;
