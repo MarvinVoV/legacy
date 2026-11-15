@@ -3,11 +3,11 @@
  *
  * GC9A01 240x240 圆形 IPS 屏驱动实现。
  *
- * 阶段 1 目标：验证 SPI2 接线与初始化序列是否能点亮整屏。
- * 只实现整屏/矩形填充，不做局部刷新与动画。
+ * 保留已验证的初始化和 7.8MHz 线速；支持整屏填充与局部帧缓冲传输。
  */
 
 #include "display.h"
+#include <stddef.h>
 
 #include "display_config.h"
 #include "log_manager.h"
@@ -22,7 +22,6 @@ static SPI_HandleTypeDef s_spi;
 static void display_dwt_init(void)
 {
     CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
-    DWT->CYCCNT = 0u;
     DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
 }
 
@@ -318,10 +317,10 @@ void Display_FillRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t c
     cs_high();
 }
 
-void Display_BlitBuffer(const uint16_t *buf, uint16_t x, uint16_t y,
+bool Display_BlitBuffer(const uint16_t *buf, uint16_t x, uint16_t y,
                         uint16_t w, uint16_t h)
 {
-    if (buf == NULL || w == 0u || h == 0u) { return; }
+    if (buf == NULL || x >= DISPLAY_WIDTH || y >= DISPLAY_HEIGHT || w == 0u || h == 0u) { return false; }
     if ((uint32_t)x + w > DISPLAY_WIDTH)  { w = (uint16_t)(DISPLAY_WIDTH - x); }
     if ((uint32_t)y + h > DISPLAY_HEIGHT) { h = (uint16_t)(DISPLAY_HEIGHT - y); }
 
@@ -340,9 +339,14 @@ void Display_BlitBuffer(const uint16_t *buf, uint16_t x, uint16_t y,
     for (uint16_t row = 0u; row < h; ++row)
     {
         const uint16_t *src = buf + (uint32_t)(y + row) * DISPLAY_WIDTH + x;
-        (void)HAL_SPI_Transmit(&s_spi, (uint8_t *)src, (uint16_t)(w * 2u), 100u);
+        if (HAL_SPI_Transmit(&s_spi, (uint8_t *)src, (uint16_t)(w * 2u), 100u) != HAL_OK)
+        {
+            cs_high();
+            return false;
+        }
     }
     cs_high();
+    return true;
 }
 
 void Display_Fill(uint16_t color)
@@ -368,6 +372,10 @@ void Display_Fill(uint16_t color) { (void)color; }
 void Display_FillRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color)
 {
     (void)x; (void)y; (void)w; (void)h; (void)color;
+}
+bool Display_BlitBuffer(const uint16_t *buf, uint16_t x, uint16_t y, uint16_t w, uint16_t h)
+{
+    (void)buf; (void)x; (void)y; (void)w; (void)h; return false;
 }
 void Display_SelfTest(void) { }
 

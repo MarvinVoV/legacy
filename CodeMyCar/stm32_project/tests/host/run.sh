@@ -5,6 +5,7 @@ DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 CC="${CC:-clang}"
 bash "$DIR/tests/host/run_power.sh"
 bash "$DIR/tests/host/run_lighting.sh"
+bash "$DIR/tests/host/run_display.sh"
 
 echo "== motion kinematics =="
 "$CC" -std=c11 -Wall -Wextra -O2 \

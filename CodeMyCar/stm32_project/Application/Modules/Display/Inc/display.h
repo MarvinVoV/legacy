@@ -2,7 +2,7 @@
  * display.h
  *
  * GC9A01 圆形 IPS 屏驱动（SPI2 + DC/CS/RST GPIO）。
- * 阶段 1 只提供初始化与整屏填充，用于验证接线。
+ * 初始化、整屏填充和带边界裁剪的局部帧缓冲传输。
  */
 
 #ifndef MODULES_DISPLAY_INC_DISPLAY_H_
@@ -33,8 +33,8 @@ void Display_Fill(uint16_t color);
 void Display_FillRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color);
 
 /** 把 RGB565 缓冲区（行优先，宽 = DISPLAY_WIDTH，已按 SPI 字节序存放）
- *  的矩形区域送到屏幕。 */
-void Display_BlitBuffer(const uint16_t *buf, uint16_t x, uint16_t y,
+ *  的矩形区域送到屏幕。返回 false 表示参数无效或 SPI 传输失败。 */
+bool Display_BlitBuffer(const uint16_t *buf, uint16_t x, uint16_t y,
                         uint16_t w, uint16_t h);
 
 /** 上电自检：红 → 绿 → 蓝 → 停在蓝色（阻塞，仅启动阶段调用） */

@@ -323,7 +323,7 @@ int System_Initialize()
     {
         LOG_ERROR(LOG_MODULE_SYSTEM, "Display init failed; system continues");
     }
-#if DISPLAY_SELF_TEST
+#if DISPLAY_ENABLED
     else
     {
         DisplayEye_Start();

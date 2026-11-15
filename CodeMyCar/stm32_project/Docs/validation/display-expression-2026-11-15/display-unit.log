@@ -1,0 +1,2 @@
+display face: animation, overrides, wrap, RGB565 and dirty coverage passed
+display SPI: clipping, framebuffer stride, bounds and failure/CS release passed
