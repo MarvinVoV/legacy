@@ -127,3 +127,6 @@ Thumbs.db
 # ESP-IDF 台架生成的本机配置
 /esp32_project/tests/audio_board_probe/sdkconfig
 /esp32_project/tests/audio_i2s_smoke/sdkconfig
+
+# 本机商家圆屏资料包
+/Docs/reference/1.28寸彩屏7针圆板模块/

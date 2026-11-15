@@ -164,6 +164,8 @@ STM32 侧配置位置：
 
 240×240 圆屏使用 SPI Mode 0，实测配置约 7.8 MHz。五种双眼表情采用 RGB565 局部刷新。[驱动、预览和实物验收](../../stm32_project/Docs/Display-Expression-Refresh-Handoff-2026-11-15.md)
 
+核对屏幕引脚时，请按资料名《1.28-SPI原理图》或模块型号 MH128R-IG01 在网上自行搜索。
+
 ## 10. OV2640 摄像头
 
 摄像头开发已搁置。最后记录为信号线仍在，摄像头 VCC/GND 已拔。恢复前核对 ESP32 侧 3.3V 供电域和当时的倒灌记录。[摄像头与供电记录](../archive/hardware/Handoff-2026-11-15-Display-Sonar-Camera.md)
