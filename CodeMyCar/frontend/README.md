@@ -2,6 +2,8 @@
 
 面向手机浏览器的 CodeMyCar 驾驶控制台，基于 Vue 3 + TypeScript + Vite。
 
+整车联调入口见[项目导读](../README.md)，运动请求、单位和停车回执见[HTTP 运动 API](../Docs/protocol/agent-motion-api.md)。
+
 ## 功能
 
 - 二维触控摇杆：纵向速度、横向转向，松手自动急停

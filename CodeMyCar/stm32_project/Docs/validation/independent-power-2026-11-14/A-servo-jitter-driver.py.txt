@@ -1,0 +1,99 @@
+import json,time,threading,os,statistics,subprocess,re
+from pathlib import Path
+import httpx
+import paho.mqtt.client as mqtt
+from app.config import get_settings
+s=get_settings();base='http://127.0.0.1:8000/api/v1';device='DEV_1'
+report={'scope':'Power A: ESP external5V/noUSB, STM USB; small servo left/center/right/center10s, zero wheel targets, no ST-LINK', 'limitations':['No ground driving/accuracy test','No independent supply root-cause certification'], 'results':[], 'events':[]}
+out=Path('/tmp/cmcar-power-a-servo-repeat.json')
+cond=threading.Condition();subscribed=threading.Event()
+fields={'ack':['seq','ack','status','session_id'], 'motion':['seq','mode','state','fault','error','lease_expired','left_mmps','right_mmps','goal_heading_source','session_id']}
+client=mqtt.Client(mqtt.CallbackAPIVersion.VERSION2,client_id=f'cmcar-ina-regress-{os.getpid()}')
+if s.mqtt_username:client.username_pw_set(s.mqtt_username,s.mqtt_password)
+def on_connect(c,u,flags,reason,props):c.subscribe([(f'data/{device}/{kind}',0) for kind in fields])
+def on_subscribe(c,u,mid,reasons,props):subscribed.set()
+def on_message(c,u,message):
+ try:d=json.loads(message.payload)
+ except (ValueError,UnicodeError):return
+ kind=message.topic.rsplit('/',1)[-1]
+ if kind not in fields:return
+ e={'t':time.monotonic(),'kind':kind,'data':{k:d[k] for k in fields[kind] if k in d}}
+ with cond:report['events'].append(e);cond.notify_all()
+client.on_connect=on_connect;client.on_subscribe=on_subscribe;client.on_message=on_message
+client.connect(s.mqtt_host,s.mqtt_port);client.loop_start();assert subscribed.wait(4),'MQTT observer subscribe failed'
+headers={'X-API-Key':s.api_key} if s.api_key else {}
+http=httpx.Client(base_url=base,headers=headers,timeout=8,trust_env=False)
+def save():out.write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
+def result(name,**kwargs):
+ d={'case':name,**kwargs};report['results'].append(d);save();print(json.dumps({k:v for k,v in d.items() if k!='motion_samples'},ensure_ascii=False),flush=True)
+def stop():
+ t=time.monotonic();r=http.post(f'/agent/devices/{device}/stop');r.raise_for_status();d=r.json()
+ assert all(d.get(k) for k in ('accepted','confirmed','stopped')),d
+ state=http.get(f'/agent/devices/{device}/state').json()
+ assert state['motion']['mode']==0 and not state['motion']['fault'],state
+ assert abs(state['velocity']['linear_cm_s'])<=.1,state
+ return {'ms':round((time.monotonic()-t)*1000,1),'reply':d}
+def hold(name,seq,velocity,duration,curvature=0.0):
+ print('START '+name,flush=True);t=time.monotonic();deadline=t+duration
+ report.setdefault('commands',[])
+ while time.monotonic()<deadline:
+  tick=time.monotonic();sent={'seq':seq,'mono':tick,'unix':time.time(),'speed_mm_s':velocity,'curvature_1pm':curvature}
+  r=http.post(f'/devices/{device}/commands',json={'seq':seq,'cmd':'motion','motion':{'mode':3,'params':{'linear_vel':velocity,'curvature_1pm':curvature}}})
+  r.raise_for_status();assert r.json().get('success'),r.json();sent['http_ms']=round((time.monotonic()-tick)*1000,1);report['commands'].append(sent)
+  with cond:
+   ack=[e for e in report['events'] if e['kind']=='ack' and e['t']>=t and e['data'].get('seq')==seq]
+   motion=[e for e in report['events'] if e['kind']=='motion' and e['t']>=t and e['data'].get('seq')==seq]
+  assert not any(e['data'].get('status')!=0 for e in ack),ack
+  if time.monotonic()-t>.5 and (not ack or time.monotonic()-ack[-1]['t']>.5):raise RuntimeError('ACK stream stale over500ms; abort')
+  for e in motion[-4:]:
+   m=e['data'];assert not m.get('fault') and not m.get('lease_expired'),m
+   assert abs(m.get('left_mmps',0))<200 and abs(m.get('right_mmps',0))<200,m
+  time.sleep(max(0,min(.12-(time.monotonic()-tick),deadline-time.monotonic())))
+ with cond:
+  ack=[e for e in report['events'] if e['kind']=='ack' and e['t']>=t and e['data'].get('seq')==seq]
+  motion=[e for e in report['events'] if e['kind']=='motion' and e['t']>=t and e['data'].get('seq')==seq]
+ assert ack and motion,'Missing ACK or measured telemetry'
+ sign=1 if velocity>0 else -1
+ if velocity==0:
+  assert all(abs(e['data'].get('left_mmps',999))<=1 and abs(e['data'].get('right_mmps',999))<=1 for e in motion),motion
+ else:
+  assert any(sign*e['data'].get('left_mmps',0)>10 and sign*e['data'].get('right_mmps',0)>10 for e in motion),motion
+ tail=[e['data'] for e in motion if e['t']>=t+duration-1]
+ gaps=[ack[i]['t']-ack[i-1]['t'] for i in range(1,len(ack))]
+ result(name,passed=True,command={'linear_mmps':velocity,'curvature_1pm':curvature,'seconds':duration},ack_count=len(ack),first_ack_ms=round((ack[0]['t']-t)*1000,1),max_ack_gap_ms=round(max(gaps,default=0)*1000,1),left_tail_mmps=[m['left_mmps'] for m in tail],right_tail_mmps=[m['right_mmps'] for m in tail],motion_samples=[e['data'] for e in motion])
+hardware_done=threading.Event()
+def sample_servo_pwm():
+ cli='/opt/ST/STM32CubeCLT_1.22.0/STM32CubeProgrammer/bin/STM32_Programmer_CLI'
+ report['pwm_reads']=[]
+ while not hardware_done.is_set():
+  sample={'unix':time.time(),'mono':time.monotonic()}
+  try:
+   r=subprocess.run([cli,'-c','port=SWD','mode=HOTPLUG','freq=1000','sn=001800495300000A4E594B4D','-r32','0x40000028','16'],capture_output=True,text=True,timeout=3)
+   txt=re.sub(r'\x1b\[[0-9;]*m','',r.stdout+r.stderr);words={}
+   for line in txt.splitlines():
+    m=re.match(r'0x([0-9A-Fa-f]{8})\s*:\s*(.*)',line)
+    if m:
+     for j,w in enumerate(re.findall(r'\b[0-9A-Fa-f]{8}\b',m[2])):words[int(m[1],16)+j*4]=int(w,16)
+   sample.update(rc=r.returncode,psc=words.get(0x40000028),arr=words.get(0x4000002c),ccr1=words.get(0x40000034))
+  except Exception as e:sample['error']=repr(e)
+  report['pwm_reads'].append(sample);hardware_done.wait(.5)
+worker=threading.Thread(target=sample_servo_pwm,daemon=True)
+worker.start()
+try:
+ result('initial_stop',passed=True,stop=stop())
+ print('PREPARE_STOPPED3seconds',flush=True)
+ time.sleep(3)
+ hold('servo_left',236,0,10,-1.0)
+ hold('servo_center',237,0,10,0)
+ hold('servo_right',238,0,10,1.0)
+ hold('servo_final_center',239,0,10,0)
+ report['completed']=True
+except BaseException as exc:
+ report['completed']=False;report['failure']=type(exc).__name__+': '+str(exc)
+ print('ABORT',report['failure'],flush=True)
+ raise
+finally:
+ hardware_done.set();worker.join(4)
+ try:result('final_stop',passed=True,stop=stop())
+ except Exception as exc:report['final_stop_error']=type(exc).__name__;print('FINAL_STOP_FAILED',type(exc).__name__,flush=True)
+ save();http.close();client.loop_stop();client.disconnect()

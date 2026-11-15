@@ -8,7 +8,7 @@ STM32 采集 GY-219 / INA219，经 ESP32-S3 UART→MQTT 桥接发送到 pyserver
 
 **后续更新：用户已确认丝印R100，即0.1Ω/100mΩ，当前硬件presets已配置100并重新烧录，启用电流和功率。** 初期阻值未知时确实禁用了安培/瓦数输出，早期验收JSON里的`current_a/power_w=null`、`current_calibrated=false`是历史正确结果，不应据此误判当前仍未实现。通用未配置构建仍默认0并输出null；这不等于电流为零。
 
-`current_calibrated=true`在本协议中表示分流阻值已配置，并不表示经过独立仪表计量校准。用户新提供的电机说明书表明两只电机同时堵转标称约6.4A，超出R100与±320mV档对应的约±3.2A测量范围，模块持续承流能力也尚未确认。不要把低负载读数成功当作全工况选型通过；硬件参数与计算见项目根目录[规格清单](../../HARDWARE-SPECIFICATIONS.md)。
+`current_calibrated=true`在本协议中表示分流阻值已配置，并不表示经过独立仪表计量校准。用户新提供的电机说明书表明两只电机同时堵转标称约6.4A，超出R100与±320mV档对应的约±3.2A测量范围，模块持续承流能力也尚未确认。不要把低负载读数成功当作全工况选型通过；硬件参数与计算见项目根目录[规格清单](../../Docs/hardware/HARDWARE-SPECIFICATIONS.md)。
 
 电池标签12V、1800mAh、充电12.6V，按3串、单节满充4.2V的常规锂离子电池建立初始电压曲线。百分比是粗略估算，**没有完成此实物电池的放电曲线标定，不能把81%理解为剩余容量的计量结果**。负载压降、温度、老化、USB旁路供电都会影响解释。尚未实现库仑积分、满充学习、持久化SOC或剩余运行时间，也未新增低电量强制停车/BMS保护。
 
@@ -129,4 +129,4 @@ cd pyserver
 
 上层服务已启动在8000端口。开发改动保留在上述分支，尚未自动合并或推送；原有未跟踪的音频probe文件未纳入本功能。`.ioc`原本就缺少手写IMU/超声波配置，本次I2C2 MSP亦手工接入；使用CubeMX再生成前需合并这些设置，不能把旧`.ioc`当成完整引脚真值。
 
-参考：[TI INA219 数据手册](https://www.ti.com/lit/ds/symlink/ina219.pdf)、[ST STM32H723 数据手册](https://www.st.com/resource/en/datasheet/stm32h723zg.pdf)。初次串入电源后的舵机/双轮回归见[同日回归记录](INA219-Power-Insertion-Regression-2026-11-12.md)。
+参考：[TI INA219 数据手册](https://www.ti.com/lit/ds/symlink/ina219.pdf)、[ST STM32H723 数据手册](https://www.st.com/resource/en/datasheet/stm32h723zg.pdf)。初次串入电源后的舵机/双轮回归见[同日回归记录](../../Docs/archive/hardware/INA219-Power-Insertion-Regression-2026-11-12.md)。

@@ -63,7 +63,7 @@ pyserver/
 
 本轮未改已有.env、实际家庭记忆内容或语音执行开关。重启时仍显式保持运动关闭、板端播放/打断启用、连续录音归档关闭。实际记忆不写到公开模板，不随代码push。长期checkpoint TTL、已播放账本、儿童/距离覆盖和机械噪声误打断仍是此前待办。
 
-后续同批职责核对：[语音设备/服务端归属](Voice-Device-Server-Ownership-2026-11-12.md)。已移除v2打断的服务端重复开关，设备声明后服务端确认协议能力；ASR分句目前仍在服务器，完整下放需要下一版utterance边界协议，尚未实施。车辆控制继续注册本地Tools，不经过MCP。
+后续同批职责核对：[语音设备/服务端归属](../../Docs/voice/Voice-Device-Server-Ownership-2026-11-12.md)。已移除v2打断的服务端重复开关，设备声明后服务端确认协议能力；ASR分句目前仍在服务器，完整下放需要下一版utterance边界协议，尚未实施。车辆控制继续注册本地Tools，不经过MCP。
 
 收尾实况：普通pyserver已重启，PID9323，HTTP就绪且日志确认companion运行时启用，未降级；日志`/tmp/cmcar-markdown-config-server.log`。配置检查确认LLM=deepseek、ASR/TTS=baidu，凭证存在但未打印。DEV_1/household实际Markdown文件已初始化/按需迁移，位于`agent_data/memories/DEV_1__household-723be441b9e7600e8aae90d9/MEMORY.md`，不进Git。语音运动关闭；启动不再依赖v2打断的旧server开关。可编辑安装重新验证通过；最终全量323项通过。
 

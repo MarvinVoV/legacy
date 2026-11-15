@@ -61,11 +61,11 @@ S3对`cmd:lighting`使用独立单槽覆盖mailbox、静态3072B/优先级2 work
 
 清除：`{"clear":true}`。可选epoch用于代际；REST缺省沿用当前epoch，Agent工具每次推进epoch。成功只表示发布，返回`data:{accepted:true,confirmed:false}`；不得据此承诺灯已亮。S3的MQTT上行是`data/DEV_1/sensor`、`type:lighting`，服务端独立缓存，GET设备status中的`data.lighting`提供状态。超过3秒、离线或session不匹配不作为新鲜状态。session=0仅接受无远端提示的本地状态，避免STM32重启后的bootstrap死锁。
 
-Agent原生`express_emotion(emotion,intensity,duration_ms)` / `clear_emotion()`，不经过MCP；设备身份由会话注入、没有device_id/RGB/故障级参数。工具等待匹配epoch及accepted变化的设备状态，超时只说已发布。`confirmed`代表设备状态观测，不代表光学测量，故障覆盖另行说明。见[单Agent交接](../../pyserver/docs/Single-Agent-Lighting-And-Voice-Acceptance-2026-11-13.md)。
+Agent原生`express_emotion(emotion,intensity,duration_ms)` / `clear_emotion()`，不经过MCP；设备身份由会话注入、没有device_id/RGB/故障级参数。工具等待匹配epoch及accepted变化的设备状态，超时只说已发布。`confirmed`代表设备状态观测，不代表光学测量，故障覆盖另行说明。见[单Agent交接](../../Docs/testing/Single-Agent-Lighting-And-Voice-Acceptance-2026-11-13.md)。
 
 ## 验收与复用
 
-完整步骤、命令、人工用例见[回归指南](../../pyserver/docs/Lighting-And-Voice-Regression-Guide-2026-11-13.md)。核心入口：
+完整步骤、命令、人工用例见[回归指南](../../Docs/testing/Lighting-And-Voice-Regression-Guide-2026-11-13.md)。核心入口：
 
 - `stm32_project/tests/host/run_lighting.sh`：编码、纯状态机、边界/TTL、优先级、事件/会话、限亮；已接入完整host/run.sh。
 - `esp32_project/tests/host`：语义JSON、20/44B转换、边界拒绝。

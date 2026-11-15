@@ -1,0 +1,42 @@
+import json,time,threading,os,re
+from pathlib import Path
+import httpx,paho.mqtt.client as mqtt
+from app.config import get_settings
+s=get_settings();r={'setup':'A: ESP32 external regulated5V, no USB; STM32 USB; direct UART/GND; IMU STM3V3; TB6612 OFF per operator','start_unix':time.time(),'samples':[],'events':[]};lock=threading.Lock();ready=threading.Event();out=Path('/tmp/cmcar-power-a-passive.json')
+c=mqtt.Client(mqtt.CallbackAPIVersion.VERSION2,client_id=f'power-A-passive-{os.getpid()}')
+if s.mqtt_username:c.username_pw_set(s.mqtt_username,s.mqtt_password)
+def conn(c,u,f,rc,p):c.subscribe('data/DEV_1/#')
+def sub(c,u,m,rc,p):ready.set()
+def message(c,u,m):
+ try:d=json.loads(m.payload)
+ except Exception:return
+ kind=m.topic.rsplit('/',1)[-1];keep=kind in ['heartbeat','motion']
+ if kind=='log':keep=any(k in str(d) for k in ['grv=','PERF','reopen','IMU_BUS','[ERROR]','POWER probe'])
+ if keep:
+  with lock:r['events'].append({'unix':time.time(),'kind':kind,'retain':m.retain,'data':d})
+c.on_connect=conn;c.on_subscribe=sub;c.on_message=message
+http=httpx.Client(base_url='http://127.0.0.1:8000/api/v1',headers={'X-API-Key':s.api_key} if s.api_key else {},trust_env=False,timeout=4)
+def save():
+ with lock:txt=json.dumps(r,ensure_ascii=False,indent=2)
+ out.write_text(txt+'\n')
+try:
+ c.connect(s.mqtt_host,s.mqtt_port);c.loop_start();assert ready.wait(3)
+ deadline=time.monotonic()+90
+ while time.monotonic()<deadline:
+  sample={'unix':time.time()}
+  try:
+   state=http.get('/agent/devices/DEV_1/state');state.raise_for_status();state=state.json()
+   status=http.get('/devices/DEV_1/status');status.raise_for_status();status=status.json()['data']
+   sample.update(state=state,status=status)
+   sample['healthy']=bool(state.get('online') and state.get('stm32_connected') and not state['motion']['stale'] and state['motion']['mode']==0 and not state['motion']['fault'] and state['velocity']['linear_cm_s']==0 and status.get('imu_age_s',999)<=1 and status.get('sensor_age_s',999)<=1)
+  except Exception as e:sample.update(healthy=False,error=repr(e))
+  r['samples'].append(sample)
+  if len(r['samples'])%5==0:save();print('PROGRESS',len(r['samples']),'healthy',sum(x['healthy'] for x in r['samples']),flush=True)
+  time.sleep(min(2,max(0,deadline-time.monotonic())))
+ r['end_unix']=time.time();r['all_samples_healthy']=all(x['healthy'] for x in r['samples']);r['completed']=True
+except Exception as e:r['failure']=repr(e)
+finally:
+ save();http.close();c.loop_stop();c.disconnect()
+ print(json.dumps({k:v for k,v in r.items() if k not in ['samples','events']},ensure_ascii=False),flush=True)
+ print('FIRST',json.dumps(r['samples'][0],ensure_ascii=False),flush=True)
+ print('LAST',json.dumps(r['samples'][-1],ensure_ascii=False),flush=True)

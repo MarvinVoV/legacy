@@ -1,0 +1,31 @@
+{
+  "setup": "Operator restored both ESP32 and STM32 USB power after A servo jitter; read-only check, no commands",
+  "start": "2026-11-14 20:16:04",
+  "end": "2026-11-14 20:16:34",
+  "samples": 16,
+  "healthy_samples": 16,
+  "imu_hz": 99.78,
+  "imu_first": [
+    1794658564.043,
+    3526,
+    3526
+  ],
+  "imu_last": [
+    1794658594.851,
+    6600,
+    6600
+  ],
+  "max_imu_age_s": 0.3,
+  "max_motion_age_ms": 293,
+  "heartbeat_uptimes": [
+    31,
+    61
+  ],
+  "unexpected_logs": [],
+  "health_logs": [
+    "2026-11-14 20:16:08,784 [device.DEV_1] INFO: [INFO][system] PERF cpu_permille=100 heap=10544 min=9680 tasks=15 rx_drop=0 log_drop=0 ",
+    "2026-11-14 20:16:18,858 [device.DEV_1] INFO: [INFO][system] PERF cpu_permille=101 heap=10544 min=9680 tasks=15 rx_drop=0 log_drop=0 ",
+    "2026-11-14 20:16:28,942 [device.DEV_1] INFO: [INFO][system] PERF cpu_permille=100 heap=10544 min=9680 tasks=15 rx_drop=0 log_drop=0 "
+  ],
+  "stopped": true
+}

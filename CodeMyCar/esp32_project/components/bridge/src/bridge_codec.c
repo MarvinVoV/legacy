@@ -1,7 +1,7 @@
 #include <math.h>
 /**
  * @file bridge_codec.c
- * @brief JSON ↔ Binary 转换实现（见 docs/cmd-mapping.md）
+ * @brief JSON ↔ Binary 转换实现（见 CodeMyCar/Docs/protocol/cmd-mapping.md）
  *
  * 下行用 cJSON 解析 JSON；上行用 snprintf 构建 JSON。
  * ESP32-C6 无硬件 FPU：sensor 浮点字段以定点整数（×1000）编码，避免 %f。

@@ -1,0 +1,26 @@
+{
+  "recorded_unix": 1794658381.843141,
+  "source": "Observed tool console and operator replies; recorded after event, not exact event timestamps",
+  "stop1": {
+    "accepted": true,
+    "confirmed": true,
+    "stopped": true,
+    "seq": 73
+  },
+  "stop2": {
+    "accepted": true,
+    "confirmed": true,
+    "stopped": true,
+    "seq": 74
+  },
+  "final_state_at_stop": {
+    "mode": 0,
+    "fault": false,
+    "error": 0,
+    "linear_cm_s": 0,
+    "seq": 74
+  },
+  "operator": "TB6612 switched OFF and servo stopped",
+  "actuation_paused": true,
+  "B_and_C_not_started": true
+}

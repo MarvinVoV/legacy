@@ -12,11 +12,11 @@
 
 尚未实现/验收：大模型自由对话（目前只有严格指令识别和原文回读）、自定义唤醒词、儿童语音效果、双麦/新codec适配、车载播放、AEC/打断，以及语音上传与控制的长期并发压力。自由对话需明确LLM提供商和配置，不能用回读冒充智能回答。
 
-最新语音架构与本地录音验收见 [语音开发接手入口](START-HERE-Voice-Architecture-Handoff-2026-11-11.md)，在 `codex/s3-voice-architecture` 分支完成；以该文档区分当前实板固件和main基线。
+最新语音架构与本地录音验收见 [语音开发接手入口](../../../Docs/archive/voice/START-HERE-Voice-Architecture-Handoff-2026-11-11.md)，在 `codex/s3-voice-architecture` 分支完成；以该文档区分当前实板固件和main基线。
 
 ## 本次目标和实际硬件
 
-**2026-11-11追加：两板现已接线，悬空基础控制、突发STOP与S3重启恢复回归通过。** 详见 [双板硬件回归](S3-STM32-Hardware-Regression-2026-11-11.md)，包含初期人工复位及代理影响的失败记录；下文第一版启动结果是此前单板阶段的历史记录。
+**2026-11-11追加：两板现已接线，悬空基础控制、突发STOP与S3重启恢复回归通过。** 详见 [双板硬件回归](../../../Docs/archive/voice/S3-STM32-Hardware-Regression-2026-11-11.md)，包含初期人工复位及代理影响的失败记录；下文第一版启动结果是此前单板阶段的历史记录。
 
 将网络桥接与语音从ESP32-C6迁移到ESP32-S3-DevKitC-1，模块丝印用户记录为 `ESP32-S3-WROOM-2 MCN32R16V`。实读S3 rev0.2、双核240MHz、32MB Octal Flash（1.8V）、16MB PSRAM。固件按N32R16V配置，不使用昨天建议的N16R8配置。
 

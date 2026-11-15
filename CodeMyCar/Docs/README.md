@@ -1,0 +1,22 @@
+# 整车文档
+
+从任务选择入口。硬件规格、跨板契约和整车验收在此维护。单板工具链、外设实现和原始测试证据跟随对应子项目。
+
+| 要做的事 | 入口 |
+|---|---|
+| 安装环境、编译或启动 | [根目录构建表](../README.md) |
+| 核对板型、电机参数、电池或引脚 | [硬件规格](hardware/HARDWARE-SPECIFICATIONS.md) · [引脚接线](hardware/HardwareWiring.md) · [供电与接地实测](hardware/Independent-Power-Root-Cause-Handoff-2026-11-14.md) |
+| 联调前端、服务端、两块板 | [HTTP 运动 API](protocol/agent-motion-api.md) · [MQTT 主题](protocol/mqtt-topics.md) · [UART 命令映射](protocol/cmd-mapping.md) |
+| 修改唤醒、打断或对话 | [语音职责划分](voice/Voice-Device-Server-Ownership-2026-11-12.md) · [声学验收和遗留问题](voice/Voice-Acoustic-Acceptance-2026-11-12.md) · [Agent 人格、工具和记忆](../pyserver/agent_profile/README.md) |
+| 验证停车、运动或灯光 | [控制测试指南](testing/Control-Test-Guide-For-Agents.md) · [灯光与语音回归](testing/Lighting-And-Voice-Regression-Guide-2026-11-13.md) |
+| 查固件实现 | [STM32 文档](../stm32_project/Docs/README.md) · [ESP32 文档](../esp32_project/docs/README.md) |
+| 查旧试验、审核意见或撤回方案 | [历史档案](archive/README.md) |
+
+## 2026-11-15 基线
+
+- STM32H723 使用 Release 配置。连杆重装后的直行中位是 **1470 µs**。停稳、轮速正负与 ACK 各自有不同的验证方法。[中位与 IMU 验证](../stm32_project/Docs/IMU-Busy-Recovery-And-Neutral-1470-Handoff-2026-11-14.md)
+- GC9A01 圆屏使用双眼动画，五种表情与灯带共用情绪输入。关闭执行器供电时实测约 20 fps，用户已确认切换完整流畅。[显示验收](../stm32_project/Docs/Display-Expression-Refresh-Handoff-2026-11-15.md)
+- 前后超声波已经接入，STM32 端已实测距离。运行期开关涉及 pyserver 发布、S3 转发和 STM32 执行。交接记录中 S3 转发固件已构建，尚待烧录并验证关闭、恢复和重启默认值。摄像头处于搁置状态。[板级交接](archive/hardware/Handoff-2026-11-15-Display-Sonar-Camera.md)
+- S3 本地识别“小鸭小鸭”，板端播放，服务端提供 ASR、对话和 TTS。当前音色 103、语速 6、音调 5。机械噪声误打断和轻声漏检仍有记录。真实语音运动执行默认关闭。[语音基线](voice/Voice-Baseline-And-Agent-Handoff-2026-11-12.md) · [单 Agent 实车验收](testing/Single-Agent-Lighting-And-Voice-Acceptance-2026-11-13.md)
+
+新增整车功能时在上表补入口。已完成的计划和被替代的调参值归档，保留当时的日期、固件和验收条件。

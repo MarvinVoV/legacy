@@ -1,17 +1,19 @@
 # CodeMyCar Server
 
-最新交接：[单Agent、灯光工具与真实语音验收](docs/Single-Agent-Lighting-And-Voice-Acceptance-2026-11-13.md)；[可复用回归指南](docs/Lighting-And-Voice-Regression-Guide-2026-11-13.md)含362项离线测试、双板HIL和有界悬空语音测试。语音运动临时验收后已恢复关闭。
+[服务端文档](docs/README.md) · [整车文档](../Docs/README.md)
+
+11 月 13 日验收记录：[单Agent、灯光工具与真实语音验收](../Docs/testing/Single-Agent-Lighting-And-Voice-Acceptance-2026-11-13.md)；[可复用回归指南](../Docs/testing/Lighting-And-Voice-Regression-Guide-2026-11-13.md)含362项离线测试、双板HIL和有界悬空语音测试。语音运动临时验收后已恢复关闭。
 
 当前语音使用ESP32-S3本地“小鸭小鸭”唤醒、AEC与板端喇叭，pyserver负责分句、ASR、对话和TTS。硬件与声学边界见[语音入口](../esp32_project/docs/voice/README.md)；Mac播放是旧阶段方案。语音运动执行仍默认关闭。
 
 **LLM开发先读：[Markdown角色/记忆与配置化厂商](docs/Markdown-Agent-Profile-And-Provider-Configuration-2026-11-12.md)**。维护[角色文件](agent_profile/README.md)与[厂商配置](config/README.md)；真实记忆在被忽略的agent_data内。当前只有一个Companion Agent（LangChain/LangGraph）；旧的deepagents/legacy模式、重复LLM循环和历史裁剪已删除。Agent不可用时语音对话明确返回不可用，不静默降级。前序[架构与车辆工具验证](docs/LLM-Companion-Architecture-And-Validation-2026-11-12.md)保留阶段证据，车辆控制一直使用本地Tools，不经过MCP。
 
-语音解耦边界：[设备/服务端职责与参数归属](docs/Voice-Device-Server-Ownership-2026-11-12.md)。v2打断选择由设备声明，服务器不再另开同名开关；云端分句仍待独立协议迁移。
+语音解耦边界：[设备/服务端职责与参数归属](../Docs/voice/Voice-Device-Server-Ownership-2026-11-12.md)。v2打断选择由设备声明，服务器不再另开同名开关；云端分句仍待独立协议迁移。
 
 CodeMyCar 的 Python 服务端：基于 FastAPI 的 HTTP API + MQTT 客户端。负责把上层（Web/App）的 JSON 命令通过 MQTT 下发给设备（ESP32），并接收/聚合设备上报的传感器、心跳、日志数据。
 
-- **协议分层**：pyserver 只处理 JSON；JSON↔二进制的转换由 ESP32 桥接组件完成；STM32 只收发二进制 v2 帧。详见 [`docs/pyserver-v2-design.md`](docs/pyserver-v2-design.md)。
-- **MQTT topic 契约**：3 段式 `data/{device_id}/{type}` 上行、`cmd/{device_id}/exec` 下行。详见 `esp32_project/docs/mqtt-topics.md`、[`docs/pyserver-v2-design.md`](docs/pyserver-v2-design.md)。
+- **协议分层**：pyserver 只处理 JSON；JSON↔二进制的转换由 ESP32 桥接组件完成；STM32 只收发二进制 v2 帧。详见 [`docs/pyserver-v2-design.md`](../Docs/archive/server/pyserver-v2-design.md)。
+- **MQTT topic 契约**：3 段式 `data/{device_id}/{type}` 上行、`cmd/{device_id}/exec` 下行。详见 [MQTT 主题契约](../Docs/protocol/mqtt-topics.md)。
 
 ## 依赖
 
@@ -46,7 +48,7 @@ MQTT_HOST=192.168.1.10 make dev
 
 ## 测试
 
-完整清单、独立运行、FakeMQTT复用及跨板集成步骤见[控制系统测试指南](../stm32_project/Docs/Control-Test-Guide-For-Agents.md)。
+完整清单、独立运行、FakeMQTT复用及跨板集成步骤见[控制系统测试指南](../Docs/testing/Control-Test-Guide-For-Agents.md)。
 
 **离线测试**（无需 broker、无需板子）：
 
@@ -129,7 +131,7 @@ mosquitto -c mosquitto.dev.conf
 ### Agent 运动 API
 
 给 AI Agent 用的同步运动接口：`POST /api/v1/agent/devices/{id}/move`、`/stop`、`GET /state`。
-完整契约、单位和错误码见 [`agent-motion-api.md`](../esp32_project/docs/agent-motion-api.md)。
+完整契约、单位和错误码见 [`agent-motion-api.md`](../Docs/protocol/agent-motion-api.md)。
 
 - `/stop` 只有在 STM32 ACK 与零速运动状态都到达时才返回 `confirmed=true`；
   否则返回 504 `stop_unconfirmed`。

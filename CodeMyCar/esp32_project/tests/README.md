@@ -1,6 +1,6 @@
 # ESP32 测试入口
 
-完整步骤与边界见 [控制系统测试指南](../../stm32_project/Docs/Control-Test-Guide-For-Agents.md)。
+完整步骤与边界见 [控制系统测试指南](../../Docs/testing/Control-Test-Guide-For-Agents.md)。
 
 - [host/test_stop_barrier.c](host/test_stop_barrier.c)：正式UART发送屏障/ACK管理，队列与锁使用替身。
 - [host/test_motion_json.c](host/test_motion_json.c)：正式状态帧/JSON编解码、来源字段与边界。

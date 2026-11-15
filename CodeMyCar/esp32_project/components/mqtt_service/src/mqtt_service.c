@@ -82,7 +82,7 @@ static void mqtt_event_handler(void* handler_args, esp_event_base_t base,
             ESP_LOGI(TAG, "Connected to broker");
             s_connected = true;
 
-            /* 自动订阅本机命令 topic（单一 device_id 层级，见 docs/mqtt-topics.md） */
+            /* 自动订阅本机命令 topic（单一 device_id 层级，见 CodeMyCar/Docs/protocol/mqtt-topics.md） */
             /* Critical STOP uses QoS1. QoS0 velocity updates remain QoS0. */
             esp_mqtt_client_subscribe(s_client, CMCAR_TOPIC_CMD_SUB, 1);
 

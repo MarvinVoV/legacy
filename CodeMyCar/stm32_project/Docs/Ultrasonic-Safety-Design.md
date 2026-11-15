@@ -520,7 +520,7 @@ GET /api/v1/devices/{id}/status
 - `CodeMyCar/pyserver/app/models/device.py`（`front_distance_cm` / `rear_distance_cm` / `sensor_age_s`）
 - `CodeMyCar/pyserver/app/services/device_manager.py`（从 `latest_sensor` 填充）
 - `CodeMyCar/pyserver/tests/test_device_status.py`
-- `CodeMyCar/esp32_project/docs/mqtt-topics.md`（SensorData 字段说明）
+- `CodeMyCar/Docs/protocol/mqtt-topics.md`（SensorData 字段说明）
 
 ## 16. 蜂鸣器距离提示（2026-10-31）
 
@@ -533,7 +533,7 @@ GET /api/v1/devices/{id}/status
 | 蜂鸣器 + | **PB2** | GPIO 推挽输出，高电平响 |
 | 蜂鸣器 − | GND | 3.3V 小蜂鸣器可直接驱动 |
 
-完整接线（含 5V + 三极管的方案）见 [`HardwareWiring.md`](HardwareWiring.md) 第 8 节。
+完整接线（含 5V + 三极管的方案）见 [`HardwareWiring.md`](../../Docs/hardware/HardwareWiring.md) 第 8 节。
 
 ### 16.2 行为
 

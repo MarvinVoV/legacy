@@ -1,0 +1,32 @@
+{
+  "completed": true,
+  "setup": "A: ESP32 external regulated5V, no USB; STM32 USB; direct UART/GND; IMU STM3V3; TB6612 OFF per operator",
+  "start_unix": 1794657846.978251,
+  "end_unix": 1794657937.00953,
+  "api_samples": 45,
+  "healthy_samples": 45,
+  "heartbeat_frames": 3,
+  "heartbeat_sessions": [
+    502122107
+  ],
+  "heartbeat_uptimes": [
+    92,
+    122,
+    152
+  ],
+  "imu_first": {
+    "unix": 1794657847.0662222,
+    "grv": 7055,
+    "gyro": 7055
+  },
+  "imu_last": {
+    "unix": 1794657936.982263,
+    "grv": 16022,
+    "gyro": 16022
+  },
+  "imu_hz": 99.73,
+  "max_motion_age_ms": 741,
+  "max_imu_age_s": 0.2,
+  "unexpected_logs": [],
+  "all_samples_healthy": true
+}

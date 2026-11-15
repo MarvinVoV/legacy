@@ -1,17 +1,27 @@
 # CodeMyCar
-Code my car ~
 
-## 硬件规格
+小鸭是一辆支持语音对话的智能车。手机控制台通过 pyserver 发命令，ESP32-S3 将 MQTT 消息转换为 UART 帧，STM32 负责电机、舵机、传感器和表情。语音使用独立的 WebSocket 链路。
 
-- [硬件规格、引脚与供电清单](HARDWARE-SPECIFICATIONS.md)：STM32、ESP32-S3、GM513电机、CODBOT-DR300驱动、IMU、音频板、R100版INA219和电池；区分额定参数、当前配置与已验收范围。
+| 从哪里开始 | 阅读入口 |
+|---|---|
+| 查整车配置、接线、协议或验收结果 | [项目文档](Docs/README.md) |
+| 修改运动闭环、传感器、灯带或圆屏 | [STM32 固件](stm32_project/README.md) |
+| 修改联网、协议转换、拾音或离线唤醒 | [ESP32 固件](esp32_project/README.md) |
+| 开发 HTTP API、语音服务或小鸭的工具 | [pyserver](pyserver/README.md) |
+| 本地预览或开发手机控制台 | [frontend](frontend/README.md) |
+| 做运动学仿真或单独验证 IMU | [运动学仿真](kinematic_sim/README.md) · [传感器台架](sensor_bench/README.md) |
 
-## 测试与后续开发
+## 构建和启动
 
-- [最新：状态灯、单Agent与真实语音验收交接](pyserver/docs/Single-Agent-Lighting-And-Voice-Acceptance-2026-11-13.md)
-- [状态灯/语音可复用回归与里程说明](pyserver/docs/Lighting-And-Voice-Regression-Guide-2026-11-13.md)
-- [STM32运行基础性能交接](stm32_project/Docs/STM32-Runtime-Performance-Handoff-2026-11-13.md)
+以下命令从 CodeMyCar 目录执行。固件构建和主机测试可以在没有连接车辆的情况下运行。
 
-- [**直行优化最新接手入口（先读）**](stm32_project/Docs/START-HERE-Straight-Control-Handoff-2026-11-08.md)：1546µs统一中位、直线/弧线验收、收工状态及下次路径外环TODO。
+| 项目 | 环境 | 构建或启动 | 本地验证 |
+|---|---|---|---|
+| STM32 | STM32CubeCLT，ARM GCC、CMake、Ninja 在 PATH | `(cd stm32_project && cmake --preset Release && cmake --build --preset Release)` | `bash stm32_project/tests/host/run.sh` |
+| ESP32-S3 | 已激活 ESP-IDF 6.1 环境 | `python esp32_project/tools/firmware.py build` | `bash esp32_project/tests/host/run.sh` |
+| pyserver | Python ≥3.11、本机 Mosquitto | `make -C pyserver dev` | `make -C pyserver test` |
+| frontend | Node.js、npm | `(cd frontend && npm ci && npm run build)` | `(cd frontend && npm run test:unit -- --run)` |
 
-- [控制系统测试指南（供 agent 复用）](stm32_project/Docs/Control-Test-Guide-For-Agents.md)：STM32/ESP32 单测清单、每组独立命令、服务端筛选、实机集成步骤及夹具边界。
-- [控制修复与验收进展](stm32_project/Docs/Remaining-Control-Fixes-And-Validation-2026-11-08.md)：已交付修复、实测证据及剩余优先级。
+手机联调时，分别启动 pyserver 和前端开发服务器（在 frontend 执行 `npm run dev`）。服务文档位于 `http://localhost:8000/docs`。只看界面时，启动前端后打开 `http://localhost:5173/?mock=1` 即可。
+
+开发 Agent 从 [AGENTS.md](AGENTS.md) 开始。

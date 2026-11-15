@@ -1,0 +1,199 @@
+{
+  "time_anchor": 1793780887.733573,
+  "nonzero_motion_events": [
+    {
+      "t": 878736.288441208,
+      "kind": "motion",
+      "data": {
+        "seq": 251,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": -108,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 1304872998
+      }
+    },
+    {
+      "t": 878736.28854625,
+      "kind": "motion",
+      "data": {
+        "seq": 251,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": -119,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 1304872998
+      }
+    },
+    {
+      "t": 878736.392710708,
+      "kind": "motion",
+      "data": {
+        "seq": 251,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": -164,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 1304872998
+      }
+    },
+    {
+      "t": 878736.491944916,
+      "kind": "motion",
+      "data": {
+        "seq": 251,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": -85,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 1304872998
+      }
+    },
+    {
+      "t": 878736.492022958,
+      "kind": "motion",
+      "data": {
+        "seq": 251,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": -96,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 1304872998
+      }
+    },
+    {
+      "t": 878736.527020458,
+      "kind": "motion",
+      "data": {
+        "seq": 251,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": -197,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 1304872998
+      }
+    },
+    {
+      "t": 878736.659410791,
+      "kind": "motion",
+      "data": {
+        "seq": 251,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": -196,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 1304872998
+      }
+    },
+    {
+      "t": 878736.708862458,
+      "kind": "motion",
+      "data": {
+        "seq": 251,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": -98,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 1304872998
+      }
+    },
+    {
+      "t": 878736.708969291,
+      "kind": "motion",
+      "data": {
+        "seq": 251,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": -263,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 1304872998
+      }
+    },
+    {
+      "t": 878736.804028125,
+      "kind": "motion",
+      "data": {
+        "seq": 251,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": -231,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 1304872998
+      }
+    },
+    {
+      "t": 878736.804055416,
+      "kind": "motion",
+      "data": {
+        "seq": 251,
+        "mode": 3,
+        "state": "running",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": -52,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 1304872998
+      }
+    },
+    {
+      "t": 878736.80409,
+      "kind": "motion",
+      "data": {
+        "seq": 80,
+        "mode": 0,
+        "state": "idle",
+        "fault": false,
+        "error": 0,
+        "lease_expired": false,
+        "left_mmps": -78,
+        "right_mmps": 0,
+        "goal_heading_source": "encoder",
+        "session_id": 1304872998
+      }
+    }
+  ],
+  "cause": "Unresolved: interference vs actual wheel movement/operator contact",
+  "agent_stop_started_unix": 1794659628.347708
+}

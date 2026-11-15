@@ -1,6 +1,6 @@
 # 服务端测试入口
 
-完整清单与复用说明见 [控制系统测试指南](../../stm32_project/Docs/Control-Test-Guide-For-Agents.md) 第5节；端到端设备验收见第6节。
+完整清单与复用说明见 [控制系统测试指南](../../Docs/testing/Control-Test-Guide-For-Agents.md) 第5节；端到端设备验收见第6节。
 
 ```bash
 cd "$PROJECT_ROOT/pyserver"

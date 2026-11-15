@@ -10,8 +10,8 @@
 
 | 逻辑 | PWM | 方向 IN1/IN2 | 编码器 |
 |---|---|---|---|
-| 左轮 | PA6 / TIM3_CH1 | PF7 / PF8 | PD12/PD13 / TIM4 |
-| 右轮 | PA7 / TIM3_CH2 | PF6 / PF10 | PA0/PA1 / TIM5 |
+| 右轮 | PA6 / TIM3_CH1 | PF7 / PF8 | PD12/PD13 / TIM4 |
+| 左轮 | PA7 / TIM3_CH2 | PF6 / PF10 | PA0/PA1 / TIM5 |
 
 转向舵机：PA5 / TIM2_CH1；中位 90° ↔ 1500µs，行程 0–180° ↔ 500–2500µs。
 
@@ -39,18 +39,14 @@
    - `motorLeftDriver.halCfg = &rightHalCfg`（TIM3_CH2/TIM5/PF6/PF10）
    - `motorRightDriver.halCfg = &leftHalCfg`（TIM3_CH1/TIM4/PF7/PF8）
    - 注意 `system_init.c` 里的注释“左轮电机配置/右轮电机配置”与变量名相反，**以绑定为准**。
-2. **两轮都启用了 `invertDirection`**：电机两根线与编码器 A/B 的极性组合使正 PWM 对应倒转。`invertDirection` 会**同时**翻转 PWM/方向和编码器计数，PID 仍是负反馈。
+2. **当前右轮通道 1 启用了 `invertDirection`**，左轮通道 2 保持默认。`invertDirection` 会**同时**翻转 PWM/方向和编码器计数，PID 仍是负反馈。
    - 只能整轮翻转（PWM + 编码器一起）；只翻一样会让 PID 正反馈。
    - 验证：`+30 RPM` 时两个轮子都向前，`MOT_L/MOT_R act` 均为正。
 3. 若换线/换电机，先做“手转编码器看符号 + 低速 5 RPM 看方向”，再上速度。
 
 ## 3. 舵机：中位、符号与限幅
 
-- 中位绝对角 **90° = 1500µs**；代码中三个运动模式统一用 **`center - steer`**，因此 **正 = 右转**。
-- 直接模式曾漏加中位（`steer` 直接当绝对角），导致“回中”顶右极限、负角度无效——已修正。
-- **枚举混用坑**：`SteerInstance.state.motionState` 被赋成平滑状态枚举的 `STEER_STATE_IDLE`（值 3），而运动枚举里 3 是 `ERROR`，`SteerService_update` 会直接返回，所有平滑转向被忽略。必须用 `STEER_MOTION_STATE_IDLE`。
-- 机械行程不对称：右侧约 **65°** 先到限位，左侧约 90°。2026-11-01 起上层改用**转向百分比**，STM32 按左右各自的标定表换算舵机偏移（见 `steering_map.c`：左 100%=60°、右 100%=32°）；运动学用标称等效角 25°，`minTurnRadiusMM=308.8`（pyserver 309）。要更大真实转角只能机械对中（摇臂转齿/调拉杆）。
-- 舵机不要从 STM32 3.3V 取电；独立 5V、共地。
+连杆重装后使用 1470 µs 直行中位，当前上层使用曲率，右正、左负。舵机使用 TB6612 的 5V 供电。更换舵机或重装摆臂时，从[转向标定与映射](Steering-Control-Design.md)和[中位实测](IMU-Busy-Recovery-And-Neutral-1470-Handoff-2026-11-14.md)开始。
 
 ## 4. 速度环设计
 
@@ -87,8 +83,8 @@
 - **ST-LINK 读寄存器**（不 halt，读运行中的值）：
   ```bash
   STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -r32 0x40000034 4   # TIM2_CCR1（舵机 PWM）
-  STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -r32 0x40000824 4   # TIM4_CNT（左编码器）
-  STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -r32 0x40000C24 4   # TIM5_CNT（右编码器）
+  STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -r32 0x40000824 4   # TIM4_CNT（右编码器）
+  STM32_Programmer_CLI -c port=SWD mode=HOTPLUG -r32 0x40000C24 4   # TIM5_CNT（左编码器）
   ```
 - `-halt`/`-coreReg` 有时会停在复位向量（连接时 halt 的副作用），不要据此判断“没启动”；优先用 hotplug 读 RAM 变量（如 `uwTick` 0x200008F8）或看 MQTT 帧。
 - ST-LINK 报 `Unable to get core ID / No STM32 target found`：检查 CubeIDE/stlink-server 是否占用调试器、升级 ST-LINK 固件、确认目标板供电和 SWD 线。

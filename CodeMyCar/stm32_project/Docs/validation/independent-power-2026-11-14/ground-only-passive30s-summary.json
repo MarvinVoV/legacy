@@ -1,0 +1,15 @@
+{
+  "setup": "Ground-only comparison: both boards USB; powered AC/DC-adapter-fed multi-output module GND->ESP GND; external5V disconnected; direct UART/GND and TB GND unchanged; TB6612OFF per instructions",
+  "start": "2026-11-14 20:28:20",
+  "end": "2026-11-14 20:28:50",
+  "healthy_samples": 16,
+  "samples": 16,
+  "all_healthy": true,
+  "imu_hz": 99.52,
+  "max_imu_age_s": 0.2,
+  "heartbeat_uptimes": [
+    752,
+    782
+  ],
+  "unexpected_logs": []
+}

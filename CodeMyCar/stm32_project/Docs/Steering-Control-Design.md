@@ -5,7 +5,7 @@
 > 状态：**已实施并刷写**，静态 round-trip 与地面直行标定完成（见 13.1/13.2）；
 > 遗留：舵机臂机械复位、定曲率绕圆标定、IMU 航向闭环
 > 相关文档：`MotionServiceDoc.md`、`Motor-Control-Tuning.md`、
-> `Landing-Test-Issues-2026-11-01.md`、`esp32_project/docs/cmd-mapping.md`
+> `Landing-Test-Issues-2026-11-01.md`、`Docs/protocol/cmd-mapping.md`
 
 ## 0. 结论摘要
 
@@ -364,7 +364,7 @@ GOAL 里的钳位分支（`motion_goal.c`）逻辑不变，只是数值从 25° 
 **文档**
 
 - `MotionServiceDoc.md`（转向章节重写）
-- `esp32_project/docs/cmd-mapping.md`（字段与单位）
+- `Docs/protocol/cmd-mapping.md`（字段与单位）
 - `Landing-Test-Issues-2026-11-01.md`（记录本次标定与结论）
 - 本文件
 

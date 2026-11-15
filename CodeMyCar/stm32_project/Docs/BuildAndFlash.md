@@ -4,6 +4,8 @@
 > 工具链：STM32CubeCLT 1.22.0（GCC 14.3.1 / CMake 4.3.1 / Ninja 1.13.2 / CubeProgrammer 2.23.0）
 > 验证日期：2026-10-25
 
+当前实车使用 [Release 构建](../README.md)，下文 Debug 命令用于调试。
+
 本文记录**命令行**和 **VS Code** 两种编译/烧录方式。烧录 STM32 不依赖 ESP32，两块板子不需要互连。
 
 ---

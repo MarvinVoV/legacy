@@ -244,7 +244,7 @@ arm-none-eabi-nm build/Debug/stm32_project.elf | grep steerInstance
 ## 9. 相关文档
 
 - [编译与烧录](BuildAndFlash.md)
-- [ESP32 ↔ STM32 接线](HardwareWiring.md)
+- [ESP32 ↔ STM32 接线](../../Docs/hardware/HardwareWiring.md)
 - [本次 UART4 DMA 故障的完整排查记录](UART-DMA-Troubleshooting.md)
 - [电机/舵机接线与调参](Motor-Control-Tuning.md)
 - [后轮速度与同步测试报告](Motor-Speed-Test-Report.md)

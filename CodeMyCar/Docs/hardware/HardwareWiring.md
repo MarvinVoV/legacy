@@ -1,0 +1,169 @@
+# ESP32 ↔ STM32 硬件接线
+
+> 适用工程：`esp32_project`（ESP32-S3）/ `stm32_project`（STM32H723ZGTx）
+> 协议：UART 二进制 v2 帧，115200 8N1，无流控
+> 基线更新于 2026-11-15。独立运行时两板分别从模块 5V 取电，各自回模块 GND 星点。详细拓扑见[独立供电实测](Independent-Power-Root-Cause-Handoff-2026-11-14.md)。
+
+ESP32 与 STM32 通过 UART 直连。ESP32 是 JSON ↔ 二进制的唯一翻译层，STM32 只收发二进制帧。
+
+---
+
+## 1. 接线表
+
+| ESP32-S3 | 方向 | STM32H723 | 说明 |
+|---|---|---|---|
+| **GPIO4**（UART1_TX） | → | **PA11**（UART4_RX） | ESP32 发 → STM32 收 |
+| **GPIO5**（UART1_RX） | ← | **PA12**（UART4_TX） | STM32 发 → ESP32 收 |
+| **GND** | — | **GND** | 两板各自回星点 |
+| — | — | — | 不要互接 VCC（两块板各自供电） |
+
+```
+ESP32-S3                     STM32H723
+GPIO4  (TX)  ────────────►  PA11  (UART4_RX)
+GPIO5  (RX)  ◄────────────  PA12  (UART4_TX)
+GND          ── 模块星点 ──  GND
+```
+
+> **TX 接 RX、RX 接 TX**（交叉接线）。TX→TX 是最常见的错误。
+
+---
+
+## 2. 串口参数
+
+| 参数 | ESP32-S3 | STM32H723 |
+|---|---|---|
+| 外设 | UART1 | UART4 |
+| TX 引脚 | GPIO4 | PA12 |
+| RX 引脚 | GPIO5 | PA11 |
+| 波特率 | 115200 | 115200 |
+| 数据位 | 8 | 8 |
+| 校验 | None | None |
+| 停止位 | 1 | 1 |
+| 流控 | 无 | 无（`UART_HWCONTROL_NONE`） |
+
+ESP32 侧引脚由 Kconfig 配置（`components/uart_service/Kconfig`）：
+
+```
+CONFIG_CMCAR_UART_PORT=1
+CONFIG_CMCAR_UART_TX_PIN=4
+CONFIG_CMCAR_UART_RX_PIN=5
+CONFIG_CMCAR_UART_BAUD_RATE=115200
+```
+
+STM32 侧配置位置：
+
+- 引脚：`Core/Src/stm32h7xx_hal_msp.c` 的 `HAL_UART_MspInit()`（PA11/PA12，`GPIO_AF6_UART4`）
+- 参数：`Core/Src/main.c` 的 `MX_UART4_Init()`（115200 8N1）
+
+---
+
+## 3. 常见接线错误
+
+| 现象 | 可能原因 |
+|---|---|
+| 完全无数据 | GND 没连；TX/RX 没交叉；引脚接错 |
+| 收到乱码 | 波特率不一致；GND 接触不良 |
+| 只能一个方向通信 | 其中一根信号线断/接错 |
+| 偶发丢帧 | 线太长、干扰；尽量 < 20 cm，GND 与信号线一起走 |
+
+> STM32 的 **USART1（PA9=TX / PA10=RX）是调试日志口**，用于接 USB-UART 看 `DEBUG_CONSOLE_OUTPUT`，**不要**把 ESP32 接到这里。
+
+电平：两端都是 **3.3V**，无需电平转换。
+
+---
+
+## 4. 联调验证
+
+1. **先确认 ESP32 在线**（不接 STM32 也应正常）：
+   ```bash
+   cd pyserver && make dev     # broker + pyserver
+   make ping                             # 应返回 pong
+   ```
+
+2. **接好线后观察 STM32 上行数据**：
+   ```bash
+   mosquitto_sub -h localhost -p 1883 -t 'data/DEV_1/sensor' -t 'data/DEV_1/log' -t 'data/DEV_1/motion' -v
+   ```
+   应能看到 STM32 经 ESP32 转换后的 JSON（运动状态通过 `data/{id}/motion` 上报）。
+
+3. 下行链路用[运动 API 的 STOP](../protocol/agent-motion-api.md)核对。先订阅 ACK 和 motion，再调用 STOP；检查同一会话的确认和双轮零速。单独的 ping/pong 只验证到 ESP32。
+
+---
+
+## 5. 协议提醒
+
+- 帧格式：`55 AA | TYPE | SEQ | FLAGS | LEN | PAYLOAD(≤120) | CRC16`，**无帧尾**，最大 128 字节。
+- **ACK 帧**：`TYPE=0x04`、`FLAGS=ACK_RSP`，**seq 在帧头 `SEQ` 字段**；payload 为 1 字节命令状态（0=接受，1=无效模式，2=无效参数，3=几何不满足，4=忙，5=内部错误）。STM32 在**校验/处理之后**才回 ACK；ESP32 用 `frame->seq` 清 pending、用 `payload[0]` 取状态。mode 4 按 seq 去重（重传只重发 ACK）。
+- UART 一次读取可能聚合多帧（例如 ACK + sensor），ESP32 的 `pkt_parser_feed_stream()` 会逐字节解析并派发每一帧。
+- 心跳由 ESP32 自产，不经过 STM32；ping/pong 也不经过 STM32。
+- **STM32 DMA 缓冲区使用非缓存 DMA_RAM 专区（0x2400_0000 起始，8 KiB）**：H7 的 DMA1/DMA2 不能访问 DTCM（0x2000_0000），放在 DTCM 会导致 RX/TX DMA 静默失效（表现为 RXNE/ORE、收不到数据、ACK 发不出）。
+
+---
+
+## 6. 电机 / 舵机接线（摘要）
+
+完整接线、极性验证和踩坑见 [`Motor-Control-Tuning.md`](../../stm32_project/Docs/Motor-Control-Tuning.md)。
+
+| 逻辑 | PWM | 方向 IN1/IN2 | 编码器 | TB6612 底板丝印 |
+|---|---|---|---|---|
+| 右轮 | PA6 (TIM3_CH1) | PF7 / PF8 | PD12/PD13 (TIM4) | `1P / 1IN1 / 1IN2 / 1A / 1B` |
+| 左轮 | PA7 (TIM3_CH2) | PF6 / PF10 | PA0/PA1 (TIM5) | `2P / 2IN1 / 2IN2 / 2A / 2B` |
+| 舵机 | PA5 (TIM2_CH1) | — | — | 当前直行中位 1470 µs |
+
+- `1A/1B/2A/2B` 是**编码器输入**；电机功率输出在另一侧/电机 6pin 座（`M+/M-`）。
+- **12V−、TB6612 GND、STM32 GND、ESP32 GND 必须共地**；TB6612 `VCC=3.3V`、`STBY=3.3V`、`VM=12V`。
+- 当前右轮通道 1 启用 invertDirection，左轮通道 2 保持默认。初始化按 motorLeftDriver / motorRightDriver 的绑定确认。
+- 上层输入曲率（1/m，右正），STM32 按标定表映射到舵机脉宽。[转向控制](../../stm32_project/Docs/Steering-Control-Design.md)
+
+---
+
+## 7. 超声波接线（HC-SR04 ×2）
+
+完整设计见 [`Ultrasonic-Safety-Design.md`](../../stm32_project/Docs/Ultrasonic-Safety-Design.md)。
+
+| 信号 | STM32 引脚 | 外设 | 说明 |
+|---|---|---|---|
+| 前 Trig | **PB0** | GPIO 推挽输出 | 10 µs 高脉冲 |
+| 前 Echo | **PA2** | EXTI2 双边沿中断 | **1k/2k 分压到 3.3V** |
+| 后 Trig | **PB1** | GPIO 推挽输出 | — |
+| 后 Echo | **PA3** | EXTI3 双边沿中断 | **1k/2k 分压到 3.3V** |
+| 时基 | — | TIM7 自由计数（1 µs） | 两路共用 |
+| VCC | TB6612 5V | — | 接线前先万用表确认 4.8–5.1V |
+| GND | 公共 GND | — | 与 12V−/TB6612/STM32/ESP32 共地 |
+
+- **Echo 是 5V 输出，必须分压**：`Echo ──[1k]──┬── STM32，┬──[2k]── GND`。
+- TIM6 是 HAL 时基，不能复用；TIM7 用作 1 µs 自由计数时基。
+- 两路错开 50 ms 触发，避免 40 kHz 串扰。
+- 每个传感器 VCC–GND 并 0.1 µF 电容，5V 源头加 100 µF 电解（电机噪声大）。
+- 传感器端面比车身外沿内缩时，把内缩量填到 `FRONT_OFFSET_CM` / `REAR_OFFSET_CM`。
+
+---
+
+## 8. 蜂鸣器接线（有源蜂鸣器）
+
+| 信号 | STM32 引脚 | 外设 | 说明 |
+|---|---|---|---|
+| 蜂鸣器 **+** | **PB2** | GPIO 推挽输出 | 高电平响，低电平静音 |
+| 蜂鸣器 **−** | GND | — | 3.3V 小蜂鸣器可直接驱动 |
+
+- **有源蜂鸣器**内部自带振荡，给直流电就响，**不需要 PWM**；音调固定，只能用响/停节奏表达"急促程度"。
+- 5V 或电流较大的蜂鸣器建议加 NPN 三极管（S8050/2N3904/BC547）+ 1kΩ 基极电阻，由 5V 供电。
+- 嫌声音太大，可在回路串 100–470 Ω 电阻，或降低供电电压。
+- 引脚/使能/节奏阈值在 `Application/System/Common/Inc/buzzer_config.h`：
+  `BUZZER_PORT/PIN`、`BUZZER_ENABLED`、`BUZZER_DISTANCE_BEEP`、`BUZZER_NEAR_CM` 等。
+
+---
+
+## 9. GC9A01 圆屏
+
+| 屏幕引脚 | STM32 连接 |
+|---|---|
+| VCC / GND | 3.3V / 公共地 |
+| SCL（时钟） / SDA（数据） | PB13（SPI2 SCK） / PB15（SPI2 MOSI） |
+| DC / CS / RST | PB9 / PB12 / PB14 |
+
+240×240 圆屏使用 SPI Mode 0，实测配置约 7.8 MHz。五种双眼表情采用 RGB565 局部刷新。[驱动、预览和实物验收](../../stm32_project/Docs/Display-Expression-Refresh-Handoff-2026-11-15.md)
+
+## 10. OV2640 摄像头
+
+摄像头开发已搁置。最后记录为信号线仍在，摄像头 VCC/GND 已拔。恢复前核对 ESP32 侧 3.3V 供电域和当时的倒灌记录。[摄像头与供电记录](../archive/hardware/Handoff-2026-11-15-Display-Sonar-Camera.md)

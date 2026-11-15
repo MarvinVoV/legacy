@@ -2,7 +2,7 @@
 
 /**
  * @file cmcar_topics.h
- * @brief MQTT Topic 常量（统一契约，见 docs/mqtt-topics.md）
+ * @brief MQTT Topic 常量（统一契约，见 CodeMyCar/Docs/protocol/mqtt-topics.md）
  *
  * 原则：topic 只含单一 device_id 层级；数据来源（esp32/stm32）放进 JSON payload
  * 的 origin 字段，不进 topic。

@@ -1,6 +1,8 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+@../AGENTS.md
+
+Board-specific build and architecture notes.
 
 ## Project Overview
 
@@ -24,7 +26,7 @@ idf.py -p /dev/cu.usbserial-XXXX flash monitor
 idf.py fullclean              # nuke build/ — use when sdkconfig changes break cmake
 ```
 
-**idf.py venv gotcha:** `idf.py` needs the IDF Python venv at `~/.espressif/tools/python/v6.1/venv/` (i.e. `IDF_PYTHON_ENV_PATH`, set by activating the environment). On this machine `~/.zshrc` defines a `get_idf` shell function that sources the most recently installed `~/.espressif/tools/activate_idf_*.sh` — use `get_idf` in interactive shells (shell functions don't exist in scripts/Makefiles; use the full `source` there). If the venv is missing/wiped, `idf.py` errors out but a `build/` generated with the **same** IDF version can still be rebuilt directly with `cd build && ninja` (needs only the riscv32 toolchain + base python at `~/.espressif/tools/python/v6.1/venv/bin/python`, not the IDF venv). After switching IDF versions, run `idf.py fullclean` first — a stale `build/` still points at the old version's paths. Full build/verify commands for all four sub-projects are in [`docs/build-verify.md`](docs/build-verify.md).
+**idf.py venv gotcha:** `idf.py` needs the IDF Python venv at `~/.espressif/tools/python/v6.1/venv/` (i.e. `IDF_PYTHON_ENV_PATH`, set by activating the environment). On this machine `~/.zshrc` defines a `get_idf` shell function that sources the most recently installed `~/.espressif/tools/activate_idf_*.sh` — use `get_idf` in interactive shells (shell functions don't exist in scripts/Makefiles; use the full `source` there). If the venv is missing/wiped, `idf.py` errors out but a `build/` generated with the **same** IDF version can still be rebuilt directly with `cd build && ninja` (needs only the riscv32 toolchain + base python at `~/.espressif/tools/python/v6.1/venv/bin/python`, not the IDF venv). After switching IDF versions, run `idf.py fullclean` first — a stale `build/` still points at the old version's paths. Current build and test commands for all four projects are in the [project guide](../README.md).
 
 ### Required menuconfig settings (see `sdkconfig.defaults`)
 - **`CONFIG_UART_ISR_IN_IRAM`** — `Component config → ESP-Driver:UART → Place UART ISR function into IRAM`. `uart_service` installs the driver with `ESP_INTR_FLAG_IRAM` (`components/uart_service/src/uart_service.c:210`); without this Kconfig flag the ISR does not actually run from IRAM.
@@ -73,7 +75,7 @@ Modules are started **event-driven**: WiFi GOT_IP → `mqtt_service_start()`; MQ
 
 - **`bridge`** — the v2 orchestration core (`components/bridge/`).
   - `bridge.c`: **downlink** `on_mqtt_data` (mqtt rx_cb, runs on the esp_mqtt client task) only copies the payload into `s_downlink_queue` and returns — `bridge_downlink_task` does `bridge_json_to_control_cmd` (9B) → `pkt_encode(ACK_REQ)` → `pending_add` → `uart_service_send` (decoupled so a full UART TX queue can't block the MQTT client task). **Uplink** `on_uart_frame` (uart rx_cb) → `s_frame_queue` → `bridge_uplink_task` → `bridge_sensor_to_json`/`bridge_log_to_json`/`bridge_motion_to_json` → `mqtt_service_publish`. **ACK**: STM32 replies after validating/processing the command; `on_uart_frame` clears the pending slot (`pending_clear`) and posts an ack-echo msg → `uplink_task` publishes `{"seq","ack":true,"status":S}` to `CMCAR_TOPIC_ACK` (status 0 = accepted; 1 invalid mode, 2 invalid param, 3 geometry, 4 busy, 5 internal). ACK retransmit scanning runs on an **`esp_timer`** (50ms), not on the uplink task, so a slow publish can't stall retransmits. Status metrics (uplink/dn drop, ack_lost, pub_fail) + `bridge_get_status()` are published to `CMCAR_TOPIC_STATUS` every 30s. System state machine `INIT → CONNECTING → ONLINE → DEGRADED`.
-  - `bridge_codec.c`: cJSON-based downlink JSON→9B `ControlCmd`; `snprintf`-based uplink binary→JSON (no `%f`, no malloc on uplink). Field mapping contract in [`docs/cmd-mapping.md`](docs/cmd-mapping.md); topic contract in [`docs/mqtt-topics.md`](docs/mqtt-topics.md).
+  - `bridge_codec.c`: cJSON-based downlink JSON→9B `ControlCmd`; `snprintf`-based uplink binary→JSON (no `%f`, no malloc on uplink). Field mapping contract in [`docs/cmd-mapping.md`](../Docs/protocol/cmd-mapping.md); topic contract in [`docs/mqtt-topics.md`](../Docs/protocol/mqtt-topics.md).
 
 ### Data flow
 
@@ -138,4 +140,4 @@ At the repo root (`/Users/sunyameng/github/legacy/serial_pkt_protocol`) lives th
 - Task priorities come from `components/common/include/task_priorities.h` (`task_priority_t` enum); all `_service` components include it. Don't inline magic numbers.
 - Watchdog-critical / realtime tasks (health heartbeat, ack echo) must use `mqtt_service_publish_timed`, never the unbounded `mqtt_service_publish`. Pure logic that's host-testable (codec, ack_manager) lives in its own component mirrored to `serial_pkt_protocol`.
 - New component goes under `components/<name>/` with `include/`, `src/`, and a `CMakeLists.txt` using `idf_component_register`; add it to `main/CMakeLists.txt` `REQUIRES`. Define its tunables in its own `Kconfig` with `CMCAR_`-prefixed names and add defaults to `sdkconfig.defaults`.
-- The project does **not** use docker. ESP32/STM32 tests are local; pyserver dev runs via `make dev` (local mosquitto + uvicorn). See [`docs/build-verify.md`](docs/build-verify.md).
+- The project does **not** use docker. ESP32/STM32 tests are local; pyserver dev runs via `make dev` (local mosquitto + uvicorn). See [`docs/build-verify.md`](../Docs/archive/bridge/build-verify.md).

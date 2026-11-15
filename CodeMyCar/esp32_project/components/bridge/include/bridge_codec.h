@@ -2,7 +2,7 @@
 
 /**
  * @file bridge_codec.h
- * @brief JSON ↔ Binary 转换（见 docs/cmd-mapping.md）
+ * @brief JSON ↔ Binary 转换（见 CodeMyCar/Docs/protocol/cmd-mapping.md）
  *
  * 下行：pyserver JSON ControlCommand → STM32 9 字节 ControlCmd payload
  * 上行：STM32 二进制 sensor_data_t / log_entry_t → pyserver JSON
@@ -12,7 +12,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-/* ControlCmd wire payload 大小（显式宽度，见 docs/cmd-mapping.md §3.2） */
+/* ControlCmd wire payload 大小（显式宽度，见 CodeMyCar/Docs/protocol/cmd-mapping.md §3.2） */
 #define BRIDGE_CONTROL_CMD_SIZE 9
 #define BRIDGE_LIGHTING_CMD_SIZE 20
 bool bridge_json_is_lighting(const char *json,size_t len);
