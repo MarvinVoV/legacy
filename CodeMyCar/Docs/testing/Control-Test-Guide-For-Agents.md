@@ -1,16 +1,6 @@
 # 控制系统测试指南：独立复用、组件集成与实机验收
 
-> 新增2026-11-13：[状态灯/单Agent/语音可复用回归指南](Lighting-And-Voice-Regression-Guide-2026-11-13.md)，覆盖新灯光协议、362项pytest、真实模型模拟体、跨板HIL及里程语义。
-
-更新：2026-11-08。基线：main 的 `83efe32` 及文档提交 `eeb3a36`。本文盘点项目现有及本轮新增/扩展的测试，供后续 agent 按功能选取、独立执行、增加回归和组织集成验收。
-
-后续扩展：servo_service_test新增生产死区下5ms命令刷新/20ms舵机更新的微调跟随回归，测试入口与16组数量不变；见 [真实车体转动与死区验收](../archive/control/IMU-Manual-Rotation-And-Steering-Deadzone-Validation-2026-11-08.md)。
-
-修复状态与历史实测证据见 [后续控制修复与分阶段验收](../archive/control/Remaining-Control-Fixes-And-Validation-2026-11-08.md)。本文解释测试如何运行；没有把历史验收结果当成当前工作区的新结果。
-
-阅读顺序：只想运行现有测试，先看第2节；按功能选测试看第3.1节；独立C命令在第9节；真实车辆集成看第6节；新增/复用夹具看第7节。
-
-本次文档核验（2026-11-08）：从第9节提取全部18个独立命令块逐条编译执行，18/18通过；服务端完整pytest为85 passed，单用例与关键字筛选已验证可收集；4个HIL脚本仅检查Python语法和--help，未进行实机动作。文档本地文件链接已检查存在。没有修改产品代码、测试代码或烧录镜像。
+当前命令统一维护在[回归测试入口](README.md)。本指南保留控制测试的夹具、覆盖边界与上板流程。后附 2026-11-08 起的实测记录，其中的数量、中位和参数均对应当时固件。
 
 ## 1. 先选择测试层级
 
@@ -20,53 +10,24 @@
 | ESP32 host | [tests/host/run.sh](../../esp32_project/tests/host/run.sh) | 否 | UART STOP 屏障及 ACK 表、正式 JSON 编解码；启用 ASan/UBSan |
 | pyserver pytest | [tests](../../pyserver/tests) | 否 | 模型/API/会话/STOP 等服务逻辑；FakeMQTT 隔离真实 broker |
 | ARM / ESP-IDF 构建 | [BuildAndFlash](../../stm32_project/Docs/BuildAndFlash.md)、ESP32 `idf.py build` | 构建不需要板子 | 目标平台头文件、链接、资源容量兼容性 |
-| HIL 实机集成 | [tests/hil](../../stm32_project/tests/hil) 的4个脚本 | 是 | HTTP→MQTT→ESP32→UART→STM32→ACK/状态链路及悬空行为 |
-
-STM32 的“16组”和 ESP32 的“2组”指测试可执行文件数量，不是断言数。2026-11-08 服务端收集到85项 pytest（含参数化项），未来以实际 collect 结果为准。
+| HIL 实机集成 | [tests/hil](../../stm32_project/tests/hil) | 是 | HTTP→MQTT→ESP32→UART→STM32→ACK/状态链路及悬空行为 |
 
 MotionTransaction 是“正式 MotionService 等组件 + 电机/舵机/IMU/RTOS 替身”的集成测试；不是把两块板的固件在 PC 上完整运行。host 临界区替身不实现 ARM 中断屏蔽，队列/锁替身不实现 FreeRTOS 调度，不能据此宣称覆盖全部真实抢占、DMA、时序或电气异常。
 
 ## 2. 环境与一键离线回归
 
-以下命令使用 Bash；将 PROJECT_ROOT 改成本机 CodeMyCar 的绝对路径。它不是父级 Git 仓库目录，也不是 stm32_project。
+从 CodeMyCar 根目录执行。下文引用的 PROJECT_ROOT 可在这里设置。
 
 ```bash
-export PROJECT_ROOT=/Users/sunyameng/github/legacy/CodeMyCar
+export PROJECT_ROOT="$PWD"
+python3 tools/regress.py
 ```
 
-依赖：本机 C11 编译器（本机使用 macOS clang）、Bash、Python >=3.11，以及 pyserver 的开发依赖。host 使用本机编译器，不用 arm-none-eabi-gcc，也不用烧录设备。
-
-若 Python 环境未建好，在 pyserver 目录执行：
-
-```bash
-cd "$PROJECT_ROOT/pyserver"
-python3 -m venv .venv
-.venv/bin/python -m pip install -e '.[dev]'
-```
-
-ESP32 JSON 测试还需要 `esp32_project/managed_components/espressif__cjson/cJSON/cJSON.c`。该目录由 ESP-IDF 组件管理器准备且被 Git 忽略；新 checkout 缺失时，在已激活项目所用 ESP-IDF 环境后执行 `idf.py reconfigure` 获取依赖，再跑测试。不要因为本机缺依赖把该组静默跳过。STOP 屏障测试本身不需要完整 IDF SDK。
-
-完整离线回归：
-
-```bash
-bash "$PROJECT_ROOT/stm32_project/tests/host/run.sh"
-bash "$PROJECT_ROOT/esp32_project/tests/host/run.sh"
-(
-  cd "$PROJECT_ROOT/pyserver"
-  .venv/bin/python -m pytest -q
-)
-```
-
-- STM32 runner 默认 `CC=clang`，可用 `CC=/path/to/clang bash .../run.sh` 指定；ESP32 runner 当前直接调用 `cc`，没有读取 CC 参数。
-- 两个 C runner 当前都没有单测筛选参数。不要写 `run.sh imu` 并以为只执行 IMU；独立编译命令在第9节。
-- STM32 runner 输出二进制到固定的 `TMPDIR` 文件名；多个完整 runner 不应同时跑，否则可能覆盖。第9节独立命令使用各自 mktemp 目录，避免这个冲突。
-- 不要加 `-DNDEBUG`：很多 C 测试在 assert 表达式内调用被测函数，禁用 assert 会导致测试没有真正执行。
-- 在 pyserver 目录执行 pytest，避免父级/供应商目录被额外收集。conftest 会禁用真实 MQTT connect/disconnect，并为 API 注入 FakeMQTT。
-- C 测试以断言/非零返回码失败；服务端以 pytest 退出码判断。不要只搜索最后一行 PASS 忽略前面的退出码。
+依赖准备和子项目筛选见[回归测试入口](README.md)。C 测试启用断言，请保留 runner 的编译选项。
 
 ## 3. STM32 测试目录与选用清单
 
-下表被测源码以文件名简写；第9节给出每组完整源文件和 include 路径。所有测试文件均在 `stm32_project/tests/host`。
+下表被测源码以文件名简写；第9节给出单独运行的方法。所有测试文件均在 `stm32_project/tests/host`。
 
 | 测试文件 / 独立入口名 | 类型 | 正式被测源码 | 覆盖与用途 |
 |---|---|---|---|
@@ -105,7 +66,7 @@ bash "$PROJECT_ROOT/esp32_project/tests/host/run.sh"
 | 上报任务/遥测字段 | motion_task、ESP32 test_motion_json | 服务端 pytest、目标固件构建 | control_smoke，检查来源及 STOP 确认 |
 | 会话/ACK 重试 | ESP32 test_stop_barrier | test_stop_session_sync、test_agent_motion、test_mqtt | session_restart_smoke、stop_burst_smoke |
 
-## 4. ESP32 两组 host 测试
+## 4. ESP32 控制协议 host 测试
 
 | 文件 | 被测正式实现 | 当前检查 | 边界 |
 |---|---|---|---|
@@ -116,7 +77,7 @@ bash "$PROJECT_ROOT/esp32_project/tests/host/run.sh"
 
 `test_stop_barrier.c` 已包含正式 uart_service.c，不要在链接命令里再加一份 uart_service.c；`motion_task_test.c` 同理，不再额外链接 motion_task.c。否则会重复定义符号。
 
-相邻仓库 serial_pkt_protocol 有自己的协议/ACK测试；它们不等于本仓库当前 components 的测试，不能用相邻库的通过结果替代当前固件，特别是接口签名有变化时。
+[serial_pkt_protocol](../../serial_pkt_protocol/README.md) 维护独立协议/ACK 测试。变更线协议时同时执行参考包和实际固件组件的测试。
 
 ## 5. 服务端独立测试与可复用替身
 
@@ -252,7 +213,7 @@ curl --fail-with-body -sS -X POST \
 
 ### 7.1 PC端独立功能测试
 
-选择最靠近被测功能的现有文件，复用其HAL/RTOS/SH-2替身及第9节链接清单。新建测试时：
+选择最靠近被测功能的现有文件，复用其HAL/RTOS/SH-2替身及 host runner 中的链接清单。新建测试时：
 
 1. 链接正式源码，注入输入/失败/时间；不要复制一份待修复算法再测试复制件。
 2. 每个C测试是一个有main的可执行文件，HAL_GetTick等替身也在测试文件中；不要把多个带main/重复替身的文件直接链接成一个程序。
@@ -303,362 +264,18 @@ bash "$PROJECT_ROOT/stm32_project/tests/host/run.sh" 2>&1 | tee "$TEST_RESULTS/s
 
 仍未由这些测试证明的项目：真实轮角与舵机间隙/卡滞、负载下制动距离和电流、电源/桥驱动失效、坡面安装坐标变换、落地转弯半径与轨迹精度、全部真实RTOS交错，以及传感器拔除/驱动锁死/网络洪峰组合故障。PID仿真不是实车整定。
 
-## 9. 各C测试可复制的独立编译命令
+## 9. 独立运行 C 用例
 
-下列命令从当前run.sh逐组整理，独立输出到临时目录，退出后清理。先执行第2节PROJECT_ROOT设置。每块使用Bash subshell，不启动服务、不烧录、不触碰真实硬件。
-
-源码或依赖改变时，以当前run.sh和源码为准同步更新本节；不要为了保留文档旧命令而链接旧实现。
-
-### 9.1 STM32（16组）
-
-#### 1. motion_kinematics_test
+在 CodeMyCar 根目录按用例名执行。STM32 的目标名、编译参数和配置组合在 [host runner](../../stm32_project/tests/host/run.sh) 中维护，每次运行使用独立临时目录。
 
 ```bash
-(
-set -euo pipefail
-DIR="$PROJECT_ROOT/stm32_project"
-CC="${CC:-clang}"
-test_out="$(mktemp -d)"
-trap 'rm -rf "$test_out"' EXIT
-"$CC" -std=c11 -Wall -Wextra -O2 \
-  -I "$DIR/Application/System/Utils/Inc" \
-  "$DIR/tests/host/motion_kinematics_test.c" \
-  "$DIR/Application/System/Utils/Src/motion_kinematics.c" \
-  -lm -o "${test_out}/motion_kinematics_test"
-"${test_out}/motion_kinematics_test"
-)
+bash stm32_project/tests/host/run.sh --list
+bash stm32_project/tests/host/run.sh imu_service motion_transaction
+bash stm32_project/tests/host/run.sh steering_pipeline
+python3 tools/regress.py stop_barrier motion_json
 ```
 
-#### 2. motion_goal_test
-
-```bash
-(
-set -euo pipefail
-DIR="$PROJECT_ROOT/stm32_project"
-CC="${CC:-clang}"
-test_out="$(mktemp -d)"
-trap 'rm -rf "$test_out"' EXIT
-"$CC" -std=c11 -Wall -Wextra -O2 \
-  -I "$DIR/Application/System/Utils/Inc" \
-  "$DIR/tests/host/motion_goal_test.c" \
-  "$DIR/Application/System/Utils/Src/motion_goal.c" \
-  "$DIR/Application/System/Utils/Src/motion_kinematics.c" \
-  -lm -o "${test_out}/motion_goal_test"
-"${test_out}/motion_goal_test"
-)
-```
-
-#### 3. seq_dedup_test
-
-```bash
-(
-set -euo pipefail
-DIR="$PROJECT_ROOT/stm32_project"
-CC="${CC:-clang}"
-test_out="$(mktemp -d)"
-trap 'rm -rf "$test_out"' EXIT
-"$CC" -std=c11 -Wall -Wextra -O2 \
-  -I "$DIR/Application/System/Utils/Inc" \
-  "$DIR/tests/host/seq_dedup_test.c" \
-  "$DIR/Application/System/Utils/Src/seq_dedup.c" \
-  -lm -o "${test_out}/seq_dedup_test"
-"${test_out}/seq_dedup_test"
-)
-```
-
-#### 4. motor_estop_test
-
-```bash
-(
-set -euo pipefail
-DIR="$PROJECT_ROOT/stm32_project"
-CC="${CC:-clang}"
-test_out="$(mktemp -d)"
-trap 'rm -rf "$test_out"' EXIT
-"$CC" -std=c11 -Wall -Wextra -O2 \
-  -I "$DIR/tests/host/stubs" \
-  -I "$DIR/Application/Modules/Motor/Inc" \
-  -I "$DIR/Application/Services/Motor/Inc" \
-  "$DIR/tests/host/motor_estop_test.c" \
-  "$DIR/Application/Modules/Motor/Src/motor_driver.c" \
-  "$DIR/Application/Services/Motor/Src/pid_controller.c" \
-  -lm -o "${test_out}/motor_estop_test"
-"${test_out}/motor_estop_test"
-)
-```
-
-#### 5. runtime_safety_test
-
-```bash
-(
-set -euo pipefail
-DIR="$PROJECT_ROOT/stm32_project"
-CC="${CC:-clang}"
-test_out="$(mktemp -d)"
-trap 'rm -rf "$test_out"' EXIT
-"$CC" -std=c11 -Wall -Wextra -O2 \
-  -I "$DIR/Application/System/Utils/Inc" \
-  "$DIR/tests/host/runtime_safety_test.c" \
-  "$DIR/Application/System/Utils/Src/control_lease.c" \
-  "$DIR/Application/System/Utils/Src/task_health.c" \
-  -o "${test_out}/runtime_safety_test"
-"${test_out}/runtime_safety_test"
-)
-```
-
-#### 6. task_timing_test
-
-```bash
-(
-set -euo pipefail
-DIR="$PROJECT_ROOT/stm32_project"
-CC="${CC:-clang}"
-test_out="$(mktemp -d)"
-trap 'rm -rf "$test_out"' EXIT
-"$CC" -std=c11 -Wall -Wextra -O2 \
-  -I "$DIR/Application/System/Utils/Inc" \
-  "$DIR/tests/host/task_timing_test.c" \
-  "$DIR/Application/System/Utils/Src/task_timing.c" \
-  -o "${test_out}/task_timing_test"
-"${test_out}/task_timing_test"
-)
-```
-
-#### 7. encoder_fault_monitor_test
-
-```bash
-(
-set -euo pipefail
-DIR="$PROJECT_ROOT/stm32_project"
-CC="${CC:-clang}"
-test_out="$(mktemp -d)"
-trap 'rm -rf "$test_out"' EXIT
-"$CC" -std=c11 -Wall -Wextra -O2 \
-  -I "$DIR/Application/System/Utils/Inc" \
-  "$DIR/tests/host/encoder_fault_monitor_test.c" \
-  "$DIR/Application/System/Utils/Src/encoder_fault_monitor.c" \
-  -lm -o "${test_out}/encoder_fault_monitor_test"
-"${test_out}/encoder_fault_monitor_test"
-)
-```
-
-#### 8. servo_service_test
-
-```bash
-(
-set -euo pipefail
-DIR="$PROJECT_ROOT/stm32_project"
-CC="${CC:-clang}"
-test_out="$(mktemp -d)"
-trap 'rm -rf "$test_out"' EXIT
-"$CC" -std=c11 -Wall -Wextra -O2 \
-  -I "$DIR/tests/host/stubs" \
-  -I "$DIR/Application/Services/Servo/Inc" \
-  -I "$DIR/Application/System/Utils/Inc" \
-  "$DIR/tests/host/servo_service_test.c" \
-  "$DIR/Application/Services/Servo/Src/servo_service.c" \
-  -lm -o "${test_out}/servo_service_test"
-"${test_out}/servo_service_test"
-)
-```
-
-#### 9. steering_lut_test
-
-```bash
-(
-set -euo pipefail
-DIR="$PROJECT_ROOT/stm32_project"
-CC="${CC:-clang}"
-test_out="$(mktemp -d)"
-trap 'rm -rf "$test_out"' EXIT
-"$CC" -std=c11 -Wall -Wextra -O2 \
-  -I "$DIR/Application/System/Utils/Inc" \
-  "$DIR/tests/host/steering_lut_test.c" \
-  "$DIR/Application/System/Utils/Src/steering_lut.c" \
-  -lm -o "${test_out}/steering_lut_test"
-"${test_out}/steering_lut_test"
-)
-```
-
-#### 10. heading_control_test
-
-```bash
-(
-set -euo pipefail
-DIR="$PROJECT_ROOT/stm32_project"
-CC="${CC:-clang}"
-test_out="$(mktemp -d)"
-trap 'rm -rf "$test_out"' EXIT
-"$CC" -std=c11 -Wall -Wextra -O2 \
-  -I "$DIR/tests/host/stubs" \
-  -I "$DIR/Application/Services/Ctrl/Inc" \
-  "$DIR/tests/host/heading_control_test.c" \
-  "$DIR/Application/Services/Ctrl/Src/heading_control.c" \
-  -lm -o "${test_out}/heading_control_test"
-"${test_out}/heading_control_test"
-)
-```
-
-#### 11. pid_sim_test
-
-```bash
-(
-set -euo pipefail
-DIR="$PROJECT_ROOT/stm32_project"
-CC="${CC:-clang}"
-test_out="$(mktemp -d)"
-trap 'rm -rf "$test_out"' EXIT
-"$CC" -std=c11 -Wall -Wextra -O2 \
-  -I "$DIR/tests/host/stubs" \
-  -I "$DIR/Application/Services/Motor/Inc" \
-  "$DIR/tests/host/pid_sim_test.c" \
-  "$DIR/Application/Services/Motor/Src/pid_controller.c" \
-  -lm -o "${test_out}/pid_sim_test"
-"${test_out}/pid_sim_test"
-)
-```
-
-#### 12. ultrasonic_safety_test
-
-```bash
-(
-set -euo pipefail
-DIR="$PROJECT_ROOT/stm32_project"
-CC="${CC:-clang}"
-test_out="$(mktemp -d)"
-trap 'rm -rf "$test_out"' EXIT
-"$CC" -std=c11 -Wall -Wextra -O2 \
-  -I "$DIR/Application/Services/Safety/Inc" \
-  "$DIR/tests/host/ultrasonic_safety_test.c" \
-  "$DIR/Application/Services/Safety/Src/safety_service.c" \
-  -lm -o "${test_out}/ultrasonic_safety_test"
-"${test_out}/ultrasonic_safety_test"
-)
-```
-
-#### 13. motor_inhibit_test
-
-```bash
-(
-set -euo pipefail
-DIR="$PROJECT_ROOT/stm32_project"
-CC="${CC:-clang}"
-test_out="$(mktemp -d)"
-trap 'rm -rf "$test_out"' EXIT
-"$CC" -std=c11 -Wall -Wextra -O2 \
-  -I "$DIR/tests/host/stubs" -I "$DIR/Application/Modules/Motor/Inc" \
-  -I "$DIR/Application/System/Utils/Inc" \
-  "$DIR/tests/host/motor_inhibit_test.c" "$DIR/Application/Modules/Motor/Src/motor_hal.c" \
-  -o "${test_out}/motor_inhibit_test"
-"${test_out}/motor_inhibit_test"
-)
-```
-
-#### 14. imu_service_test
-
-```bash
-(
-set -euo pipefail
-DIR="$PROJECT_ROOT/stm32_project"
-CC="${CC:-clang}"
-test_out="$(mktemp -d)"
-trap 'rm -rf "$test_out"' EXIT
-"$CC" -std=c11 -Wall -Wextra -O2 \
-  -I "$DIR/tests/host/stubs" -I "$DIR/Application/Services/IMU/Inc" \
-  -I "$DIR/Application/Modules/IMU/ThirdParty" -I "$DIR/Application/System/Utils/Inc" \
-  "$DIR/tests/host/imu_service_test.c" "$DIR/Application/Services/IMU/Src/imu_service.c" \
-  -lm -o "${test_out}/imu_service_test"
-"${test_out}/imu_service_test"
-)
-```
-
-#### 15. motion_transaction_test
-
-```bash
-(
-set -euo pipefail
-DIR="$PROJECT_ROOT/stm32_project"
-CC="${CC:-clang}"
-test_out="$(mktemp -d)"
-trap 'rm -rf "$test_out"' EXIT
-"$CC" -std=c11 -Wall -Wextra -O2 \
-  -I "$DIR/tests/host/stubs" -I "$DIR/Application/Services/Ctrl/Inc" \
-  -I "$DIR/Application/Services/Motor/Inc" -I "$DIR/Application/Modules/Motor/Inc" \
-  -I "$DIR/Application/Services/Servo/Inc" -I "$DIR/Application/Services/IMU/Inc" \
-  -I "$DIR/Application/Services/Safety/Inc" -I "$DIR/Application/System/Utils/Inc" \
-  -I "$DIR/Application/System/Common/Inc" -I "$DIR/Application/System/Protocol/Inc" \
-  -I "$DIR/Application/Tasks/MotionTask/Inc" -I "$DIR/Application/Tasks/ImuTask/Inc" \
-  -I "$DIR/Application/Tasks/SonarTask/Inc" \
-  "$DIR/tests/host/motion_transaction_test.c" \
-  "$DIR/Application/Services/Ctrl/Src/motion_service.c" \
-  "$DIR/Application/Services/Ctrl/Src/heading_control.c" \
-  "$DIR/Application/Services/Safety/Src/safety_service.c" \
-  "$DIR/Application/System/Utils/Src/motion_kinematics.c" \
-  "$DIR/Application/System/Utils/Src/motion_goal.c" \
-  "$DIR/Application/System/Utils/Src/steering_lut.c" \
-  "$DIR/Application/System/Utils/Src/control_lease.c" \
-  "$DIR/Application/System/Utils/Src/encoder_fault_monitor.c" \
-  -lm -o "${test_out}/motion_transaction_test"
-"${test_out}/motion_transaction_test"
-)
-```
-
-#### 16. motion_task_test
-
-```bash
-(
-set -euo pipefail
-DIR="$PROJECT_ROOT/stm32_project"
-CC="${CC:-clang}"
-test_out="$(mktemp -d)"
-trap 'rm -rf "$test_out"' EXIT
-"$CC" -std=c11 -Wall -Wextra -O2 \
-  -I "$DIR/tests/host/motion_task_stubs" -I "$DIR/Application/System/Protocol/Inc" \
-  "$DIR/tests/host/motion_task_test.c" "$DIR/Application/System/Protocol/Src/motion_status.c" \
-  -o "${test_out}/motion_task_test"
-"${test_out}/motion_task_test"
-)
-```
-
-### 9.2 ESP32（2组）
-
-#### 1. test_stop_barrier
-
-```bash
-(
-set -euo pipefail
-cd "$PROJECT_ROOT/esp32_project/tests/host"
-out="$(mktemp -d)"
-trap 'rm -rf "$out"' EXIT
-flags=(-Wl,--gc-sections)
-if [[ $(uname) == Darwin ]]; then flags=(-Wl,-dead_strip); fi
-cc -std=c11 -O2 -g -fsanitize=address,undefined -ffunction-sections -fdata-sections \
-  -Istubs -I../../components/uart_service/include -I../../components/pkt_codec/include \
-  -I../../components/ack_manager/include \
-  test_stop_barrier.c ../../components/ack_manager/src/ack_manager.c \
-  "${flags[@]}" -o "$out/test_stop_barrier"
-"$out/test_stop_barrier"
-)
-```
-
-#### 2. test_motion_json
-
-```bash
-(
-set -euo pipefail
-cd "$PROJECT_ROOT/esp32_project/tests/host"
-out="$(mktemp -d)"
-trap 'rm -rf "$out"' EXIT
-cc -std=c11 -O2 -g -fsanitize=address,undefined \
-  -Istubs -I../../components/bridge/include -I../../components/pkt_codec/include \
-  -I../../managed_components/espressif__cjson/cJSON \
-  test_motion_json.c ../../components/bridge/src/bridge_codec.c \
-  ../../components/pkt_codec/src/motion_status.c \
-  ../../managed_components/espressif__cjson/cJSON/cJSON.c -o "$out/test_motion_json"
-"$out/test_motion_json"
-)
-```
-
+以下为历史验证记录。当前构建参数及组数以 runner 为准。
 
 ## 2026-11-08 落地直行偏航回归补充
 

@@ -1481,7 +1481,7 @@ health_monitor (health_mon_task)
 
 ---
 
-## 附录 A: 与 sibling 项目 `serial_pkt_protocol` 的同步策略
+## 附录 A: 与 UART 协议子项目 `serial_pkt_protocol` 的同步策略
 
 协议升级到 v2 后，需要同步更新 `serial_pkt_protocol/` 中的解析器：
 

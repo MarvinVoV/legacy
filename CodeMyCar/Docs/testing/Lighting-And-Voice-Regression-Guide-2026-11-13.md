@@ -19,21 +19,10 @@
 
 ## 1. 离线基础（修改后首先执行）
 
+从 CodeMyCar 根目录执行。环境准备、完整基线和单项筛选见[回归测试入口](README.md)。
+
 ```bash
-cd /Users/sunyameng/github/legacy/CodeMyCar/stm32_project
-bash tests/host/run.sh
-# 独立灯光 / 独立运行基础也可：
-bash tests/host/run_lighting.sh
-bash tests/host/run_runtime.sh
-
-cd /Users/sunyameng/github/legacy/CodeMyCar/esp32_project
-bash tests/host/run.sh
-
-cd /Users/sunyameng/github/legacy/CodeMyCar/pyserver
-.venv/bin/python -m pytest -q
-# 定向诊断：
-.venv/bin/python -m pytest -q tests/test_lighting.py tests/test_agent_lighting.py tests/test_agent_message_repair.py tests/test_voice_agent_route.py tests/test_odometer_semantics.py
-.venv/bin/python -m pip check
+python3 tools/regress.py lighting runtime motion_json voice pyserver
 ```
 
 `test_agent_lighting.py`使用真实LangGraph、脚本模型与FakeLights；`test_voice_agent_route.py`检查真实WS路由注入唯一AgentSession。它们不验证云端模型听懂话。完整pytest本轮362项通过。STM32完整host使用ASAN/UBSAN（依脚本），S3测试有既有6个弃用警告，未导致失败。构建/烧录使用现有BuildAndFlash与S3 firmware.py流程；不能只测Python而跳过修改后的双板构建。

@@ -4,10 +4,12 @@
 
 | 要做的事 | 入口 |
 |---|---|
+| 第一次运行整车、烧录、排查在线状态 | [DevOps 运行手册](DevOps.md) |
 | 安装环境、编译或启动 | [根目录构建表](../README.md) |
 | 核对板型、电机参数、电池或引脚 | [硬件规格](hardware/HARDWARE-SPECIFICATIONS.md) · [引脚接线](hardware/HardwareWiring.md) · [供电与接地实测](hardware/Independent-Power-Root-Cause-Handoff-2026-11-14.md) |
 | 联调前端、服务端、两块板 | [HTTP 运动 API](protocol/agent-motion-api.md) · [MQTT 主题](protocol/mqtt-topics.md) · [UART 命令映射](protocol/cmd-mapping.md) |
 | 修改唤醒、打断或对话 | [语音职责划分](voice/Voice-Device-Server-Ownership-2026-11-12.md) · [声学验收和遗留问题](voice/Voice-Acoustic-Acceptance-2026-11-12.md) · [Agent 人格、工具和记忆](../pyserver/agent_profile/README.md) |
+| 运行离线全量、选单项及准备环境 | [回归测试入口](testing/README.md) |
 | 验证停车、运动或灯光 | [控制测试指南](testing/Control-Test-Guide-For-Agents.md) · [灯光与语音回归](testing/Lighting-And-Voice-Regression-Guide-2026-11-13.md) |
 | 查固件实现 | [STM32 文档](../stm32_project/Docs/README.md) · [ESP32 文档](../esp32_project/docs/README.md) |
 | 查旧试验、审核意见或撤回方案 | [历史档案](archive/README.md) |

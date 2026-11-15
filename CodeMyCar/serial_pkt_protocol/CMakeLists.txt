@@ -19,5 +19,6 @@ add_executable(serial_pkt_protocol
 # 添加测试子目录（仅在启用测试时编译）
 option(BUILD_TESTING "Build tests" ON)
 if (BUILD_TESTING)
+    enable_testing()
     add_subdirectory(tests)  # 引用测试专用的 CMakeLists.txt
 endif ()

@@ -15,7 +15,6 @@ target_include_directories(${TEST_TARGET} PRIVATE
         ${CMAKE_SOURCE_DIR}/vendor/unity
 )
 
-enable_testing()
 add_test(NAME ${TEST_TARGET} COMMAND ${TEST_TARGET})
 
 # bridge_codec 跨语言测试：pyserver JSON → C 转 13 字节 ControlCmd / 二进制 → JSON

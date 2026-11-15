@@ -1,19 +1,14 @@
 # STM32 测试入口
 
-完整清单、逐组独立编译命令、夹具复用及实机集成步骤见 [控制系统测试指南](../../Docs/testing/Control-Test-Guide-For-Agents.md)。
-
-- [host/run.sh](host/run.sh)：16组本机C测试；无需板子/ARM工具链。
-- 指定某个功能：指南第3节选用清单、第9.1节复制该组独立命令。runner当前不支持名称筛选参数。
-- [hil](hil)：4个真实设备集成脚本；前置条件、固定地址/设备名、预期结果见指南第6节。
-- [修复与验收记录](../../Docs/archive/control/Remaining-Control-Fixes-And-Validation-2026-11-08.md)：历史实际结果及未覆盖项目。
-
-从CodeMyCar目录设置 `PROJECT_ROOT` 后，离线运行：
+从 CodeMyCar 根目录执行。每次编译使用独立临时目录。
 
 ```bash
-bash "$PROJECT_ROOT/stm32_project/tests/host/run.sh"
+python3 tools/regress.py stm32
+bash stm32_project/tests/host/run.sh --list
+bash stm32_project/tests/host/run.sh motion_transaction encoder_fault_monitor
 ```
 
-HIL不会被此命令调用。不要把host通过当成真实轮角/制动距离已通过。
+[整车回归入口](../../Docs/testing/README.md)汇总依赖和跨项目组合。[控制测试指南](../../Docs/testing/Control-Test-Guide-For-Agents.md)解释各组断言、替身及实机边界。[实机脚本](hil)单独执行。
 
 INA219：`bash host/run_power.sh`可单独运行纯驱动/电池估算与实际PowerTask的HAL/RTOS模拟集成。
 `hil/power_telemetry_smoke.py`是独立的实机无运动验收（只发STOP）；使用pyserver虚拟环境运行。

@@ -361,7 +361,7 @@ idf.py -p /dev/cu.usbserial-XXXX flash monitor
 - **参考示例**：`examples/system/unit_test` 展示了完整的项目布局和测试注册方式
 - **VSCode 扩展**自动发现 `test/test_*.c` 文件中的 `TEST_CASE` 宏，可在 Testing 标签页直接运行
 - **pytest-embedded** 可用于自动化测试：`dut.run_all_single_board_cases()` 运行所有用例，支持按 group/attributes/name 过滤
-- **本项目 sibling 项目** `serial_pkt_protocol/` 已有 Unity 测试，可作为参考
+- [UART 协议子项目](../../../serial_pkt_protocol/README.md) 已有 Unity 测试，可作为参考
 
 ---
 

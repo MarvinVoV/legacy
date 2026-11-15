@@ -87,8 +87,8 @@ pio.ini.bak
 # =======================
 # 忽略工具链、库和子模块
 # =======================
-/tools/
-/tools/sdk/
+/tools/*
+!/tools/regress.py
 /idf_tools.py
 /idf_tools.json
 /lib/
